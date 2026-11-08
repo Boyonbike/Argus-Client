@@ -1,8 +1,8 @@
 package dev.randomstuff.client.gui;
 
-import dev.eggclient.client.ClientContext;
-import dev.eggclient.client.modules.Module;
-import dev.eggclient.client.modules.ModuleCategory;
+import dev.randomstuff.client.ClientContext;
+import dev.randomstuff.client.modules.Module;
+import dev.randomstuff.client.modules.ModuleCategory;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;

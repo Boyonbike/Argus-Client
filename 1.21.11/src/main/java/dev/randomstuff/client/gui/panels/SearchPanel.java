@@ -1,10 +1,10 @@
-package dev.eggclient.client.gui.panels;
+package dev.randomstuff.client.gui.panels;
 
-import dev.eggclient.client.ClientContext;
-import dev.eggclient.client.gui.components.ModuleComponent;
-import dev.eggclient.client.modules.Module;
-import dev.eggclient.client.modules.ModuleCategory;
-import dev.eggclient.client.render.TextUtils;
+import dev.randomstuff.client.ClientContext;
+import dev.randomstuff.client.gui.components.ModuleComponent;
+import dev.randomstuff.client.modules.Module;
+import dev.randomstuff.client.modules.ModuleCategory;
+import dev.randomstuff.client.render.TextUtils;
 // Mojang name for net.minecraft.class_4587. If your project uses Yarn, import MatrixStack instead.
 import com.mojang.blaze3d.vertex.PoseStack;
 

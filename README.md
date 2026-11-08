@@ -22,7 +22,8 @@ and Friends management. Client projects are organised by Minecraft version.
 - The **Classic** tab opens the original click GUI, including its Search panel.
 
 The combined client uses Random Stuff Client display branding and includes the
-lavender UI defaults. Internal mod IDs and existing settings remain compatible.
+lavender UI defaults. Its mod ID and resource namespace are `randomstuffclient`, with Java packages
+under `dev.randomstuff`.
 
 ## Repository layout
 

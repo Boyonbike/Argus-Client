@@ -1,9 +1,9 @@
 package dev.randomstuff.client.gui;
 
-import dev.eggclient.client.ClientContext;
-import dev.eggclient.client.managers.SocialRegistry;
-import dev.eggclient.client.modules.misc.SocialEntry;
-import dev.eggclient.client.settings.options.SocialRole;
+import dev.randomstuff.client.ClientContext;
+import dev.randomstuff.client.managers.SocialRegistry;
+import dev.randomstuff.client.modules.misc.SocialEntry;
+import dev.randomstuff.client.settings.options.SocialRole;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;

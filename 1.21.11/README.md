@@ -64,15 +64,19 @@ client while preserving its Mixin runtime metadata.
 - [`ModulesScreen.java`](src/main/java/dev/randomstuff/client/gui/ModulesScreen.java): tabbed module menu.
 - [`FriendsScreen.java`](src/main/java/dev/randomstuff/client/gui/FriendsScreen.java): friends management using the client's existing social registry.
 - [`FriendsMod.java`](src/main/java/dev/randomstuff/client/gui/FriendsMod.java): command registration and deferred screen opening.
-- [`SearchPanel.java`](src/main/java/dev/eggclient/client/gui/panels/SearchPanel.java): original GUI's Search panel.
+- [`SearchPanel.java`](src/main/java/dev/randomstuff/client/gui/panels/SearchPanel.java): original GUI's Search panel.
 - [`libs/client-base.jar`](libs/client-base.jar): previously supplied compiled client, including the search hook, config protections, branding, and imported lavender defaults.
 
 The ZIPs did not include the full underlying client's Java source. This project
 rebuilds the available GUI sources and combines them with that compiled base;
-it is not a reconstruction of all client source. Internal `eggclient` mod IDs,
-Java packages, resource paths, and migration keys remain for compatibility.
+it is not a reconstruction of all client source. The mod ID and resource namespace are `randomstuffclient`; core classes and GUI
+source use `dev.randomstuff`. Shared fields use the same namespace consistently.
+Settings live in `randomstuffclient/` inside the instance game directory. An
+upgrade copies an existing legacy settings folder if the new folder is absent;
+existing Random Stuff Client settings take priority. Previous folder names appear
+only in the compatibility code that locates those settings.
 The merged GUI uses the `dev.randomstuff.client.gui` package and does not require
-a separate `shuclient` mod.
+a separate GUI add-on.
 
 ## Verification
 
@@ -81,9 +85,9 @@ python3 tools/verify_branding.py build/libs/random-stuff-client.jar
 python3 tools/verify_merge.py build/libs/random-stuff-client.jar
 ```
 
-The JUnit viewport regression test, compilation/remapping, package integrity,
-entrypoint registration, display
-branding, and bytecode checks passed. In-game appearance and controls have not
+JUnit tests cover viewport layout, shared-field linkage, namespace consistency,
+and preservation of settings during upgrades. Compilation/remapping, package
+integrity, entrypoint registration, display branding, and bytecode checks passed. In-game appearance and controls have not
 been tested in a running Minecraft instance.
 
 The display rename can also be applied to a compatible existing build:
@@ -92,6 +96,5 @@ The display rename can also be applied to a compatible existing build:
 python3 tools/rebrand.py input.jar output.jar
 ```
 
-Historical branding strings used to recognize old settings remain in migration
-code. `tools/rebrand.py` changes display literals without relocating internal
-classes or Minecraft resources.
+`tools/rebrand.py` is an optional display-text utility; the packaged client
+already uses the Random Stuff Client mod, package, and resource namespaces.

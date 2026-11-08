@@ -13,7 +13,9 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     modCompileOnly files('libs/client-base.jar')
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.ow2.asm:asm-tree:9.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
+    testRuntimeOnly files('libs/client-base.jar')
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -52,10 +54,10 @@ tasks.register('mergeClient', Jar) {
     archiveFileName = 'random-stuff-client.jar'
     destinationDirectory = layout.buildDirectory.dir('libs')
     from(zipTree(file('libs/client-base.jar'))) {
-        exclude 'fabric.mod.json', 'META-INF/MANIFEST.MF', 'dev/eggclient/client/gui/panels/SearchPanel.class'
+        exclude 'fabric.mod.json', 'META-INF/MANIFEST.MF', 'dev/randomstuff/client/gui/panels/SearchPanel.class', 'dev/randomstuff/client/config/ClientDataDirectory*.class'
     }
     from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
-        include 'dev/randomstuff/**', 'dev/eggclient/client/gui/panels/SearchPanel.class'
+        include 'dev/randomstuff/**', 'dev/randomstuff/client/gui/panels/SearchPanel.class'
     }
     from(mergedMetadata) { into '' }
     // Preserve the base client's static Mixin remapping and runtime namespace metadata.
