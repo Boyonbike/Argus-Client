@@ -16,7 +16,19 @@ final class GuiState {
         if (preferences == null) preferences = GuiPreferences.load(path());
         return preferences;
     }
-    static UiTheme theme() { return UiTheme.of(preferences()); }
+    private static UiTheme shownTheme, targetTheme;
+    private static long themeChanged;
+    /** The palette, cross-faded for a quarter second whenever mode or accent changes. */
+    static UiTheme theme() {
+        UiTheme target = UiTheme.of(preferences());
+        if (targetTheme == null) { targetTheme = shownTheme = target; }
+        if (!target.equals(targetTheme)) { shownTheme = blendedTheme(); targetTheme = target; themeChanged = System.nanoTime(); }
+        return blendedTheme();
+    }
+    private static UiTheme blendedTheme() {
+        float t = UiAnim.easeOutCubic((System.nanoTime() - themeChanged) / 2.5e8f);
+        return t >= 1 ? targetTheme : UiTheme.blend(shownTheme, targetTheme, t);
+    }
     static void save() {
         try { preferences().save(path()); saveError = ""; }
         catch (IOException failure) { saveError = "Could not save GUI preferences."; }

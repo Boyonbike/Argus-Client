@@ -18,4 +18,11 @@ public record UiTheme(int base, int mantle, int crust, int surface, int overlay,
                 : new UiTheme(0xff1e1e2e,0xff181825,0xff11111b,0xff313244,0xff45475a,0xffcdd6f4,
                 0xffa6adc8,0xff000000|accent,0xffa6e3a1,0xff89b4fa,0xfff9e2af,0xfff38ba8);
     }
+
+    static UiTheme blend(UiTheme a, UiTheme b, float t) {
+        return new UiTheme(UiDraw.mix(a.base, b.base, t), UiDraw.mix(a.mantle, b.mantle, t), UiDraw.mix(a.crust, b.crust, t),
+                UiDraw.mix(a.surface, b.surface, t), UiDraw.mix(a.overlay, b.overlay, t), UiDraw.mix(a.text, b.text, t),
+                UiDraw.mix(a.muted, b.muted, t), UiDraw.mix(a.accent, b.accent, t), UiDraw.mix(a.green, b.green, t),
+                UiDraw.mix(a.blue, b.blue, t), UiDraw.mix(a.yellow, b.yellow, t), UiDraw.mix(a.red, b.red, t));
+    }
 }

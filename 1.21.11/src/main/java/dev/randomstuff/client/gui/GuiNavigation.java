@@ -16,7 +16,7 @@ public final class GuiNavigation {
     }
     public static void closeFromBind(){
         Minecraft mc=Minecraft.getInstance();
-        if(mc.screen instanceof UiScreen screen)mc.setScreen(screen.rootParent());
+        if(mc.screen instanceof UiScreen screen)screen.beginClose(screen.rootParent());
         deferred=false;
     }
     static void tick(){
