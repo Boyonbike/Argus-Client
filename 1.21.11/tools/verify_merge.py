@@ -25,6 +25,10 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     assert b'ShuClient' not in jar.read('dev/randomstuff/client/gui/ModulesScreen.class')
     assert 'dev/randomstuff/client/gui/panels/SearchPanel.class' in jar.namelist()
     assert metadata['name'] == 'Random Stuff Client'
+    assert 'randomstuffclient.gui.mixins.json' in metadata['mixins'], 'GUI keybind integration missing'
+    assert 'dev/randomstuff/client/gui/SearchScreen.class' in jar.namelist(), 'Clickable Search screen missing'
+    assert 'assets/randomstuffclient/font/ui.json' in jar.namelist(), 'GUI font definition missing'
+    assert 'assets/randomstuffclient/font/lexend-deca.ttf' in jar.namelist(), 'GUI font asset missing'
     base_path = Path(__file__).resolve().parents[1] / 'libs/client-base.jar'
     with zipfile.ZipFile(base_path) as base:
         for name in base.namelist():

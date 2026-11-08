@@ -1,7 +1,7 @@
 # Random Stuff Client
 
-A Fabric client with a searchable module menu, draggable category windows,
-and Friends management. Client projects are organised by Minecraft version.
+A Fabric client with a Meteor-style floating-window GUI, pastel Light/Dark
+themes, ranked module/settings search, and Friends management. Client projects are organised by Minecraft version.
 
 ## Versions
 
@@ -17,12 +17,14 @@ and Friends management. Client projects are organised by Minecraft version.
 
 ## Menus
 
-- `/randomstuff` opens the tabbed module menu with search and draggable category windows.
+- The existing GUI keybind or `/randomstuff` opens the floating module menu.
+- Click **Search** to search modules, aliases and settings; the input focuses immediately.
+- **Theme** offers Light/Dark and a separate accent colour choice.
 - `/friends` opens the Friends window to add, remove, and list friends.
 - The **Classic** tab opens the original click GUI, including its Search panel.
 
-The combined client uses Random Stuff Client display branding and includes the
-lavender UI defaults. Its mod ID and resource namespace are `randomstuffclient`, with Java packages
+The combined client uses Random Stuff Client branding, with Dark mode and
+Lavender accents by default. Its mod ID and resource namespace are `randomstuffclient`, with Java packages
 under `dev.randomstuff`.
 
 ## Repository layout

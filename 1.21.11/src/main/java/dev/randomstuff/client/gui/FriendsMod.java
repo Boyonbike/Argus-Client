@@ -30,6 +30,7 @@ public final class FriendsMod implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            GuiNavigation.tick();
             Request r = request;
             if (r == Request.NONE) return;
             request = Request.NONE;

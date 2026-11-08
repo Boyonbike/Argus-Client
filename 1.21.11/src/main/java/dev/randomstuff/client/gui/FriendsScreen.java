@@ -1,227 +1,62 @@
 package dev.randomstuff.client.gui;
 
 import dev.randomstuff.client.ClientContext;
-import dev.randomstuff.client.managers.SocialRegistry;
 import dev.randomstuff.client.modules.misc.SocialEntry;
 import dev.randomstuff.client.settings.options.SocialRole;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.network.chat.Component;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-
-/**
- * Meteor-style friends window: a name box + "Add" button on top, and a
- * scrollable list of friends, each with a "Remove" button.
- *
- * Uses only vanilla widgets plus the client's existing SocialRegistry, so it
- * does not depend on the client's custom panel framework.
- *
- * Integrated with Random Stuff Client for Minecraft 1.21.11 (Mojang mappings).
- */
-public final class FriendsScreen extends Screen {
-
-    private static final int PANEL_W = 260;
-    private static final int ROW_H = 22;
-    private static final int HEADER_H = 54;
-    private static final int PAD = 8;
-
-    private static final int COLOR_PANEL = 0xE0181818;
-    private static final int COLOR_HEADER = 0xFF202020;
-    private static final int COLOR_ROW = 0xFF262626;
-    private static final int COLOR_ROW_ALT = 0xFF2C2C2C;
-    private static final int COLOR_ACCENT = 0xFFB978FF; // matches the lavender "enabled" colour
-    private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_DIM = 0xFFAAAAAA;
-
-    private final Screen parent;
-    private EditBox nameBox;
-    private Button addButton;
-    private final List<Button> removeButtons = new ArrayList<>();
-    private List<String> friends = new ArrayList<>();
-
-    private int scroll = 0;
-    private String status = "";
-
-    public FriendsScreen(Screen parent) {
-        super(Component.literal("Friends"));
-        this.parent = parent;
-    }
-
-    // ---- layout helpers -------------------------------------------------
-
-    private int left() { return (this.width - PANEL_W) / 2; }
-    private int top() { return Math.max(20, this.height / 2 - 110); }
-    private int listTop() { return top() + HEADER_H; }
-    private int listHeight() { return Math.min(220, this.height - listTop() - 20); }
-    private int visibleRows() { return Math.max(1, listHeight() / ROW_H); }
-
-    // ---- data -----------------------------------------------------------
-
-    private void reloadFriends() {
-        SocialRegistry registry = ClientContext.socialRegistry;
-        List<String> names = new ArrayList<>();
-        for (Object o : registry.getRegistry()) {
-            SocialEntry entry = (SocialEntry) o;
-            if (entry.role() == SocialRole.FRIEND) {
-                names.add(entry.name());
-            }
-        }
-        names.sort(Comparator.comparing(s -> s.toLowerCase(Locale.ROOT)));
-        this.friends = names;
-        int maxScroll = Math.max(0, friends.size() - visibleRows());
-        if (scroll > maxScroll) scroll = maxScroll;
-        if (scroll < 0) scroll = 0;
-    }
-
-    private void addFriend() {
-        String name = nameBox.getValue().trim();
-        if (name.isEmpty()) {
-            status = "Type a name first.";
-            return;
-        }
-        if (!name.matches("[A-Za-z0-9_]{1,16}")) {
-            status = "Invalid name.";
-            return;
-        }
-        SocialRegistry registry = ClientContext.socialRegistry;
-        if (registry.isFriendName(name)) {
-            status = name + " is already a friend.";
-            return;
-        }
-        registry.addFriend(name);
-        status = "Added " + name + ".";
-        nameBox.setValue("");
-        rebuild();
-    }
-
-    private void removeFriend(String name) {
-        ClientContext.socialRegistry.removeSocial(name);
-        status = "Removed " + name + ".";
-        rebuild();
-    }
-
-    private void rebuild() {
-        this.rebuildWidgets();
-    }
-
-    // ---- widgets --------------------------------------------------------
-
-    @Override
-    protected void init() {
-        String draft = nameBox == null ? "" : nameBox.getValue();
-        reloadFriends();
-        removeButtons.clear();
-
-        int x = left();
-        int y = top();
-
-        nameBox = new EditBox(this.font, x + PAD, y + 26, PANEL_W - PAD * 2 - 58, 18, Component.literal("Name"));
-        nameBox.setMaxLength(16);
-        nameBox.setValue(draft);
-        nameBox.setHint(Component.literal("Player name..."));
-        this.addRenderableWidget(nameBox);
-        this.setInitialFocus(nameBox);
-
-        addButton = Button.builder(Component.literal("Add"), b -> addFriend())
-                .bounds(x + PANEL_W - PAD - 52, y + 25, 52, 20)
-                .build();
-        this.addRenderableWidget(addButton);
-
-        int rows = Math.min(visibleRows(), Math.max(0, friends.size() - scroll));
-        for (int i = 0; i < rows; i++) {
-            final String name = friends.get(scroll + i);
-            int ry = listTop() + i * ROW_H;
-            Button remove = Button.builder(Component.literal("Remove"), b -> removeFriend(name))
-                    .bounds(x + PANEL_W - PAD - 54, ry + 1, 54, ROW_H - 2)
-                    .build();
-            removeButtons.add(remove);
-            this.addRenderableWidget(remove);
+/** Friends uses the same palette and navigation while editing the existing social registry. */
+public final class FriendsScreen extends UiScreen {
+    private int left,top,panelWidth,scroll,rows;
+    private UiInput nameBox;
+    private List<String> friends=List.of();
+    private String status="";
+    public FriendsScreen(Screen parent){super("Friends",parent,"Friends");}
+    @Override protected void buildContent(){
+        panelWidth=Math.min(360,width-24);left=(width-panelWidth)/2;top=46;
+        rows=Math.max(1,(height-top-100)/24);
+        List<String> names=new ArrayList<>();
+        for(Object object:ClientContext.socialRegistry.getRegistry())if(object instanceof SocialEntry entry&&entry.role()==SocialRole.FRIEND)names.add(entry.name());
+        names.sort(String.CASE_INSENSITIVE_ORDER);friends=List.copyOf(names);scroll=Math.clamp(scroll,0,Math.max(0,friends.size()-rows));
+        String draft=nameBox==null?"":nameBox.getValue();
+        nameBox=new UiInput(font,left+12,top+37,panelWidth-91,18,"Player name...");nameBox.setMaxLength(16);nameBox.setValue(draft);
+        addRenderableWidget(nameBox);setInitialFocus(nameBox);
+        addRenderableWidget(new UiButton(left+panelWidth-70,top+34,58,24,"Add",this::addFriend));
+        for(int i=0;i<rows&&scroll+i<friends.size();i++){
+            String name=friends.get(scroll+i);
+            addRenderableWidget(new UiButton(left+panelWidth-75,top+71+i*24,61,19,"Remove",()->{ClientContext.socialRegistry.removeSocial(name);status="Removed "+name+".";rebuildWidgets();}));
         }
     }
-
-    // ---- rendering ------------------------------------------------------
-
-    @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
-        // dim the game behind the window
-        g.fill(0, 0, this.width, this.height, 0x90000000);
-
-        int x = left();
-        int y = top();
-        int h = HEADER_H + listHeight() + 26;
-
-        // panel + header
-        g.fill(x, y, x + PANEL_W, y + h, COLOR_PANEL);
-        g.fill(x, y, x + PANEL_W, y + 20, COLOR_HEADER);
-        g.fill(x, y + 20, x + PANEL_W, y + 21, COLOR_ACCENT);
-        g.drawString(this.font, "Friends (" + friends.size() + ")", x + PAD, y + 6, COLOR_TEXT, true);
-
-        // rows
-        int rows = Math.min(visibleRows(), Math.max(0, friends.size() - scroll));
-        for (int i = 0; i < rows; i++) {
-            int ry = listTop() + i * ROW_H;
-            g.fill(x + 2, ry, x + PANEL_W - 2, ry + ROW_H, (i % 2 == 0) ? COLOR_ROW : COLOR_ROW_ALT);
-            g.fill(x + 2, ry, x + 4, ry + ROW_H, COLOR_ACCENT);
-            g.drawString(this.font, friends.get(scroll + i), x + PAD + 4, ry + 7, COLOR_TEXT, true);
-        }
-
-        if (friends.isEmpty()) {
-            g.drawString(this.font, "No friends yet. Add one above.", x + PAD, listTop() + 8, COLOR_DIM, true);
-        }
-
-        // status line
-        if (!status.isEmpty()) {
-            g.drawString(this.font, status, x + PAD, y + h - 16, COLOR_DIM, true);
-        }
-
-        super.render(g, mouseX, mouseY, delta); // widgets on top
+    private void addFriend(){
+        String name=nameBox.getValue().trim();
+        if(!name.matches("[A-Za-z0-9_]{1,16}")){status="Enter a player name using letters, numbers or underscores.";return;}
+        if(ClientContext.socialRegistry.isFriendName(name)){status=name+" is already a friend.";return;}
+        ClientContext.socialRegistry.addFriend(name);status="Added "+name+".";nameBox.setValue("");rebuildWidgets();
     }
-
-    // ---- input ----------------------------------------------------------
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        int maxScroll = Math.max(0, friends.size() - visibleRows());
-        int newScroll = scroll - (int) Math.signum(vertical);
-        newScroll = Math.max(0, Math.min(maxScroll, newScroll));
-        if (newScroll != scroll) {
-            scroll = newScroll;
-            rebuild();
-            return true;
+    @Override public void render(GuiGraphics g,int mx,int my,float delta){
+        backdrop(g);UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,height-top-24,t);
+        UiDraw.text(g,font,"Friends",left+13,top+13,t.text());
+        UiDraw.text(g,font,Integer.toString(friends.size()),left+panelWidth-28,top+13,t.accent());
+        for(int i=0;i<rows&&scroll+i<friends.size();i++){
+            int y=top+69+i*24;UiDraw.rounded(g,left+10,y,panelWidth-20,22,4,t.mantle());
+            UiDraw.rounded(g,left+14,y+7,8,8,4,t.green());
+            UiDraw.text(g,font,UiDraw.fit(font,friends.get(scroll+i),panelWidth-112),left+30,y+7,t.text());
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+        if(friends.isEmpty())UiDraw.center(g,font,"No friends yet. Add one above.",left,top+83,panelWidth,t.muted());
+        UiDraw.text(g,font,UiDraw.fit(font,status.isEmpty()?"Scroll to see more friends.":status,panelWidth-24),left+12,height-36,t.muted());
+        chrome(g,mx,my,delta);
     }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        // Enter adds the typed name
-        if ((event.key() == 257 || event.key() == 335) && nameBox != null && nameBox.isFocused()) {
-            addFriend();
-            return true;
+    @Override public boolean keyPressed(KeyEvent event){
+        if((event.key()==257||event.key()==335)&&nameBox.isFocused()){addFriend();return true;}return super.keyPressed(event);
+    }
+    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+        if(UiDraw.over(mx,my,left,top+65,panelWidth,height-top-90)){
+            int next=Math.clamp(scroll-(int)Math.signum(vertical),0,Math.max(0,friends.size()-rows));
+            if(next!=scroll){scroll=next;rebuildWidgets();}return true;
         }
-        return super.keyPressed(event);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        return super.mouseClicked(event, doubleClick);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
         return false;
-    }
-
-    @Override
-    public void onClose() {
-        this.minecraft.setScreen(parent);
     }
 }

@@ -1,0 +1,6 @@
+{
+  "providers": [
+    {"type":"ttf","file":"randomstuffclient:lexend-deca.ttf","size":10,"oversample":2,"shift":[0,0]},
+    {"type":"reference","id":"minecraft:default"}
+  ]
+}

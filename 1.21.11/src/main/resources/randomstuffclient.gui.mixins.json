@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.randomstuff.client.gui.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["UIModuleMixin"],
+  "injectors": {"defaultRequire": 1}
+}
