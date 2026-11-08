@@ -14,4 +14,5 @@ The bundled Lexend Deca font comes from
 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/lexenddeca).
 Copyright and SIL Open Font License 1.1 terms are included in
 [`OFL-Lexend-Deca.txt`](src/main/resources/assets/randomstuffclient/font/OFL-Lexend-Deca.txt)
-and in the client JAR alongside the unmodified font file.
+and in the client JAR alongside the pre-rendered glyph atlas. The unmodified
+source font is in `tools/font-source/lexend-deca.ttf`; it is not loaded by Minecraft.

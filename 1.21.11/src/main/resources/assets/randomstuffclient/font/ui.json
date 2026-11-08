@@ -1,6 +1,15 @@
 {
   "providers": [
-    {"type":"ttf","file":"randomstuffclient:lexend-deca.ttf","size":10,"oversample":2,"shift":[0,0]},
+    {"type":"space","advances":{" ":3}},
+    {"type":"bitmap","file":"randomstuffclient:font/gui.png","height":12,"ascent":10,"chars":[
+      " !\"#$%&'()*+,-./",
+      "0123456789:;<=>?",
+      "@ABCDEFGHIJKLMNO",
+      "PQRSTUVWXYZ[\\]^_",
+      "`abcdefghijklmno",
+      "pqrstuvwxyz{|}~…",
+      "−·×\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    ]},
     {"type":"reference","id":"minecraft:default"}
   ]
 }

@@ -57,7 +57,8 @@ are tolerated. Each result shows its type and owning category/module.
 The user-facing controls are **Light / Dark** and **Accent colour**, with Dark
 and Lavender as defaults. Accent choices are Lavender, Blue, Green, Peach,
 Pink and Red. The theme applies across modules, search, friends and settings.
-The GUI includes rounded panels and the bundled Lexend Deca font.
+The GUI includes rounded panels and a pre-rendered Lexend Deca glyph atlas.
+The atlas avoids native TrueType loading during Minecraft resource reloads.
 
 The design and search interaction are inspired by
 [Catppuccin for Meteor Client](https://github.com/X-C-0/catppuccin-addon).
@@ -117,3 +118,9 @@ compatibility code.
 
 Build and automated checks are verified. The new GUI still needs visual and
 interaction testing in a running Minecraft instance.
+
+To regenerate the GUI font atlas offline (JDK only):
+
+```sh
+java -Djava.awt.headless=true tools/BakeGuiFont.java
+```

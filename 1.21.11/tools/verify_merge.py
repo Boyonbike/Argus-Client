@@ -28,7 +28,9 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     assert 'randomstuffclient.gui.mixins.json' in metadata['mixins'], 'GUI keybind integration missing'
     assert 'dev/randomstuff/client/gui/SearchScreen.class' in jar.namelist(), 'Clickable Search screen missing'
     assert 'assets/randomstuffclient/font/ui.json' in jar.namelist(), 'GUI font definition missing'
-    assert 'assets/randomstuffclient/font/lexend-deca.ttf' in jar.namelist(), 'GUI font asset missing'
+    assert 'assets/randomstuffclient/textures/font/gui.png' in jar.namelist(), 'GUI font atlas missing'
+    font = json.loads(jar.read('assets/randomstuffclient/font/ui.json'))
+    assert all(provider['type'] != 'ttf' for provider in font['providers']), 'Native GUI TTF loader reintroduced'
     base_path = Path(__file__).resolve().parents[1] / 'libs/client-base.jar'
     with zipfile.ZipFile(base_path) as base:
         for name in base.namelist():
