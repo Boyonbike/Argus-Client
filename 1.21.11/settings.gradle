@@ -5,4 +5,4 @@ pluginManagement {
         mavenCentral()
     }
 }
-rootProject.name = 'random-stuff-client'
+rootProject.name = 'argus-client'

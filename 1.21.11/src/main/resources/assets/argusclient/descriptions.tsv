@@ -1,0 +1,2023 @@
+# module	setting	description
+AnchorAura		Hunts nearby enemies with respawn anchors.
+AntiFeetPlace		Stops enemies from placing blocks under your feet.
+AutoMace		Automatically swings a mace at nearby targets.
+AutoTrap		Encases nearby players in obsidian traps.
+BedAura		Detonates beds beside nearby enemies.
+Tooltips		Adds extra details to item tooltips.
+AutoCrystal	Place	Enables or disables crystal placement.
+AutoCrystal	PlaceDelay	Delay between crystal placement attempts in milliseconds.
+AutoCrystal	PlaceRange	Maximum distance for placing crystals.
+AutoCrystal	PlaceWallRange	Placement range through walls for hidden spots.
+AutoCrystal	MinPlaceDamage	Minimum target damage required to place a crystal.
+AutoCrystal	MaxSelfPlace	Maximum self damage allowed when placing crystals.
+AutoCrystal	DamageRatio	Required target-to-self damage ratio for placements.
+AutoCrystal	Sequential	Queues another placement after a crystal spawns.
+AutoCrystal	1.12	Requires clear air above the crystal space, like 1.12.
+AutoCrystal	StrictDirection	Only places where valid strict directions exist.
+AutoCrystal	LowerHitBox	Only checks the lower half for placement collision.
+AutoCrystal	MineIgnore	Ignores the block you are mining in damage checks.
+AutoCrystal	Always	Allows low-damage placements when ignoring a mined block.
+AutoCrystal	Threshold	Extra predicted ticks when checking the mining block.
+AutoCrystal	Break	Enables or disables attacking crystals.
+AutoCrystal	HitDelay	Delay between crystal attack attempts in milliseconds.
+AutoCrystal	Factor	Number of attack attempts per crystal break.
+AutoCrystal	BreakRange	Maximum distance for breaking crystals.
+AutoCrystal	BreakWallRange	Breaking range through walls for hidden crystals.
+AutoCrystal	MinBreakDamage	Minimum target damage required to break a crystal.
+AutoCrystal	MaxSelfHit	Maximum self damage allowed when breaking crystals.
+AutoCrystal	AntiSuicide	Skips attacks that would kill you.
+AutoCrystal	Instant	Attacks newly spawned crystals without waiting.
+AutoCrystal	Await	Waits for the mined block before instant attacks.
+AutoCrystal	TicksExisted	Minimum crystal age in ticks before attacking.
+AutoCrystal	Weakness	How the Weakness effect is treated when attacking.
+AutoCrystal	BasePlace	Also places obsidian under crystals as a base.
+AutoCrystal	BaseDelay	Delay between base block placements in milliseconds.
+AutoCrystal	Air	Allows base blocks to be placed in mid-air.
+AutoCrystal	Rotate	Rotates toward targets when placing or breaking crystals.
+AutoCrystal	PlaceRotate	Rotates toward the chosen placement position.
+AutoCrystal	BreakRotate	Rotates toward crystals before attacking them.
+AutoCrystal	FacePlace	Lowers damage requirements against weak or low-armor targets.
+AutoCrystal	FacePlaceHealth	Target health below which face placing is allowed.
+AutoCrystal	FacePlaceArmor	Lowest armor durability percent that allows face placing.
+AutoCrystal	ShieldBreaker	Also face places targets holding a shield.
+AutoCrystal	DamageSync	Disables face placing while Aura is attacking.
+AutoCrystal	ExtraTicks	Extrapolates target movement when predicting crystal damage.
+AutoCrystal	Ticks	Number of ticks ahead used for prediction.
+AutoCrystal	Draw	Renders predicted target positions while placing.
+AutoCrystal	Render	Toggles rendering of AutoCrystal placements.
+AutoCrystal	Fill	Fill color for rendered crystal placements.
+AutoCrystal	Outline	Outline color for rendered crystal placements.
+AutoCrystal	LineWidth	Width of rendered placement outlines.
+AutoCrystal	Damage	Shows predicted damage on rendered placements.
+AutoCrystal	Fade	Fades rendered placements out over time.
+AutoCrystal	MultiFade	Fades each rendered placement independently.
+AutoCrystal	FadeTime	Seconds rendered placements take to fade.
+AutoCrystal	Mining	Pauses AutoCrystal while you are mining.
+AutoCrystal	Eating	Pauses AutoCrystal while you are eating.
+AutoCrystal	Mending	Pauses AutoCrystal while mending your armor.
+AutoCrystal	TargetRange	Maximum distance for selecting player targets.
+AutoCrystal	CrystalRange	Maximum base-to-target distance for damage calculation.
+AutoCrystal	AntiFriendKill	Prevents placements that could kill a friend.
+AutoCrystal	AntiQuiver	Requires stronger placements while arrows are near the target.
+AutoCrystal	IgnoreNakeds	Skips players who are wearing no armor.
+AutoCrystal	AssumeBestArmor	Assumes targets wear their best armor for damage.
+AutoCrystal	Bosses	Also targets bosses such as withers and dragons.
+AutoCrystal	ForceSuicide	Allows targeting yourself for crystal damage.
+AutoCrystal	NoArmor	Drops a non-binding armor piece while force suiciding.
+AutoCrystal	AssumeInvincibility	Assumes newly joined players are briefly invulnerable.
+AutoCrystal	Self	Applies the invincibility window to yourself too.
+AutoCrystal	InvincTimeout	Seconds after joining that immunity is assumed.
+AutoCrystal	AutoSwap	Automatic item swap mode for crystal placement.
+AutoCrystal	Silent	Silent swap method used for crystal placement.
+AutoCrystal	SwapBack	Returns to your previous slot after swapping.
+AutoCrystal	StrictTiming	Uses stricter timing between silent item swaps.
+AutoCrystal	SwapDelay	Cooldown between automatic item swaps.
+AutoCrystal	SwapPenalty	Pause after you manually change slots.
+AutoCrystal	Multipoint	Samples eight points per face for placements.
+FeetPlace	Delay	Delay between surround placement attempts in milliseconds.
+FeetPlace	BPT	Maximum blocks placed per tick.
+FeetPlace	AirPlace	Allows placing blocks without an adjacent support block.
+FeetPlace	Raytrace	Requires a visible hit point on the support block.
+FeetPlace	Rotate	Rotates toward blocks before placing them.
+FeetPlace	Attack	Attacks crystals occupying your placement positions.
+FeetPlace	Firework	Places fireworks to break crystals around your feet.
+FeetPlace	Sequential	Re-runs placement after each block update.
+FeetPlace	Center	Centers you on the block before placing.
+FeetPlace	Flatten	Also places a block below your feet.
+FeetPlace	Cover	Also places a block above your head.
+FeetPlace	SmartFace	Adds raised positions when many crystals are nearby.
+FeetPlace	BlockIgnore	Skips blocks being mined or occupied by enemies.
+FeetPlace	OnlyObby	Uses obsidian as the only surround block.
+FeetPlace	Instant	Attacks crystals instantly when they spawn.
+FeetPlace	Jump	Disables the module when you jump or sleep.
+FeetPlace	Chorus	Disables the module after eating a chorus fruit.
+FeetPlace	Pearl	Disables the module when you throw an ender pearl.
+FeetPlace	RubberBand	Disables the module after a position correction.
+FeetPlace	Height	Disables when you fall two or more blocks.
+FeetPlace	Render	Toggles rendering of FeetPlace placements.
+FeetPlace	Fill	Fill color for rendered surround positions.
+FeetPlace	Outline	Outline color for rendered surround positions.
+FeetPlace	LineWidth	Width of rendered surround outlines.
+FeetPlace	Fade	Fades rendered surround positions out over time.
+FeetPlace	FadeTime	Seconds rendered surround positions take to fade.
+AnchorAura	Delay	Delay between anchor actions in milliseconds.
+AnchorAura	Range	Maximum distance for placing anchors.
+AnchorAura	WallRange	Anchor range through walls for hidden spots.
+AnchorAura	TargetRange	Maximum distance for selecting anchor targets.
+AnchorAura	MinDamage	Minimum damage required to detonate an anchor.
+AnchorAura	MaxSelfDamage	Maximum self damage allowed when detonating anchors.
+AnchorAura	AntiSuicide	Avoids detonating anchors that would kill you.
+AnchorAura	Rotate	Rotates toward anchors before interacting.
+AnchorAura	AirPlace	Allows placing anchors without adjacent support.
+AnchorAura	LiquidPlace	Allows anchors to be placed in liquids.
+AnchorAura	Inhibit	Removes the anchor client-side after detonating.
+AnchorAura	Sequential	Places the anchor again once the base confirms.
+AnchorAura	MineIgnore	Pauses anchor placement while you are mining.
+AnchorAura	Render	Toggles rendering of anchor placements.
+AnchorAura	Fill	Fill color for rendered anchor positions.
+AnchorAura	Outline	Outline color for rendered anchor positions.
+AnchorAura	Fade	Fades rendered anchor positions out over time.
+AnchorAura	FadeTime	Seconds rendered anchor positions take to fade.
+AnchorAura	Mining	Pauses AnchorAura while you are mining.
+AnchorAura	Eating	Pauses AnchorAura while you are eating.
+AnchorAura	Health	Pauses AnchorAura below this health value.
+MultiTask	Mode	Controls which actions are blocked while using an item.
+MultiTask	AllowInventory	Keeps inventory actions allowed while using an item.
+MultiTask	AutoReplace	Allows block replacement while you are using an item.
+MultiTask	AntiFeetPlace	Allows AntiFeetPlace to keep running while using an item.
+MultiTask	AntiPhase	Allows AntiPhase to keep running while using an item.
+MultiTask	Aura	Allows Aura to keep running while using an item.
+MultiTask	AutoDrop	Allows AutoDrop to keep running while using an item.
+MultiTask	AutoMine	Allows AutoMine to keep running while using an item.
+MultiTask	AutoTrap	Allows AutoTrap to keep running while using an item.
+MultiTask	Blocker	Allows Blocker to keep running while using an item.
+MultiTask	FeetPlace	Allows FeetPlace to keep running while using an item.
+MultiTask	FishTrap	Allows FishTrap to keep running while using an item.
+MultiTask	HoleFill	Allows HoleFill to keep running while using an item.
+MultiTask	InventorySorter	Allows InventorySorter to keep running while using an item.
+MultiTask	PistonCrystal	Allows PistonCrystal to keep running while using an item.
+MultiTask	Pusher	Allows Pusher to keep running while using an item.
+MultiTask	SelfTrap	Allows SelfTrap to keep running while using an item.
+MultiTask	SpeedMine	Allows SpeedMine to keep running while using an item.
+MultiTask	WebAura	Allows WebAura to keep running while using an item.
+Nuker	Blocks	Blocks matched by whitelist or blacklist mode.
+Nuker	Mode	Selects which blocks Nuker should break.
+Nuker	Shape	Area shape Nuker searches for blocks.
+Nuker	Sort	Order in which candidate blocks are broken.
+Nuker	BPT	Maximum blocks broken per tick.
+Nuker	Delay	Delay between breaking batches in milliseconds.
+Nuker	Range	Maximum reach distance for breaking blocks.
+Nuker	WallRange	Reach distance through walls for hidden blocks.
+Nuker	Height	Height of the tunnel when using Tunnel shape.
+Nuker	StrictDirection	Only breaks faces with a valid strict direction.
+Nuker	Rotate	Rotates toward blocks before breaking them.
+Nuker	Creative	Breaks blocks instantly as if in creative mode.
+Nuker	Flatten	Skips blocks that are below your feet.
+Nuker	BaritoneArea	Only breaks blocks inside the Baritone selection.
+Nuker	PlayerProximity	Only breaks shulkers near another player.
+Nuker	Color	Color of blocks queued for breaking.
+SourceFill	Selection	Filter mode applied to the block list.
+SourceFill	Blocks	Block types used as the fill material.
+SourceFill	Range	Maximum distance to search for liquids.
+SourceFill	WallRange	Liquid search distance through walls.
+SourceFill	Delay	Delay between fill attempts in milliseconds.
+SourceFill	BPT	Maximum placements made per tick.
+SourceFill	AirPlace	Allows filling without an adjacent support block.
+SourceFill	Rotate	Rotates toward the liquid before placing.
+SourceFill	Water	Fills water source blocks with your blocks.
+SourceFill	Lava	Fills lava source blocks with your blocks.
+SourceFill	Render	Shows the selected fill positions.
+SourceFill	Fill	Fill color for highlighted liquid positions.
+SourceFill	Outline	Outline color for highlighted liquid positions.
+SourceFill	LineWidth	Outline width for highlighted liquid positions.
+Mainhand	Slot	Hotbar slot reserved for your totem.
+Mainhand	Delay	Delay between totem refill attempts.
+Mainhand	Safe	Minimum health needed to use the gapple bind.
+Mainhand	AutoSelect	Automatically selects your totem slot when needed.
+Mainhand	SwapDelay	Delay between automatic totem slot selections.
+Mainhand	Lethal	Holds a totem when lethal damage is predicted.
+Mainhand	Health	Auto-selects the totem below this health value.
+Mainhand	GappleBind	Binds eating a gapple to the totem slot.
+Mainhand	Fallback	Uses a gapple when no totem is available.
+Mainhand	Crapple	Uses a regular golden apple instead of an enchanted one.
+Mainhand	Hotbar	Temporarily selects a gapple while holding a weapon or totem.
+Mainhand	Weapon	Lets swords and maces trigger the temporary gapple.
+Mainhand	Totem	Lets totems trigger the temporary gapple selection.
+AntiFeetPlace	Mode	Block type used to replace the mined feet block.
+AntiFeetPlace	Delay	Delay between replacement attempts in milliseconds.
+AntiFeetPlace	AirPlace	Allows replacement without an adjacent support block.
+AntiFeetPlace	Raytrace	Requires a visible hit point on the support block.
+AntiFeetPlace	Rotate	Rotates toward the replacement position.
+AntiFeetPlace	Render	Shows the positions being replaced.
+AntiFeetPlace	Fill	Fill color for the replacement highlights.
+AntiFeetPlace	Outline	Outline color for the replacement highlights.
+AntiFeetPlace	LineWidth	Outline width for the replacement highlights.
+AntiFeetPlace	Fade	Fades replacement highlights out over time.
+AntiFeetPlace	FadeTime	Seconds the replacement highlights take to fade.
+SelfFill	Blocks	Block types SelfFill may place.
+SelfFill	Selection	Filter mode applied to the block list.
+SelfFill	Mode	Placement technique used to fill the space.
+SelfFill	Rotate	Rotates toward the target position before placing.
+SelfFill	Attack	Attacks crystals blocking the fill position.
+SelfFill	Center	Centers you on the block before placing.
+SelfFill	Alternative	Alternates the slot search used for the fill block.
+SelfFill	Head	Also places blocks above your head.
+SelfFill	MultiPlace	Places at every valid position instead of one.
+SelfFill	Persistent	Keeps the module enabled after a completed fill.
+SelfFill	JumpDisable	Disables SelfFill when you jump.
+AutoTrade	Delay	Delay between trade attempts in milliseconds.
+AutoTrade	Frequency	Number of trades performed each cycle.
+AutoTrade	Close	Closes the merchant screen after trading.
+AutoTrade	Drop	Drops trade results instead of storing them.
+AutoTrade	AutoOpen	Automatically opens nearby villagers to trade.
+AutoTrade	OnSight	Only opens the villager you are looking at.
+AutoTrade	Range	Distance to search for villagers to trade with.
+AutoTrade	Rotate	Rotates toward villagers when opening trades.
+PhaseESP	Crawling	Keeps highlighting while you are crawling.
+PhaseESP	InBlocks	Keeps highlighting while inside a collidable block.
+PhaseESP	Inside	Includes positions your hitbox overlaps.
+PhaseESP	Safe	Color for fully safe phase positions.
+PhaseESP	SemiSafe	Color for partially safe phase positions.
+PhaseESP	Unsafe	Color for unsafe phase positions.
+PhaseESP	Outline	Draws outlines around highlighted positions.
+PhaseESP	Alpha	Opacity of the phase position outlines.
+ChorusControl	Yaw	How your view faces after a chorus teleport.
+ChorusControl	Smart	Only keeps teleports that land near a target.
+ChorusControl	Range	Maximum distance between the destination and the target.
+ChorusControl	Render	Shows the chosen teleport position.
+ChorusControl	Fill	Fill color for the teleport preview.
+ChorusControl	Outline	Outline color for the teleport preview.
+ChorusControl	LineWidth	Outline width for the teleport preview.
+InventorySorter	Scope	Which part of the inventory gets sorted.
+InventorySorter	Mode	Sorting order: item type, name, or kit.
+InventorySorter	Delay	Delay between sorting actions in milliseconds.
+InventorySorter	Frequency	Number of slot swaps performed each cycle.
+InventorySorter	Silent	Allows sorting while the inventory screen is closed.
+InventorySorter	AutoDisable	Disables the module when no swaps are needed.
+Borders	Chunk	Color of the current chunk border.
+Borders	Map	Color of the map region border.
+Borders	LineWidth	Width of the rendered border lines.
+Borders	MapSize	Map region size, doubling for each level.
+Borders	Level	Height where the border lines are drawn.
+AutoTool	BlockDamage	Break progress needed before AutoTool finishes blocks.
+AutoTool	Inventory	Also searches your inventory for tools.
+AutoTool	SwapBack	Returns to your previous slot after breaking.
+AutoTool	NoBreakDelay	Skips the vanilla delay between block breaks.
+ViewClip	Skip	Third-person camera left unclipped by ViewClip.
+ViewClip	Range	Maximum distance for the third-person camera.
+ViewClip	Smooth	Animates the camera clipping smoothly.
+ViewClip	Scroll	Hold Ctrl and scroll to change camera distance.
+SkinFlicker	Mode	Which skin parts are flickered.
+SkinFlicker	Cape	Includes your cape in the flicker.
+SkinFlicker	Delay	Seconds between skin flicker toggles.
+Glint	Color	Color applied to your enchantment glint.
+Glint	Spread	Scale of the glint texture.
+AntiCyrillic	Mode	Which messages get Cyrillic letters replaced.
+Blur	Radius	Blur strength for GUI backgrounds.
+SoundBlocker	Sounds	Sound events that should not play.
+NoRender	HurtCam	Removes the camera tilt when you take damage.
+NoRender	Potions	Hides particles from potion effects.
+NoRender	Darkness	Hides the darkness effect overlay.
+NoRender	Blindness	Hides the blindness effect overlay.
+NoRender	NewSneaking	Keeps your eye height tall while sneaking.
+NoRender	TotemOverlay	Hides the totem activation overlay.
+NoRender	Hands	Hides your hands and held items.
+NoRender	HandsOpacity	Transparency of your hands when Hands is enabled.
+NoRender	MessageIndicator	Hides the unread message indicator.
+NoRender	UnsecureServer	Hides the unsecure server warning.
+NoRender	TutorialToast	Hides the tutorial toast notifications.
+NoRender	TextShadow	Removes shadows from rendered text.
+NoRender	BossBars	Hides boss health bars from the screen.
+NoRender	ScoreBoard	Hides the scoreboard sidebar from view.
+NoRender	ActionBar	Hides action bar messages and text.
+NoRender	TabIcons	Hides player heads in the tab list.
+NoRender	HeldTooltips	Hides the held item tooltip.
+NoRender	Tint	Hides the dark background behind open screens.
+NoRender	Explosions	Hides explosion particles and smoke.
+NoRender	WorldBorder	Hides the world border from rendering.
+NoRender	SkyLight	Renders blocks as if fully lit by the sky.
+NoRender	CelestialBodies	Hides the sun and moon.
+NoRender	Stars	Hides stars in the night sky.
+NoRender	Maps	Hides maps displayed in item frames.
+NoRender	Chunks	Ignores server changes to your render distance.
+NoRender	FireBlock	Hides fire blocks in the world.
+NoRender	Vines	Hides vines and similar hanging plants.
+NoRender	Fog	Enables custom fog distances in the world.
+NoRender	Range	Fog distance as a multiple of your view distance.
+NoRender	Sky	Applies the custom fog to the sky as well.
+NoRender	Particles	Enables hiding particles selected by the filter.
+NoRender	ParticleTypes	Particle types the particle filter applies to.
+NoRender	ParticleSelection	Whether listed particle types are hidden or kept.
+NoRender	NoBlockBreaking	Hides particles from blocks being broken.
+NoRender	Hurt	Hides the red damage tint on entities.
+NoRender	Shadow	Hides shadows cast under entities.
+NoRender	Glow	Hides glowing outlines around entities.
+NoRender	NameTags	Hides name tags above entities.
+NoRender	Interpolation	Stops entities moving smoothly between ticks.
+NoRender	ArmorTrim	Hides armor trim patterns on armor.
+NoRender	Elytra	Hides elytra wings on entities.
+NoRender	Fire	Hides the fire overlay on you and crystals.
+NoRender	Others	Also hides fire overlays on all entities.
+NoRender	Armor	Hides armor on rendered entities.
+NoRender	Opacity	Transparency of armor while Armor is enabled.
+NoRender	NoCluster	Fades entities standing very close to you.
+NoRender	ClusterAlpha	Minimum opacity for entities faded by NoCluster.
+NoRender	Wardens	Hides wardens beyond the set distance.
+NoRender	WardenDistance	Distance beyond which wardens stop rendering.
+NoRender	Items	Enables limiting how many dropped items render.
+NoRender	Limit	Maximum dropped items rendered at once.
+NoRender	TileEntities	Enables hiding block entities selected by the filter.
+NoRender	TileTypes	Block entity types the tile filter applies to.
+NoRender	Selection	Whether listed block entities are hidden or kept.
+NoRender	TileDistance	Distance beyond which block entities are hidden.
+NoRender	Entities	Enables hiding entities selected by the filter.
+NoRender	EntityTypes	Entity types the entity filter applies to.
+NoRender	Removal	Whether filtered entities fade out or stop rendering.
+NoRender	EntitySelection	Whether listed entities are hidden or kept.
+SelfTrap	Delay	Delay in milliseconds between placement attempts.
+SelfTrap	BPT	Maximum blocks placed each tick.
+SelfTrap	AirPlace	Places blocks without a supporting neighbor.
+SelfTrap	Raytrace	Only places blocks you can see.
+SelfTrap	OnlyObby	Only uses obsidian for the trap.
+SelfTrap	Rotate	Rotates your view toward the placement positions.
+SelfTrap	Attack	Attacks crystals blocking the placement positions.
+SelfTrap	Sequential	Only places in response to nearby block updates.
+SelfTrap	Head	Places a block above your head.
+SelfTrap	Face	Places blocks beside your head and shoulders.
+SelfTrap	Legs	Also places blocks around your legs and feet.
+SelfTrap	AntiStep	Adds another block above your head.
+SelfTrap	OnlyHole	Only traps while you are standing in a hole.
+SelfTrap	OnlyStanding	Only traps while you are standing upright.
+SelfTrap	Smart	Only traps when an enemy is nearby.
+SelfTrap	EnemyRange	Distance within which Smart detects a nearby enemy.
+SelfTrap	Jump	Disables SelfTrap when you jump, sleep, or step up.
+SelfTrap	Chorus	Disables SelfTrap after a chorus fruit teleport.
+SelfTrap	Pearl	Disables SelfTrap when you throw a pearl.
+SelfTrap	RubberBand	Disables SelfTrap after a server position correction.
+SelfTrap	Height	Disables SelfTrap when you fall two blocks or more.
+SelfTrap	Complete	Disables SelfTrap once the trap is complete.
+SelfTrap	Render	Shows preview boxes for trap placements.
+SelfTrap	Fill	Fill color of the trap placement previews.
+SelfTrap	Outline	Outline color of the trap placement previews.
+SelfTrap	LineWidth	Thickness of the trap preview outlines.
+SelfTrap	Fade	Fades old trap previews out over time.
+SelfTrap	FadeTime	How long trap previews take to fade.
+AutoMine	StrictDirection	Only mines blocks with a valid strict side.
+AutoMine	Raytrace	Only mines blocks you can see.
+AutoMine	Rotate	Rotates your view toward mined blocks.
+AutoMine	IgnoreNaked	Skips targets that have no armor.
+AutoMine	Assistant	Treats partly mined blocks as already being mined.
+AutoMine	Burrow	Mines the blocks enemies are burrowed inside.
+AutoMine	Fish	Mines the support block under a standing enemy.
+AutoMine	Terrain	Mines terrain blocks around the target.
+AutoMine	EnderChests	Mines ender chests near the target.
+AutoMine	Range	Maximum distance for finding ender chests.
+AutoMine	Head	Mines the block above the target's head.
+AutoMine	InCrawl	Also mines head blocks when the target crawls.
+AutoMine	TrapOverride	Raises head mining priority while AutoTrap is active.
+AutoMine	Feet	Mines the block under the target's feet.
+AutoMine	Corners	Also mines blocks next to the target's feet.
+AutoMine	Safe	Avoids mining blocks you are standing on.
+AutoMine	Self	Mines blocks trapping you so you can escape.
+AutoMine	Face	Mines the hard block at your eye level.
+AutoMine	OnlyCrawl	Only mines self blocks while you are crawling.
+AutoMine	TryCrawl	Also mines a block to let you start crawling.
+AutoMine	Instant	Reuses the last self-mine position briefly.
+AutoMine	Down	Mines the block underneath you.
+AutoMine	DownPriority	Prefers mining the block below you.
+Scaffold	Blocks	Blocks Scaffold is allowed to place.
+Scaffold	Selection	Whether the block list is a whitelist or blacklist.
+Scaffold	Swap	How Scaffold moves blocks into the hotbar.
+Scaffold	Mode	Switches between single and multi block placement.
+Scaffold	Size	Radius of the area placed in multi mode.
+Scaffold	Frequency	Maximum blocks placed per multi-mode cycle.
+Scaffold	Delay	Delay in milliseconds between scaffold placements.
+Scaffold	Offset	How far ahead Scaffold searches for a free spot.
+Scaffold	Tower	How Scaffold towers upward while jumping.
+Scaffold	SafeWalk	Stops you walking off the edge of blocks.
+Scaffold	AirPlace	Places blocks without a supporting neighbor.
+Scaffold	Telly	Keeps placements level for telly bridging.
+Scaffold	Rotate	Rotates your view toward the block being placed.
+Scaffold	Attack	Attacks crystals blocking the placement position.
+Scaffold	Render	Shows preview boxes for scaffold placements.
+Scaffold	LineWidth	Thickness of the scaffold preview outlines.
+Scaffold	Fill	Fill color of the scaffold preview boxes.
+Scaffold	Outline	Outline color of the scaffold preview boxes.
+Scaffold	Fade	Fades old scaffold previews out over time.
+Scaffold	FadeTime	How long scaffold previews take to fade.
+HoleSnap	Priority	Chooses holes by distance or crosshair direction.
+HoleSnap	Height	Maximum vertical distance to a candidate hole.
+HoleSnap	Timeout	How long HoleSnap waits for a hole.
+HoleSnap	Range	Maximum horizontal distance to a hole.
+HoleSnap	Speed	Speed multiplier applied while snapping.
+HoleSnap	Pitch	Minimum pitch needed before snapping starts.
+HoleSnap	AutoDisable	Disables HoleSnap after you land in the hole.
+HoleSnap	PauseStep	Temporarily pauses Step after snapping begins.
+HoleSnap	PauseInBlocks	Pauses snapping while your collision box is raised.
+HoleSnap	Shift	Uses sneak input to charge extra snapping speed.
+HoleSnap	Factor	Speed multiplier gained from sneak charging.
+HoleSnap	Charge	Maximum sneak charge ticks stored.
+HoleSnap	Directional	Only snaps toward the direction you are moving.
+HoleSnap	Soft	Smooths snapping toward holes at other heights.
+HoleSnap	Align	Centres you inside the hole when standing still.
+HoleSnap	OnlyWide	Skips holes that are only one block wide.
+HoleSnap	AlignPitch	Minimum pitch needed to align in a hole.
+Pusher	Alternative	Allows swapping items from inventory, not just the hotbar.
+Pusher	Range	Maximum distance for selecting a target.
+Pusher	Delay	Delay in milliseconds between pusher cycles.
+Pusher	Rotate	Rotates your view toward the power placement.
+Pusher	Raytrace	Requires the placement position to be visible.
+Pusher	AutoDisable	Disables Pusher once a piston reaches the target.
+Pusher	IgnoreNaked	Skips targets that have no armor.
+Pusher	OnlySafe	Only targets enemies in holes or on resistant blocks.
+Pusher	OnlyHole	Only targets enemies standing in a hole.
+Pusher	Render	Shows a preview box for power placements.
+Pusher	Fill	Fill color of the pusher preview box.
+Pusher	Outline	Outline color of the pusher preview box.
+Pusher	LineWidth	Thickness of the pusher preview outline.
+Pusher	Fade	Fades old pusher previews out over time.
+Pusher	FadeTime	How long pusher previews take to fade.
+Animations	SmoothCamera	Smooths camera movement between ticks.
+Animations	Crystals	Applies custom animations to end crystals.
+Animations	FloatFactor	Amount crystals bob up and down.
+Animations	RotationSpeed	Speed of the crystal rotation animation.
+Animations	CrystalScale	Scale multiplier for crystal models.
+Animations	Inner	Renders the crystal's inner model layer.
+Animations	Outer	Renders the crystal's outer model layer.
+Animations	Core	Renders the crystal's core model.
+Animations	Bottom	Renders the crystal's bottom model.
+Animations	Players	Applies custom animations to player models.
+Animations	Static	Freezes player limb animations in place.
+Animations	Sneak	Enables the custom sneaking animation.
+Animations	PlayerScale	Scale multiplier for player models.
+Hitmarker	Draw	Draws hitmarkers on your screen.
+Hitmarker	Length	Length of the hitmarker lines.
+Hitmarker	Time	How long the hitmarker remains visible.
+Hitmarker	FadeTime	How long the hitmarker takes to fade.
+Hitmarker	Color	Color of the hitmarker lines.
+Hitmarker	Sound	Plays a sound when a hit registers.
+Hitmarker	Type	Sound played for each hitmarker.
+Hitmarker	Volume	Volume of the hitmarker sound.
+Hitmarker	Animals	Shows hitmarkers for animals you hit.
+Hitmarker	Hostiles	Shows hitmarkers for hostile mobs you hit.
+Hitmarker	Players	Shows hitmarkers for players you hit.
+Hitmarker	Crystals	Shows hitmarkers for end crystals you hit.
+Crosshair	Mode	Chooses between the custom and vanilla crosshair.
+Crosshair	ThirdPerson	Draws the custom crosshair in third person.
+Crosshair	Scale	Size of the vanilla crosshair.
+Crosshair	Shadow	Adds a shadow copy behind the crosshair.
+Crosshair	Amplitude	Extra gap added while you are moving.
+Crosshair	Length	Length of each crosshair line.
+Crosshair	Gap	Space between the crosshair lines.
+Crosshair	Width	Thickness of the crosshair lines.
+Crosshair	Top	Draws the top crosshair line.
+Crosshair	Center	Draws a center dot in the crosshair.
+Crosshair	Color	Color of the custom crosshair.
+Freecam	Speed	Horizontal camera movement speed in freecam.
+Freecam	VerticalSpeed	Vertical camera movement speed in freecam.
+Freecam	Scroll	Adjusts camera speed with the scroll wheel.
+Freecam	NoHands	Hides your hands while in freecam.
+Freecam	Rotate	Rotates you toward the block you interact with.
+Freecam	Always	Rotates you even when movement sync is enabled.
+Freecam	ClampY	Keeps the camera inside a height range.
+Freecam	Min	Lowest camera height allowed by ClampY.
+Freecam	Value	Camera height used when outside the ClampY range.
+Freecam	Max	Highest camera height allowed by ClampY.
+Flight	Mode	Selects which flight movement mode to use.
+Flight	Speed	Horizontal movement speed while flying.
+Flight	Vertical	Vertical speed while flying in static mode.
+Flight	Glide	Downward drift while not ascending in static mode.
+Flight	AntiKick	Adds periodic downward dips while flying upward.
+Flight	Accelerate	Ramps your speed up from a starting value.
+Flight	StartSpeed	Speed at the start of acceleration.
+Flight	Time	Time taken to reach full flight speed.
+AutoPot	Potions	Potion types AutoPot is allowed to throw.
+AutoPot	Delay	Delay between automatic potion throws.
+AutoPot	Frequency	Maximum potions thrown in one burst.
+AutoPot	Health	Health at or below which AutoPot throws.
+AutoPot	Totems	Totem count at or below which AutoPot throws.
+AutoPot	Override	Throws potions even when the effect is active.
+AutoPot	AutoDisable	Disables AutoPot after it throws a potion.
+FastWeb	Mode	Selects the cobweb movement technique.
+FastWeb	Horizontal	Enables horizontal speed changes in cobwebs.
+FastWeb	Speed	Horizontal speed multiplier in cobwebs.
+FastWeb	Vertical	Enables vertical speed changes in cobwebs.
+FastWeb	VSpeed	Vertical speed multiplier in cobwebs.
+FastWeb	Upwards	Lets you rise in cobwebs with the jump key.
+AutoTemplate	Templates	Smithing templates AutoTemplate will apply.
+AutoTemplate	Materials	Materials consumed when applying templates.
+AutoTemplate	Items	Which item types AutoTemplate applies templates to.
+AutoTemplate	Delay	Delay between automatic smithing actions.
+AutoTemplate	Safe	Keeps a spare template instead of using it.
+Step	Mode	Chooses between vanilla and custom stepping.
+Step	Height	Maximum height Step can climb.
+Step	SafeDisable	Disables Step if you step inside a hole.
+Step	UseTimer	Slows ticks briefly while stepping to smooth movement.
+Step	TimerSpeed	Tick rate multiplier used during a step.
+Xray	Blocks	Blocks that Xray renders visibly.
+Xray	Selection	Whether the block list is a whitelist or blacklist.
+Xray	Alpha	Opacity of blocks hidden by Xray.
+Xray	Bypass	Only shows ores next to non-opaque blocks.
+AntiBot	IllegalChars	Removes bots whose names contain invalid characters.
+AntiBot	IllegalNames	Removes bots whose names are too short or too long.
+AutoBowRelease	Delay	Ticks to draw the bow before releasing.
+AutoBowRelease	Crossbow	Also releases charged crossbows automatically.
+NoGlitchBlocks	Place	Sends placement packets manually to avoid ghost blocks.
+NoGlitchBlocks	Break	Skips the local break so ghost blocks do not appear.
+Discord	Server	Shows the server address in your Discord status.
+ESP	DrawEntities	Master switch for all entity ESP rendering.
+ESP	EntityMode	Draw entities as 3D boxes or flat 2D boxes.
+ESP	Shadow	Shadow style drawn behind 2D entity boxes.
+ESP	Length	Length of the corner brackets on 2D boxes.
+ESP	Outline	Opacity of the outline color around entities.
+ESP	Fill	Opacity of the fill color inside entity boxes.
+ESP	Tint	Opacity of the color tint on 2D entities.
+ESP	Name	Show entity names in the 2D info.
+ESP	HeldItem	Show the item each entity is holding.
+ESP	Distance	Show the distance to each highlighted entity.
+ESP	Effects	Show active potion effects on entities.
+ESP	HealthBar	Draw a vertical health bar beside 2D boxes.
+ESP	HealthText	Show the entity's health as text.
+ESP	HealthColor	Color the health bar by current health.
+ESP	Hostiles	Include hostile mobs in the ESP.
+ESP	HostilesColor	Color used for hostile mob highlights.
+ESP	Players	Include other players in the ESP.
+ESP	Social	Use friend and enemy colors for players.
+ESP	PlayersColor	Color used for highlighted players.
+ESP	Animals	Include passive animals in the ESP.
+ESP	AnimalsColor	Color used for animal highlights.
+ESP	Pearls	Highlight ender pearls; box mode only.
+ESP	PearlsFill	Fill color of ender pearl boxes.
+ESP	PearlsOutline	Outline color of ender pearl boxes.
+ESP	DrawItems	Draw ESP for dropped items.
+ESP	List	Items the item filter applies to.
+ESP	Selection	Treat the item list as any, whitelist or blacklist.
+ESP	ItemsMode	Draw items as boxes, text or both.
+ESP	ItemRange	Maximum distance for item ESP, in metres.
+ESP	Group	Merge identical nearby items into one label.
+ESP	ItemsText	Color of the item text labels.
+ESP	Background	Background color behind item text labels.
+ESP	Scale	Scale of the item text labels.
+ESP	ItemsColor	Color of the item ESP boxes.
+ESP	Exp	Highlight experience orbs on the ground.
+ESP	ExpColor	Color used for experience orb highlights.
+ESP	DrawBlocks	Draw ESP for storage blocks and containers.
+ESP	StorageFill	Fill opacity of highlighted storage blocks.
+ESP	Chests	Highlight chests in the world.
+ESP	Barrels	Highlight barrels in the world.
+ESP	EChests	Highlight ender chests in the world.
+ESP	Shulkers	Highlight shulker boxes in the world.
+ESP	Beds	Highlight beds in the world.
+ESP	Signs	Highlight signs in the world.
+ESP	Dispensers	Highlight dispensers in the world.
+ESP	Hoppers	Highlight hoppers in the world.
+ESP	Furnaces	Highlight furnaces in the world.
+ESP	Pots	Highlight flower pots in the world.
+ESP	Looted	Mark storage that has already been looted.
+ESP	MobOwner	Show the owner of tamed mobs.
+ESP	Light	Show the light level at nearby blocks.
+ESP	Chorus	Mark chorus fruit teleport destinations.
+ESP	ChorusText	Color of the chorus teleport labels.
+ESP	LineWidth	Thickness of entity box outlines.
+NewChunks	Distance	Radius in chunks where detected chunks are shown.
+NewChunks	Height	Vertical position of chunk overlays; Auto follows you.
+NewChunks	LineWidth	Thickness of the chunk overlay outlines.
+NewChunks	New	Highlight chunks that were newly generated.
+NewChunks	NewFill	Fill color for newly generated chunks.
+NewChunks	NewLine	Outline color for newly generated chunks.
+NewChunks	Old	Highlight chunks generated before your scan.
+NewChunks	OldFill	Fill color for old chunks.
+NewChunks	OldLine	Outline color for old chunks.
+NewChunks	1.12	Highlight chunks with 1.12-era block data.
+NewChunks	1.12Fill	Fill color for 1.12-era chunks.
+NewChunks	1.12Line	Outline color for 1.12-era chunks.
+NewChunks	Overflow	Highlight chunks where liquid overflow is detected.
+NewChunks	IgnoreOwn	Ignore chunks generated by your own movement.
+NewChunks	OverflowFill	Fill color for overflow chunks.
+NewChunks	OverflowLine	Outline color for overflow chunks.
+NewChunks	OverflowBlocks	Block threshold used for overflow detection.
+NewChunks	Dungeons	Highlight chunks that contain dungeons.
+NewChunks	Tracer	Draw a tracer line to detected dungeons.
+NewChunks	DungeonFill	Fill color for dungeon chunks.
+NewChunks	DungeonLine	Outline color for dungeon chunks.
+NewChunks	AirMismatch	Highlight chunks containing isolated air pockets.
+NewChunks	AirMismatchFill	Fill color for air mismatch chunks.
+NewChunks	Liquids	Outline liquid blocks flagged during chunk scanning.
+NewChunks	LiquidsLine	Outline color for flagged liquid blocks.
+NewChunks	Sound	Play a sound when a dungeon is detected.
+NewChunks	Path	Sound played for dungeon alerts.
+NewChunks	Volume	Volume of the dungeon alert sound.
+AutoDrop	Delay	Milliseconds between each block placement attempt.
+AutoDrop	BPT	Maximum blocks placed per tick.
+AutoDrop	AirPlace	Place blocks without a supporting block.
+AutoDrop	Raytrace	Require a visible support face when placing.
+AutoDrop	Rotate	Rotate towards the block before placing.
+AutoDrop	Attack	Attack crystals that block the placement.
+AutoDrop	TargetRange	Maximum distance to the target player.
+AutoDrop	IgnoreNakeds	Skip players who are not wearing armour.
+AutoDrop	Anvils	Use anvils as falling blocks.
+AutoDrop	Sand	Use sand as falling blocks.
+AutoDrop	Gravel	Use gravel as falling blocks.
+AutoDrop	Concrete	Use concrete as falling blocks.
+AutoDrop	DragonEgg	Use dragon eggs as falling blocks.
+AutoDrop	Complete	Disable AutoDrop when no drop positions remain.
+AutoDrop	Jump	Disable AutoDrop when you jump.
+AutoDrop	Pearl	Disable AutoDrop when you throw a pearl.
+AutoDrop	RubberBand	Disable AutoDrop after a server setback.
+AutoDrop	Height	Disable AutoDrop when you drop two blocks.
+AutoDrop	Render	Draw boxes around blocks AutoDrop will place.
+AutoDrop	Fill	Fill color of the placement previews.
+AutoDrop	Outline	Outline color of the placement previews.
+AutoDrop	LineWidth	Thickness of the placement preview outlines.
+AutoDrop	Fade	Fade placement previews out over time.
+AutoDrop	FadeTime	Seconds for placement previews to fade.
+FakeLag	Mode	Blink holds packets; Pulse releases them periodically.
+FakeLag	Cancel	Roll back and clear buffered packets when turned on.
+FakeLag	Timeout	Milliseconds before Pulse mode releases held packets.
+FakeLag	AutoDisable	Turn FakeLag off automatically on chosen events.
+FakeLag	OnDamage	Disable FakeLag when you take damage.
+FakeLag	OnRubberBand	Disable FakeLag after a server setback.
+FakeLag	OnTime	Seconds before FakeLag disables itself.
+FakeLag	Render	Draw the held position while lagging.
+FakeLag	Chams	Render your player model instead of a box.
+FakeLag	Fill	Fill color of the held position.
+FakeLag	Outline	Outline color of the held position.
+FakeLag	LineWidth	Thickness of the held position outline.
+FakeLag	Movement	Hold back your movement packets.
+FakeLag	Interact	Hold back block interaction packets.
+FakeLag	Swing	Hold back arm swing packets.
+FakeLag	Swap	Hold back hotbar swap packets.
+FakeLag	InteractEntity	Hold back entity interaction packets.
+FakeLag	Digging	Hold back block digging packets.
+FakeLag	Ping	Hold back keep-alive ping packets.
+FakeLag	All	Hold back every outgoing packet.
+StashFinder	Log	Save detected stashes to a log.
+StashFinder	Notify	Send a chat message when a stash is found.
+StashFinder	CensorCoords	Hide coordinates in stash notifications.
+StashFinder	Sound	Play a sound when a stash is found.
+StashFinder	Type	Sound played for stash alerts.
+StashFinder	Volume	Volume of the stash alert sound.
+StashFinder	IgnoreNatural	Skip stashes inside known natural structures.
+StashFinder	Dungeon	Ignore stashes found inside dungeons.
+StashFinder	Fortress	Ignore stashes inside nether fortresses.
+StashFinder	Bastion	Ignore stashes found inside bastions.
+StashFinder	AncientCity	Ignore stashes inside ancient cities.
+StashFinder	TrialChambers	Ignore stashes inside trial chambers.
+StashFinder	Shulkers	Treat shulker boxes as stash storage.
+StashFinder	ChestEntities	Treat chest-carrying entities as stashes.
+StashFinder	Chests	Count chests when detecting stashes.
+StashFinder	ChestCount	Minimum chests for a stash to count.
+StashFinder	StackedCarts	Detect stashes made of stacked minecarts.
+StashFinder	Minimum	Minimum minecarts for a cart stash.
+Notifications	Watermark	Color of the client name in chat.
+Notifications	Brackets	Color of the brackets around the prefix.
+Notifications	Commands	Notify in chat when commands are used.
+Notifications	Modules	Notify in chat when modules are toggled.
+Notifications	OnlyDrawn	Only notify for modules shown in the array list.
+Notifications	TotemPops	Announce totem pops in chat.
+Notifications	Self	Include your own totem pops too.
+Notifications	Primary	Color of the player name in messages.
+Notifications	Secondary	Color of the action text in messages.
+Notifications	SayChat	Send totem messages to public chat.
+Notifications	Path	File of totem messages to choose from.
+Notifications	Delay	Seconds to wait before sending a totem message.
+Notifications	OnlyEnemies	Only announce pops from enemy players.
+Notifications	Random	Pick a random message from the file.
+Notifications	Refresh	Reload totem messages from the file.
+Ambience	Brightness	Brightness mode: screen, gamma, potion or none.
+Ambience	Color	Color of the screen brightness overlay.
+Ambience	Occlusion	Darken occluded areas using the occlusion color.
+Ambience	OcclusionColor	Color used for the occlusion shading.
+Ambience	WorldTime	Override the world's time of day.
+Ambience	Sync	Use your real-world clock for world time.
+Ambience	Time	Time of day to set, in hours.
+Ambience	WorldWeather	Override the world's weather conditions.
+Ambience	Weather	Weather type to display when overriding.
+Ambience	Always	Keep rain or snow falling at all times.
+Ambience	Opacity	Opacity of the rain and snow.
+Ambience	FieldDepth	Add a depth-of-field blur effect.
+Ambience	Strength	Strength of the depth-of-field blur.
+Waypoints	Distance	Maximum render distance in kilometres.
+Waypoints	LineWidth	Thickness of waypoint lines and boxes.
+Waypoints	Box	Draw a box around each waypoint.
+Waypoints	Beam	Draw a vertical beam at each waypoint.
+Waypoints	Tracers	Draw tracers from you to waypoints.
+Waypoints	Name	Show the waypoint name in the world.
+Waypoints	Info	Show coordinates or distance under the name.
+Waypoints	TextScale	Scale of the waypoint name text.
+Waypoints	TextBackground	Draw a background behind waypoint text.
+Waypoints	EyesAlign	Place waypoint text at eye height.
+Waypoints	Color	Color of waypoint boxes and lines.
+Waypoints	Text	Color of the waypoint name text.
+Waypoints	BeamAlpha	Alpha of the waypoint beam.
+AutoEat	Items	Foods AutoEat is allowed to eat.
+AutoEat	Mode	Treat the food list as any, whitelist or blacklist.
+AutoEat	Health	Eat when health drops to this value.
+AutoEat	Hunger	Eat when hunger drops to this value.
+AutoEat	UntilFull	Keep eating until your hunger is full.
+AutoEat	PauseBaritone	Pause Baritone pathing while you eat.
+AutoEat	AutoSwap	Swap food into your hand automatically.
+AutoEat	Sort	Sort foods by hunger, saturation or health.
+AutoEat	SwapBack	Swap back to your old item after eating.
+AutoEat	AutoEscape	Eat a chorus fruit to escape nearby players.
+AutoEat	AutoDisable	Turn AutoEat off after an escape.
+Fonts	Font	Font family used for client text.
+Fonts	Style	Font style: plain, bold, italic or bold italic.
+Fonts	Size	Size of client text in pixels.
+Fonts	AntiAlias	Smooth font edges with anti-aliasing.
+Fonts	Chat	Use the custom font in chat.
+Fonts	Shift	Vertical offset of rendered text.
+Fonts	Translate	Horizontal offset of rendered text.
+Fonts	Shadow	Shadow opacity under rendered text.
+Fonts	SimplifiedChinese	Load extra glyphs for Simplified Chinese.
+Fonts	Japanese	Load extra glyphs for Japanese.
+Baritone	FreeLook	Allow free camera movement while Baritone paths.
+Baritone	BackFill	Let Baritone fill blocks behind while mining.
+Baritone	LogOnArrival	Disconnect when Baritone reaches its goal.
+Baritone	AssumeEnabled	Assume Step, AutoTool and SafeWalk are on.
+Baritone	CensorCoords	Hide coordinates in Baritone's chat output.
+Baritone	ReplaceColors	Use the client's colors for Baritone paths.
+Baritone	Color	Color used for Baritone path rendering.
+Baritone	Goal	Color of the Baritone goal box.
+AutoNameTag	Entities	Entity types to use name tags on.
+AutoNameTag	Mode	Treat the entity list as any, whitelist or blacklist.
+AutoNameTag	Range	Maximum distance to entities to tag.
+AutoNameTag	Frequency	Maximum name tags used per cycle.
+AutoNameTag	Delay	Seconds between name tag cycles.
+AutoNameTag	Rotate	Rotate towards the entity before tagging.
+AutoNameTag	Swap	Swap mode: none, normal or silent.
+FastFall	Mode	Plain, Strict or Instant fall behaviour.
+FastFall	Height	Maximum height above ground to start fast falling.
+FastFall	Speed	Fall speed added in Plain mode.
+FastFall	StopInLiquids	Stop fast falling in water or lava.
+FastFall	OnlyHole	Only fast fall when a hole is below.
+FastFall	SafeDisable	Disable after landing safely in a hole.
+Arrows	AutoShoot	Automatically fire the bow straight up.
+Arrows	Speed	Ticks between drawing and releasing the bow.
+Arrows	BeforePull	Swap the arrow before drawing the bow.
+Arrows	Fov	Maximum angle to a target player, in degrees.
+Arrows	AssumeDuration	Assumed remaining effect duration, as a percentage.
+KeyPearl	NoEntityTrace	Ignore entities in the pearl's flight path.
+KeyPearl	Solid	Throw even when aiming at a solid block.
+KeyPearl	DisableOnElytra	Disable KeyPearl while elytra flying.
+KeyPearl	DisableOnRiding	Disable KeyPearl while riding a vehicle.
+KeyPearl	Await	Wait for the pearl cooldown instead of disabling.
+Skeleton	Bloom	Add a bloom glow around skeletons.
+Skeleton	Self	Draw a skeleton for yourself too.
+Skeleton	LineWidth	Thickness of skeleton bone lines.
+Skeleton	Color	Color of the skeleton lines.
+CoordLogger	Log	Save your coordinates when you disconnect.
+CoordLogger	Death	Save your coordinates when you die.
+CoordLogger	File	Append saved coordinates to a text file.
+AntiSpam	Indicator	Append a repeat count to stacked messages.
+AntiSpam	Links	Hide chat messages containing links.
+NoFall	Mode	Packet, Anti, Teleport, MLG, Grim or GrimJump behaviour.
+NoFall	GroundDistance	Depth scanned below for an MLG water placement.
+AntiVanish	Notify	Notify in chat when a vanished player is detected.
+FreeLook	Scroll	Use the mouse wheel to zoom the free camera.
+ElytraFly	Mode	Selects the elytra movement mode.
+ElytraFly	Takeoff	Controls how flight begins after taking off.
+ElytraFly	Responsive	Adapts flight yaw and pitch to your input.
+ElytraFly	Factorize	Only applies boost while looking downward.
+ElytraFly	Always	Applies boost even without pressing forward.
+ElytraFly	NCPBoost	Uses NCP-compatible pitch timing while boosting.
+ElytraFly	MinBoost	Minimum boost strength applied while boosting.
+ElytraFly	Limit	Maximum horizontal speed in kilometres per hour.
+ElytraFly	AutoJump	Automatically jumps while fall flying.
+ElytraFly	InLava	Uses separate speed handling inside lava.
+ElytraFly	LavaSpeed	Boost multiplier applied while flying in lava.
+ElytraFly	MinY	Lowest Y level used by vanilla mode.
+ElytraFly	Height	Target height above ground for vanilla mode.
+ElytraFly	UseFirework	Uses fireworks to sustain vanilla flight.
+ElytraFly	Speed	Horizontal speed for control and packet modes.
+ElytraFly	Vertical	Selects how vertical movement is handled.
+ElytraFly	VSpeed	Vertical speed used in plain mode.
+ElytraFly	VPitch	Pitch angle used for strict climbing.
+ElytraFly	Glide	Downward glide speed applied while flying.
+ElytraFly	SpoofPitch	Sends a fixed spoofed pitch to the server.
+ElytraFly	Pitch	Pitch angle sent while spoofing pitch.
+ElytraFly	AntiAfk	Adds slight movement while idle to prevent kicks.
+ElytraFly	VerticalPacket	Controls vertical movement handling in packet mode.
+ElytraFly	Accelerate	Gradually accelerates flight speed over time.
+ElytraFly	VerAccelMin	Minimum vertical speed before acceleration begins.
+ElytraFly	AccelMin	Minimum horizontal speed before acceleration begins.
+ElytraFly	AccelTime	Time over which flight acceleration is applied.
+ElytraFly	Start	Starting speed used when strict mode begins.
+ElytraFly	StrictSpeed	Target speed maintained by strict mode.
+ElytraFly	DeployTime	Delay before deploying the elytra.
+ElytraFly	PitchLock	Locks your pitch while bouncing.
+ElytraFly	Silent	Spoofs the locked pitch without moving your camera.
+ElytraFly	Auto	Automatically adjusts the bounce pitch angle.
+ElytraFly	BouncePitch	Manual pitch angle used while bouncing.
+ElytraFly	BounceBoost	Uses packet mode for bounce movement.
+ElytraFly	Diagonal	Uses diagonal yaw steps while bouncing.
+ElytraFly	BounceMaxBoost	Maximum boost speed for packet bouncing.
+ElytraFly	Compensate	Queues movement packets to compensate for bouncing.
+ElytraFly	StopMotion	Selects how idle motion is stopped.
+ElytraFly	FallChestplate	Swaps to a chestplate when descending near enemies.
+ElytraFly	ResponsiveDescend	Uses your look pitch while descending.
+ElytraFly	MuteElytra	Mutes the elytra flight sound.
+ElytraFly	InfDurability	Selects how elytra durability is preserved.
+SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
+SpeedMine	Mode	Controls how the block list is filtered.
+SpeedMine	Damage	Mining progress needed before the block breaks.
+SpeedMine	Range	Maximum distance to blocks SpeedMine can mine.
+SpeedMine	Grim	Sends Grim-specific block break start packets.
+SpeedMine	TPSSync	Adjusts mining progress for the server tick rate.
+SpeedMine	NoBreakDelay	Removes the delay before starting the next break.
+SpeedMine	ExtraBreak	Also targets an extra block along your aim.
+SpeedMine	SneakExtend	Extends the extra break target while sneaking.
+SpeedMine	Rebreak	Selects how broken blocks are mined again.
+SpeedMine	Async	Sends instant rebreak actions asynchronously.
+SpeedMine	InstantDelay	Delay between instant rebreak actions.
+SpeedMine	HoldingBest	Keeps the best tool held during instant rebreaking.
+SpeedMine	AutoSwap	Selects normal or silent tool swapping.
+SpeedMine	SwapBack	Returns to your original slot after mining.
+SpeedMine	1.21	Selects the Minecraft 1.21 mining compatibility mode.
+SpeedMine	Alternative	Uses an alternative silent swap method.
+SpeedMine	SwapReset	Resets the selected slot after a silent swap.
+SpeedMine	Rotate	Rotates toward the block before mining it.
+SpeedMine	Limit	Mining progress at which rotation begins.
+SpeedMine	Render	Renders the block being mined.
+SpeedMine	LineWidth	Width of the rendered mining outline.
+SpeedMine	RenderMode	Selects the mining render style.
+SpeedMine	Air	Renders mining progress for already-broken blocks.
+SpeedMine	Fade	Fades the mining render over time.
+SpeedMine	ColorMode	Selects progress or custom render colors.
+SpeedMine	Fill	Fill color of the mining render.
+SpeedMine	Outline	Outline color of the mining render.
+SpeedMine	Abort	Aborts the current mining action.
+FishTrap	Delay	Delay between trap block placements.
+FishTrap	BPT	Maximum blocks placed per tick.
+FishTrap	AirPlace	Allows placing trap blocks in mid-air.
+FishTrap	Raytrace	Requires a valid ray trace to place.
+FishTrap	OnlyObby	Only uses obsidian for trap placement.
+FishTrap	Rotate	Rotates toward blocks before placing them.
+FishTrap	Attack	Attacks crystals while placing the trap.
+FishTrap	Range	Maximum placement distance for the trap.
+FishTrap	Sequential	Places trap blocks one at a time.
+FishTrap	AntiStep	Places blocks to prevent stepping out.
+FishTrap	IgnoreNakeds	Ignores unarmored players when selecting targets.
+FishTrap	Extrapolation	Ticks of target movement to extrapolate.
+FishTrap	Mode	Selects which crawl trap layers to place.
+FishTrap	Jump	Disables when you jump or start sleeping.
+FishTrap	Chorus	Disables after eating a chorus fruit.
+FishTrap	Pearl	Disables after throwing an ender pearl.
+FishTrap	RubberBand	Disables after a server position correction.
+FishTrap	Height	Disables when your Y level drops.
+FishTrap	Complete	Disables once the trap is complete.
+FishTrap	Render	Renders the trap placement positions.
+FishTrap	Fill	Fill color of rendered trap positions.
+FishTrap	Outline	Outline color of rendered trap positions.
+FishTrap	LineWidth	Width of rendered trap outlines.
+FishTrap	Fade	Fades rendered trap positions over time.
+FishTrap	FadeTime	Duration of the trap position fade.
+Search	Range	Maximum distance to scan for search targets.
+Search	SearchBlocks	Enables searching for whitelisted blocks.
+Search	Blocks	Blocks that Search will highlight.
+Search	Height	Selects the world height format to scan.
+Search	OnlyOminous	Only alerts on ominous vaults.
+Search	IgnoreNatural	Hides naturally generated structure chests.
+Search	Dungeon	Ignores loot chests in dungeons.
+Search	Fortress	Ignores nether fortress loot chests.
+Search	Bastion	Ignores loot chests in bastions.
+Search	AncientCity	Ignores loot chests in ancient cities.
+Search	TrialChambers	Ignores loot chests in trial chambers.
+Search	SearchEntities	Enables searching for whitelisted entities.
+Search	Entities	Entities that Search will highlight.
+Search	IgnoreVehicles	Ignores vehicles such as boats and minecarts.
+Search	IgnoreNakeds	Ignores unarmored players when searching entities.
+Search	Sound	Plays a sound when a target is found.
+Search	Type	Sound used for Search alerts.
+Search	Volume	Volume of the Search alert sound.
+Search	Fill	Fill opacity of highlighted search results.
+Search	Outline	Outline opacity of highlighted search results.
+Search	Tracers	Tracer opacity for highlighted search results.
+AutoLog	Health	Health threshold that triggers the auto-log.
+AutoLog	InvincTimeout	Seconds after spawn before checks begin.
+AutoLog	Reconnect	Keeps auto-reconnect enabled after logging out.
+AutoLog	AutoDisable	Disables AutoLog after it triggers.
+AutoLog	GearedOnly	Only logs out when wearing armor.
+AutoLog	UnfocusedOnly	Only logs out while the window is unfocused.
+AutoLog	OnRender	Logs when a player enters render distance.
+AutoLog	Crystal	Logs when a nearby crystal could kill you.
+AutoLog	TNTMinecart	Logs when a primed TNT minecart is near.
+AutoLog	Totems	Logs when your totem count is low.
+AutoLog	TotemCount	Totem count that triggers the auto-log.
+AutoLog	Elytra	Logs when your elytra durability is low.
+AutoLog	Durability	Elytra durability percentage that triggers logging.
+AutoLog	AssumeInventory	Counts inventory elytras when checking durability.
+AutoLog	YLevel	Logs when you fall below a set Y level.
+AutoLog	Y	Y level that triggers the auto-log.
+AutoLog	Waypoints	Logs when close to a configured waypoint.
+AutoLog	Distance	Waypoint distance that triggers the auto-log.
+Offhand	Item	Item to keep in your offhand.
+Offhand	Custom	Custom items to keep in the offhand.
+Offhand	Delay	Delay between offhand item swaps.
+Offhand	Health	Health threshold below which a totem is held.
+Offhand	Lethal	Keeps a totem when damage would be lethal.
+Offhand	Elytra	Keeps a totem while wearing an elytra.
+Offhand	1.17+	Uses the newer direct swap packet format.
+Offhand	Containers	Allows swaps while a container is open.
+Offhand	GappleBind	Allows gapples to be bound to the use key.
+Offhand	SafeHealth	Health above which the gapple bind triggers.
+Offhand	SafeInBlocks	Block-safety health threshold for the gapple bind.
+Offhand	Axe	Allows the gapple bind while holding an axe.
+Offhand	Pickaxe	Allows the gapple bind while holding a pickaxe.
+Offhand	Crystals	Allows the gapple bind while holding crystals.
+Offhand	Totems	Allows the gapple bind while holding a totem.
+Offhand	Crapple	Uses enchanted golden apples for the bind.
+Trails	Render	Renders the active trail lines.
+Trails	Bloom	Adds a glow effect to trails.
+Trails	Delay	Seconds between trail position samples.
+Trails	LineWidth	Width of the rendered trail lines.
+Trails	Fade	Fades trail lines over time.
+Trails	FadeDelay	Delay before trails start fading.
+Trails	FadeDuration	Time taken for a trail to fade.
+Trails	Self	Traces your own movement trail.
+Trails	Players	Traces other players' movement trails.
+Trails	Pearls	Traces trails left by ender pearls.
+Trails	Arrows	Traces trails left by arrows.
+Trails	Exp	Traces trails left by experience bottles.
+Trails	Color	Color of the rendered trail lines.
+Trails	Threshold	Controls the rainbow color cycle speed.
+Trajectories	LineWidth	Width of the trajectory line.
+Trajectories	OnlyOwn	Only traces projectiles you launched.
+Trajectories	Predict	Shows predicted paths for held projectiles.
+Trajectories	Airborne	Traces projectiles already flying in the air.
+Trajectories	Trail	Draws a trail behind flying projectiles.
+Trajectories	TrailLength	Maximum length of the projectile trail.
+Trajectories	Color	Color of the trajectory line.
+Trajectories	Bow	Traces arrows shot from bows.
+Trajectories	Crossbow	Traces arrows shot from crossbows.
+Trajectories	Trident	Traces tridents thrown by players.
+Trajectories	Pearls	Traces ender pearls thrown by players.
+Trajectories	Exp	Traces experience bottles thrown by players.
+Trajectories	Others	Traces other projectiles like eggs and snowballs.
+AutoBreed	Range	Maximum distance to target animals.
+AutoBreed	Frequency	Maximum interactions per breeding cycle.
+AutoBreed	Delay	Delay before the next breeding cycle.
+AutoBreed	Rotate	Rotates toward animals before feeding them.
+AutoBreed	Dogs	Breeds nearby dogs when enabled.
+AutoBreed	Cats	Breeds nearby cats when enabled.
+AutoBreed	Parrots	Breeds nearby parrots when enabled.
+AutoBreed	Donkeys	Breeds nearby donkeys when enabled.
+AutoBreed	Horses	Breeds nearby horses when enabled.
+AutoBreed	Allays	Breeds nearby allays when enabled.
+AutoBreed	Others	Breeds other supported animal types.
+Announcer	ClientSide	Prints announcements locally instead of chat.
+Announcer	Compact	Uses a shorter client-side join message.
+Announcer	Joins	Announces when players join the server.
+Announcer	Friends	Includes friends in join announcements.
+Announcer	Enemies	Includes enemies in join announcements.
+Announcer	Others	Includes other players in join announcements.
+Announcer	Move	Announces the distance you travel.
+Announcer	Break	Announces the blocks you break.
+Announcer	Eat	Announces the food you eat.
+Announcer	Delay	Minimum delay between announcements in seconds.
+Sprint	Mode	Selects how sprinting is handled.
+Sprint	StopInLiquids	Stops sprinting while in liquids.
+Sprint	InBlocks	Allows sprinting while inside blocks.
+Sprint	DirectionSpoof	Spoofs your movement direction to the server.
+Sprint	Keep	Keeps you sprinting after an attack.
+Sprint	VanillaSlowdown	Applies vanilla block slowdown in Instant mode.
+Sprint	Adjust	Adjusts sprint speed with a custom multiplier.
+Sprint	Factor	Sprint speed multiplier applied by Adjust.
+Sprint	Boost	Gives a short sprint boost after explosions.
+Sprint	BoostSpeed	Strength of the temporary sprint boost.
+Warp	Mode	Selects the warp movement mode.
+Warp	Boost	Tick-rate multiplier applied during a dash.
+Warp	Charge	Maximum warp charge that can be stored.
+Warp	ChargeSpeed	Charge gained per tick while recharging.
+Warp	Recharge	How charge refills while Warp is disabled.
+Warp	FakeLag	Toggles FakeLag while a warp is active.
+Warp	DisableGround	Only enables FakeLag while grounded.
+Warp	AutoDisable	Disables Warp after a dash completes.
+AutoWalk	AutoJump	Automatically jumps while AutoWalk is active.
+AutoWalk	StuckNotify	Warns you when AutoWalk gets stuck.
+AutoWalk	Sound	Sound played for the stuck warning.
+AutoWalk	Volume	Volume of the stuck warning sound.
+AutoWalk	Mining	Pauses walking while you are mining.
+AutoWalk	Eating	Pauses walking while you are eating.
+SelfWeb	Rotate	Snaps your view down before placing.
+SelfWeb	AutoDisable	Disables SelfWeb after placing a web.
+SelfWeb	OnlyHole	Only places webs while you are in a hole.
+SelfWeb	Smart	Only places webs when enemies are nearby.
+SelfWeb	EnemyRange	Maximum distance to look for enemies.
+SelfWeb	Aggressive	Includes enemies at your own Y level.
+BowAim	Players	Includes other players as aim targets.
+BowAim	IgnoreNakeds	Skips players who are not wearing armor.
+BowAim	Animals	Includes animals as aim targets.
+BowAim	Hostiles	Includes hostile mobs as aim targets.
+BowAim	Neutrals	Includes neutral mobs as aim targets.
+Criticals	Mode	Selects the critical hit mode.
+Criticals	PauseOnMove	Pauses criticals while you are moving.
+Criticals	OnlyFull	Only crits under a full block in 2b2t mode.
+Criticals	OnlyWeapon	Only applies while holding a weapon.
+Zoom	Smooth	Smoothly animates the zoom transition.
+Zoom	SmoothCamera	Smooths camera movement while zoomed in.
+Zoom	Scroll	Adjusts zoom with the scroll wheel.
+Zoom	Amount	Zoom strength; higher values zoom in further.
+AntiQuit	Disconnect	Blocks accidental clicks on the disconnect button.
+AntiQuit	GameClose	Blocks accidentally closing the game window.
+AutoFish	Water	Only recasts when looking at water.
+AutoFish	RecastDelay	Delay before recasting the fishing rod.
+RocketExtender	Timeout	Maximum duration of a rocket extension.
+RocketExtender	Hold	Keeps the extension active when not gliding.
+IllegalDisconnect	IgnoreProxy	Skips the illegal disconnect on known proxies.
+Chams	Culling	Stops rendering entities that are outside the chams range.
+Chams	Blend	Uses a blended pipeline when drawing chams overlays.
+Chams	ExtraLayerGlobal	Shows extra model layers such as hats and armor.
+Chams	LineWidth	Thickness of the chams outline.
+Chams	Fade	Fades chams out with distance from the camera.
+Chams	FadeRadius	Percent of the render range where fading begins.
+Chams	Model	Draws the entity's own model for chams.
+Chams	XQZ	Allows chams to render through walls.
+Chams	Opacity	Opacity of the chams model and through-wall render.
+Chams	Shine	Adds an enchantment glint over chams models.
+Chams	Speed	Scroll speed of the chams glint.
+Chams	Strength	Strength of the glint applied to chams.
+Chams	Progress	Static glint position when the shine speed is zero.
+Chams	ShineSpread	How widely the glint spreads across the model.
+Chams	Bloom	Adds a bloom glow around chams models.
+Chams	Radius	Radius of the chams bloom glow.
+Chams	Factor	Intensity of the chams bloom effect.
+Chams	Overlap	How many bloom layers overlap.
+Chams	Animals	Chams style used for animals.
+Chams	Hostiles	Chams style used for hostile mobs.
+Chams	Players	Chams style used for other players.
+Chams	Self	Chams style used for your own player model.
+Chams	Crystals	Chams style used for end crystals.
+Chams	Pop	Spawns a fading ghost when a player pops a totem.
+Chams	PopMode	Which parts of the totem pop ghost are drawn.
+Chams	ExtraLayer	Shows extra model layers on totem pop ghosts.
+Chams	Ease	Eases the totem pop ghost fade-out.
+Chams	Death	Also creates ghosts when players die.
+Chams	Animate	Keeps the walking animation on pop ghosts.
+Chams	Boost	Randomizes the pop ghost's walk animation.
+Chams	Time	How long totem pop ghosts last, in seconds.
+Chams	Motion	Vertical drift of pop ghosts over their lifetime.
+Chams	PlayerRange	Maximum chams render distance for players.
+Chams	CrystalRange	Maximum chams render distance for crystals.
+Chams	OtherRange	Maximum chams render range for other entities.
+Chams	Friends	Uses friend and enemy colors for chams.
+Chams	Fill	Fill color of the chams style.
+Chams	Outline	Outline color of the chams style.
+Chams	ShineColor	Color of the chams glint overlay.
+Chams	PopFill	Fill color of totem pop ghosts.
+Chams	PopLine	Outline color of totem pop ghosts.
+UI	Reset	Resets the click GUI panels to their default positions.
+UI	Style	Panel style and padding used by the click GUI.
+UI	AnimSpeed	Speed of animations in the click GUI.
+UI	Scale	Overall scale of the click GUI.
+UI	Games	Shows the Game panel in the click GUI.
+UI	Descriptions	Shows descriptions for settings in the click GUI.
+UI	Language	Language used for the click GUI text.
+UI	Settings	Shows module settings in the click GUI.
+UI	Aero	Enables the Aero style for the click GUI.
+UI	Gradient	Applies a gradient to click GUI elements.
+UI	Line	Draws a separating line between GUI elements.
+UI	Binds	Shows keybinds on modules in the click GUI.
+UI	Gear	Shows the settings gear icon on modules.
+UI	Hover	Plays a sound when hovering over elements.
+UI	HoverSound	Sound played when hovering over a GUI element.
+UI	HoverVolume	Volume of the GUI hover sound.
+UI	LeftClick	Plays a sound on left click in the GUI.
+UI	LeftClickSound	Sound played when left clicking a GUI element.
+UI	LeftClickVolume	Volume of the left click sound.
+UI	RightClick	Plays a sound on right click in the GUI.
+UI	RightClickSound	Sound played when right clicking a GUI element.
+UI	RightClickVolume	Volume of the right click sound.
+UI	TextColor	Color of text in the click GUI.
+UI	EnabledColor	Text color for enabled modules in the click GUI.
+UI	Color	Color used for click GUI outlines and accents.
+UI	BgColor	Background color of the click GUI panels.
+UI	BgButton	Background color of click GUI buttons.
+UI	BgEnabled	Background color of enabled module buttons.
+UI	Tint	Color of the click GUI tint overlay.
+UI	GradientColor	Second color used for click GUI gradients.
+Blocker	Delay	Milliseconds between block placements while protecting.
+Blocker	BPT	Maximum blocks placed per tick.
+Blocker	AirPlace	Places protection blocks without a supporting block.
+Blocker	Raytrace	Requires a visible block face before placing.
+Blocker	Rotate	Rotates to face each block before placing.
+Blocker	Attack	Attacks crystals that spawn inside the protected area.
+Blocker	Mode	How a position is detected as being broken.
+Blocker	BlockDamage	Break progress required before placing a block.
+Blocker	Fish	Protects below you when standing on a single column.
+Blocker	Surround	Protects the blocks directly around your position.
+Blocker	Corners	Also covers diagonal corner positions around you.
+Blocker	Face	Places a block on top of triggered positions.
+Blocker	Cev	Covers positions two and three blocks above you.
+Blocker	Extended	Adds an extra layer above the surround positions.
+Blocker	Jump	Turns Blocker off when you jump or sleep.
+Blocker	Chorus	Turns Blocker off after eating a chorus fruit.
+Blocker	Pearl	Turns Blocker off when you throw a pearl.
+Blocker	RubberBand	Turns Blocker off after a server position correction.
+Blocker	Height	Turns Blocker off after a long fall.
+Blocker	Render	Shows the protected positions in the world.
+Blocker	Fill	Fill color of the protection boxes.
+Blocker	Outline	Outline color of the protection boxes.
+Blocker	LineWidth	Thickness of the protection box outlines.
+Blocker	Fade	Fades protection boxes out over time.
+Blocker	FadeTime	How long protection boxes take to fade.
+AntiPearl	Delay	Milliseconds between blocks placed against pearls.
+AntiPearl	BPT	Maximum blocks placed per tick against pearls.
+AntiPearl	AirPlace	Allows placing blockers without a supporting block.
+AntiPearl	Raytrace	Requires a visible face before placing blockers.
+AntiPearl	Rotate	Rotates toward each blocker before placing it.
+AntiPearl	Attack	Attacks crystals inside the blocked area.
+AntiPearl	Range	Maximum distance to place pearl blockers, in blocks.
+AntiPearl	Predict	Multiplier for predicted pearl movement distance.
+AntiPearl	Airborne	Keeps tracking pearls already in flight.
+AntiPearl	TryCrawl	Uses the raycast hit when the path is obstructed.
+AntiPearl	Jump	Turns AntiPearl off when you jump or sleep.
+AntiPearl	Chorus	Turns AntiPearl off after eating chorus fruit.
+AntiPearl	Pearl	Turns AntiPearl off when you throw a pearl.
+AntiPearl	RubberBand	Turns AntiPearl off after a server position correction.
+AntiPearl	Height	Turns AntiPearl off after a long fall.
+AntiPearl	Render	Shows blocked pearl positions in the world.
+AntiPearl	Fill	Fill color of the pearl blocker boxes.
+AntiPearl	Outline	Outline color of the pearl blocker boxes.
+AntiPearl	LineWidth	Thickness of the pearl blocker outlines.
+AntiPearl	Fade	Fades blocker boxes out over time.
+AntiPearl	FadeTime	How long blocker boxes take to fade.
+Particles	Totems	Recolors and resizes totem pop particles.
+Particles	TotemsScale	Size multiplier for totem pop particles.
+Particles	TotemsVelocity	Speed multiplier for totem pop particles.
+Particles	TotemsColor1	First color used for totem pop particles.
+Particles	TotemsColor2	Second color used for totem pop particles.
+Particles	IgnoreSelf	Hides totem particles from your own pops.
+Particles	Rockets	Recolors and resizes firework rocket particles.
+Particles	RocketScale	Size multiplier for firework rocket particles.
+Particles	RocketColor	Color used for firework rocket particles.
+Particles	Damage	Recolors and resizes damage effect particles.
+Particles	DamageScale	Size multiplier for damage effect particles.
+Particles	DamageVelocity	Speed multiplier for damage effect particles.
+Particles	DamageColor	Color used for damage effect particles.
+Particles	Portal	Recolors and resizes nether portal particles.
+Particles	PortalScale	Size multiplier for nether portal particles.
+Particles	PortalColor	Color used for nether portal particles.
+Particles	Dust	Recolors falling dust and ash particles.
+Particles	From	Starting color for dust particle transitions.
+Particles	To	Ending color for dust particle transitions.
+NoSlow	GuiMove	Allows movement while a GUI is open.
+NoSlow	Containers	Allows GUI movement in container screens.
+NoSlow	Rotate	Lets arrow keys turn the camera in GUIs.
+NoSlow	Mode	Anticheat bypass used for item slowdown.
+NoSlow	StrictInventory	Bypass mode used for inventory actions.
+NoSlow	Items	Cancels the slowdown from using items.
+NoSlow	Sneak	Removes the speed penalty while sneaking.
+NoSlow	Crawl	Removes the speed penalty while crawling.
+NoSlow	Slowness	Ignores the Slowness status effect.
+NoSlow	Ice	Prevents ice from slowing your movement.
+NoSlow	SoulSand	Prevents soul sand from slowing you down.
+NoSlow	Honey	Prevents honey blocks from slowing you down.
+NoSlow	BerryBush	Prevents sweet berry bushes from slowing you.
+NoSlow	Slime	Prevents slime blocks from slowing you down.
+NoSlow	NoSlimeBounce	Stops slime blocks from bouncing you.
+AntiPhase	Material	Block used to fill the target's position.
+AntiPhase	Banner	Uses banners instead of the chosen material.
+AntiPhase	Range	Maximum distance to a phase target.
+AntiPhase	Delay	Milliseconds between placements on a target.
+AntiPhase	BPT	Blocks placed per tick on a target.
+AntiPhase	Rotate	Rotates toward the target before placing blocks.
+AntiPhase	NoCrawl	Skips targets one block tall or shorter.
+AntiPhase	Smart	Skips targets that move fast or are stuck.
+AntiPhase	Render	Shows blocked target positions in the world.
+AntiPhase	Fill	Fill color of the anti-phase boxes.
+AntiPhase	Outline	Outline color of the anti-phase boxes.
+AntiPhase	LineWidth	Thickness of the anti-phase box outlines.
+AntiPhase	Fade	Fades anti-phase boxes out over time.
+AntiPhase	FadeTime	How long anti-phase boxes take to fade.
+ChestStealer	Whitelist	Items used by the whitelist or blacklist filter.
+ChestStealer	Names	Item names used by the list filter.
+ChestStealer	Mode	Action performed on the open container.
+ChestStealer	Select	How the item lists filter container contents.
+ChestStealer	LookFor	Whether the lists match item types or names.
+ChestStealer	OnlyButtons	Only acts when a GUI button requests a mode.
+ChestStealer	Animate	Animates item transfers between slots.
+ChestStealer	Delay	Milliseconds between each item transfer.
+ChestStealer	Timeout	How long to wait for a container screen.
+ChestStealer	Frequency	Maximum number of transfers per cycle.
+ChestStealer	Full	Enables shulker box cleanup and refill.
+ChestStealer	Close	Closes the container screen after stealing.
+ChestStealer	Return	Puts shulker boxes back after stealing.
+Reach	Modifier	Extra blocks added to your interaction range.
+Reach	GhostHand	Places blocks at the last stored raycast hit.
+Reach	Boats	Stops boat items from being used.
+Reach	LiquidPlace	Allows placing blocks against liquid blocks.
+Reach	AirPlace	Places blocks in the air at the raycast position.
+Reach	Grim	Wraps interactions with offhand swap packets.
+Reach	NoEntityTrace	Makes interaction raycasts ignore entities.
+Reach	Pickaxe	Applies entity trace bypass to pickaxes.
+Reach	Food	Applies entity trace bypass to food items.
+Reach	Crystals	Applies entity trace bypass to crystals.
+Reach	Totems	Applies entity trace bypass to totems.
+Reach	All	Applies entity trace bypass to all items.
+AutoExp	Mode	Whether bottle slots are swapped back silently.
+AutoExp	Delay	Ticks between experience bottle throws.
+AutoExp	Frequency	Number of bottles thrown per cycle.
+AutoExp	Rotate	Aims down at your feet before throwing.
+AutoExp	Air	Allows throwing without looking at a block.
+AutoExp	Inventory	Pulls experience bottles from your inventory.
+AutoExp	Stop	Stops once all armor is fully repaired.
+AutoExp	StopAt	Durability percentage to mend armor up to.
+AutoExp	AutoDisable	Turns AutoExp off when mending finishes.
+AutoExp	Tools	Also repairs held tools while mending.
+Velocity	Mode	Velocity bypass method: plain, grim or walls.
+Velocity	Horizontal	Percentage of horizontal knockback kept.
+Velocity	Vertical	Percentage of vertical knockback kept.
+Velocity	Inverse	Reverses the horizontal knockback direction.
+Velocity	Reduce	Keeps knockback briefly after a server setback.
+Velocity	Static	Keeps velocity static while Walls mode is active.
+Velocity	Explosions	Cancels knockback caused by explosions.
+Velocity	Push	Cancels being pushed by entities.
+Velocity	Liquids	Cancels being pushed by liquids.
+Velocity	FishingBobber	Cancels being pulled by a fishing bobber.
+AntiAFK	Delay	Seconds of inactivity before acting.
+AntiAFK	AutoReply	Replies to whispers while you are idle.
+AntiAFK	Jump	Randomly jumps while you are idle.
+AntiAFK	Sneak	Randomly sneaks while you are idle.
+AntiAFK	Rotate	Randomly turns the camera while you are idle.
+AntiAFK	Attack	Randomly attacks while you are idle.
+AntiAFK	OnlySwing	Swings the arm instead of attacking.
+InventoryTweaks	LockSlot	Stops the drop key from dropping your held item.
+InventoryTweaks	FastMove	Quick-moves the hovered slot on Ctrl left click.
+InventoryTweaks	OnlyContainer	Restricts fast move to container screens.
+InventoryTweaks	Spam	Allows repeated fast moves on the same slot.
+InventoryTweaks	FastArmor	Equips armor faster from the inventory.
+InventoryTweaks	BundleTweaks	Swaps bundle contents with left or right click.
+InventoryTweaks	XCarryTweaks	Tweaks how XCarry crafting slots behave.
+Spammer	Path	Message file inside the spammer folder.
+Spammer	Delay	Seconds to wait between sent messages.
+Spammer	Refresh	Reloads messages from the file.
+Spammer	SmartDelay	Restarts the delay after you send a message.
+Spammer	Random	Picks a random message instead of in order.
+Spammer	AutoDisable	Turns Spammer off after one message.
+BreakHighlight	Range	Maximum distance to highlight broken blocks.
+BreakHighlight	Friends	Also highlights blocks broken by friends.
+BreakHighlight	EnemyColor	Uses social colors for enemy break highlights.
+BreakHighlight	Fill	Fill color of the break highlight.
+BreakHighlight	Outline	Outline color of the break highlight.
+HighJump	Mode	Jump boost type: plain, fence or shulker.
+HighJump	Strength	How strong the jump boost is.
+HighJump	InMovement	Applies the boost while you are moving.
+HighJump	Infinite	Keeps the shulker boost going indefinitely.
+AutoMount	Range	Maximum distance to search for something to ride.
+AutoMount	Delay	Seconds to wait between mount attempts.
+AutoMount	Rotate	Rotates toward the entity before mounting.
+FastLatency	Mode	Method used to measure your latency.
+FastLatency	Timeout	Seconds to wait between latency probes.
+FastLatency	Response	How often server packets are answered early.
+AutoReconnect	Minutes	Minutes to wait before reconnecting.
+AutoReconnect	Delay	Extra seconds to wait before reconnecting.
+SafeWalk	Sneak	Sneaks automatically at the edge of blocks.
+SafeWalk	Delay	How long to keep sneaking after an edge.
+NoBob	Multiplier	How much camera bobbing to keep.
+Shader	Shader	ESP shader effect applied to selected targets.
+Shader	Range	Maximum distance at which targets are shaded.
+Shader	Fade	Percentage of the range where the shader starts fading.
+Shader	LineWidth	Thickness of the shader outline in pixels.
+Shader	FastLines	Use faster line rendering for thick outlines.
+Shader	Step	Size of each step in the gradient sweep.
+Shader	GradientSpeed	Animation speed of the gradient effect.
+Shader	Speed	Animation speed of the rainbow effect.
+Shader	LineStrength	Intensity of the rainbow outline color.
+Shader	FillStrength	Intensity of the rainbow fill color.
+Shader	Image	Overlay a texture image on shaded targets.
+Shader	OverlayAlpha	Opacity of the image overlay.
+Shader	Quality	Glow render quality and smoothness.
+Shader	Weight	Strength of the glow effect.
+Shader	Inner	Also glow inside the outline.
+Shader	Type	Decorator pattern drawn over the shader.
+Shader	DecoratorRadius	Size of the decorator pattern.
+Shader	DecoratorAlpha	Opacity of the decorator pattern.
+Shader	Smooth	Smooth color transitions across the shader.
+Shader	Fill	Main fill color of the shader.
+Shader	FillSecond	Second fill color for gradients.
+Shader	Outline	Main outline color of the shader.
+Shader	OutlineSecond	Second outline color for gradients.
+Shader	Hands	Apply the shader to your hands.
+Shader	HandsFill	Also fill your hands with the shader.
+Shader	HandsOutline	Also outline your hands with the shader.
+Shader	Optimized	Use optimised rendering for hand shaders.
+Shader	Crystals	Include end crystals in the shader.
+Shader	CrystalRange	Shader range for end crystals.
+Shader	Items	Include dropped items in the shader.
+Shader	ItemRange	Shader range for dropped items.
+Shader	Animals	Include passive animals in the shader.
+Shader	Hostiles	Include hostile mobs in the shader.
+Shader	Players	Include other players in the shader.
+Shader	Self	Include yourself in the shader.
+Shader	Exp	Include experience orbs in the shader.
+Shader	Pearls	Include ender pearls in the shader.
+Shader	Minecarts	Include minecarts in the shader.
+Shader	Dead	Include dead entities in the shader.
+Shader	NameTags	Include name tags in the shader.
+BetterChat	Timestamps	Prepend a timestamp to each chat message.
+BetterChat	OnlyServer	Only timestamp messages sent by the server.
+BetterChat	Format	Timestamp format: hours, minutes or seconds.
+BetterChat	TextColor	Color of the timestamp text.
+BetterChat	BracketsColor	Color of the brackets around timestamps.
+BetterChat	Rainbow	Render the timestamp in rainbow colors.
+BetterChat	RainbowAmount	Spread of the rainbow effect across the timestamp.
+BetterChat	LeftBracket	Text placed before the timestamp.
+BetterChat	RightBracket	Text placed after the timestamp.
+BetterChat	MentionSound	Play a sound when your name is mentioned.
+BetterChat	SoundMode	Sound used for mention alerts.
+BetterChat	Volume	Volume of the mention sound.
+BetterChat	PMSound	Play a sound for incoming private messages.
+BetterChat	PMSoundMode	Sound used for private message alerts.
+BetterChat	PMVolume	Volume of the private message sound.
+BetterChat	Animation	Animate chat messages as they appear.
+BetterChat	Type	Animation style used for new messages.
+BetterChat	Speed	Speed of the chat animation.
+BetterChat	Alpha	Duration of the chat animation in milliseconds.
+BetterChat	Always	Keep chat animations running even when idle.
+BetterChat	Message	Add a prefix and suffix to your messages.
+BetterChat	Prefix	Text added before your outgoing messages.
+BetterChat	Suffix	Text added after your outgoing messages.
+BetterChat	Highlight	Highlight player names in chat messages.
+BetterChat	Self	Highlight your own name in chat.
+BetterChat	Friends	Highlight friends' names in chat.
+BetterChat	Enemies	Highlight enemies' names in chat.
+BetterChat	HighlightColor	Color used for highlighted names.
+BetterChat	LongChatHistory	Keep a longer history of chat messages.
+BetterChat	NoReset	Keep chat history when changing worlds.
+LogoutSpots	Distance	Maximum distance to render logout spots.
+LogoutSpots	Model	Model style used for logout spots.
+LogoutSpots	Textured	Use the player's skin on the model.
+LogoutSpots	Alpha	Opacity of the textured player model.
+LogoutSpots	Width	Outline width of the rendered model.
+LogoutSpots	Tracer	Draw a line to each logout spot.
+LogoutSpots	NameTag	Show a label above each logout spot.
+LogoutSpots	TextScale	Size of the name tag text.
+LogoutSpots	Position	Where the name tag is placed.
+LogoutSpots	Time	Show how long ago the player logged out.
+LogoutSpots	Health	Show the player's health on the name tag.
+LogoutSpots	Totems	Show the totem pop count on the name tag.
+LogoutSpots	Notify	Send chat notifications for logout spots.
+LogoutSpots	Login	Notify when a saved player logs back in.
+LogoutSpots	LoginSoundPath	Play a sound when a player logs back in.
+LogoutSpots	Sound Path	Sound played for logout spot notifications.
+LogoutSpots	Logout	Notify when a player logs out.
+LogoutSpots	LogoutSoundPath	Play a sound when a player logs out.
+LogoutSpots	ModelFill	Fill color for the complex logout model.
+LogoutSpots	ModelLine	Outline color for the complex logout model.
+LogoutSpots	BoxFill	Fill color for the simple box model.
+LogoutSpots	BoxLine	Outline color for the simple box model.
+LogoutSpots	NameTagColor	Text color of the logout name tag.
+LogoutSpots	FillColor	Background color behind the name tag.
+LogoutSpots	IgnoreFriends	Ignore friends when saving logout spots.
+LogoutSpots	IgnoreNakeds	Ignore players without armour when saving spots.
+AutoFarm	Mode	Choose between crosshair and sphere targeting.
+AutoFarm	Swap	How AutoFarm switches to the needed item.
+AutoFarm	Range	Radius of the sphere search for crops.
+AutoFarm	Frequency	Maximum blocks processed per tick.
+AutoFarm	Place	Replant crops after harvesting them.
+AutoFarm	Rotate	Face the block before acting on it.
+AutoFarm	Fertilize	Use bone meal on immature crops.
+AutoFarm	Remove	Harvest grown crops by breaking them.
+AutoFarm	RemoveDelay	Delay in seconds between harvest actions.
+AutoFarm	OnlyGrown	Only harvest fully grown crops.
+AutoFarm	Wheat	Include wheat in AutoFarm targets.
+AutoFarm	Carrots	Include carrots in AutoFarm targets.
+AutoFarm	Potatoes	Include potatoes in AutoFarm targets.
+AutoFarm	BeetRoots	Include beetroots in AutoFarm targets.
+AutoFarm	Melons	Include melons in AutoFarm targets.
+AutoFarm	Pumpkins	Include pumpkins in AutoFarm targets.
+AutoFarm	SugarCane	Include sugar cane in AutoFarm targets.
+AutoFarm	NetherWart	Include nether wart in AutoFarm targets.
+AutoFarm	Mushrooms	Include mushrooms in AutoFarm targets.
+AutoFarm	Trees	Include trees in AutoFarm targets.
+AutoFarm	Moss	Include moss in AutoFarm targets.
+AutoArmor	Frequency	Armour pieces swapped per tick.
+AutoArmor	Delay	Milliseconds between armour swap attempts.
+AutoArmor	Alternative	Use an alternate inventory click method for swaps.
+AutoArmor	Safe	Skip armour below the durability threshold.
+AutoArmor	SafeAmount	Durability percentage below which armour is skipped.
+AutoArmor	InRange	Only swap armour when a player is nearby.
+AutoArmor	Range	Distance within which a player must be.
+AutoArmor	AllowFriends	Ignore friends for the nearby player check.
+AutoArmor	Helmet	Helmet preference: best, turtle, golden or none.
+AutoArmor	GoldenBoots	Prefer golden boots when a piglin is nearby.
+AutoArmor	PiglinRange	Distance to check for adult piglins.
+AutoArmor	OnlySafe	Only remove your helmet when you are safe.
+AutoArmor	Blast	Which armour slots prefer blast protection.
+AutoArmor	BindingCurse	Allow swapping out binding-cursed armour.
+AutoArmor	Thorns	Ignore the scoring penalty on thorns armour.
+AutoArmor	Elytra	Prefer an elytra when it would score better.
+AutoArmor	OnlyAir	Only prefer the elytra while airborne.
+AutoArmor	BlastBoots	Force blast protection on boots when using an elytra.
+HoleESP	Fill	Fill style used for rendered holes.
+HoleESP	Line	Outline style used for rendered holes.
+HoleESP	LineWidth	Thickness of the rendered hole outlines.
+HoleESP	Height	Vertical offset of the rendered hole boxes.
+HoleESP	Radius	Maximum distance to search for holes.
+HoleESP	Bloom	Add a soft glow around holes.
+HoleESP	HideOwn	Hide the hole you are standing in.
+HoleESP	Fade	Fade holes out towards the edge of range.
+HoleESP	FadeRadius	Distance where hole fading begins.
+HoleESP	Trapped	Include holes covered by a block above.
+HoleESP	TrappedFill	Fill color for trapped holes.
+HoleESP	TrappedOutline	Outline color for trapped holes.
+HoleESP	SafeFill	Fill color for safe holes.
+HoleESP	SafeOutline	Outline color for safe holes.
+HoleESP	UnsafeFill	Fill color for unsafe holes.
+HoleESP	UnsafeOutline	Outline color for unsafe holes.
+Phase	Mode	Phasing method: ender pearl or block clip.
+Phase	Auto	Automatically repeat the clip without input.
+Phase	Delay	Seconds between automatic clip attempts.
+Phase	Attack	Which obstacles to clear while phasing.
+Phase	Dynamic	Aim at the nearest solid block corner ahead.
+Phase	NCP	Add an extra support interaction for NCP.
+Phase	Always	Keep re-arming instead of disabling after a phase.
+Phase	InBlocks	Allow phasing while inside a solid block.
+Phase	InCrawl	Allow phasing while you are crawling.
+Phase	Avoid	Adjust the throw angle near bedrock.
+Phase	1.21	Use the 1.21-specific phasing behaviour.
+Phase	Place	Place a support block before throwing the pearl.
+Phase	Await	Wait until the support block can be placed.
+Phase	Flatten	Also fill the space below the support block.
+ExtraTab	Display	Show all players or only socials in the tab list.
+ExtraTab	Latency	How ping is shown in the tab list.
+ExtraTab	Limit	Maximum number of players listed.
+ExtraTab	Scale	Size of the tab list.
+ExtraTab	Colored	Use colored text for ping values.
+ExtraTab	Smooth	Animate the tab list opening and closing.
+ExtraTab	BetterSkin	Render higher quality player skins.
+ExtraTab	Highlight	Highlight yourself and socials in the tab list.
+ExtraTab	Self	Color used to highlight your own entry.
+ExtraTab	Social	Highlight friends and enemies as well.
+ExtraTab	Sort	Enable custom sorting of the tab list.
+ExtraTab	Mode	Sort order used for the tab list.
+ExtraTab	Reverse	Reverse the tab list sort order.
+VisualRange	Join	Announce players entering your visual range.
+VisualRange	Leave	Announce players leaving your visual range.
+VisualRange	Players	Include regular players in visual range alerts.
+VisualRange	Friends	Include friends in visual range alerts.
+VisualRange	Enemies	Include enemies in visual range alerts.
+VisualRange	Nakeds	Include players without armour in alerts.
+VisualRange	Signs	Announce signs found in newly loaded chunks.
+VisualRange	EnderPearls	Announce ender pearls entering visual range.
+VisualRange	PlaySound	Play a sound for visual range alerts.
+VisualRange	OnlyEnemies	Only play the alert sound for enemies.
+VisualRange	Sound	Sound played for visual range alerts.
+VisualRange	Volume	Volume of the alert sound.
+FastSwim	Glide	Downward glide speed without vertical input.
+FastSwim	Water	Enable the custom speed in water.
+FastSwim	WaterSpeed	Horizontal speed multiplier in water.
+FastSwim	Lava	Enable the custom speed in lava.
+FastSwim	LavaSpeed	Horizontal speed multiplier in lava.
+FastSwim	Vertical	Enable custom vertical speed while swimming.
+FastSwim	VSpeed	Vertical speed multiplier while swimming.
+FastSwim	Accelerate	Gradually build up to the full swim speed.
+FastSwim	AccelMin	Starting speed multiplier when acceleration begins.
+FastSwim	AccelTime	Seconds taken to reach full swim speed.
+Replenish	Items	Items kept stocked in your hotbar.
+Replenish	Selection	Item list filter mode: any, whitelist or blacklist.
+Replenish	Delay	Delay in milliseconds between replenish actions.
+Replenish	Threshold	Refill stacks when they drop below this percentage.
+Replenish	Sort	Merge partial stacks instead of swapping them.
+Replenish	Unstackable	Restore unstackable items that went missing.
+Replenish	Renamed	Restore renamed items that went missing.
+Replenish	Motion	Pause replenishing while you are moving.
+Replenish	Falling	Pause replenishing while you are falling.
+Timer	Mode	Timer mode: constant, pulsing or temporary.
+Timer	Physics	Apply the timer to physics ticks instead of the tick rate.
+Timer	Shift	Tick rate multiplier applied by the timer.
+Timer	PulseMin	Multiplier during the low pulse phase.
+Timer	PulseMax	Multiplier during the high pulse phase.
+Timer	MinDelay	Seconds spent in the low pulse phase.
+Timer	MaxDelay	Seconds spent in the high pulse phase.
+Timer	DisableDelay	Seconds before the timer turns itself off.
+LongJump	Mode	Jump mode: plain boost or spear lunge.
+LongJump	JumpSpeed	Speed multiplier for the plain jump.
+LongJump	InLiquid	Allow long jumps while in liquids.
+LongJump	Amount	Number of spear lunges per jump.
+LongJump	AutoJump	Automatically jump again after landing.
+LongJump	UseTimer	Use the timer to extend your jump.
+LongJump	AutoDisable	Turn LongJump off after a jump.
+Speed	Mode	Speed mode: strafe, vanilla, ground or Grim.
+Speed	Speed	Speed multiplier for the selected mode.
+Speed	Boost	Burst of speed after nearby crystal explosions.
+Speed	InLiquid	Keep the speed boost active in liquids.
+Speed	UseTimer	Use the timer to increase movement speed.
+Speed	PauseInBlocks	Pause speed while inside a solid block.
+Colors	RainbowSpeed	Speed of the rainbow color cycle.
+Colors	ThemeColor	Main accent color used across the client.
+Colors	FriendColor	Color used for friends in chat and ESP.
+Colors	EnemyColor	Color used for enemies in chat and ESP.
+Colors	Scheme	Color scheme preset, including color-blind options.
+MiddleClick	Friends	Middle-click a player to add or remove a friend.
+MiddleClick	Fireworks	Middle-click to launch a firework rocket.
+MiddleClick	OnGround	Allow firework launches while standing on the ground.
+MiddleClick	Alternative	Use inventory swaps instead of selecting a hotbar slot.
+ChatFilter	CaseSensitive	Match filtered words with exact letter case.
+ChatFilter	IgnoreSelf	Don't filter your own outgoing messages.
+ChatFilter	IgnorePM	Don't filter incoming private messages.
+Jesus	Mode	How Jesus keeps you above the water surface.
+Jesus	Strict	Send small position offsets to stay on water.
+Jesus	Ascending	Upward push applied while walking on water.
+AutoRespawn	Say	Send a message after you respawn.
+AutoRespawn	Message	Chat message or command sent after respawning.
+Settings	Startup	Sound played when the client starts up.
+Settings	Presets	Open the preset menu to manage saved configs.
+NoEffects	Effects	Status effects to cancel on your client.
+ViewModel	Adjust	Opens the view model adjustment editor.
+ViewModel	InstantSwap	Makes held item swaps appear instant.
+ViewModel	Eating	Applies view model changes while eating.
+ViewModel	Lighter	Uses a lighter shading style for the view model.
+ViewModel	Arm	Toggles the arm in the first-person view.
+ViewModel	MainX	X position offset for the main-hand model.
+ViewModel	MainY	Y position offset for the main-hand model.
+ViewModel	MainZ	Z position offset for the main-hand model.
+ViewModel	MainScaleX	X scale of the main-hand view model.
+ViewModel	MainScaleY	Y scale of the main-hand view model.
+ViewModel	MainScaleZ	Z scale of the main-hand view model.
+ViewModel	MainRotateX	X rotation of the main-hand view model.
+ViewModel	MainRotateY	Y rotation of the main-hand view model.
+ViewModel	MainRotateZ	Z rotation of the main-hand view model.
+ViewModel	OffX	X position offset for the off-hand model.
+ViewModel	OffY	Y position offset for the off-hand model.
+ViewModel	OffZ	Z position offset for the off-hand model.
+ViewModel	OffScaleX	X scale of the off-hand view model.
+ViewModel	OffScaleY	Y scale of the off-hand view model.
+ViewModel	OffScaleZ	Z scale of the off-hand view model.
+ViewModel	OffRotateX	X rotation of the off-hand view model.
+ViewModel	OffRotateY	Y rotation of the off-hand view model.
+ViewModel	OffRotateZ	Z rotation of the off-hand view model.
+ViewModel	EatMultiplier	Multiplier for the eating animation progress.
+ViewModel	NoSway	Disables view model sway while moving.
+ViewModel	NoTridentAnim	Disables the trident throwing animation.
+ViewModel	SwingProgress	Enables custom swing progress handling.
+ViewModel	Static	Keeps swing progress fixed instead of animating.
+ViewModel	SwingMainHand	Overrides swing progress for the main hand.
+ViewModel	SwingProgressAmount	Minimum swing progress for the main hand.
+ViewModel	SwingOffHand	Overrides swing progress for the off hand.
+ViewModel	SwingProgressAmountOffHand	Minimum swing progress for the off hand.
+ViewModel	ViewModelFov	Enables a custom field of view for the view model.
+ViewModel	FovAmount	Field of view used for the view model.
+AutoTrap	Delay	Milliseconds between AutoTrap block placements.
+AutoTrap	BPT	Blocks AutoTrap may place per tick.
+AutoTrap	AirPlace	Allows AutoTrap to place blocks without support.
+AutoTrap	Raytrace	Requires a visible face for each placement.
+AutoTrap	Rotate	Rotates toward each placement position.
+AutoTrap	Attack	Attacks crystals spawning at placement positions.
+AutoTrap	Range	Maximum distance from your eye for placements.
+AutoTrap	Sequential	Places one trap block per block update.
+AutoTrap	Head	Places blocks above the target's head.
+AutoTrap	Face	Places blocks level with the target's face.
+AutoTrap	Legs	Includes blocks at the target's leg level.
+AutoTrap	Below	Places a block beneath the target.
+AutoTrap	AntiStep	Places blocks to stop the target stepping up.
+AutoTrap	OnlyPhased	Only traps players phased inside blocks.
+AutoTrap	IgnoreNakeds	Skips players who are not wearing armor.
+AutoTrap	IgnoreCrawl	Skips targets who are currently crawling.
+AutoTrap	Logouts	Includes logout spots as valid targets.
+AutoTrap	OnlyObby	Uses only obsidian for the trap.
+AutoTrap	Jump	Disables AutoTrap after jumping or sleeping.
+AutoTrap	Chorus	Disables after eating a chorus fruit.
+AutoTrap	Pearl	Disables after throwing an ender pearl.
+AutoTrap	RubberBand	Disables on large server position setbacks.
+AutoTrap	Height	Disables after a significant height change.
+AutoTrap	Complete	Disables when no trap placements remain.
+AutoTrap	Render	Renders boxes at trap positions.
+AutoTrap	Fill	Fill color of the trap boxes.
+AutoTrap	Outline	Outline color of the trap boxes.
+AutoTrap	LineWidth	Thickness of the trap box outlines.
+AutoTrap	Fade	Fades trap boxes over time.
+AutoTrap	FadeTime	Seconds before trap boxes finish fading.
+HUD	HudEditor	Opens the HUD editor when enabled.
+HUD	Icons	Controls where potion effect icons are drawn.
+HUD	TextScale	Scales the size of HUD text.
+HUD	SmoothWidth	Smooths width changes of HUD text rows.
+HUD	Parallax	Moves HUD elements with your view.
+HUD	Bloom	Adds a glow around HUD elements.
+HUD	Shadow	Draws text shadows while bloom is enabled.
+HUD	Radius	Radius of the HUD bloom glow.
+HUD	Strength	Intensity of the HUD bloom glow.
+HUD	SafeX	Horizontal safe-zone margin for HUD elements.
+HUD	SafeY	Vertical safe-zone margin for HUD elements.
+HUD	Fade	Color mode used for HUD elements.
+HUD	FadeOffset	Offsets the color gradient across HUD elements.
+HUD	ColorAmount	Number of raw colors used by the HUD.
+HUD	FadeSpeed	Speed of the raw color fade cycle.
+HUD	MixColors	Blends the raw colors together.
+HUD	Color	Primary color used by HUD elements.
+HUD	SecondColor	Secondary color used by pulse mode.
+HUD	Color1	First raw color used by HUD elements.
+HUD	Color2	Second raw color used by HUD elements.
+HUD	Color3	Third raw color used by HUD elements.
+HUD	Color4	Fourth raw color used by HUD elements.
+HUD	Color5	Fifth raw color used by HUD elements.
+HUD	Color6	Sixth raw color used by HUD elements.
+HUD	Color7	Seventh raw color used by HUD elements.
+HUD	Color8	Eighth raw color used by HUD elements.
+HUD	Color9	Ninth raw color used by HUD elements.
+BedAura	Place	Enables BedAura's automatic bed placement.
+BedAura	PlaceDelay	Ticks between automatic bed placements.
+BedAura	PlaceRange	Maximum distance for placing beds.
+BedAura	Rotate	Rotates toward the bed placement.
+BedAura	LiquidPlace	Allows placing beds in liquids.
+BedAura	AirPlace	Allows placing beds without support.
+BedAura	Break	Enables BedAura's automatic bed breaking.
+BedAura	BreakDelay	Ticks between automatic bed breaks.
+BedAura	BreakRange	Maximum distance for breaking beds.
+BedAura	TPSSync	Scales bed delays with the server tick rate.
+BedAura	Instant	Breaks the bed immediately after placing it.
+BedAura	Extrapolation	Predicts target movement for damage calculations.
+BedAura	Ticks	Prediction ticks used for damage calculations.
+BedAura	Refill	Moves beds into the chosen hotbar slot.
+BedAura	Slot	Hotbar slot used for bed refills.
+BedAura	Render	Renders boxes at bed positions.
+BedAura	Fill	Fill color of the bed boxes.
+BedAura	Outline	Outline color of the bed boxes.
+BedAura	Fade	Fades bed boxes over time.
+BedAura	FadeTime	Seconds before bed boxes finish fading.
+BedAura	MinDamage	Minimum damage required to place a bed.
+BedAura	MaxSelfDamage	Maximum self-damage allowed per bed.
+BedAura	AntiSucide	Prevents placements that would kill you.
+Fireworks	AntiWaste	Redirects firework use away from block interactions.
+Fireworks	SoftLag	Slows client ticking slightly while flying.
+Fireworks	FakeRocket	Spawns a client-side fake rocket for visuals.
+Fireworks	Boost	Adds extra speed while a firework boost is active.
+Fireworks	WithElytraFly	Keeps the extra boost active during ElytraFly flight.
+Fireworks	Grim	Uses a Grim anticheat-compatible version of the boost.
+Fireworks	Directional	Applies the extra boost along your movement direction.
+Fireworks	BoostFactor	Amount of extra speed added by the boost.
+Fireworks	AutoLaunch	Automatically uses firework rockets while elytra flying.
+Fireworks	OnlyElytraFly	Only auto-launches while ElytraFly is enabled.
+Fireworks	OnlyFirst	Launches only one rocket per elytra flight.
+Fireworks	Await	Waits for the current rocket boost to end.
+Fireworks	Delay	Seconds to wait between automatic rocket launches.
+Fireworks	FastLaunch	Equips an elytra and starts flying automatically.
+Fireworks	Mode	Manual triggers a timed launch, Toggle holds it active.
+Fireworks	Swap	Item-swap method used when equipping the elytra.
+Fireworks	Ticks	Duration of the fast launch in ticks.
+Fireworks	SwapBack	Swaps your items back after the launch.
+Fireworks	AutoPhase	Throws an ender pearl when blocked mid-flight.
+Skybox	Type	Selects the sky style used by Skybox.
+Skybox	SplitFog	Uses separate fog distances for sky and terrain.
+Skybox	FancyStars	Draws more detailed stars in the sky.
+Skybox	StarsColor	Color of the fancy sky stars.
+Skybox	Shader	Draws a custom shader over the sky.
+Skybox	Parallax	Strength of the shader's sky parallax effect.
+Skybox	Color	Color of the custom sky shader.
+Skybox	Clouds	Overrides the vanilla cloud layer.
+Skybox	Height	Height at which clouds are rendered.
+Skybox	CloudsColor	Color of the rendered clouds.
+Skybox	Dense	Uses denser fog for the sky background.
+Skybox	Fog	Color of the sky fog.
+Skybox	Sky	Color of the sky itself.
+Skybox	Background	Background color behind the sky.
+Skybox	Overworld	Applies Skybox changes in the Overworld.
+Skybox	Nether	Applies Skybox changes in the Nether.
+Skybox	End	Applies Skybox changes in the End.
+AntiAim	Yaw	Enables the server-side yaw spoof.
+AntiAim	YawMode	Method used to generate the fake yaw.
+AntiAim	Speed	Spin speed of the yaw spoof.
+AntiAim	StaticYaw	Fixed yaw angle used in Static mode.
+AntiAim	RelativeYaw	Yaw offset added to your real yaw.
+AntiAim	Flip	Angle offset alternated each tick in Flip mode.
+AntiAim	JitterRange	Maximum random offset for Jitter mode.
+AntiAim	Base	Base angle for Flip and Jitter modes.
+AntiAim	Pitch	Enables the server-side pitch spoof.
+AntiAim	PitchMode	Method used to generate the fake pitch.
+AntiAim	StaticPitch	Fixed pitch angle used in Static mode.
+AntiAim	RelativePitch	Pitch offset added to your real pitch.
+AntiAim	Enderman	Adjusts rotations when endermen are nearby.
+AntiAim	Look	Controls whether endermen are avoided or stared at.
+AntiCheat	2b2t	Enables special handling for the 2b2t server.
+AntiCheat	Limiter	Limits outgoing packets while 2b2t mode is on.
+AntiCheat	NoServerSlot	Avoids using the server's selected hotbar slot.
+AntiCheat	StrictDirection	Anti-cheat preset used for strict block directions.
+AntiCheat	Mining	Mining behaviour preset for the selected anti-cheat.
+AntiCheat	Placements	Block placement mode used against anti-cheats.
+AntiCheat	MovementSync	Synchronizes rotations with movement while moving.
+AntiCheat	Rotations	Rotation mode sent to the server.
+AntiCheat	Swing	Enables anti-cheat swing packet handling.
+AntiCheat	Place	Sends swing packets when placing blocks.
+AntiCheat	Hit	Sends swing packets when attacking entities.
+AntiCheat	MiningSwing	Sends swing packets while mining blocks.
+AntiCheat	AssumeBlockBreaking	Assumes blocks are being broken when checking placements.
+PistonCrystal	Delay	Delay between piston, crystal, and power cycles.
+PistonCrystal	PlaceRange	Maximum distance for placing pistons and crystals.
+PistonCrystal	AttackRange	Maximum distance for attacking crystals.
+PistonCrystal	TargetRange	Maximum distance for selecting a target.
+PistonCrystal	AirPlace	Allows placing without an adjacent support block.
+PistonCrystal	Rotate	Rotates toward placement and attack positions.
+PistonCrystal	Alternative	Uses an alternative item-swapping method.
+PistonCrystal	Render	Renders boxes at planned positions.
+PistonCrystal	Fill	Fill color of the rendered boxes.
+PistonCrystal	Outline	Outline color of the rendered boxes.
+PistonCrystal	Fade	Fades rendered boxes over time.
+PistonCrystal	FadeTime	Seconds before rendered boxes finish fading.
+EntityControl	CopyYaw	Copies your yaw to the ridden entity.
+EntityControl	HorseJump	Enables jumping while riding horses.
+EntityControl	GrimOverflow	Uses Grim-compatible overflow motion for boats.
+EntityControl	EntitySpeed	Enables speed control for ridden entities.
+EntityControl	Speed	Horizontal speed applied to the ridden entity.
+EntityControl	NoCollision	Disables collision for the ridden entity.
+EntityControl	Baritone	Lets Baritone control the ridden entity's path.
+EntityControl	Glide	Descends slowly while flying on an entity.
+EntityControl	Accelerate	Gradually accelerates to the target speed.
+EntityControl	Flight	Enables vertical flight while riding.
+EntityControl	Vertical	Vertical speed used while flying on an entity.
+RotationLock	Mode	Plain locks angles, Target locks onto a player.
+RotationLock	Silent	Keeps locked rotations server-side only.
+RotationLock	Yaw	Locks your yaw to the chosen angle.
+RotationLock	Custom	Uses a custom yaw instead of 45-degree steps.
+RotationLock	YawValue	Custom yaw angle for the rotation lock.
+RotationLock	Pitch	Locks your pitch at the chosen angle.
+RotationLock	PitchValue	Pitch angle used by the rotation lock.
+RotationLock	Range	Maximum distance for finding a target to lock.
+RotationLock	DisableRange	Disables the lock when the target is this close.
+Tooltips	Colored	Tints tooltip backgrounds based on shulker colors.
+Tooltips	MajorityItem	Highlights the most common item in container previews.
+Tooltips	KeepText	Keeps the vanilla tooltip text alongside previews.
+Tooltips	ShulkerContent	Shows shulker box contents in tooltips.
+Tooltips	BundleContent	Shows bundle contents in tooltips.
+Tooltips	BeeNest	Shows bee nest occupant details in tooltips.
+Tooltips	MapOverlay	Shows the map overlay hint in tooltips.
+Tooltips	Size	Shows the item's serialized size in tooltips.
+VoidESP	LineWidth	Thickness of the void block outlines.
+VoidESP	Height	Height of the rendered void columns.
+VoidESP	Radius	Radius around you where void blocks are found.
+VoidESP	Fade	Fades void boxes with distance.
+VoidESP	FadeRadius	Distance where void box fading begins.
+VoidESP	Fill	Fill color of the void block boxes.
+VoidESP	Line	Outline color of the void block boxes.
+Tunnels	Verticals	Includes vertical shafts in tunnel detection.
+Tunnels	LineWidth	Thickness of the tunnel outlines.
+Tunnels	Height	Extra render height added to tunnel boxes.
+Tunnels	MinLength	Minimum length for a tunnel to render.
+Tunnels	Fill	Fill color of the tunnel boxes.
+Tunnels	Outline	Outline color of the tunnel boxes.
+ExtraScreenshot	Mode	Copy saves to clipboard, Imgur uploads the image.
+ExtraScreenshot	DeleteFile	Deletes the screenshot file after processing.
+ExtraScreenshot	Sound	Plays a sound after taking a screenshot.
+ExtraScreenshot	Path	Sound played when a screenshot is taken.
+ExtraScreenshot	Volume	Volume of the screenshot sound.
+NameProtect	Name	Replacement name shown instead of yours.
+NameProtect	Others	Also replaces other players' names.
+NameProtect	Skin	Replaces your player skin in the client.
+NameProtect	Slim	Uses a slim skin model for the replacement.
+ChestSearchBar	HighlightFull	Highlights matching full stacks in containers.
+ChestSearchBar	ChestStealer	Hides items that do not match your search.
+ChestSearchBar	OnlyFull	Requires a full stack to count as a match.
+NoInteract	Targets	Selects which blocks are protected from interaction.
+NoInteract	Mode	Cancel blocks interaction, Shift sneaks instead.
+NoInteract	OnlyFood	Only applies while holding a food item.
+CustomDeathText	Mode	Uses a custom death message or a random one.
+CustomDeathText	Message	Text shown on the death screen.
+Trident	Always	Always applies riptide effects regardless of conditions.
+Trident	Boost	Multiplier applied to riptide boost speed.
+NoPacketKick	Message	Logs intercepted packet errors to the console.
+Aura	Sorting	Order in which Aura picks its next target.
+Aura	Fov	Maximum angle from your crosshair that Aura targets.
+Aura	Delay	Attack charge needed before swinging; higher waits longer.
+Aura	Range	Maximum attack distance for Aura targets.
+Aura	WallRange	Attack distance used for targets behind walls.
+Aura	ExtraRange	Uses a slightly expanded range when measuring targets.
+Aura	TPSSync	Adapts attack cooldown timing to the server tick rate.
+Aura	PauseBaritone	Pauses Baritone while Aura has a target.
+Aura	Rotate	Lets Aura rotate your aim toward targets.
+Aura	Magnet	Pulls your aim toward the target after each attack.
+Aura	Offset	Yaw offset applied to the Magnet rotation.
+Aura	Limit	Portion of the attack delay required before rotating.
+Aura	Render	Renders boxes or circles around Aura targets.
+Aura	Type	Shape used when rendering Aura targets.
+Aura	Fill	Fill color for rendered Aura targets.
+Aura	Outline	Outline color for rendered Aura targets.
+Aura	LineWidth	Thickness of rendered Aura target outlines.
+Aura	Weapon	How Aura handles weapons: none, require, or swap.
+Aura	Swap	Weapon swap style: normal, swap back, or silent.
+Aura	Mace	Mace variant Aura should use when attacking.
+Aura	AlternativeMace	Uses an alternative slot search when swapping to a mace.
+Aura	Players	Includes other players as Aura targets.
+Aura	Invisible	Includes invisible players as Aura targets.
+Aura	IgnoreNakeds	Skips players who are not wearing armor.
+Aura	Animals	Includes animals as Aura targets.
+Aura	Villagers	Includes villagers as Aura targets.
+Aura	Hostiles	Includes hostile mobs as Aura targets.
+Aura	Neutrals	Includes neutral mobs as Aura targets.
+Aura	Crystals	Includes end crystals as Aura targets.
+Aura	Projectiles	Includes projectiles as Aura targets.
+Aura	Vehicles	Includes vehicles as Aura targets.
+Aura	IgnoreNamed	Skips named entities when choosing Aura targets.
+NameTags	Range	Maximum distance at which nametags are drawn.
+NameTags	Scale	Size multiplier for rendered nametags.
+NameTags	Name	Shows the player's name on the nametag.
+NameTags	Ping	Shows the player's ping on the nametag.
+NameTags	PingColor	Colors the ping value based on latency.
+NameTags	Health	Shows the player's health on the nametag.
+NameTags	Decimals	Shows health with one decimal place.
+NameTags	Gamemode	Shows the player's gamemode on the nametag.
+NameTags	TotemPops	Shows how many totems the player has popped.
+NameTags	Armor	Shows the player's armor on the nametag.
+NameTags	Durability	Whether armor durability text is shown.
+NameTags	Items	Shows the player's held items.
+NameTags	ShowEating	Also shows items while the player is eating.
+NameTags	Enchants	Shows enchantments on the player's items.
+NameTags	HideMax	Hides enchantments that are already maxed.
+NameTags	ItemName	Shows the item name under the nametag.
+NameTags	ItemAmount	Shows the item stack amount.
+NameTags	Players	Draws nametags for other players.
+NameTags	Dead	Also draws nametags for dead players.
+NameTags	Self	Also draws a nametag for yourself.
+NameTags	Bots	Also draws nametags for known bots.
+NameTags	Animals	Also draws nametags for animals.
+NameTags	Hostiles	Also draws nametags for hostile mobs.
+NameTags	Neutrals	Also draws nametags for neutral mobs.
+NameTags	Friend	Colors nametags for your friends.
+NameTags	Enemy	Colors nametags for your enemies.
+NameTags	Fill	Background color of the nametag.
+NameTags	Outline	Outline color of the nametag.
+NameTags	Text	Text color used for the nametag.
+NameTags	Invisibles	Text color for invisible players.
+NameTags	Sneak	Text color while the player is sneaking.
+NameTags	Eating	Text color while the player is eating.
+HoleFill	Delay	Milliseconds between each hole-filling placement.
+HoleFill	BPT	Maximum blocks placed per tick.
+HoleFill	Raytrace	Only fills holes that are visible.
+HoleFill	Rotate	Rotates your aim toward each hole.
+HoleFill	Blocks	Blocks used to fill holes.
+HoleFill	Sequential	Fills one hole at a time as blocks update.
+HoleFill	Mode	Plain fills nearby holes; Smart targets enemy holes.
+HoleFill	Range	Maximum horizontal distance to fill a hole.
+HoleFill	VerticalRange	Maximum vertical distance to fill a hole.
+HoleFill	Doubles	Also fills double holes, not just single holes.
+HoleFill	OnlySafe	Only fills holes while you are inside a hole.
+HoleFill	Self	Also fills the hole you are standing in.
+HoleFill	Extrapolation	Predicts enemy movement when choosing holes.
+HoleFill	Ticks	Ticks to predict enemy movement; zero is automatic.
+HoleFill	SmartRange	Maximum enemy distance from a hole being filled.
+HoleFill	SelfSafety	Keeps you a safe distance from filled holes.
+HoleFill	IgnoreNakeds	Skips unarmored enemies when choosing holes.
+HoleFill	Jump	Disables HoleFill when you jump or sleep.
+HoleFill	Pearl	Disables HoleFill when you throw an ender pearl.
+HoleFill	RubberBand	Disables HoleFill when the server moves you back.
+HoleFill	Height	Disables HoleFill when your height changes sharply.
+HoleFill	Render	Renders the positions where holes will be filled.
+HoleFill	Fill	Fill color for rendered hole placements.
+HoleFill	Outline	Outline color for rendered hole placements.
+HoleFill	LineWidth	Thickness of rendered hole outlines.
+HoleFill	Fade	Fades out hole renders after placing.
+HoleFill	FadeTime	Seconds over which hole renders fade.
+WebAura	Delay	Milliseconds between each cobweb placement.
+WebAura	BPT	Maximum cobwebs placed per tick.
+WebAura	AirPlace	Places cobwebs without a supporting block.
+WebAura	Raytrace	Only places cobwebs at visible positions.
+WebAura	Rotate	Rotates your aim toward each cobweb placement.
+WebAura	Alternative	Uses an alternative slot search when swapping cobwebs.
+WebAura	Range	Maximum distance for placing cobwebs.
+WebAura	IgnoreNakeds	Skips players who are not wearing armor.
+WebAura	IgnoreHole	Skips players already standing in a hole.
+WebAura	OnlyFish	Only targets fish-type entities with cobwebs.
+WebAura	SelfSafety	Avoids placing cobwebs that would trap you.
+WebAura	Extrapolation	Predicts enemy movement when choosing cobweb spots.
+WebAura	Ticks	Ticks to predict enemy movement; zero is automatic.
+WebAura	Head	Places cobwebs above the target's head.
+WebAura	Legs	Places cobwebs around the target's legs.
+WebAura	RubberBand	Disables WebAura when the server moves you back.
+WebAura	Height	Disables WebAura when your height changes sharply.
+WebAura	Render	Renders the positions where cobwebs will go.
+WebAura	Fill	Fill color for rendered cobweb placements.
+WebAura	Outline	Outline color for rendered cobweb placements.
+WebAura	LineWidth	Thickness of rendered cobweb outlines.
+WebAura	Fade	Fades out cobweb renders after placing.
+WebAura	FadeTime	Seconds over which cobweb renders fade.
+KillEffects	KillSound	Plays a sound when you get a kill.
+KillEffects	Sound	Sound played when you get a kill.
+KillEffects	SelfSound	Sound played when you die.
+KillEffects	Volume	Volume of the kill and death sounds.
+KillEffects	KillStreak	Plays a sound when your killstreak increases.
+KillEffects	KillStreakVolume	Volume of the killstreak sound.
+KillEffects	KillSay	Sends a chat message when you get a kill.
+KillEffects	Delay	Seconds to wait before sending the killsay message.
+KillEffects	Path	File holding the killsay messages.
+KillEffects	OnlyEnemies	Only sends killsay messages for enemies.
+KillEffects	Random	Picks a random killsay line each time.
+KillEffects	Refresh	Reloads the killsay message file.
+KillEffects	Thunder	Spawns lightning at the death position.
+KillEffects	Lightnings	Number of lightning bolts spawned.
+KillEffects	Color	Color tint applied to the spawned lightning.
+KillEffects	Particles	Particle effect shown when someone dies.
+KillEffects	ParticleTypes	Particles used when the custom particle mode is set.
+KillEffects	IgnoreNakeds	Skips unarmored players when detecting kills.
+KillEffects	Self	Also plays effects when you die.
+AutoCraft	Items	Items that AutoCraft will craft.
+AutoCraft	RecipeBlackList	Items that must not be used as ingredients.
+AutoCraft	Delay	Milliseconds between each crafting action.
+AutoCraft	InInventory	Crafts in the 2x2 inventory grid instead of a table.
+AutoCraft	Frequency	Maximum crafting actions attempted per cycle.
+AutoCraft	Drop	How crafted items leave the crafting result slot.
+AutoCraft	CraftAll	Keeps crafting until the materials run out.
+AutoCraft	FastClose	Closes the crafting screen immediately so it never appears.
+AutoCraft	AutoOpen	Walks to and opens a nearby crafting table.
+AutoCraft	Range	Search radius for a nearby crafting table.
+AutoCraft	Raytrace	Requires line of sight to the crafting table.
+AutoCraft	StrictDirection	Only interacts from a strict valid direction.
+AutoCraft	Rotate	Rotates toward the crafting table before opening.
+AutoCraft	Limit	Caps how many of the item are crafted.
+AutoCraft	Max	Maximum number of items to craft.
+AutoCraft	StackLimit	Treats Max as stacks instead of single items.
+Tracers	Mode	Draws tracers as screen lines or as markers.
+Tracers	Hitbox	Height on the target body where tracer lines end.
+Tracers	MinDistance	Distance below which no tracer is drawn.
+Tracers	MaxDistance	Distance above which no tracer is drawn.
+Tracers	Shadow	Shadow offset behind marker text; zero turns it off.
+Tracers	Distance	Screen distance of markers from the center.
+Tracers	LineWidth	Thickness of the drawn tracer lines.
+Tracers	Stem	Adds a vertical line through the target's body.
+Tracers	Color	Base color of tracer lines and markers.
+Tracers	DistanceColor	Colors tracers according to distance.
+Tracers	FriendColor	Color used for tracers to friends.
+Tracers	EnemyColor	Color used for tracers to enemies.
+Tracers	IgnoreVisible	Skips markers for players you can already see.
+Tracers	IgnoreFriends	Skips drawing tracers to friends.
+Tracers	IgnoreNakeds	Skips players who are not wearing armor.
+AutoMace	Sorting	Order in which AutoMace picks targets.
+AutoMace	Range	Maximum distance to look for targets.
+AutoMace	Smart	Steers the dive automatically while elytra flying.
+AutoMace	Height	Height above the target that starts the dive.
+AutoMace	Angle	Pitch angle used for the dive.
+AutoMace	AutoBoost	Uses fireworks to keep you airborne.
+AutoMace	Render	Renders the current AutoMace target.
+AutoMace	Color	Color of the AutoMace target marker.
+AutoMace	Players	Includes other players as targets.
+AutoMace	Nakeds	Also targets players who are not wearing armor.
+AutoMace	Animals	Includes animals as AutoMace targets.
+AutoMace	Hostiles	Includes hostile mobs as targets.
+AutoMace	Neutrals	Includes neutral mobs as targets.
+RaytraceBypass	Always	Bypasses even when the block is already visible.
+RaytraceBypass	Rotations	How the bypass rotation is sent or applied.
+RaytraceBypass	Keep	Ticks to keep the motion rotation active.
+RaytraceBypass	Delay	Minimum milliseconds between bypass rotations.
+RaytraceBypass	Offset	Vertical offset added to the hit position.
+RaytraceBypass	Resolver	Searches for a rotation where the raytrace misses.
+RaytraceBypass	BruteOffset	Offset step used while brute-forcing rotations.
+RaytraceBypass	Iterations	Number of resolver passes before giving up.
+RaytraceBypass	BruteStep	Angle step used while scanning rotations.
+RaytraceBypass	BasePitch	Starting pitch used while scanning rotations.
+RaytraceBypass	Backup	Uses a fallback rotation when the resolver fails.
+RaytraceBypass	BackUpPitch	Pitch used for the fallback rotation.
+FastPlace	Delay	Caps the right-click cooldown at this many ticks.
+FastPlace	AutoPlace	Right-clicks automatically whenever item use is ready.
+FastPlace	RandomBlock	Picks a random hotbar block before placing.
+FastPlace	All	Applies the fast delay to every item.
+FastPlace	Exp	Applies the fast delay to experience bottles.
+FastPlace	Rockets	Applies the fast delay to firework rockets.
+FastPlace	Blocks	Applies the fast delay to block items.
+FastPlace	Food	Applies the fast delay to food.
+FastPlace	Tools	Applies the fast delay to right-click tools.
+FastPlace	EnderChests	Applies the fast delay to ender chests.
+FastPlace	AutoReplace	Places a new ender chest at the mined position.
+AutoTame	Action	What AutoTame does: tame, sit, or stand.
+AutoTame	Range	Maximum distance to interact with animals.
+AutoTame	Frequency	Maximum interactions attempted per tick.
+AutoTame	Delay	Seconds to wait between interaction cycles.
+AutoTame	Rotate	Rotates toward the animal before interacting.
+AutoTame	Dogs	Also targets dogs for taming.
+AutoTame	Cats	Also targets cats for taming.
+AutoTame	Parrots	Also targets parrots for taming.
+InventoryCleaner	Items	Items checked by the selection mode.
+InventoryCleaner	Selection	How the item list controls which items get dropped.
+InventoryCleaner	Delay	Milliseconds between each cleaning action.
+InventoryCleaner	Frequency	Maximum items dropped per cycle.
+InventoryCleaner	Offhand	Also cleans the offhand slot.
+InventoryCleaner	Containers	Also cleans while a container screen is open.
+InventoryCleaner	OnlyUI	Only cleans while an inventory screen is open.
+InventoryCleaner	IgnoreHotbar	Leaves the hotbar slots untouched.
+AutoSign	FancyDate	Formats the date as an ordinal day and month.
+AutoSign	OnlyEmpty	Only fills signs that have no text.
+AutoSign	Delay	Seconds to wait before writing the sign.
+AutoSign	Line1	Text written to the first sign line.
+AutoSign	Line2	Text written to the second sign line.
+AutoSign	Line3	Text written to the third sign line.
+AutoSign	Line4	Text written to the fourth sign line.
+Highlight	Mode	Which block shape gets highlighted.
+Highlight	Depth	Lets blocks in front hide the highlight.
+Highlight	Unreachable	Uses the vanilla outline instead of the custom highlight.
+Highlight	LineWidth	Thickness of the highlight outline.
+Highlight	Color	Color of the highlight outline.
+Highlight	FillColor	Color used to fill the highlighted face.
+Avoid	Unload	Slows the game while nearby chunks are loading.
+Avoid	Timer	Game speed multiplier applied while nearby chunks load.
+Avoid	Void	Prevents you from falling into the void.
+Avoid	Mode	Teleports you up or cancels your fall near the void.
+Avoid	Height	Distance above the world bottom that triggers rescue.
+AutoClicker	Mode	Mouse button that AutoClicker presses.
+AutoClicker	CPS	Number of clicks per second.
+AutoClicker	Delay	Random extra delay between clicks; one means off.
+AutoClicker	FriendProtect	Stops clicking when a friend is your target.
+Swing	Hand	Which hand shows the swing animation.
+Swing	Type	Swing animation style: vanilla, 1.12, or 1.8.
+Swing	Shake	Adds random shake to 1.12-style swings.
+Swing	Speed	Speed of the swing animation.
+PingSpoof	Mode	Selects between latency-only and full packet spoofing.
+PingSpoof	Delay	Base latency added in milliseconds.
+PingSpoof	Jitter	Random extra latency added on top.
+FastClimb	Speed	Climbing speed bonus; the minimum turns it off.
+FastClimb	Airborne	Also applies the climb boost while airborne.
+XCarry	AutoPickup	Moves end crystals and experience bottles into crafting slots.
+XCarry	OnlyNearItems	Only moves items when dropped items are nearby.
+NoRotate	InBlocks	How server rotations are handled inside blocks.
+ObstaclePasser	Align	Aligns each jump to the center of the target block.
+ObstaclePasser	OnlyLoaded	Only considers chunks that are already loaded.
+ObstaclePasser	Y	Target height for pathfinding; -1 chooses it automatically.
+ObstaclePasser	MaxTravel	Maximum blocks to search for a safe landing spot.
+WebhookNotifs	Timeout	Seconds between batched webhook notifications.
+WebhookNotifs	Color	Uses ANSI colors in Discord webhook messages.
+WebhookNotifs	Timestamp	Prefixes each webhook message with the time.
+WebhookNotifs	IgnoreArgus Client	Skips messages generated by Argus Client itself.
+WebhookNotifs	Queue	Notifies when your server queue position changes.
+WebhookNotifs	Disconnect	Notifies when you disconnect from a server.
+WebhookNotifs	DM	Forwards private messages to the webhook.
+WebhookNotifs	ChatMessages	Forwards public chat messages to the webhook.
+WebhookNotifs	VisualRange	Notifies when a player enters visual range.
+WebhookNotifs	Stash	Notifies when a stash message is detected.
+WebhookNotifs	Ping	Mentions everyone when a stash notification is sent.

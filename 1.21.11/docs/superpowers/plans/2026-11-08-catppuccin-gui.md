@@ -1,4 +1,4 @@
-# Random Stuff Client GUI implementation plan
+# Argus Client GUI implementation plan
 
 > **For agentic workers:** Execute inline using superpowers:executing-plans, then request one independent whole-change review.
 
@@ -11,12 +11,12 @@
 **Spec:** User requests Meteor-like GUI with styling/search from X-C-0/catppuccin-addon. User explicitly wants Light/Dark plus accent colour controls (no flavour names), Dark default, and a clickable Search tab that focuses input without requiring a shortcut.
 
 ## Constraints
-- All runtime packages stay under dev.randomstuff; mod/resource ID randomstuffclient.
+- All runtime packages stay under dev.argus; mod/resource ID argusclient.
 - No Meteor runtime dependency and no source copying from the reference add-on.
 - Preserve existing module toggles, friends, Classic fallback, HUD editor, settings and migration.
 - Search spans module names, aliases and setting names, ranked with fuzzy matching. Left-click toggles modules; right-click opens settings. Setting results open their owning module and focus that setting.
 - GUI preferences and windows persist; small scaled screens must keep all categories reachable.
-- Built-in GUI bind and /randomstuff open the new menu. Search tab works with the mouse and autofocuses.
+- Built-in GUI bind and /argus open the new menu. Search tab works with the mouse and autofocuses.
 
 ## Review focus
 - UI module lifecycle must not close the new screen on the next player tick.

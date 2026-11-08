@@ -3,8 +3,8 @@ plugins {
 }
 
 version = project.mod_version
-group = 'dev.randomstuff'
-base { archivesName = 'random-stuff-client-gui' }
+group = 'dev.argus'
+base { archivesName = 'argus-client-gui' }
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -14,6 +14,7 @@ dependencies {
     modCompileOnly files('libs/client-base.jar')
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'org.ow2.asm:asm-tree:9.10.1'
+    testImplementation 'org.ow2.asm:asm-analysis:9.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
 }
 
@@ -36,11 +37,11 @@ tasks.register('prepareMergedMetadata') {
         def zip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
         try {
             def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
-            data.name = 'Random Stuff Client'
+            data.name = 'Argus Client'
             data.version = project.version.toString()
-            data.description = 'Random Stuff Client with module search, a tabbed module menu, and Friends management.'
-            data.entrypoints.client += 'dev.randomstuff.client.gui.FriendsMod'
-            data.mixins += 'randomstuffclient.gui.mixins.json'
+            data.description = 'Argus Client with module search, a tabbed module menu, and Friends management.'
+            data.entrypoints.client += 'dev.argus.client.gui.FriendsMod'
+            data.mixins += 'argusclient.gui.mixins.json'
             def target = mergedMetadata.get().asFile
             target.parentFile.mkdirs()
             target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)) + '\n'
@@ -52,14 +53,14 @@ tasks.register('prepareMergedMetadata') {
 // The base client's custom loading overlay (splash, progress bar and startup sound) is dropped:
 // Minecraft's own loading screen is shown instead.
 def removedBaseMixins = ['LoadingOverlayMixin']
-def mergedMixins = layout.buildDirectory.file('generated/merged/randomstuffclient.mixins.json')
+def mergedMixins = layout.buildDirectory.file('generated/merged/argusclient.mixins.json')
 tasks.register('prepareMergedMixins') {
     inputs.file('libs/client-base.jar')
     outputs.file(mergedMixins)
     doLast {
         def zip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
         try {
-            def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('randomstuffclient.mixins.json')))
+            def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('argusclient.mixins.json')))
             ['mixins', 'client', 'server'].each { key -> if (data[key] != null) data[key] = data[key].findAll { !(it in removedBaseMixins) } }
             def target = mergedMixins.get().asFile
             target.parentFile.mkdirs()
@@ -71,14 +72,14 @@ tasks.register('prepareMergedMixins') {
 }
 tasks.register('mergeClient', Jar) {
     dependsOn tasks.remapJar, tasks.prepareMergedMetadata, tasks.prepareMergedMixins
-    archiveFileName = 'random-stuff-client.jar'
+    archiveFileName = 'argus-client.jar'
     destinationDirectory = layout.buildDirectory.dir('libs')
     from(zipTree(file('libs/client-base.jar'))) {
-        exclude 'config/**', 'configs/**', 'randomstuffclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
-        exclude 'fabric.mod.json', 'randomstuffclient.mixins.json', 'dev/randomstuff/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/randomstuff/client/gui/panels/SearchPanel.class', 'dev/randomstuff/client/config/ClientDataDirectory*.class'
+        exclude 'config/**', 'configs/**', 'argusclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
+        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/argus/client/gui/panels/SearchPanel.class', 'dev/argus/client/config/ClientDataDirectory*.class'
     }
     from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
-        include 'dev/randomstuff/**', 'assets/randomstuffclient/font/**', 'assets/randomstuffclient/fonts/**', 'assets/randomstuffclient/shaders/**', 'assets/randomstuffclient/textures/font/**', 'assets/randomstuffclient/textures/icons/**', 'randomstuffclient.gui.mixins.json'
+        include 'dev/argus/**', 'assets/argusclient/descriptions.tsv', 'assets/argusclient/font/**', 'assets/argusclient/fonts/**', 'assets/argusclient/shaders/**', 'assets/argusclient/textures/font/**', 'assets/argusclient/textures/icons/**', 'argusclient.gui.mixins.json'
     }
     from(mergedMetadata) { into '' }
     from(mergedMixins) { into '' }
@@ -107,10 +108,10 @@ tasks.register('verifyReleaseConfig') {
         try {
             java.util.Collections.list(zip.entries()).each { entry ->
                 def name = entry.name
-                assert !['config/', 'configs/', 'randomstuffclient/', 'eggclient/', 'shuclient/'].any { name.startsWith(it) } : "Saved client data in release: ${name}"
+                assert !['config/', 'configs/', 'argusclient/', 'eggclient/', 'shuclient/'].any { name.startsWith(it) } : "Saved client data in release: ${name}"
                 assert !name.endsWith('/gui.properties') : "Saved GUI preferences in release: ${name}"
             }
-            def mixins = zip.getInputStream(zip.getEntry('randomstuffclient.mixins.json')).text
+            def mixins = zip.getInputStream(zip.getEntry('argusclient.mixins.json')).text
             removedBaseMixins.each { assert !mixins.contains("\"${it}\"") : "Removed mixin still registered: ${it}" }
         } finally { zip.close() }
     }

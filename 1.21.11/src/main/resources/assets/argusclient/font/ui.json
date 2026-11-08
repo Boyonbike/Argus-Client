@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {"type":"space","advances":{" ":3}},
+    {"type":"bitmap","file":"argusclient:font/gui.png","height":11,"ascent":9,"chars":[
+      " !\"#$%&'()*+,-./",
+      "0123456789:;<=>?",
+      "@ABCDEFGHIJKLMNO",
+      "PQRSTUVWXYZ[\\]^_",
+      "`abcdefghijklmno",
+      "pqrstuvwxyz{|}~…",
+      "−·×\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    ]},
+    {"type":"reference","id":"minecraft:default"}
+  ]
+}

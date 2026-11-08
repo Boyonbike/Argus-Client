@@ -6,6 +6,6 @@ __pycache__/
 # Local game data must never be distributed.
 /1.21.11/run/
 /1.21.11/config/
-/1.21.11/randomstuffclient/
+/1.21.11/argusclient/
 /1.21.11/mods/
 /1.21.11/logs/

@@ -1,4 +1,4 @@
-# Random Stuff Client — Minecraft 1.21.11
+# Argus Client — Minecraft 1.21.11
 
 [Repository overview](../README.md)
 
@@ -7,7 +7,7 @@ ranked search, module settings and Friends management.
 
 ## Install
 
-Download [`random-stuff-client.jar`](random-stuff-client.jar), place it in your
+Download [`argus-client.jar`](argus-client.jar), place it in your
 instance's `mods` folder, and replace earlier copies of this client or its
 separate GUI add-on.
 
@@ -18,7 +18,7 @@ separate GUI add-on.
 
 ## Open and use the GUI
 
-Use the client's existing GUI keybind or type `/randomstuff` in chat.
+Use the client's existing GUI keybind or type `/argus` in chat.
 
 | Control | Action |
 | --- | --- |
@@ -72,7 +72,7 @@ native TrueType loading during Minecraft resource reloads.
 
 The design and search interaction are inspired by
 [Catppuccin for Meteor Client](https://github.com/X-C-0/catppuccin-addon).
-This GUI is independently implemented against Random Stuff Client's existing
+This GUI is independently implemented against Argus Client's existing
 module and settings APIs; it does not require Meteor or that add-on.
 
 ### Module settings
@@ -92,12 +92,12 @@ From this `1.21.11` directory:
 
 ```sh
 ./gradlew build
-python3 tools/verify_branding.py build/libs/random-stuff-client.jar
-python3 tools/verify_merge.py build/libs/random-stuff-client.jar
+python3 tools/verify_branding.py build/libs/argus-client.jar
+python3 tools/verify_merge.py build/libs/argus-client.jar
 ```
 
 On Windows use `gradlew.bat build`. Install the combined output at
-`build/libs/random-stuff-client.jar`. The smaller `random-stuff-client-gui-...jar`
+`build/libs/argus-client.jar`. The smaller `argus-client-gui-...jar`
 is an intermediate build artifact.
 
 The build compiles the GUI against Mojang mappings, remaps it to Fabric
@@ -109,8 +109,8 @@ and shared-field linkage. The build also rejects packaged saved configurations.
 
 ## Source and data
 
-- `src/main/java/dev/randomstuff/client/gui/`: menus, search, theme, controls and GUI integration.
-- `src/main/java/dev/randomstuff/client/config/`: settings-directory migration.
+- `src/main/java/dev/argus/client/gui/`: menus, search, theme, controls and GUI integration.
+- `src/main/java/dev/argus/client/config/`: settings-directory migration.
 - `src/test/java/`: regression tests.
 - `src/main/resources/`: GUI Mixin configuration and font assets/license.
 - `libs/client-base.jar`: the compiled underlying client, including existing features and protections.
@@ -118,16 +118,16 @@ and shared-field linkage. The build also rejects packaged saved configurations.
 
 The ZIPs did not include the full underlying client's source. This project
 rebuilds the available and newly implemented GUI source and combines it with
-that compiled base. The runtime mod/resource ID is `randomstuffclient`, and
-packages are under `dev.randomstuff`.
+that compiled base. The runtime mod/resource ID is `argusclient`, and
+packages are under `dev.argus`.
 
 No user config, preset, saved window layout or friend list is bundled in the
 repository or release JAR; releases start with factory defaults.
 
-Settings are stored in `randomstuffclient/` inside the instance's game directory;
-GUI-only preferences are in `randomstuffclient/gui.properties`. An upgrade
+Settings are stored in `argusclient/` inside the instance's game directory;
+GUI-only preferences are in `argusclient/gui.properties`. An upgrade
 copies a previous settings folder if the new folder does not exist. Existing
-Random Stuff Client settings take priority; historical names appear only in
+Argus Client settings take priority; historical names appear only in
 compatibility code.
 
 Build and automated checks are verified. The new GUI still needs visual and

@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 public final class BakeGuiFont {
     public static void main(String[] args) throws Exception {
         Path fontSource=Path.of(args.length>0?args[0]:"tools/font-source/lexend-deca.ttf");
-        Path assets=Path.of(args.length>1?args[1]:"src/main/resources/assets/randomstuffclient");
+        Path assets=Path.of(args.length>1?args[1]:"src/main/resources/assets/argusclient");
         Font font=Font.createFont(Font.TRUETYPE_FONT,fontSource.toFile()).deriveFont(Font.PLAIN,96f);
         StringBuilder characters=new StringBuilder();for(char c=32;c<127;c++)characters.append(c);
         for(char c:"…−⌕·×→▸▾✓★♥".toCharArray())if(font.canDisplay(c))characters.append(c);
@@ -24,7 +24,7 @@ public final class BakeGuiFont {
         }
         g.dispose();Path texture=assets.resolve("textures/font/gui.png");Files.createDirectories(texture.getParent());
         ImageIO.write(atlas,"png",texture.toFile());
-        StringBuilder json=new StringBuilder("{\n  \"providers\": [\n    {\"type\":\"space\",\"advances\":{\" \":3}},\n    {\"type\":\"bitmap\",\"file\":\"randomstuffclient:font/gui.png\",\"height\":11,\"ascent\":9,\"chars\":[\n");
+        StringBuilder json=new StringBuilder("{\n  \"providers\": [\n    {\"type\":\"space\",\"advances\":{\" \":3}},\n    {\"type\":\"bitmap\",\"file\":\"argusclient:font/gui.png\",\"height\":11,\"ascent\":9,\"chars\":[\n");
         for(int row=0;row<rows;row++){
             json.append("      \"");
             for(int column=0;column<columns;column++){
