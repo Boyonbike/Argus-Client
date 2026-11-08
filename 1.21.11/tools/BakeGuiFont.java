@@ -8,10 +8,10 @@ public final class BakeGuiFont {
     public static void main(String[] args) throws Exception {
         Path fontSource=Path.of(args.length>0?args[0]:"tools/font-source/lexend-deca.ttf");
         Path assets=Path.of(args.length>1?args[1]:"src/main/resources/assets/randomstuffclient");
-        Font font=Font.createFont(Font.TRUETYPE_FONT,fontSource.toFile()).deriveFont(Font.PLAIN,24f);
+        Font font=Font.createFont(Font.TRUETYPE_FONT,fontSource.toFile()).deriveFont(Font.PLAIN,96f);
         StringBuilder characters=new StringBuilder();for(char c=32;c<127;c++)characters.append(c);
         for(char c:"…−⌕·×→▸▾✓★♥".toCharArray())if(font.canDisplay(c))characters.append(c);
-        int columns=16,cellWidth=32,cellHeight=36,rows=(characters.length()+columns-1)/columns;
+        int columns=16,cellWidth=128,cellHeight=128,rows=(characters.length()+columns-1)/columns;
         while(characters.length()<rows*columns)characters.append('\0');
         BufferedImage atlas=new BufferedImage(columns*cellWidth,rows*cellHeight,BufferedImage.TYPE_INT_ARGB);
         Graphics2D g=atlas.createGraphics();
@@ -20,11 +20,11 @@ public final class BakeGuiFont {
         g.setColor(Color.WHITE);g.setFont(font);
         for(int i=0;i<characters.length();i++){
             char c=characters.charAt(i);if(c=='\0'||c==' ')continue;
-            g.drawString(String.valueOf(c),(i%columns)*cellWidth+1,(i/columns)*cellHeight+27);
+            g.drawString(String.valueOf(c),(i%columns)*cellWidth+4,(i/columns)*cellHeight+104);
         }
         g.dispose();Path texture=assets.resolve("textures/font/gui.png");Files.createDirectories(texture.getParent());
         ImageIO.write(atlas,"png",texture.toFile());
-        StringBuilder json=new StringBuilder("{\n  \"providers\": [\n    {\"type\":\"space\",\"advances\":{\" \":3}},\n    {\"type\":\"bitmap\",\"file\":\"randomstuffclient:font/gui.png\",\"height\":12,\"ascent\":10,\"chars\":[\n");
+        StringBuilder json=new StringBuilder("{\n  \"providers\": [\n    {\"type\":\"space\",\"advances\":{\" \":3}},\n    {\"type\":\"bitmap\",\"file\":\"randomstuffclient:font/gui.png\",\"height\":11,\"ascent\":9,\"chars\":[\n");
         for(int row=0;row<rows;row++){
             json.append("      \"");
             for(int column=0;column<columns;column++){

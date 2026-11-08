@@ -18,13 +18,14 @@ themes, ranked module/settings search, and Friends management. Client projects a
 ## Menus
 
 - The existing GUI keybind or `/randomstuff` opens the floating module menu.
-- Click **Search** to search modules, aliases and settings; the input focuses immediately.
-- **Theme** offers Light/Dark and a separate accent colour choice.
+- Use the **Search dropdown panel** inside the right-shift menu to search modules, aliases and settings.
+- **Theme** offers Light/Dark, an accent colour choice, and an independent GUI scale.
 - `/friends` opens the Friends window to add, remove, and list friends.
 - The **Classic** tab opens the original click GUI, including its Search panel.
 
 The combined client uses Random Stuff Client branding, with Dark mode and
-Lavender accents by default. Its mod ID and resource namespace are `randomstuffclient`, with Java packages
+Lavender accents by default, with compact sizing and high-density font/art assets.
+Release JARs contain no saved user configuration. Its mod ID and resource namespace are `randomstuffclient`, with Java packages
 under `dev.randomstuff`.
 
 ## Repository layout

@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "dev.randomstuff.client.gui.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": ["UIModuleMixin"],
+  "client": ["UIModuleMixin", "EditBoxAccessor"],
   "injectors": {"defaultRequire": 1}
 }

@@ -4,6 +4,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
 
 final class UiDraw {
     private static final FontDescription FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("randomstuffclient","ui"));
@@ -26,6 +27,9 @@ final class UiDraw {
     static boolean over(double mx,double my,int x,int y,int w,int h) { return mx>=x&&mx<x+w&&my>=y&&my<y+h; }
     static void rounded(GuiGraphics g,int x,int y,int width,int height,int radius,int colour) {
         if(width<=0||height<=0)return;
+        if(radius>=3&&width>=radius*2&&height>=radius*2){
+            g.blitSprite(RenderPipelines.GUI_TEXTURED,Identifier.fromNamespaceAndPath("randomstuffclient","rounded_"+Math.clamp(radius,3,7)),x,y,width,height,colour);return;
+        }
         int r=Math.max(0,Math.min(radius,Math.min(width,height)/2));
         if(r==0){g.fill(x,y,x+width,y+height,colour);return;}
         g.fill(x,y+r,x+width,y+height-r,colour);
@@ -35,6 +39,7 @@ final class UiDraw {
             g.fill(x+inset,y+height-row-1,x+width-inset,y+height-row,colour);
         }
     }
+    static void icon(GuiGraphics g,String name,int x,int y,int size,int colour){g.blitSprite(RenderPipelines.GUI_TEXTURED,Identifier.fromNamespaceAndPath("randomstuffclient",name),x,y,size,size,colour);}
     static void panel(GuiGraphics g,int x,int y,int width,int height,UiTheme theme) {
         rounded(g,x-1,y+2,width+2,height+2,7,0x30000000);
         rounded(g,x,y,width,height,6,theme.base());

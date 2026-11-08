@@ -7,10 +7,10 @@ final class GuiPreferencesTest {
     @TempDir Path temp;
     @Test void persistsThemeAccentFavouritesAndWindowPositions() throws Exception {
         var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
-        p.mode=GuiPreferences.Mode.LIGHT; p.accent=GuiPreferences.Accent.GREEN;
+        p.mode=GuiPreferences.Mode.LIGHT; p.accent=GuiPreferences.Accent.GREEN;p.uiScale=.8;
         p.favourites.add("AutoCrystal");p.windows.put("Combat",new GuiPreferences.Window(24,80,true,12));p.save(path);
         var loaded=GuiPreferences.load(path);
-        assertEquals(GuiPreferences.Mode.LIGHT,loaded.mode);assertEquals(GuiPreferences.Accent.GREEN,loaded.accent);
+        assertEquals(.8,loaded.uiScale,.001);assertEquals(GuiPreferences.Mode.LIGHT,loaded.mode);assertEquals(GuiPreferences.Accent.GREEN,loaded.accent);
         assertTrue(loaded.favourites.contains("AutoCrystal"));assertEquals(24,loaded.windows.get("Combat").x());
     }
     @Test void invalidPreferencesFallBackToDarkAndLavender() throws Exception {

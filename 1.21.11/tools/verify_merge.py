@@ -26,7 +26,11 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     assert 'dev/randomstuff/client/gui/panels/SearchPanel.class' in jar.namelist()
     assert metadata['name'] == 'Random Stuff Client'
     assert 'randomstuffclient.gui.mixins.json' in metadata['mixins'], 'GUI keybind integration missing'
-    assert 'dev/randomstuff/client/gui/SearchScreen.class' in jar.namelist(), 'Clickable Search screen missing'
+    assert 'dev/randomstuff/client/gui/SearchScreen.class' not in jar.namelist(), 'Standalone search tab reintroduced'
+    assert 'dev/randomstuff/client/gui/GuiSearch.class' in jar.namelist(), 'Inline search engine missing'
+    for name in jar.namelist():
+        assert not name.startswith(('config/','configs/','randomstuffclient/','eggclient/','shuclient/')), 'User data bundled in release: '+name
+        assert not name.endswith('/gui.properties'), 'Saved GUI preferences bundled in release'
     assert 'assets/randomstuffclient/font/ui.json' in jar.namelist(), 'GUI font definition missing'
     assert 'assets/randomstuffclient/textures/font/gui.png' in jar.namelist(), 'GUI font atlas missing'
     font = json.loads(jar.read('assets/randomstuffclient/font/ui.json'))

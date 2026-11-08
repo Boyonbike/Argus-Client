@@ -12,6 +12,7 @@ public final class GuiPreferences {
     public Mode mode = Mode.DARK;
     public Accent accent = Accent.LAVENDER;
     public boolean snap = true;
+    public double uiScale = 1;
     public final Set<String> favourites = new HashSet<>();
     public final Map<String, Window> windows = new HashMap<>();
 
@@ -23,6 +24,7 @@ public final class GuiPreferences {
         try { result.mode = Mode.valueOf(values.getProperty("mode", "DARK")); } catch (IllegalArgumentException ignored) {}
         try { result.accent = Accent.valueOf(values.getProperty("accent", "LAVENDER")); } catch (IllegalArgumentException ignored) {}
         result.snap = Boolean.parseBoolean(values.getProperty("snap", "true"));
+        try { double scale=Double.parseDouble(values.getProperty("uiScale","1")); if(Double.isFinite(scale))result.uiScale=Math.clamp(scale,.65,1.4); } catch(IllegalArgumentException ignored) {}
         for (String key : values.stringPropertyNames()) {
             if (key.startsWith("favourite.") && Boolean.parseBoolean(values.getProperty(key))) result.favourites.add(key.substring(10));
             if (key.startsWith("window.") && key.endsWith(".x")) {
@@ -40,6 +42,7 @@ public final class GuiPreferences {
     public void save(Path path) throws IOException {
         Path target = path.toAbsolutePath(); Files.createDirectories(target.getParent());
         Properties values = new Properties();
+        values.setProperty("uiScale",Double.toString(uiScale));
         values.setProperty("mode", mode.name()); values.setProperty("accent", accent.name()); values.setProperty("snap", Boolean.toString(snap));
         for (String module : favourites) values.setProperty("favourite." + module, "true");
         windows.forEach((name, window) -> {

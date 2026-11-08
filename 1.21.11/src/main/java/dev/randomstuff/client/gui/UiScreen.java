@@ -6,17 +6,22 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /** Shared navigation for the module menu, search, friends and theme/settings pages. */
 public abstract class UiScreen extends Screen {
     protected final Screen parent;
     private final String activeTab;
+    private GuiViewport viewport=new GuiViewport(320,240,1);
     protected UiScreen(String title,Screen parent,String activeTab) { super(Component.literal(title));this.parent=parent;this.activeTab=activeTab; }
     protected Screen rootParent() { return parent instanceof UiScreen screen?screen.rootParent():parent; }
     @Override protected final void init() {
+        var window=minecraft.getWindow();
+        viewport=GuiViewport.create(window.getWidth(),window.getHeight(),window.getGuiScale(),GuiState.preferences().uiScale);
+        width=viewport.width();height=viewport.height();
         buildContent();
-        String[] labels={"Modules","Search","Friends","HUD","Theme","Classic"};
+        String[] labels={"Modules","Friends","HUD","Theme","Classic"};
         int[] widths=new int[labels.length];int total=0;
         for(int i=0;i<labels.length;i++){widths[i]=Math.max(30,UiDraw.width(font,labels[i])+16);total+=widths[i]+3;}
         int x=Math.max(5,(width-total)/2);
@@ -27,11 +32,28 @@ public abstract class UiScreen extends Screen {
         }
     }
     protected abstract void buildContent();
+    protected abstract void renderUi(GuiGraphics g,int mx,int my,float delta);
+    @Override public final void render(GuiGraphics g,int mx,int my,float delta){
+        g.pose().pushMatrix();
+        g.pose().scale(viewport.renderScale(),viewport.renderScale());
+        try{renderUi(g,(int)viewport.toLogical(mx),(int)viewport.toLogical(my),delta);}
+        finally{g.pose().popMatrix();}
+    }
+    private MouseButtonEvent logical(MouseButtonEvent event){return new MouseButtonEvent(viewport.toLogical(event.x()),viewport.toLogical(event.y()),event.buttonInfo());}
+    @Override public final boolean mouseClicked(MouseButtonEvent event,boolean doubled){return mouseClickedUi(logical(event),doubled);}
+    protected boolean mouseClickedUi(MouseButtonEvent event,boolean doubled){return super.mouseClicked(event,doubled);}
+    @Override public final boolean mouseDragged(MouseButtonEvent event,double dx,double dy){return mouseDraggedUi(logical(event),viewport.toLogical(dx),viewport.toLogical(dy));}
+    protected boolean mouseDraggedUi(MouseButtonEvent event,double dx,double dy){return super.mouseDragged(event,dx,dy);}
+    @Override public final boolean mouseReleased(MouseButtonEvent event){return mouseReleasedUi(logical(event));}
+    protected boolean mouseReleasedUi(MouseButtonEvent event){return super.mouseReleased(event);}
+    @Override public final boolean mouseScrolled(double mx,double my,double horizontal,double vertical){return mouseScrolledUi(viewport.toLogical(mx),viewport.toLogical(my),horizontal,vertical);}
+    protected boolean mouseScrolledUi(double mx,double my,double horizontal,double vertical){return super.mouseScrolled(mx,my,horizontal,vertical);}
+    @Override public final void mouseMoved(double mx,double my){super.mouseMoved(viewport.toLogical(mx),viewport.toLogical(my));}
+
     protected void navigate(String label) {
         Screen root=rootParent();
         switch(label){
             case "Modules"->minecraft.setScreen(new ModulesScreen(root));
-            case "Search"->minecraft.setScreen(new SearchScreen(this instanceof SearchScreen?parent:this));
             case "Friends"->minecraft.setScreen(new FriendsScreen(this instanceof FriendsScreen?parent:this));
             case "HUD"->ClientContext.getHudEditor().open();
             case "Theme"->minecraft.setScreen(new AppearanceScreen(this instanceof AppearanceScreen?parent:this));
@@ -51,7 +73,7 @@ public abstract class UiScreen extends Screen {
                 minecraft.setScreen(rootParent());return true;
             }
         }
-        if((event.modifiers()&2)!=0 && event.key()==70){minecraft.setScreen(new SearchScreen(this instanceof SearchScreen?parent:this));return true;}
+        if((event.modifiers()&2)!=0 && event.key()==70){if(this instanceof ModulesScreen screen)screen.focusSearch();else minecraft.setScreen(new ModulesScreen(rootParent(),true));return true;}
         return super.keyPressed(event);
     }
     @Override public void onClose() { minecraft.setScreen(parent); }

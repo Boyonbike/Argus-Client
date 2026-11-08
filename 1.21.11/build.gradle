@@ -54,10 +54,11 @@ tasks.register('mergeClient', Jar) {
     archiveFileName = 'random-stuff-client.jar'
     destinationDirectory = layout.buildDirectory.dir('libs')
     from(zipTree(file('libs/client-base.jar'))) {
+        exclude 'config/**', 'configs/**', 'randomstuffclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
         exclude 'fabric.mod.json', 'META-INF/MANIFEST.MF', 'dev/randomstuff/client/gui/panels/SearchPanel.class', 'dev/randomstuff/client/config/ClientDataDirectory*.class'
     }
     from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
-        include 'dev/randomstuff/**', 'assets/randomstuffclient/font/**', 'assets/randomstuffclient/textures/font/**', 'randomstuffclient.gui.mixins.json'
+        include 'dev/randomstuff/**', 'assets/randomstuffclient/font/**', 'assets/randomstuffclient/textures/font/**', 'assets/randomstuffclient/textures/gui/sprites/**', 'randomstuffclient.gui.mixins.json'
     }
     from(mergedMetadata) { into '' }
     // Preserve the base client's static Mixin remapping and runtime namespace metadata.
@@ -76,3 +77,19 @@ tasks.build { dependsOn tasks.mergeClient }
 
 // Core API tests need the same remapped Minecraft/client classes as compilation.
 tasks.test { useJUnitPlatform(); classpath += sourceSets.main.compileClasspath }
+
+// Distribution archives contain defaults/assets, never a player's saved state.
+tasks.register('verifyReleaseConfig') {
+    dependsOn tasks.mergeClient
+    doLast {
+        def zip = new java.util.zip.ZipFile(tasks.mergeClient.archiveFile.get().asFile)
+        try {
+            java.util.Collections.list(zip.entries()).each { entry ->
+                def name = entry.name
+                assert !['config/', 'configs/', 'randomstuffclient/', 'eggclient/', 'shuclient/'].any { name.startsWith(it) } : "Saved client data in release: ${name}"
+                assert !name.endsWith('/gui.properties') : "Saved GUI preferences in release: ${name}"
+            }
+        } finally { zip.close() }
+    }
+}
+tasks.check { dependsOn tasks.verifyReleaseConfig }

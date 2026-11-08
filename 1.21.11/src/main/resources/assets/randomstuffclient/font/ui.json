@@ -1,7 +1,7 @@
 {
   "providers": [
     {"type":"space","advances":{" ":3}},
-    {"type":"bitmap","file":"randomstuffclient:font/gui.png","height":12,"ascent":10,"chars":[
+    {"type":"bitmap","file":"randomstuffclient:font/gui.png","height":11,"ascent":9,"chars":[
       " !\"#$%&'()*+,-./",
       "0123456789:;<=>?",
       "@ABCDEFGHIJKLMNO",

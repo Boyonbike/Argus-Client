@@ -33,7 +33,7 @@ final class CollectionSettingScreen extends UiScreen {
         catch(RuntimeException failure){message="That entry is not recognised. Use a name from the list.";}
     }
     private void toggleTyped(){toggle(query.getValue());}
-    @Override public void render(GuiGraphics g,int mx,int my,float delta){
+    @Override protected void renderUi(GuiGraphics g,int mx,int my,float delta){
         backdrop(g);UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,height-top-24,t);
         UiDraw.text(g,font,UiDraw.fit(font,GuiState.title(setting.getName()),panelWidth-100),left+12,top+13,t.text());
         UiDraw.text(g,font,selected.size()+" selected",left+panelWidth-85,top+13,t.accent());
@@ -51,12 +51,12 @@ final class CollectionSettingScreen extends UiScreen {
         UiDraw.text(g,font,UiDraw.fit(font,message.isEmpty()?"Click an entry to add or remove it.":message,panelWidth-24),left+12,height-35,message.isEmpty()?t.muted():t.red());
         chrome(g,mx,my,delta);
     }
-    @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubled){
-        if(super.mouseClicked(event,doubled))return true;
+    @Override protected boolean mouseClickedUi(MouseButtonEvent event,boolean doubled){
+        if(super.mouseClickedUi(event,doubled))return true;
         if(event.button()!=0||!UiDraw.over(event.x(),event.y(),left+8,top+70,panelWidth-16,viewHeight))return false;
         int row=((int)event.y()-top-70+scroll)/23;if(row>=0&&row<entries.size())toggle(entries.get(row));return true;
     }
-    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+    @Override protected boolean mouseScrolledUi(double mx,double my,double horizontal,double vertical){
         if(UiDraw.over(mx,my,left,top+70,panelWidth,viewHeight)){scroll=Math.clamp(scroll-(int)(vertical*46),0,Math.max(0,entries.size()*23-viewHeight));return true;}return false;
     }
     @Override public boolean keyPressed(KeyEvent event){if(event.key()==257||event.key()==335){toggleTyped();return true;}return super.keyPressed(event);}

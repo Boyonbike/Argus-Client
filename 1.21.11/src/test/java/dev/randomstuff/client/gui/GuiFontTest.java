@@ -25,6 +25,8 @@ final class GuiFontTest {
                         assertNotNull(image,"Atlas texture missing");var atlas=ImageIO.read(image);assertNotNull(atlas);
                         int rows=value.getAsJsonArray("chars").size(),columns=value.getAsJsonArray("chars").get(0).getAsString().length();
                         assertEquals(0,atlas.getWidth()%columns);assertEquals(0,atlas.getHeight()%rows);
+                        assertTrue(atlas.getWidth()/columns>=128,"GUI glyphs need high-density source cells");
+                        assertTrue(atlas.getHeight()/rows>=128,"GUI glyphs need high-density source cells");
                     }
                 }
             }

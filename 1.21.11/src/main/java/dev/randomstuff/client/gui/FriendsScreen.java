@@ -36,7 +36,7 @@ public final class FriendsScreen extends UiScreen {
         if(ClientContext.socialRegistry.isFriendName(name)){status=name+" is already a friend.";return;}
         ClientContext.socialRegistry.addFriend(name);status="Added "+name+".";nameBox.setValue("");rebuildWidgets();
     }
-    @Override public void render(GuiGraphics g,int mx,int my,float delta){
+    @Override protected void renderUi(GuiGraphics g,int mx,int my,float delta){
         backdrop(g);UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,height-top-24,t);
         UiDraw.text(g,font,"Friends",left+13,top+13,t.text());
         UiDraw.text(g,font,Integer.toString(friends.size()),left+panelWidth-28,top+13,t.accent());
@@ -52,7 +52,7 @@ public final class FriendsScreen extends UiScreen {
     @Override public boolean keyPressed(KeyEvent event){
         if((event.key()==257||event.key()==335)&&nameBox.isFocused()){addFriend();return true;}return super.keyPressed(event);
     }
-    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+    @Override protected boolean mouseScrolledUi(double mx,double my,double horizontal,double vertical){
         if(UiDraw.over(mx,my,left,top+65,panelWidth,height-top-90)){
             int next=Math.clamp(scroll-(int)Math.signum(vertical),0,Math.max(0,friends.size()-rows));
             if(next!=scroll){scroll=next;rebuildWidgets();}return true;

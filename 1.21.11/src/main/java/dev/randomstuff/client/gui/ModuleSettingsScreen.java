@@ -46,7 +46,7 @@ final class ModuleSettingsScreen extends UiScreen {
         return GuiSettings.editText(setting);
     }
     private int maxScroll(){return Math.max(0,visible.size()*ROW-viewHeight);}
-    @Override public void render(GuiGraphics g,int mx,int my,float delta){
+    @Override protected void renderUi(GuiGraphics g,int mx,int my,float delta){
         backdrop(g);UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,height-top-24,t);
         UiDraw.text(g,font,UiDraw.fit(font,GuiState.title(module.getName()),panelWidth-122),left+12,top+15,t.text());
         UiDraw.text(g,font,UiDraw.fit(font,module.getDescription()==null?"":module.getDescription(),panelWidth-24),left+12,top+31,t.muted());
@@ -80,11 +80,11 @@ final class ModuleSettingsScreen extends UiScreen {
         chrome(g,mx,my,delta);
     }
     @SuppressWarnings({"rawtypes","unchecked"}) private void change(Setting setting,Object next){setting.setValue(next);editing=null;message="";rebuildWidgets();}
-    @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubled){
+    @Override protected boolean mouseClickedUi(MouseButtonEvent event,boolean doubled){
         if(binding){
             if(event.button()>=0){module.setKeybind(new Keybind(event.button(),module.getKeybind().mode(),true));binding=false;rebuildWidgets();return true;}
         }
-        if(super.mouseClicked(event,doubled))return true;
+        if(super.mouseClickedUi(event,doubled))return true;
         int start=top+74;
         if(!UiDraw.over(event.x(),event.y(),left+8,start,panelWidth-16,viewHeight))return false;
         int i=((int)event.y()-start+scroll)/ROW;if(i<0||i>=visible.size())return false;
@@ -120,7 +120,7 @@ final class ModuleSettingsScreen extends UiScreen {
             editing=null;message="";rebuildWidgets();
         }catch(RuntimeException failure){message="Invalid value. Check the format or allowed range.";}
     }
-    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+    @Override protected boolean mouseScrolledUi(double mx,double my,double horizontal,double vertical){
         if(UiDraw.over(mx,my,left,top+74,panelWidth,viewHeight)){scroll=Math.clamp(scroll-(int)(vertical*ROW*2),0,maxScroll());return true;}return false;
     }
     @Override public boolean keyPressed(KeyEvent event){

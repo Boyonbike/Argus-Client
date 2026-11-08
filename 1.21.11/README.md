@@ -23,7 +23,7 @@ Use the client's existing GUI keybind or type `/randomstuff` in chat.
 | Control | Action |
 | --- | --- |
 | **Modules** tab | Floating category windows and a Favourites window |
-| **Search** tab | Open global search with the input focused immediately |
+| **Search** floating panel | Search modules, aliases and settings inside the right-shift menu |
 | **Friends** tab or `/friends` | Add, remove and list friends |
 | **HUD** tab | Open the existing HUD editor |
 | **Theme** tab | Choose Light/Dark, accent colour, grid snapping and reset positions |
@@ -40,7 +40,9 @@ highlight. Module names and descriptions appear in hover tooltips.
 
 ### Search
 
-**Click Search and start typing. No keyboard shortcut is required.**
+**Search is a draggable, collapsible dropdown panel beside the category panels.**
+Expand it if needed, click its text box and type. It is not a top navigation tab
+and does not require a shortcut.
 
 Search ranks module names, aliases and individual settings together. Exact and
 substring matches appear before approximate matches, so minor typing mistakes
@@ -49,16 +51,24 @@ are tolerated. Each result shows its type and owning category/module.
 - Left-click a module result to toggle it.
 - Right-click a result to open the module's settings.
 - Click a setting result to open its owning module and reveal that setting.
-- Arrow keys select results; Enter toggles/opens, and Shift+Enter opens settings.
-- Escape returns to the previous screen. Ctrl+F is an optional alternative.
+- Drag its header to move it; use the header’s plus/minus control to expand or collapse it.
+- Scroll its results independently. Ctrl+F optionally focuses and reveals the same panel.
 
 ### Appearance
 
 The user-facing controls are **Light / Dark** and **Accent colour**, with Dark
 and Lavender as defaults. Accent choices are Lavender, Blue, Green, Peach,
 Pink and Red. The theme applies across modules, search, friends and settings.
-The GUI includes rounded panels and a pre-rendered Lexend Deca glyph atlas.
-The atlas avoids native TrueType loading during Minecraft resource reloads.
+The menu uses an independent, compact scale rather than inheriting Minecraft’s
+GUI zoom. **Theme → GUI scale** adjusts it, and clicking the percentage resets
+it to 100%. The default renders a category window at about 196 screen pixels
+wide on ordinary desktop windows.
+
+The font uses a 2048×896 pre-rendered atlas with 128-pixel glyph cells, four
+times the previous source resolution in each dimension. Text inputs use the
+same font, with matching cursor and selection positioning. Panels have
+antialiased, high-density rounded edges and category icons. The atlas avoids
+native TrueType loading during Minecraft resource reloads.
 
 The design and search interaction are inspired by
 [Catppuccin for Meteor Client](https://github.com/X-C-0/catppuccin-addon).
@@ -93,8 +103,9 @@ is an intermediate build artifact.
 The build compiles the GUI against Mojang mappings, remaps it to Fabric
 intermediary names, and merges it into the supplied compiled base. It preserves
 the core Mixin metadata and registers the source-built GUI integration.
-JUnit tests cover search ranking, settings dependencies and collections,
-preferences, layout, namespace consistency, migration and shared-field linkage.
+JUnit tests cover search ranking, inline placement, GUI/input scaling, font and
+art resolution, settings dependencies, preferences, layout, namespaces, migration
+and shared-field linkage. The build also rejects packaged saved configurations.
 
 ## Source and data
 
@@ -110,6 +121,9 @@ rebuilds the available and newly implemented GUI source and combines it with
 that compiled base. The runtime mod/resource ID is `randomstuffclient`, and
 packages are under `dev.randomstuff`.
 
+No user config, preset, saved window layout or friend list is bundled in the
+repository or release JAR; releases start with factory defaults.
+
 Settings are stored in `randomstuffclient/` inside the instance's game directory;
 GUI-only preferences are in `randomstuffclient/gui.properties`. An upgrade
 copies a previous settings folder if the new folder does not exist. Existing
@@ -123,4 +137,5 @@ To regenerate the GUI font atlas offline (JDK only):
 
 ```sh
 java -Djava.awt.headless=true tools/BakeGuiFont.java
+java -Djava.awt.headless=true tools/BakeGuiArt.java
 ```

@@ -7,6 +7,12 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import static org.junit.jupiter.api.Assertions.*;
 final class GuiEntrypointTest {
+    @Test void highDensityInputAccessorTargetsTheActualSelectionField() throws Exception {
+        try(var source=getClass().getResourceAsStream("/net/minecraft/client/gui/components/EditBox.class")){
+            assertNotNull(source);var type=new ClassNode();new ClassReader(source).accept(type,0);
+            assertTrue(type.fields.stream().anyMatch(field->field.name.equals("highlightPos")&&field.desc.equals("I")));
+        }
+    }
     @Test void guiBindIntegrationTargetsRealCoreMethodsAndHasRegisteredMixin() throws Exception {
         try(var resource=getClass().getResourceAsStream("/randomstuffclient.gui.mixins.json")){
             assertNotNull(resource,"The GUI bind integration needs a packaged Mixin configuration");
