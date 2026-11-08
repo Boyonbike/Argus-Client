@@ -1,0 +1,75 @@
+plugins {
+    id 'fabric-loom' version '1.18.4'
+}
+
+version = project.mod_version
+group = 'dev.randomstuff'
+base { archivesName = 'random-stuff-client-gui' }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    modCompileOnly files('libs/client-base.jar')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+
+// Compile/remap the GUI, then combine it with the existing client at runtime names.
+// Only the GUI classes and newly compiled SearchPanel replace packaged content.
+def mergedMetadata = layout.buildDirectory.file('generated/merged/fabric.mod.json')
+tasks.register('prepareMergedMetadata') {
+    inputs.file('libs/client-base.jar')
+    outputs.file(mergedMetadata)
+    doLast {
+        def zip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
+        try {
+            def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            data.name = 'Random Stuff Client'
+            data.version = project.version.toString()
+            data.description = 'Random Stuff Client with module search, a tabbed module menu, and Friends management.'
+            data.entrypoints.client += 'dev.randomstuff.client.gui.FriendsMod'
+            def target = mergedMetadata.get().asFile
+            target.parentFile.mkdirs()
+            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)) + '\n'
+        } finally {
+            zip.close()
+        }
+    }
+}
+tasks.register('mergeClient', Jar) {
+    dependsOn tasks.remapJar, tasks.prepareMergedMetadata
+    archiveFileName = 'random-stuff-client.jar'
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    from(zipTree(file('libs/client-base.jar'))) {
+        exclude 'fabric.mod.json', 'META-INF/MANIFEST.MF', 'dev/eggclient/client/gui/panels/SearchPanel.class'
+    }
+    from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
+        include 'dev/randomstuff/**', 'dev/eggclient/client/gui/panels/SearchPanel.class'
+    }
+    from(mergedMetadata) { into '' }
+    // Preserve the base client's static Mixin remapping and runtime namespace metadata.
+    doFirst {
+        def baseZip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
+        try {
+            def original = new java.util.jar.Manifest(baseZip.getInputStream(baseZip.getEntry('META-INF/MANIFEST.MF')))
+            manifest.attributes(original.mainAttributes.collectEntries { key, value -> [(key.toString()): value.toString()] })
+        } finally {
+            baseZip.close()
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+tasks.build { dependsOn tasks.mergeClient }
+
+tasks.test { useJUnitPlatform() }

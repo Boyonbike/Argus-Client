@@ -6,7 +6,7 @@ import dev.eggclient.client.modules.Module;
 import dev.eggclient.client.modules.ModuleCategory;
 import dev.eggclient.client.render.TextUtils;
 // Mojang name for net.minecraft.class_4587. If your project uses Yarn, import MatrixStack instead.
-import net.minecraft.class_4587;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -45,7 +45,7 @@ public class SearchPanel extends Panel {
     }
 
     @Override
-    public void render(class_4587 poseStack, double mouseX, double mouseY) {
+    public void render(PoseStack poseStack, double mouseX, double mouseY) {
         String query = currentQuery();
         if (!query.equals(lastQuery)) {
             rebuild(query);
@@ -60,7 +60,7 @@ public class SearchPanel extends Panel {
             return "";
         }
         // class_342#method_1882 == EditBox#getValue (Mojang) / TextFieldWidget#getText (Yarn)
-        return gui.getSearchBox().method_1882().trim();
+        return gui.getSearchBox().getValue().trim();
     }
 
     private void rebuild(String query) {
