@@ -54,6 +54,11 @@ class RekitPlannerTest {
         assertEquals(new RekitPlanner.Move(2, 1, true), choose(saved, gear("sword sharp5", 100), sources, false, false, true));
         assertNull(choose(saved, gear("sword sharp5", 450), sources, false, false, true));
     }
+    @Test void fullStorageStillUsesAWholeStackWhenAnEarlierSourceNeedsSplitting() {
+        assertEquals(new RekitPlanner.Move(1, 16, true), RekitPlanner.choose(
+                stack("stone", "saved", 16), stack("dirt", "dirt", 8),
+                List.of(stack("stone", "a", 64), stack("stone", "b", 16)), false, true, false, false));
+    }
     @Test void ignoresEmptyPresetSlotsAndDoesNotTrimExistingExcess() {
         assertNull(choose(RekitPlanner.Stack.EMPTY, stack("stone", "a", 12), List.of(stack("stone", "a", 64)), true, true, true));
         assertNull(choose(stack("stone", "a", 12), stack("stone", "a", 32), List.of(stack("stone", "a", 64)), false, true, false));

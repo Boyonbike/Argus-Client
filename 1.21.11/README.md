@@ -139,3 +139,56 @@ To regenerate the GUI font atlas offline (JDK only):
 java -Djava.awt.headless=true tools/BakeGuiFont.java
 java -Djava.awt.headless=true tools/BakeGuiArt.java
 ```
+
+## Auto Rekit
+
+Open **Player → AutoRekit → Manage rekit presets**. Arrange your inventory, worn armour and
+offhand, enter a preset name, and click **Save inventory**. Saving also selects
+that preset; click another saved preset to make it active. **Update** replaces a
+preset with your current inventory, and **Delete** asks for a second click.
+
+- **Auto** refills while a chest, barrel, ender chest, shulker box, hopper or
+  dispenser/dropper is open. **Manual** waits for the **Rekit** container button.
+- **Stack size** chooses the saved amounts or each item's full stack limit.
+  Existing excess is left alone.
+- **Replace damaged gear** upgrades carried tools, worn armour and offhand gear
+  to a better-durability exact match. Worn armour uses the normal equip action;
+  displaced gear returns to storage and your original hotbar item is restored.
+- Matching ignores custom/item names and damage; enchantments, potion contents,
+  and all other components must match. Minecraft's actual stackability still applies.
+- **Replace with larger stacks** swaps in a bigger matching stack if names prevent
+  merging. Displaced items return to storage. Partial replacements need a spare
+  storage slot for the displaced stack; unavailable replacements are skipped.
+- Unrecorded slots are untouched. Transfers pause while you carry an item on the
+  cursor and respect the client's click limit and the module's transfer delay.
+- While AutoRekit is enabled with an active preset, it takes priority over
+  ChestStealer in supported storage screens, including after a manual run.
+
+Inventory presets and the active selection persist in the normal module config.
+
+Presets saved before equipment support need **Update** once to record armour and offhand. Curse of Binding prevents replacing worn armour in survival, as in vanilla Minecraft.
+
+### Import Meteor or Argus configs
+
+Open **Settings → Presets → Import config**. Paste a file/folder path or drop a file into the import screen, choose a preset name, and select **Preview import**. Supported inputs are Meteor `modules.nbt`, Meteor profile folders, and Argus `modules.json` or Modules/Everything preset JSON. A folder containing several candidates asks you to choose one. Everything inputs import their module portion only.
+
+The preview lists modules to enable and unsupported enabled modules. Clear module counterparts transfer their on/off state; only explicitly compatible settings transfer. All other gameplay settings use declared **Argus defaults**, rather than your current values or Meteor defaults. Unrepresented gameplay modules are disabled when loaded. HUD, appearance and other client configuration stay as they are. Compatible binds can be imported optionally; the default keeps your current binds. Meteor addon modules without a supported counterpart are reported as skipped.
+
+**Save preset** imports without changing the running config. Choose **Load** afterwards to open the replacement warning. **Save current & load** lets you name and save your current configuration first; **Load without saving** skips that named save, and **Cancel** changes nothing. Save errors stop the load. Imported loads always create a complete gameplay recovery snapshot, including colours, binds and AutoRekit inventory presets. **Restore backup** opens the same confirmation flow, and recovery snapshots also appear under Modules. Existing native presets use the same replacement warning and retain their native category scope.
+
+#### From another instance
+
+In the import screen choose **From an instance**. Argus lists the other launcher instances (Prism/MultiMC `instances` folder) that have a Meteor folder; pick one, or paste/drop any instance, `minecraft` or `meteor-client` folder and press **Scan**. The screen shows everything in that folder with an Argus equivalent — **Modules** (main config or a saved profile), **Friends**, **Enemies**, **Waypoints** and **Macros** — with counts, and ticks the ones that have entries. Files with no Argus equivalent (HUD layout, Meteor settings, GUI/themes, accounts, proxies, addon data) are listed under *Stays in Meteor* and never read.
+
+**Import** saves the modules as a normal Modules preset (load it from Presets when ready, with the usual replacement warning) and **adds** friends, enemies, waypoints and macros to what Argus already has — existing entries are never changed or removed. Duplicates, invalid player names, waypoints with no matching dimension and macros without messages are skipped and listed under *Won’t transfer* with the reason; macro key combinations with modifiers import without a bind. Before adding anything Argus writes the current friends, waypoints and macros to `argusclient/import-backups/`, and stops if it can’t. Waypoints keep their server (from the Meteor file name) and dimension; Meteor icons and colours aren’t carried over. The Meteor folder is only read.
+
+Automatic server/world bindings load imported presets through the checked loader with a recovery backup; they do not interrupt connection with a popup. Import does not copy account/proxy data, friends, macros, themes or waypoints.
+
+## Credits and licensing
+
+The **Volytra Fly** ElytraFly mode is ported and adapted from
+[VolytraFly](https://github.com/Volizray/VolytraFly-Addon) by **Volizray**,
+released under **CC0 1.0 Universal**. The attribution, third-party notice and
+full licence text are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+and [licenses/VolytraFly-CC0.txt](licenses/VolytraFly-CC0.txt), and are packaged
+inside `argus-client.jar`.

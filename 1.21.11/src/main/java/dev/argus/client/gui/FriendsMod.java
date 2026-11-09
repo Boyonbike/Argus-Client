@@ -1,6 +1,8 @@
 package dev.argus.client.gui;
 
 import net.fabricmc.api.ClientModInitializer;
+import dev.argus.client.modules.player.AutoRekitModule;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -20,6 +22,8 @@ public final class FriendsMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         DescriptionCatalog.ensureApplied();
+        ScreenEvents.AFTER_INIT.register(MultiplayerProfiles::install);
+        ScreenEvents.AFTER_INIT.register(AutoRekitModule::addContainerButton);
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("argus").executes(ctx -> {
                 request = Request.MODULES;
@@ -36,6 +40,8 @@ public final class FriendsMod implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             GuiNavigation.tick();
+            AutoRekitModule rekit = AutoRekitModule.get();
+            if (rekit != null) rekit.tick(client);
             Request r = request;
             if (r == Request.NONE) return;
             request = Request.NONE;

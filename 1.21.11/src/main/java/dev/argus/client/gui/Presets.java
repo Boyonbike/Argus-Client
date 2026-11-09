@@ -61,6 +61,8 @@ final class Presets {
     }
 
     static boolean load(PresetCategory category, String name) {
+        if (category == PresetCategory.MODULES && dev.argus.client.config.importing.ImportedPresetStore.isImported(name))
+            return dev.argus.client.config.importing.ImportedPresetStore.load(name).success();
         if (!registry(category).applyPreset(name)) return false;
         applyLayout(category, name);
         return true;

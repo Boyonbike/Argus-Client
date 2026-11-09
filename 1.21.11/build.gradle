@@ -6,7 +6,17 @@ version = project.mod_version
 group = 'dev.argus'
 base { archivesName = 'argus-client-gui' }
 
+repositories { mavenCentral(); maven { url = 'https://maven.lenni0451.net/releases' } }
+
 dependencies {
+    implementation('io.netty:netty-handler-proxy:4.2.7.Final') { transitive = false }
+    implementation('io.netty:netty-codec-socks:4.2.7.Final') { transitive = false }
+    include('io.netty:netty-handler-proxy:4.2.7.Final') { transitive = false }
+    include('io.netty:netty-codec-socks:4.2.7.Final') { transitive = false }
+    implementation('net.raphimc:MinecraftAuth:5.0.2') { exclude group: 'com.google.code.gson' }
+    include('net.raphimc:MinecraftAuth:5.0.2') { transitive = false }
+    include('net.lenni0451.commons:httpclient:1.9.2') { transitive = false }
+    include('net.lenni0451.commons:gson:1.9.2') { transitive = false }
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -42,6 +52,7 @@ tasks.register('prepareMergedMetadata') {
             data.description = 'Argus Client with module search, a tabbed module menu, and Friends management.'
             data.entrypoints.client += 'dev.argus.client.gui.FriendsMod'
             data.mixins += 'argusclient.gui.mixins.json'
+            data.jars = [[file: 'META-INF/jars/netty-handler-proxy-4.2.7.Final.jar'], [file: 'META-INF/jars/netty-codec-socks-4.2.7.Final.jar'], [file: 'META-INF/jars/MinecraftAuth-5.0.2.jar'], [file: 'META-INF/jars/httpclient-1.9.2.jar'], [file: 'META-INF/jars/gson-1.9.2.jar']]
             def target = mergedMetadata.get().asFile
             target.parentFile.mkdirs()
             target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)) + '\n'
@@ -77,9 +88,11 @@ tasks.register('mergeClient', Jar) {
     from(zipTree(file('libs/client-base.jar'))) {
         exclude 'config/**', 'configs/**', 'argusclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
         exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/argus/client/gui/panels/SearchPanel.class', 'dev/argus/client/config/ClientDataDirectory*.class'
+        exclude 'dev/argus/client/modules/movement/ElytraFlyModule*.class'
+        exclude 'dev/argus/client/managers/HudModuleRegistry*.class'
     }
     from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
-        include 'dev/argus/**', 'assets/argusclient/descriptions.tsv', 'assets/argusclient/font/**', 'assets/argusclient/fonts/**', 'assets/argusclient/shaders/**', 'assets/argusclient/textures/font/**', 'assets/argusclient/textures/icons/**', 'argusclient.gui.mixins.json'
+        include 'META-INF/jars/**', 'dev/argus/**', 'THIRD_PARTY_NOTICES.md', 'licenses/**', 'assets/argusclient/descriptions.tsv', 'assets/argusclient/font/**', 'assets/argusclient/fonts/**', 'assets/argusclient/shaders/**', 'assets/argusclient/textures/font/**', 'assets/argusclient/textures/icons/**', 'argusclient.gui.mixins.json'
     }
     from(mergedMetadata) { into '' }
     from(mergedMixins) { into '' }
@@ -113,6 +126,12 @@ tasks.register('verifyReleaseConfig') {
             }
             def mixins = zip.getInputStream(zip.getEntry('argusclient.mixins.json')).text
             removedBaseMixins.each { assert !mixins.contains("\"${it}\"") : "Removed mixin still registered: ${it}" }
+            // Accounts/Proxies need their bundled libraries declared and present, and both mixins registered.
+            def metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            assert metadata.jars : 'No nested libraries declared'
+            metadata.jars.each { assert zip.getEntry(it.file) != null : "Declared nested library missing: ${it.file}" }
+            def guiMixins = zip.getInputStream(zip.getEntry('argusclient.gui.mixins.json')).text
+            ['AccountSessionAccessor', 'ConnectionProxyMixin'].each { assert guiMixins.contains("\"${it}\"") : "Mixin not registered: ${it}" }
         } finally { zip.close() }
     }
 }

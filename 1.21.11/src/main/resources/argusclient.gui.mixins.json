@@ -3,6 +3,17 @@
   "minVersion": "0.8",
   "package": "dev.argus.client.gui.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": ["UIModuleMixin", "EditBoxAccessor"],
-  "injectors": {"defaultRequire": 1}
+  "client": [
+    "UIModuleMixin",
+    "EditBoxAccessor",
+    "ModuleRegistryMixin",
+    "ChestStealerRekitMixin",
+    "ImportedPresetMixin",
+    "AccountSessionAccessor",
+    "ConnectionProxyMixin",
+    "SmartElytraTakeoffMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

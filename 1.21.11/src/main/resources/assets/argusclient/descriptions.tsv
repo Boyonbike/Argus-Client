@@ -799,6 +799,12 @@ ElytraFly	FallChestplate	Swaps to a chestplate when descending near enemies.
 ElytraFly	ResponsiveDescend	Uses your look pitch while descending.
 ElytraFly	MuteElytra	Mutes the elytra flight sound.
 ElytraFly	InfDurability	Selects how elytra durability is preserved.
+ElytraFly	volytraCustomSpeeds	Turns base and boost speeds on or off. Off flies Volytra's own speeds with no boost; on uses the four speed sliders and the boost key.
+ElytraFly	volytraBaseHorizontalSpeed	Horizontal speed while flying without boost.
+ElytraFly	volytraBaseVerticalSpeed	Climb and dive speed while flying without boost.
+ElytraFly	volytraBoostHorizontalSpeed	Horizontal speed while the boost key is held. The top of the slider, Volytra Max, uses Volytra's Horizontal Speed.
+ElytraFly	volytraBoostVerticalSpeed	Climb and dive speed while the boost key is held.
+ElytraFly	volytraBoostKey	Key or mouse button that boosts. Follows your Sprint key unless you pick another; Delete or reset returns it to Sprint.
 SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
 SpeedMine	Mode	Controls how the block list is filtered.
 SpeedMine	Damage	Mining progress needed before the block breaks.
@@ -2021,3 +2027,11 @@ WebhookNotifs	ChatMessages	Forwards public chat messages to the webhook.
 WebhookNotifs	VisualRange	Notifies when a player enters visual range.
 WebhookNotifs	Stash	Notifies when a stash message is detected.
 WebhookNotifs	Ping	Mentions everyone when a stash notification is sent.
+
+AutoRekit		Restores saved inventory, worn armour and offhand from open storage using a rekit preset.
+AutoRekit	Mode	Auto refills while storage is open; Manual waits for the Rekit button in the container screen.
+AutoRekit	Stack size	Saved counts refills to the captured amounts; Full stacks refills to each item's stack limit. Existing excess is left alone.
+AutoRekit	Replace damaged gear	Replaces damaged tools, worn armour and offhand gear with a higher-durability match, preserving item type, enchantments and other components. Names and damage are ignored for matching.
+AutoRekit	Replace with larger stacks	Swaps in a larger matching stack when different names prevent Minecraft from combining the stacks. The displaced stack goes back into storage.
+AutoRekit	Delay	Milliseconds between complete inventory transfers. The client's normal click limit still applies.
+AutoRekit	Active preset	The inventory preset to restore. Use Manage rekit presets to save, update, select or delete a preset.

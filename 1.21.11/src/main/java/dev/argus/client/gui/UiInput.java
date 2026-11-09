@@ -15,6 +15,9 @@ final class UiInput extends EditBox {
     static final int PAD = 7;
     private final String placeholder;
     private String icon;
+    private boolean secret;
+    UiInput secret(boolean value) { secret = value; return this; }
+    private String displayValue() { return secret ? "•".repeat(getValue().length()) : getValue(); }
     private int displayStart;
     private float focus, caret;
     private long lastEdit;
@@ -45,7 +48,7 @@ final class UiInput extends EditBox {
     private float w(String text) { return UiDraw.width(text); }
 
     private void alignCursor() {
-        String text = getValue(); int cursor = getCursorPosition();
+        String text = displayValue(); int cursor = getCursorPosition();
         displayStart = Math.clamp(displayStart, 0, cursor);
         if (w(text.substring(displayStart, cursor)) <= getWidth() - 2) return;
         int low = displayStart, high = cursor;
@@ -54,7 +57,7 @@ final class UiInput extends EditBox {
     }
 
     private int displayEnd() {
-        String text = getValue(); int low = displayStart, high = text.length();
+        String text = displayValue(); int low = displayStart, high = text.length();
         while (low < high) { int middle = (low + high + 1) / 2; if (w(text.substring(displayStart, middle)) <= getWidth() - 2) low = middle; else high = middle - 1; }
         return low;
     }
@@ -64,7 +67,7 @@ final class UiInput extends EditBox {
     @Override public void renderWidget(GuiGraphics g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         alignCursor();
-        String text = getValue(); int end = displayEnd();
+        String text = displayValue(); int end = displayEnd();
         focus = UiAnim.approach(focus, isFocused() ? 1 : 0, 16);
         boolean hover = isMouseOver(mx, my);
         float x = left(), y = getY() - 4, fw = getWidth() + (getX() - x) + PAD, fh = getHeight() + 8, r = Math.min(7, fh / 2);
@@ -100,7 +103,7 @@ final class UiInput extends EditBox {
 
     private int cursorAt(double mx) {
         alignCursor();
-        String text = getValue(); int end = displayEnd(); double point = mx - getX();
+        String text = displayValue(); int end = displayEnd(); double point = mx - getX();
         if (point < 0) return Math.max(0, displayStart - 1);
         if (point >= getWidth()) return Math.min(text.length(), end + 1);
         float previous = 0;

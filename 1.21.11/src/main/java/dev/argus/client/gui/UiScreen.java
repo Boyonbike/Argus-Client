@@ -139,6 +139,9 @@ public abstract class UiScreen extends Screen {
         minecraft.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, section, null));
     }
 
+    /** A modal keeps the parent visible and suppresses navigation shortcuts and chrome. */
+    protected boolean modal() { return false; }
+
     protected abstract void buildContent();
     protected abstract void renderUi(GuiGraphics g, int mx, int my, float delta);
 
@@ -157,6 +160,7 @@ public abstract class UiScreen extends Screen {
     }
 
     @Override public final void render(GuiGraphics g, int rawX, int rawY, float delta) {
+        if (modal() && parent != null) parent.render(g, -1000, -1000, delta);
         UiAnim.frame();
         int mx = (int) viewport.toLogical(rawX), my = (int) viewport.toLogical(rawY);
         mouseX = mx; mouseY = my;
@@ -176,8 +180,7 @@ public abstract class UiScreen extends Screen {
                 super.render(g, mx, my, delta);
             } finally { g.pose().popMatrix(); }
             UiRender.opacity = keepBackdrop ? 1 : appear;
-            tabs(g, mx, my);
-            footer(g);
+            if (!modal()) { tabs(g, mx, my); footer(g); }
             UiRender.opacity = appear;
             ColorPicker.render(g, mx, my, GuiState.theme());
             drawTooltip(g);
@@ -334,6 +337,7 @@ public abstract class UiScreen extends Screen {
     @Override public final boolean mouseClicked(MouseButtonEvent raw, boolean doubled) {
         if (closingAt != 0) return true;
         MouseButtonEvent event = logical(raw);
+        if (modal()) return mouseClickedUi(event, doubled);
         // An open colour picker takes the click first (a click outside it closes it).
         if (ColorPicker.click(event, doubled)) return true;
         if (event.button() == 0 && overFace(event.x(), event.y())) { setBarOpen(!barOpen()); return true; }
@@ -354,6 +358,7 @@ public abstract class UiScreen extends Screen {
     @Override public final boolean mouseDragged(MouseButtonEvent raw, double dx, double dy) {
         if (closingAt != 0) return false;
         MouseButtonEvent event = logical(raw);
+        if (modal()) return mouseDraggedUi(event, viewport.toLogical(dx), viewport.toLogical(dy));
         if (ColorPicker.dragged(event)) return true;
         if (pressedTab >= 0) {
             mouseX = (int) event.x();
@@ -414,6 +419,7 @@ public abstract class UiScreen extends Screen {
 
     @Override public boolean keyPressed(KeyEvent event) {
         if (closingAt != 0) return true;
+        if (modal()) return super.keyPressed(event);
         if (ColorPicker.key(event)) return true;
         if (UIModule.INSTANCE != null) {
             var bind = UIModule.INSTANCE.getKeybind();

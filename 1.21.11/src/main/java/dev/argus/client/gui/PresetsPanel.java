@@ -24,7 +24,7 @@ final class PresetsPanel {
     private final UiInput nameInput, addressInput;
     private final List<Hit> hits = new ArrayList<>();
     private int x, y, w, h;
-    private String selected, confirmDelete, status = "";
+    private String selected, confirmDelete, recoveryName, status = "";
     private boolean statusError;
     private long confirmAt, statusAt;
     private int scroll;
@@ -68,8 +68,21 @@ final class PresetsPanel {
     }
 
     private void load(String name) {
-        if (Presets.load(category, name)) status("Loaded " + name + ".", false);
-        else status("Couldn't find " + name + " any more.", true);
+        boolean imported = category == PresetCategory.MODULES && dev.argus.client.config.importing.ImportedPresetStore.isImported(name);
+        host.hostOpen(new PresetLoadConfirmationScreen(host, category, name, message -> {
+            if (imported) {
+                var result = dev.argus.client.config.importing.ImportedPresetStore.lastResult();
+                if (result != null) recoveryName = result.backupName();
+            }
+            status(message, false);
+        }));
+    }
+
+    private void importConfig() {
+        host.hostOpen(new ConfigImportScreen(host, name -> {
+            category = PresetCategory.MODULES; selected = name; scroll = 0;
+            status("Imported " + name + ". Choose Load when you’re ready.", false);
+        }));
     }
 
     private void overwrite(String name) {
@@ -119,6 +132,12 @@ final class PresetsPanel {
         hits.clear();
         UiDraw.icon(g, "star", x, y + 13.5f, 9, t.accent());
         UiDraw.bold(g, "Presets", x + 13, y + 18, UiDraw.TITLE, t.text());
+        float importWidth = pill(g, "Import config", x + w, y + 14, mx, my, t.accent(), true, this::importConfig);
+        if (recoveryName != null && Presets.exists(PresetCategory.MODULES, recoveryName))
+            pill(g, "Restore backup", x + w - importWidth - 5, y + 14, mx, my, t.green(), false, () -> {
+                PresetCategory previous = category; category = PresetCategory.MODULES;
+                load(recoveryName); category = previous;
+            });
         UiDraw.text(g, "Save configs and bind them to servers or worlds to load them automatically", x, y + 31, UiDraw.SMALL, t.muted());
         UiDraw.rect(g, x, y + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
         UiDraw.card(g, x - 6, y + 46, w + 12, 112, "star", "Save current config", "Pick what the preset covers, name it and save", 0, t);

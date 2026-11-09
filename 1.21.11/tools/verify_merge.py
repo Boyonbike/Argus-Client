@@ -38,10 +38,14 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     base_path = Path(__file__).resolve().parents[1] / 'libs/client-base.jar'
     with zipfile.ZipFile(base_path) as base:
         for name in base.namelist():
-            if name.startswith('dev/argus/client/config/ClientDataDirectory') or name.endswith('/') or name in {'fabric.mod.json', 'META-INF/MANIFEST.MF', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class',
+            if name.startswith('dev/argus/client/config/ClientDataDirectory') or name.startswith('dev/argus/client/modules/movement/ElytraFlyModule') or name.startswith('dev/argus/client/managers/HudModuleRegistry') or name.endswith('/') or name in {'fabric.mod.json', 'META-INF/MANIFEST.MF', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class',
                     'dev/argus/client/gui/panels/SearchPanel.class'}:
                 continue
             assert jar.read(name) == base.read(name), 'Base client content changed: ' + name
+    assert 'dev/argus/client/modules/movement/ElytraFlyModule.class' in jar.namelist(), 'ElytraFly override missing'
+    assert 'dev/argus/client/utils/movement/VolytraElytraFlyHandler.class' in jar.namelist(), 'Volytra handler missing'
+    assert 'dev/argus/client/modules/hud/VolytraSpeedHudModule.class' in jar.namelist(), 'Volytra speed HUD missing'
+    assert 'dev/argus/client/managers/HudModuleRegistry.class' in jar.namelist(), 'HUD registry override missing'
     mixins = json.loads(jar.read('argusclient.mixins.json'))
     assert 'LoadingOverlayMixin' not in mixins.get('client', []) + mixins.get('mixins', [])
 print('PASS: combined initializer, remapped GUI classes, branding, and classic Search panel')

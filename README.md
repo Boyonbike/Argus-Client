@@ -25,6 +25,7 @@ themes, ranked module/settings search, and Friends management. Client projects a
 - **Settings** holds Appearance, Presets, Friends and the other Client modules (Anti Cheat, Baritone, Discord, HUD, Notifications, Settings). Appearance is one scrolling page of cards: Theme (Light/Dark, scale, accent), Top bar, Windows, and the Menu, Colours and Fonts options.
 - Every setting has a reset icon that restores its default value. Settings are grouped into cards (General plus one per settings group) that fold open from their titles, and colour settings open a colour picker with hue, shade, transparency, hex entry, rainbow/theme sync and a saved palette you can add colours to.
 - **Settings → Presets** saves your current config (everything, or just modules, binds, HUD, colours, visuals or macros) under a name, loads it back, and binds it to any number of servers or singleplayer worlds so it loads automatically when you join. Presets are the same files the `/preset` and `/autopreset` commands use.
+- **Settings → Presets → Import config** previews Meteor NBT and Argus JSON configs before saving them as presets. Module on/off states take priority; settings transfer only through clear mappings, otherwise using Argus defaults. Every manual Load warns before replacing the current config, offers **Save current & load**, and lets you cancel. Imported loads create recovery backups with a **Restore backup** action.
 - **Settings → Friends** (or `/friends`) adds, removes and lists friends.
 
 The combined client uses Argus Client branding, with Dark mode and
@@ -32,11 +33,21 @@ Lavender accents by default, with compact sizing and high-density font/art asset
 Text, corners and icons are rendered at your screen's real pixel size, and menus animate when they open, collapse, scroll and change. Minecraft's standard loading screen is used. Release JARs contain no saved user configuration. Its mod ID and resource namespace are `argusclient`, with Java packages
 under `dev.argus`.
 
+## Credits and licensing
+
+The **Volytra Fly** ElytraFly mode is ported and adapted from
+[VolytraFly](https://github.com/Volizray/VolytraFly-Addon) by **Volizray**,
+released under **CC0 1.0 Universal**. See the
+[third-party notices](1.21.11/THIRD_PARTY_NOTICES.md) for attribution and the
+[full CC0 text](1.21.11/licenses/VolytraFly-CC0.txt).
+
 ## Repository layout
 
 ```text
 1.21.11/
 ├── README.md                 Version-specific instructions
+├── THIRD_PARTY_NOTICES.md    Third-party attribution and licence notices
+├── licenses/                 Full third-party licence texts
 ├── src/main/java/            Available client GUI source
 ├── src/test/java/            Regression tests
 ├── libs/client-base.jar      Compiled underlying client

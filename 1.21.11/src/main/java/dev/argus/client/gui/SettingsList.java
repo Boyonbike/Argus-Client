@@ -2,6 +2,7 @@ package dev.argus.client.gui;
 
 import dev.argus.client.modules.Module;
 import dev.argus.client.settings.ColorSetting;
+import dev.argus.client.settings.KeyBindSetting;
 import dev.argus.client.settings.NamedEntry;
 import dev.argus.client.settings.SetSetting;
 import dev.argus.client.settings.Setting;
@@ -28,6 +29,8 @@ final class SettingsList {
     private List<Setting<?>> visible = List.of();
     private UiInput editor;
     private Setting<?> editing, sliding;
+    /** A key setting waiting for its next key or mouse button. */
+    private KeyBindSetting capturing;
     private String message = "";
     private long messageAt;
     /** Details popup: the row under the pointer, since when, and where it was drawn. */
@@ -91,6 +94,7 @@ final class SettingsList {
     boolean editing() { return editing != null; }
     String hint() {
         if (!message.isEmpty() && (System.nanoTime() - messageAt) / 1e9f < 4.5f) return null;
+        if (capturing != null) return "Press a key or mouse button · Esc cancels · Delete restores the default";
         return editing != null ? "Enter applies · Esc cancels" : "Click to change · Drag sliders · The reset icon restores the default";
     }
     String message() { return message.isEmpty() || (System.nanoTime() - messageAt) / 1e9f >= 4.5f ? "" : message; }
@@ -111,6 +115,7 @@ final class SettingsList {
     private float sliderX() { return right() - 34 - SLIDER; }
 
     static String value(Setting<?> setting) {
+        if (setting instanceof KeyBindSetting bind) return bind.displayName();
         Object value = setting.getValue();
         if (value instanceof NamedEntry named) return named.getName();
         if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" · %d%%", Math.round(colour.getAlpha() / 2.55)) : "");
@@ -196,6 +201,15 @@ final class SettingsList {
                 editor.visible = rowY >= clipTop() - 2 && rowY + ROW <= clipBottom() + 2;
                 editorShown = editor.visible;
                 editor.render(g, mx, my, delta);
+            } else if (setting instanceof KeyBindSetting bind) {
+                boolean listening = capturing == bind;
+                String text = listening ? "Press a key…" : UiDraw.fit(bind.displayName(), half - 40);
+                float pulse = listening ? .5f + .5f * (float) Math.sin(System.nanoTime() / 1.5e8) : 0;
+                float pw = UiDraw.width(text, UiDraw.SMALL) + 23, px = right - pw;
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, listening ? UiDraw.alpha(t.accent(), .18f + pulse * .12f) : UiDraw.mix(t.mantle(), t.overlay(), hv * .6f));
+                if (listening) UiDraw.outline(g, px, cy - 7, pw, 14, 7, .7f, UiDraw.alpha(t.accent(), .5f + pulse * .5f));
+                UiDraw.icon(g, "keyboard", px + 6, cy - 4, 8, listening ? t.accent() : t.muted());
+                UiDraw.text(g, text, px + 17, cy, UiDraw.SMALL, listening ? t.accent() : t.text());
             } else if (current instanceof Boolean enabled) {
                 UiDraw.toggle(g, right - 18, cy - 5, UiAnim.smooth(key + ".on", enabled ? 1 : 0, 16), hover && !resetHover, t);
             } else if (slider(setting)) {
@@ -250,6 +264,7 @@ final class SettingsList {
 
     private static String kind(Setting<?> setting) {
         Object value = setting.getValue();
+        if (setting instanceof KeyBindSetting) return "Key";
         if (value instanceof Boolean) return "Toggle";
         if (value instanceof Number) return "Number";
         if (value instanceof Enum<?> || value instanceof NamedEntry) return "Choice";
@@ -288,6 +303,7 @@ final class SettingsList {
         float right = right();
         if (editing == setting) return x + w / 2f;
         if (!setting.isVisible()) return right - UiDraw.width("Unavailable", UiDraw.SMALL);
+        if (setting instanceof KeyBindSetting bind) return right - UiDraw.width(capturing == bind ? "Press a key…" : bind.displayName(), UiDraw.SMALL) - 23;
         if (current instanceof Boolean) return right - 18;
         if (slider(setting)) return sliderX();
         if (current instanceof Enum<?> || current instanceof NamedEntry) return right - UiDraw.width(UiDraw.fit(value(setting), (w - 12) / 2f - 40)) - 30;
@@ -402,6 +418,7 @@ final class SettingsList {
     }
 
     private static String defaultText(Setting<?> setting) {
+        if (setting instanceof KeyBindSetting bind) return bind.followsName() + " key";
         Object value = setting.getDefaultValue();
         if (value instanceof Boolean b) return b ? "On" : "Off";
         if (value instanceof NamedEntry named) return named.getName();
@@ -421,7 +438,7 @@ final class SettingsList {
 
     void stopEditing() {
         if (editor != null) host.hostRemove(editor);
-        editor = null; editing = null;
+        editor = null; editing = null; capturing = null;
     }
 
     private void startEditing(Setting<?> setting) {
@@ -466,6 +483,7 @@ final class SettingsList {
     /** @return true if the click landed in the list (handled or not). */
     boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         double mx = event.x(), my = event.y();
+        if (capturing != null) { capturing.bindMouse(event.button()); capturing = null; return true; }
         if (editor != null && editor.visible && editor.isMouseOver(mx, my)) { host.hostFocus(editor); return editor.mouseClicked(event, doubled); }
         if (!UiDraw.over(mx, my, x, y, w, h) || my < clipTop() || my >= clipBottom()) { if (editing != null) stopEditing(); return false; }
         int i = (int) Math.floor((my - y + shownScroll) / ROW);
@@ -480,6 +498,7 @@ final class SettingsList {
         if (event.button() == 1) { reset(setting); return true; }
         if (event.button() != 0) return true;
         if (setting instanceof SetSetting<?> collection) host.hostOpen(new CollectionSettingScreen(host, collection));
+        else if (setting instanceof KeyBindSetting bind) { stopEditing(); capturing = bind; }
         else if (current instanceof Boolean enabled) change(setting, !enabled);
         else if (slider(setting) && mx >= sliderX() - 4 && mx <= sliderX() + SLIDER + 4) { sliding = setting; slideTo(setting, mx); }
         else if (current instanceof Enum<?> choice) {
@@ -507,6 +526,12 @@ final class SettingsList {
 
     /** Enter applies and Esc cancels an inline edit. */
     boolean keyPressed(KeyEvent event) {
+        if (capturing != null) {
+            if (event.key() == 259 || event.key() == 261) capturing.followDefault();
+            else if (event.key() != 256) capturing.bindKey(event.key());
+            capturing = null;
+            return true;
+        }
         if (editor == null || editing == null) return false;
         if (event.key() == 257 || event.key() == 335) { apply(); return true; }
         if (event.key() == 256) { stopEditing(); return true; }

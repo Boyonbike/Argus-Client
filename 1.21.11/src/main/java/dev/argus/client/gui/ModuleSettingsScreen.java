@@ -2,6 +2,7 @@ package dev.argus.client.gui;
 
 import dev.argus.client.modules.Keybind;
 import dev.argus.client.modules.Module;
+import dev.argus.client.modules.player.AutoRekitModule;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -30,9 +31,11 @@ final class ModuleSettingsScreen extends UiScreen {
         panelHeight = height - top - 24;
         cards.panelEdges(left, left + panelWidth);
         cards.reattach();
+        if (module instanceof AutoRekitModule rekit) addRenderableWidget(new UiButton(left + 14, top + 49, panelWidth - 28, 20,
+                "Manage rekit presets · save inventory", () -> minecraft.setScreen(new RekitPresetsScreen(this, rekit))));
     }
 
-    private float pageTop() { return top + HEAD; }
+    private float pageTop() { return top + HEAD + (module instanceof AutoRekitModule ? 26 : 0); }
     private float pageBottom() { return top + panelHeight - 24; }
     private String bindLabel() { return module.getKeybind().isUnbound() ? "Not bound" : module.getKeybind().getDisplayName(); }
     private float chipWidth(String label) { return UiDraw.width(label, UiDraw.SMALL) + 24; }
