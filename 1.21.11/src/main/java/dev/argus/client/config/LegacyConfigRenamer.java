@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Updates names left in saved configs by the clients Argus Client grew out of (Egg Client, Random
- * Stuff Client, Mio, Zio) to Argus Client. It runs over every .json and .properties file in the data
+ * Stuff Client, Mio, Zio) to Argus Client, including Zio's {@code "client": "zio"} marker. It runs over every .json and .properties file in the data
  * folder, presets included, and only rewrites files that actually change.
  */
 public final class LegacyConfigRenamer {
@@ -33,11 +33,15 @@ public final class LegacyConfigRenamer {
             {"https://github.com/Cypphi/open-zio", PROJECT_URL},
     };
 
-    /** Replaced only when they are the whole value (old watermark and welcome defaults). */
+    /** Replaced only when they are the whole key or value (old watermark, welcome, sign and setting names). */
     private static final Map<String, String> WHOLE = Map.of(
             "Mio", "Argus Client",
+            "Zio", "Argus Client",
             "ArgusClient", "Argus Client",
-            "Welcome to Mio.", "Welcome to Argus Client.");
+            "Welcome to Mio.", "Welcome to Argus Client.",
+            "Welcome to Zio.", "Welcome to Argus Client.",
+            "get Zio", "get Argus Client",
+            "IgnoreZio", "IgnoreArgus Client");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -117,6 +121,7 @@ public final class LegacyConfigRenamer {
                 if (!key.equals(entry.getKey()) && element.getAsJsonObject().has(key)) continue;
                 copy.add(key, rename(entry.getValue()));
             }
+            if ("zio".equals(string(copy, "client"))) copy.addProperty("client", "argusclient");
             updateSign(copy);
             return copy;
         }

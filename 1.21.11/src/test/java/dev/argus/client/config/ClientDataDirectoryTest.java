@@ -81,6 +81,72 @@ final class ClientDataDirectoryTest {
         assertEquals(EGG_MODULES, Files.readString(egg.resolve("modules.json")), "Egg Client folder must stay untouched");
     }
 
+    private static final String ZIO_MODULES = """
+            {
+              "client": "zio",
+              "AutoSign": {
+                "settings": {
+                  "Line1": "get Zio",
+                  "Line2": "at",
+                  "Line3": "github.com/",
+                  "Line4": "spectrumdevs/zio"
+                }
+              },
+              "Nametags": { "settings": { "IgnoreZio": true } },
+              "Announcer": { "settings": { "Message": "flew thanks to https://github.com/spectrumdevs/zio!" } }
+            }
+            """;
+
+    @Test
+    void importsZioSettingsAndUpdatesTheirNames() throws Exception {
+        Path zio = Files.createDirectory(game.resolve("zio"));
+        Files.writeString(zio.resolve("modules.json"), ZIO_MODULES);
+        Files.writeString(zio.resolve("hud.json"), """
+                {
+                  "Watermark": { "settings": { "Text": "Zio" } },
+                  "Welcomer": { "settings": { "Text": "Welcome to Zio." } }
+                }
+                """);
+        Path target = game.resolve("argusclient");
+
+        ClientDataDirectory.migrateLegacy(target);
+
+        JsonObject modules = read(target.resolve("modules.json"));
+        assertEquals("argusclient", modules.get("client").getAsString());
+        JsonObject sign = modules.getAsJsonObject("AutoSign").getAsJsonObject("settings");
+        assertEquals("get Argus Client", sign.get("Line1").getAsString());
+        assertEquals("at github.com/", sign.get("Line2").getAsString());
+        assertEquals("Boyonbike/", sign.get("Line3").getAsString());
+        assertEquals("Argus-Client", sign.get("Line4").getAsString());
+        JsonObject tags = modules.getAsJsonObject("Nametags").getAsJsonObject("settings");
+        assertTrue(tags.get("IgnoreArgus Client").getAsBoolean());
+        assertFalse(tags.has("IgnoreZio"));
+        assertEquals("flew thanks to https://github.com/Boyonbike/Argus-Client!",
+                modules.getAsJsonObject("Announcer").getAsJsonObject("settings").get("Message").getAsString());
+        JsonObject hud = read(target.resolve("hud.json"));
+        assertEquals("Argus Client", hud.getAsJsonObject("Watermark").getAsJsonObject("settings").get("Text").getAsString());
+        assertEquals("Welcome to Argus Client.",
+                hud.getAsJsonObject("Welcomer").getAsJsonObject("settings").get("Text").getAsString());
+        assertEquals(ZIO_MODULES, Files.readString(zio.resolve("modules.json")), "Zio folder must stay untouched");
+    }
+
+    @Test
+    void prefersEggClientWhenBothOldFoldersExist() throws Exception {
+        Files.createDirectory(game.resolve("zio"));
+        Files.writeString(game.resolve("zio/gui.properties"), "from=zio");
+        Files.createDirectory(game.resolve("eggclient"));
+        Files.writeString(game.resolve("eggclient/gui.properties"), "from=egg");
+        Path target = game.resolve("argusclient");
+        ClientDataDirectory.migrateLegacy(target);
+        assertEquals("from=egg", Files.readString(target.resolve("gui.properties")));
+    }
+
+    @Test
+    void leavesOtherValuesNamedZioAlone() {
+        String json = "{\"Mode\": \"zio\", \"Text\": \"Zion\"}";
+        assertEquals(json, LegacyConfigRenamer.renameJson(json), "Only the client marker is renamed from lowercase zio");
+    }
+
     @Test
     void updatesOldNamesInExistingArgusSettings() throws Exception {
         Path target = Files.createDirectory(game.resolve("argusclient"));

@@ -6,12 +6,12 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
- * Resolves the Argus Client data directory. On first start it imports an Egg Client settings folder
- * found next to it, and on every start it updates old client names inside the saved configs.
+ * Resolves the Argus Client data directory. On first start it imports an Egg Client or Zio settings
+ * folder found next to it, and on every start it updates old client names inside the saved configs.
  */
 public final class ClientDataDirectory {
-    /** Folder an Egg Client install keeps its settings in; imported, never written to. */
-    static final String EGG_FOLDER = "eggclient";
+    /** Folders Egg Client and Zio keep their settings in, in import priority; read, never written to. */
+    static final String[] IMPORT_FOLDERS = {"eggclient", "zio"};
 
     private ClientDataDirectory() {}
 
@@ -21,8 +21,13 @@ public final class ClientDataDirectory {
             if (!Files.isDirectory(target))
                 throw new UncheckedIOException(new IOException("Client data path is not a directory: " + target));
         } else {
-            Path egg = target.resolveSibling(EGG_FOLDER);
-            if (Files.isDirectory(egg, LinkOption.NOFOLLOW_LINKS)) copyInto(egg, target);
+            for (String folder : IMPORT_FOLDERS) {
+                Path previous = target.resolveSibling(folder);
+                if (Files.isDirectory(previous, LinkOption.NOFOLLOW_LINKS)) {
+                    copyInto(previous, target);
+                    break;
+                }
+            }
         }
         if (Files.isDirectory(target)) LegacyConfigRenamer.renameAll(target);
         return target;
@@ -50,7 +55,7 @@ public final class ClientDataDirectory {
             Files.move(staged, target);
         } catch (IOException failure) {
             if (staged != null) deleteQuietly(staged, failure);
-            throw new UncheckedIOException("Could not import Egg Client settings into " + target, failure);
+            throw new UncheckedIOException("Could not import settings from " + source + " into " + target, failure);
         }
     }
 
