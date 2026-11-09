@@ -52,4 +52,17 @@ final class GuiPreferencesTest {
         var p=GuiPreferences.load(path);assertEquals(GuiPreferences.Mode.DARK,p.mode);
         assertEquals(GuiPreferences.Accent.LAVENDER,p.accent);assertTrue(p.windows.isEmpty());
     }
+
+    @Test
+    void compactMovesAreSavedApartFromTheFullSizeLayout(@org.junit.jupiter.api.io.TempDir java.nio.file.Path temp) throws Exception {
+        var path = temp.resolve("gui.properties");
+        var p = new GuiPreferences();
+        p.windows.put("Combat", new GuiPreferences.Window(500, 80, false, 0, 1000, 30, 140, 420));
+        p.windows.put("Render", new GuiPreferences.Window(10, 64, false, 0, WindowFit.AUTO));
+        p.save(path);
+        var loaded = GuiPreferences.load(path);
+        assertEquals(new GuiPreferences.Window(500, 80, false, 0, 1000, 30, 140, 420), loaded.windows.get("Combat"));
+        assertEquals(WindowFit.AUTO, loaded.windows.get("Render").layoutWidth());
+        assertEquals(0, loaded.windows.get("Render").compactWidth());
+    }
 }

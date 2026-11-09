@@ -127,6 +127,8 @@ public abstract class UiScreen extends Screen {
         for (int i = 0; i < tabLabels.length; i++) {
             if (section != null && section.equals(tabSections[i])) return i;
             if (section == null && tabSections[i] == null && tabEntries[i].equals(PAGE_PREFIX + activeTab)) return i;
+            if (section != null && tabEntries[i].equals(PAGE_PREFIX + "HUD") && GuiState.preferences().hudTab == GuiPreferences.HudTab.SETTINGS
+                    && section.equals(SettingsScreen.hudSection())) return i;
         }
         return -1;
     }
@@ -402,9 +404,17 @@ public abstract class UiScreen extends Screen {
         Screen root = rootParent();
         switch (label) {
             case "Modules" -> minecraft.setScreen(new ModulesScreen(root));
-            case "HUD" -> ClientContext.getHudEditor().open();
+            case "HUD" -> { if (GuiState.preferences().hudTab == GuiPreferences.HudTab.SETTINGS) openSection(SettingsScreen.hudSection()); else openHudEditor(); }
             case "Settings" -> minecraft.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, null, null));
         }
+    }
+
+    /** Opens the HUD editor, or goes back to it when this page was opened from the editor. */
+    final void openHudEditor() {
+        Screen root = rootParent();
+        if (root instanceof ArgusHudEditorScreen editor) { beginClose(editor); return; }
+        if (ClientContext.getHudEditor() instanceof ArgusHudEditorScreen editor) editor.openOver(root);
+        else ClientContext.getHudEditor().open();
     }
 
     protected void backdrop(GuiGraphics g) {

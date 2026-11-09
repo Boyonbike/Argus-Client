@@ -79,6 +79,10 @@ final class Presets {
             JsonObject json = new JsonObject();
             json.addProperty("x", place.x()); json.addProperty("y", place.y());
             json.addProperty("collapsed", place.collapsed()); json.addProperty("scroll", place.scroll());
+            json.addProperty("layoutWidth", place.layoutWidth());
+            if (place.compactWidth() > 0) {
+                json.addProperty("compactX", place.compactX()); json.addProperty("compactY", place.compactY()); json.addProperty("compactWidth", place.compactWidth());
+            }
             windows.add(window, json);
         });
         layout.addProperty("version", 1);
@@ -100,7 +104,10 @@ final class Presets {
             JsonObject json = entry.getValue().getAsJsonObject();
             try {
                 windows.put(entry.getKey(), new GuiPreferences.Window(json.get("x").getAsInt(), json.get("y").getAsInt(),
-                        json.has("collapsed") && json.get("collapsed").getAsBoolean(), json.has("scroll") ? Math.max(0, json.get("scroll").getAsInt()) : 0));
+                        json.has("collapsed") && json.get("collapsed").getAsBoolean(), json.has("scroll") ? Math.max(0, json.get("scroll").getAsInt()) : 0,
+                        json.has("layoutWidth") ? Math.max(WindowFit.AUTO, json.get("layoutWidth").getAsInt()) : WindowFit.UNKNOWN,
+                        json.has("compactWidth") ? json.get("compactX").getAsInt() : 0, json.has("compactWidth") ? json.get("compactY").getAsInt() : 0,
+                        json.has("compactWidth") ? Math.max(0, json.get("compactWidth").getAsInt()) : 0));
             } catch (RuntimeException ignored) { }
         }
         GuiState.save();

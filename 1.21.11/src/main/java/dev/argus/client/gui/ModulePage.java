@@ -37,7 +37,7 @@ final class ModulePage {
             "On only while the key is held", "Off only while the key is held"};
 
     /** A button a module adds to the controls row. */
-    private record Action(String label, String icon, String hint, Runnable run) {}
+    private record Action(java.util.function.Supplier<String> label, String icon, String hint, Runnable run) {}
     /** A clickable region recorded while drawing, so clicks always match what is on screen. */
     private record Hit(float x, float y, float w, float h, int button, Runnable action) {}
 
@@ -83,7 +83,9 @@ final class ModulePage {
     ModulePage icon(String name) { icon = name; return this; }
 
     /** Adds a button to the controls row, e.g. a module's own manager screen. */
-    ModulePage action(String label, String icon, String hint, Runnable run) { actions.add(new Action(label, icon, hint, run)); return this; }
+    ModulePage action(String label, String icon, String hint, Runnable run) { return action(() -> label, icon, hint, run); }
+    /** An action whose label is read every frame, e.g. one that shows a current choice. */
+    ModulePage action(java.util.function.Supplier<String> label, String icon, String hint, Runnable run) { actions.add(new Action(label, icon, hint, run)); return this; }
 
     /** Places the page. {@code allowRail} shows the section list when there is room and more than one card. */
     void layout(float x, float y, float w, float h, float panelLeft, float panelRight, boolean allowRail) {
@@ -182,7 +184,11 @@ final class ModulePage {
         float hv = UiAnim.smooth(key + "sw.h", hover ? 1 : 0, 18);
         UiDraw.rounded(g, px, py, pw, ph, 9, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .6f), UiDraw.alpha(t.accent(), .2f + hv * .06f), on));
         UiDraw.outline(g, px, py, pw, ph, 9, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f), UiDraw.alpha(t.accent(), .55f), on));
-        UiDraw.text(g, module.isToggled() ? "Enabled" : "Disabled", px + 9, py + ph / 2, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        // The HUD module's switch shows or hides the whole HUD, so say that rather than "Enabled".
+        boolean hudSwitch = module instanceof dev.argus.client.modules.client.HUDModule;
+        String state = hudSwitch ? (module.isToggled() ? "HUD on" : "HUD off") : module.isToggled() ? "Enabled" : "Disabled";
+        UiDraw.text(g, state, px + 9, py + ph / 2, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        if (hover && hudSwitch) host.tooltip(key + "sw.hud", module.isToggled() ? "HUD is on" : "HUD is off", "Shows or hides every HUD element in game");
         UiDraw.toggle(g, px + pw - 25, py + 4, on, hover, t);
         hits.add(new Hit(px, py, pw, ph, 0, () -> { module.toggle(); UiAnim.set(key + "ring", 1); }));
     }
@@ -271,7 +277,8 @@ final class ModulePage {
 
         for (int i = actions.size() - 1; i >= 0; i--) {
             Action action = actions.get(i);
-            float aw = UiDraw.width(action.label(), UiDraw.SMALL) + (action.icon() == null ? 14 : 26);
+            String actionLabel = action.label().get();
+            float aw = UiDraw.width(actionLabel, UiDraw.SMALL) + (action.icon() == null ? 14 : 26);
             rx -= aw + 6;
             if (rx < cx) break;
             boolean hover = UiDraw.over(mx, my, rx, cy, aw, CHIP);
@@ -280,9 +287,9 @@ final class ModulePage {
             UiDraw.outline(g, rx, cy, aw, CHIP, 8, .6f, UiDraw.alpha(t.accent(), .35f + hv * .3f));
             float tx = rx + 7;
             if (action.icon() != null) { UiDraw.icon(g, action.icon(), tx, cy + 4, 8, t.accent()); tx += 12; }
-            UiDraw.text(g, action.label(), tx, cy + CHIP / 2, UiDraw.SMALL, t.accent());
+            UiDraw.text(g, actionLabel, tx, cy + CHIP / 2, UiDraw.SMALL, t.accent());
             hits.add(new Hit(rx, cy, aw, CHIP, 0, action.run()));
-            if (hover && action.hint() != null) host.tooltip(key + "act" + i, action.label(), action.hint());
+            if (hover && action.hint() != null) host.tooltip(key + "act" + i, actionLabel, action.hint());
         }
     }
 

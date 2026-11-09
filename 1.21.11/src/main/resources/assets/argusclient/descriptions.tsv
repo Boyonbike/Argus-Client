@@ -1589,6 +1589,10 @@ HUD	Radius	Radius of the HUD bloom glow.
 HUD	Strength	Intensity of the HUD bloom glow.
 HUD	SafeX	Horizontal safe-zone margin for HUD elements.
 HUD	SafeY	Vertical safe-zone margin for HUD elements.
+HUD	SafeLeft	Space kept clear between HUD elements and the left edge of the screen.
+HUD	SafeRight	Space kept clear between HUD elements and the right edge of the screen.
+HUD	SafeTop	Space kept clear between HUD elements and the top of the screen.
+HUD	SafeBottom	Space kept clear between HUD elements and the bottom of the screen.
 HUD	Fade	Color mode used for HUD elements.
 HUD	FadeOffset	Offsets the color gradient across HUD elements.
 HUD	ColorAmount	Number of raw colors used by the HUD.

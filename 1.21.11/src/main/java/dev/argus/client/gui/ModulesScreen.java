@@ -22,8 +22,16 @@ public final class ModulesScreen extends UiScreen {
         final ModuleCategory category;
         final Kind kind;
         final int order;
+        /** Where the window is shown; may be squeezed from its arrangement on a small screen. */
         int x, y, scroll, width = WIDTH;
+        /** The arrangement the user made, and the screen width it was made on ({@link WindowFit}). */
+        int layoutX, layoutY, layoutWidth = WindowFit.AUTO;
+        /** Where it was moved to in the compact view (only used there); compactWidth 0 = never moved there. */
+        int compactX, compactY, compactWidth;
         float shownX = Float.NaN, shownY, shownScroll, open, lift, scrollbar;
+        /** Seconds left before this window starts gliding to a new place after a resize. */
+        float reflowDelay;
+        boolean reflowing;
         boolean collapsed;
         Window(String name, ModuleCategory category, Kind kind, int order) { this.name = name; this.category = category; this.kind = kind; this.order = order; }
     }
@@ -53,6 +61,9 @@ public final class ModulesScreen extends UiScreen {
 
     @Override protected void buildContent() {
         String query = searchInput == null ? "" : searchInput.getValue();
+        // Resizing rebuilds the screen; windows keep where they were drawn so they can glide to their new places.
+        Map<String, Window> previous = new HashMap<>();
+        for (Window window : windows) previous.put(window.name, window);
         all = GuiState.modules(); windows.clear();
         int order = 0;
         // Client modules live in the Settings tab rather than a dropdown.
@@ -66,6 +77,8 @@ public final class ModulesScreen extends UiScreen {
         int[][] positions = CategoryLayout.arrange(categoryArea, heights);
         for (int i = 0; i < windows.size(); i++) restore(windows.get(i), positions[i][0], positions[i][1]);
         restore(searchWindow, width - searchWindow.width - 10, 64); windows.add(searchWindow);
+        fit();
+        reflowFrom(previous);
         searchIndex = all.stream().map(module -> new GuiSearch.Entry(module.getName(), module.getCategory().getName(),
                 Arrays.asList(module.getAliases()), List.of())).toList();
         searchInput = new UiInput(searchWindow.x + 6, searchWindow.y + HEADER + 8, searchWindow.width - 12, 12, "Search modules…").withIcon("search");
@@ -75,9 +88,58 @@ public final class ModulesScreen extends UiScreen {
 
     private void restore(Window window, int x, int y) {
         var saved = GuiState.preferences().windows.get(window.name);
-        window.x = saved == null ? x : Math.clamp(saved.x(), 10, Math.max(10, width - window.width - 10));
-        window.y = saved == null ? y : Math.max(MIN_Y, saved.y()); window.collapsed = saved != null && saved.collapsed(); window.scroll = saved == null ? 0 : saved.scroll();
+        boolean auto = saved == null || saved.layoutWidth() == WindowFit.AUTO;
+        // Untouched windows follow the default layout for this screen size.
+        window.layoutX = auto ? x : saved.x(); window.layoutY = auto ? y : saved.y();
+        window.layoutWidth = auto ? WindowFit.AUTO : saved.layoutWidth();
+        if (saved != null) { window.compactX = saved.compactX(); window.compactY = saved.compactY(); window.compactWidth = saved.compactWidth(); }
+        window.collapsed = saved != null && saved.collapsed(); window.scroll = saved == null ? 0 : saved.scroll();
         window.open = window.collapsed ? 0 : 1; window.shownScroll = window.scroll;
+    }
+
+    /**
+     * Shows the arrangement on this screen: unchanged if it fits. If it doesn't, windows moved in
+     * the compact view go where they were put there and the rest are squeezed around them.
+     */
+    private void fit() {
+        boolean compact = compact();
+        List<WindowFit.Box> boxes = new ArrayList<>();
+        for (Window window : windows) boxes.add(compact && window.compactWidth > 0
+                ? new WindowFit.Box(window.compactX, window.compactY, window.width, panelHeight(window, 1), window.compactWidth, true)
+                : new WindowFit.Box(window.layoutX, window.layoutY, window.width, panelHeight(window, 1), window.layoutWidth, false));
+        int[][] shown = WindowFit.fit(width, MIN_Y, boxes);
+        for (int i = 0; i < windows.size(); i++) { windows.get(i).x = shown[i][0]; windows.get(i).y = shown[i][1]; }
+    }
+
+    /** True while at least one hand-placed window is shown squeezed because the screen is too narrow. */
+    private boolean compact() {
+        for (Window window : windows) if (WindowFit.squeezed(width, window.layoutWidth)) return true;
+        return false;
+    }
+
+    /** After a resize, windows glide from where they were drawn, one after another left to right. */
+    private void reflowFrom(Map<String, Window> previous) {
+        if (previous.isEmpty()) return;
+        List<Window> moving = new ArrayList<>();
+        for (Window window : windows) {
+            Window old = previous.get(window.name);
+            if (old == null || Float.isNaN(old.shownX)) continue;
+            window.shownX = old.shownX; window.shownY = old.shownY; window.open = old.open; window.shownScroll = old.shownScroll;
+            if (Math.abs(window.shownX - window.x) > .5f || Math.abs(window.shownY - window.y) > .5f) moving.add(window);
+        }
+        moving.sort(Comparator.comparingInt((Window window) -> window.x).thenComparingInt(window -> window.y));
+        for (int i = 0; i < moving.size(); i++) { moving.get(i).reflowing = true; moving.get(i).reflowDelay = Math.min(i * .028f, .2f); }
+    }
+
+    /**
+     * A dropped window: in the compact view the move only changes the compact view, so the
+     * full-size arrangement is untouched; at full size it becomes part of the arrangement.
+     */
+    private void place(Window window) {
+        if (compact()) { window.compactX = window.x; window.compactY = window.y; window.compactWidth = width; return; }
+        window.layoutX = window.x; window.layoutY = window.y; window.layoutWidth = width;
+        // Once anything is arranged by hand, the rest stop following the default layout so they can't drift into it.
+        for (Window other : windows) if (other.layoutWidth == WindowFit.AUTO) { other.layoutX = other.x; other.layoutY = other.y; other.layoutWidth = width; }
     }
 
     private List<Module> modules(Window window) {
@@ -115,7 +177,13 @@ public final class ModulesScreen extends UiScreen {
         canvasShown = UiAnim.approach(canvasShown, canvasScroll, 18);
         for (Window window : windows) {
             if (Float.isNaN(window.shownX)) { window.shownX = window.x; window.shownY = window.y; }
-            if (!groupStart.containsKey(window)) { window.shownX = UiAnim.approach(window.shownX, window.x, 22); window.shownY = UiAnim.approach(window.shownY, window.y, 22); }
+            if (window.reflowDelay > 0) window.reflowDelay -= UiAnim.delta();
+            else if (!groupStart.containsKey(window)) {
+                // Resize reflows glide a little slower than drags so the reshuffle reads clearly.
+                float speed = window.reflowing ? 11 : 22;
+                window.shownX = UiAnim.approach(window.shownX, window.x, speed); window.shownY = UiAnim.approach(window.shownY, window.y, speed);
+                if (window.shownX == window.x && window.shownY == window.y) window.reflowing = false;
+            }
             window.open = UiAnim.approach(window.open, window.collapsed ? 0 : 1, 15);
             window.lift = UiAnim.approach(window.lift, groupStart.containsKey(window) ? 1 : 0, 14);
             window.scroll = Math.clamp(window.scroll, 0, Math.max(0, contentHeight(window) - viewHeight(window)));
@@ -141,11 +209,28 @@ public final class ModulesScreen extends UiScreen {
             UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(theme.accent(), .7f));
         }
         g.disableScissor();
+        drawCompactHint(g, theme);
         searchInput.active = searchInput.visible;
         if (!searchInput.visible && getFocused() == searchInput) setFocused(null);
     }
 
     private float gridFade;
+
+    /** A small pill at the bottom while the arrangement is squeezed, so it's clear nothing was lost. */
+    private void drawCompactHint(GuiGraphics g, UiTheme theme) {
+        float shown = UiAnim.smooth("modules.compact", compact() ? 1 : 0, 7);
+        if (shown <= .01f) return;
+        String text = UiDraw.fit("Compact view · moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
+        float w = UiDraw.width(text, UiDraw.SMALL) + 22, h = 13, x = (width - w) / 2f, y = height - 16 + (1 - UiAnim.easeOutCubic(shown)) * 6;
+        float base = UiRender.opacity;
+        UiRender.opacity = base * shown;
+        try {
+            UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(theme.mantle(), .92f));
+            UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.alpha(theme.accent(), .45f));
+            UiDraw.circle(g, x + 8, y + h / 2, 1.8f, theme.accent());
+            UiDraw.text(g, text, x + 14, y + h / 2, UiDraw.SMALL, theme.muted());
+        } finally { UiRender.opacity = base; }
+    }
 
     /** The snap grid, faded in while a window is being dragged (if enabled in Appearance). */
     private void drawGrid(GuiGraphics g, UiTheme theme) {
@@ -386,6 +471,8 @@ public final class ModulesScreen extends UiScreen {
             Window member = entry.getKey(); int[] start = entry.getValue();
             member.shownX = start[0] + moveX; member.shownY = start[1] + moveY;
             member.x = start[0] + snapX; member.y = start[1] + snapY;
+            member.reflowing = false; member.reflowDelay = 0;
+            place(member);
         }
         remember(); return true;
     }
@@ -466,6 +553,8 @@ public final class ModulesScreen extends UiScreen {
         return super.charTyped(event);
     }
 
-    private void remember() { for (Window window : windows) GuiState.preferences().windows.put(window.name, new GuiPreferences.Window(window.x, window.y, window.collapsed, window.scroll)); }
+    private void remember() { for (Window window : windows) GuiState.preferences().windows.put(window.name,
+            new GuiPreferences.Window(window.layoutX, window.layoutY, window.collapsed, window.scroll, window.layoutWidth,
+                    window.compactX, window.compactY, window.compactWidth)); }
     @Override public void removed() { remember(); super.removed(); }
 }

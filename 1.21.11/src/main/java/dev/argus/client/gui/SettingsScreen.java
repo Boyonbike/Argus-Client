@@ -4,6 +4,7 @@ import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
 import dev.argus.client.modules.client.FontsModule;
+import dev.argus.client.modules.client.HUDModule;
 import dev.argus.client.modules.client.UIModule;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,18 @@ final class SettingsScreen extends UiScreen {
     static boolean isSection(String name) {
         return APPEARANCE.equals(name) || PRESETS.equals(name) || FRIENDS.equals(name) || clientModules().stream().anyMatch(m -> m.getName().equals(name));
     }
+    /** The Settings section holding the HUD module (its name, normally "HUD"). */
+    static String hudSection() {
+        for (Module module : GuiState.modules()) if (module instanceof HUDModule) return module.getName();
+        return "HUD";
+    }
+    static void toggleHudTab() {
+        var p = GuiState.preferences();
+        p.hudTab = p.hudTab == GuiPreferences.HudTab.EDITOR ? GuiPreferences.HudTab.SETTINGS : GuiPreferences.HudTab.EDITOR;
+        GuiState.save();
+    }
+    /** Flips the HUD tab's target and re-lays the top bar so the tab's highlight follows at once. */
+    private void flipHudTab() { toggleHudTab(); layoutTabs(); }
     static String sectionLabel(String name) { return APPEARANCE.equals(name) || PRESETS.equals(name) || FRIENDS.equals(name) ? name : GuiState.title(name); }
 
     /** One icon per section, used in the sidebar, the top-bar chips and icon-style tabs. */
@@ -120,6 +133,11 @@ final class SettingsScreen extends UiScreen {
         } else {
             Module module = modules.stream().filter(m -> m.getName().equals(name)).findFirst().orElse(null);
             if (module != null) page = new ModulePage(this, module, focus, false).icon(icon(module.getName()));
+            if (module instanceof HUDModule) page
+                    .action(() -> "HUD tab opens: " + (GuiState.preferences().hudTab == GuiPreferences.HudTab.EDITOR ? "Editor" : "Settings"), "sliders",
+                            "Click to switch whether the HUD tab in the top bar opens the on-screen editor or this page", this::flipHudTab)
+                    .action(() -> rootParent() instanceof ArgusHudEditorScreen ? "Back to editor" : "Open HUD editor", "hud",
+                            "Add, remove and arrange HUD elements on your screen", this::openHudEditor);
         }
         if (name.equals(PRESETS) && presets == null) presets = new PresetsPanel(this);
         if (name.equals(FRIENDS) && friends == null) friends = new FriendsPanel(this);
@@ -216,7 +234,7 @@ final class SettingsScreen extends UiScreen {
     }
 
     static String chipLabel(String entry) {
-        if (entry.startsWith(UiScreen.PAGE_PREFIX)) { String page = entry.substring(UiScreen.PAGE_PREFIX.length()); return page.equals("HUD") ? "HUD editor" : page; }
+        if (entry.startsWith(UiScreen.PAGE_PREFIX)) { String page = entry.substring(UiScreen.PAGE_PREFIX.length()); return page; }
         String label = sectionLabel(entry);
         return label.equalsIgnoreCase("HUD") ? "HUD settings" : label;
     }
@@ -355,7 +373,14 @@ final class SettingsScreen extends UiScreen {
         UiDraw.text(g, "Tab style", ix, row + 9, UiDraw.SMALL, t.muted());
         segmented(g, "app.tabstyle", new String[]{"Names", "Icons"}, p.tabStyle == GuiPreferences.TabStyle.ICONS ? 1 : 0, ix + 50, row, 110, mx, my, t,
                 i -> { p.tabStyle = i == 1 ? GuiPreferences.TabStyle.ICONS : GuiPreferences.TabStyle.NAMES; GuiState.save(); layoutTabs(); });
-        UiDraw.text(g, "Names switch to icons when they don't fit", ix + 168, row + 9, 6f, UiDraw.alpha(t.muted(), .7f));
+        // What the HUD tab opens, next to the tab style since it changes what a tab does.
+        float hudSegW = 110, hudSegX = ix + iw - hudSegW, hudLabelX = hudSegX - UiDraw.width("HUD tab opens", UiDraw.SMALL) - 8;
+        UiDraw.text(g, UiDraw.fit("Names switch to icons when they don't fit", Math.max(0, hudLabelX - ix - 176), 6f), ix + 168, row + 9, 6f, UiDraw.alpha(t.muted(), .7f));
+        UiDraw.text(g, "HUD tab opens", hudLabelX, row + 9, UiDraw.SMALL, t.muted());
+        segmented(g, "app.hudtab", new String[]{"Editor", "Settings"}, p.hudTab == GuiPreferences.HudTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
+                i -> { p.hudTab = i == 1 ? GuiPreferences.HudTab.SETTINGS : GuiPreferences.HudTab.EDITOR; GuiState.save(); layoutTabs(); });
+        if (UiDraw.over(mx, my, hudLabelX, row, ix + iw - hudLabelX, 18))
+            tooltip("app.hudtab.tip", "HUD tab", "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
         float cx = ix, cy = row + 26;
         for (String entry : barCandidates()) {
             float cw = UiDraw.width(chipLabel(entry), UiDraw.SMALL) + 26;

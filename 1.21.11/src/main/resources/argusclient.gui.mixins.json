@@ -16,7 +16,12 @@
     "ImportedPresetMixin",
     "AccountSessionAccessor",
     "ConnectionProxyMixin",
-    "SmartElytraTakeoffMixin"
+    "SmartElytraTakeoffMixin",
+    "HUDModuleMixin",
+    "ModuleConfigMixin",
+    "HudAnchorGroupMixin",
+    "HudMarginControllerMixin",
+    "ArmorModuleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
