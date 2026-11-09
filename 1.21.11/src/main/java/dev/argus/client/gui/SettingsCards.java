@@ -4,6 +4,7 @@ import dev.argus.client.modules.Module;
 import dev.argus.client.settings.Setting;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -18,19 +19,22 @@ final class SettingsCards {
     private static final class Section {
         final Setting<?> group;
         final SettingsList list;
+        final List<Setting<?>> members;
         final int size;
         float body;
         float top;
-        Section(Setting<?> group, SettingsList list, int size) { this.group = group; this.list = list; this.size = size; }
+        Section(Setting<?> group, SettingsList list, List<Setting<?>> members) { this.group = group; this.list = list; this.members = members; this.size = members.size(); }
         boolean open() { return group == null || group.isExpanded(); }
     }
 
+    private final UiScreen host;
     private final Module module;
     private final List<Section> sections = new ArrayList<>();
     private final String focusSetting;
     private float x, w;
 
     SettingsCards(UiScreen host, Module module, String focusSetting) {
+        this.host = host;
         this.module = module;
         this.focusSetting = focusSetting;
         if (focusSetting != null) GuiSettings.expandGroups(module.getSettings());
@@ -47,7 +51,41 @@ final class SettingsCards {
     private void add(UiScreen host, Setting<?> group, List<Setting<?>> members) {
         if (members.isEmpty()) return;
         boolean focused = focusSetting != null && members.stream().anyMatch(s -> s.getName().equals(focusSetting));
-        sections.add(new Section(group, new SettingsList(host, module, focused ? focusSetting : null, List.copyOf(members)), members.size()));
+        List<Setting<?>> copy = List.copyOf(members);
+        sections.add(new Section(group, new SettingsList(host, module, focused ? focusSetting : null, copy), copy));
+    }
+
+    // ---- sections, for the module page's section rail -----------------------------------------
+
+    int sectionCount() { return sections.size(); }
+    String title(int index) { Section s = sections.get(index); return s.group == null ? "General" : GuiState.title(s.group.getName()); }
+    String icon(int index) { return sections.get(index).group == null ? "sliders" : "misc"; }
+
+    /** Offset of a card from the top of the stack, using the current (animated) card heights. */
+    float offset(int index) {
+        float offset = 0;
+        for (int i = 0; i < index; i++) offset += UiDraw.CARD_HEAD + sections.get(i).body + GAP;
+        return offset;
+    }
+
+    /** Opens a folded card (the General card is always open). */
+    void open(int index) { Section s = sections.get(index); if (s.group != null) s.group.expanded = true; }
+
+    private static boolean changed(Setting<?> setting) { return !Objects.equals(setting.getValue(), setting.getDefaultValue()); }
+
+    /** Settings in a card that differ from their defaults. */
+    int changed(int index) { return (int) sections.get(index).members.stream().filter(SettingsCards::changed).count(); }
+    int changed() { int total = 0; for (int i = 0; i < sections.size(); i++) total += changed(i); return total; }
+
+    /** Restores every setting on the page to its default and flashes the rows that changed. */
+    int resetAll() {
+        stopEditing();
+        int count = 0;
+        for (Section s : sections) for (Setting<?> setting : s.members) if (changed(setting)) {
+            setting.reset(); count++;
+            UiAnim.set("set." + System.identityHashCode(setting) + ".reset", 1);
+        }
+        return count;
     }
 
     Module module() { return module; }
@@ -74,7 +112,8 @@ final class SettingsCards {
 
     void render(GuiGraphics g, int mx, int my, float delta, UiTheme t, float x, float y, float w, float clipTop, float clipBottom) {
         this.x = x; this.w = w;
-        for (Section s : sections) {
+        for (int index = 0; index < sections.size(); index++) {
+            Section s = sections.get(index);
             float target = s.open() ? s.list.contentHeight() + 6 : 0;
             s.body = UiAnim.approach(s.body, target, 16);
             s.top = y;
@@ -82,8 +121,19 @@ final class SettingsCards {
             String title = s.group == null ? "General" : GuiState.title(s.group.getName());
             // Open cards count the rows showing (options under a switch stay hidden until it is expanded).
             int count = s.open() ? s.list.rowCount() : s.size;
-            String subtitle = count + (count == 1 ? " setting" : " settings") + (s.group != null && !s.open() ? " · click to show" : "");
-            UiDraw.card(g, x, y, w, h, s.group == null ? "sliders" : "misc", title, subtitle, 40, t);
+            int changed = changed(index);
+            String subtitle = count + (count == 1 ? " setting" : " settings") + (changed > 0 ? " · " + changed + " changed" : "")
+                    + (s.group != null && !s.open() ? " · click to show" : "");
+            // Cards rise into place one after another when the page opens.
+            float appear = host.appear(index + 3), opacity = UiRender.opacity;
+            UiRender.opacity = opacity * appear;
+            g.pose().pushMatrix();
+            g.pose().translate(0, (1 - appear) * 10);
+            try {
+            boolean cardHover = UiDraw.over(mx, my, x, y, w, h) && my >= clipTop && my < clipBottom;
+            float lift = UiAnim.smooth("card.l." + module.getName() + "." + index, cardHover ? 1 : 0, 14);
+            UiDraw.card(g, x, y, w, h, icon(index), title, subtitle, 40, t);
+            if (lift > .01f) UiDraw.outline(g, x, y, w, h, 8, .7f, UiDraw.alpha(t.accent(), .28f * lift));
             if (s.group != null) {
                 boolean hover = UiDraw.over(mx, my, x, y, w, UiDraw.CARD_HEAD) && my >= clipTop && my < clipBottom;
                 float hv = UiAnim.smooth("card.h." + System.identityHashCode(s.group), hover ? 1 : 0, 20);
@@ -101,6 +151,7 @@ final class SettingsCards {
                 s.list.render(g, mx, my, delta, t);
                 g.disableScissor();
             }
+            } finally { g.pose().popMatrix(); UiRender.opacity = opacity; }
             y += h + GAP;
         }
     }

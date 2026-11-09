@@ -30,10 +30,8 @@ final class SettingsScreen extends UiScreen {
     /** Module asked for when opening (e.g. from search), so Appearance can scroll to its card. */
     private String focusModule;
     private List<Module> modules = List.of();
-    /** Settings of the selected client module section, as cards. */
-    private SettingsCards cards;
-    private float modScroll, shownModScroll;
-    private boolean scrollToFocus;
+    /** The selected client module, shown with the same page layout as every other module. */
+    private ModulePage page;
     /** The modules folded into Appearance, shown as cards. */
     private final List<SettingsList> appearanceLists = new ArrayList<>();
     private PresetsPanel presets;
@@ -104,24 +102,24 @@ final class SettingsScreen extends UiScreen {
         panelHeight = height - top - 24;
         modules = clientModules();
         if (!isSection(section)) section = APPEARANCE;
-        if (cards == null && appearanceLists.isEmpty() && presets == null && friends == null) select(section, focusSetting, false);
+        if (page == null && appearanceLists.isEmpty() && presets == null && friends == null) select(section, focusSetting, false);
         else layoutSection();
     }
 
     private void select(String name, String focus, boolean animate) {
-        if (cards != null) cards.stopEditing();
+        if (page != null) page.stopEditing();
         for (SettingsList card : appearanceLists) card.stopEditing();
         if (presets != null) presets.detach();
         if (friends != null) friends.detach();
         section = name; remembered = name;
-        cards = null; appearanceLists.clear();
+        page = null; appearanceLists.clear();
         if (name.equals(APPEARANCE)) {
             for (Module module : appearanceModules())
                 appearanceLists.add(new SettingsList(this, module, module.getName().equals(focusModule) ? focus : null));
             pageScroll = 0; shownPageScroll = 0;
         } else {
             Module module = modules.stream().filter(m -> m.getName().equals(name)).findFirst().orElse(null);
-            if (module != null) { cards = new SettingsCards(this, module, focus); modScroll = 0; shownModScroll = 0; scrollToFocus = focus != null; }
+            if (module != null) page = new ModulePage(this, module, focus, false).icon(icon(module.getName()));
         }
         if (name.equals(PRESETS) && presets == null) presets = new PresetsPanel(this);
         if (name.equals(FRIENDS) && friends == null) friends = new FriendsPanel(this);
@@ -132,7 +130,7 @@ final class SettingsScreen extends UiScreen {
 
     private void layoutSection() {
         int x = Math.round(contentX()), w = Math.round(contentWidth() - 8);
-        if (cards != null) { cards.panelEdges(left, left + panelWidth); cards.reattach(); }
+        if (page != null) page.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth, false);
         for (SettingsList card : appearanceLists) card.panelEdges(left, left + panelWidth);
         if (section.equals(PRESETS)) presets.layout(x, top, w, panelHeight);
         if (section.equals(FRIENDS)) friends.layout(x, top, w, panelHeight);
@@ -187,37 +185,7 @@ final class SettingsScreen extends UiScreen {
     // ---- client module section --------------------------------------------------------------
 
     private void module(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
-        if (cards == null) return;
-        Module module = cards.module();
-        float x = contentX(), w = contentWidth();
-        UiDraw.icon(g, icon(module.getName()), x, top + 13.5f, 9, t.accent());
-        UiDraw.bold(g, UiDraw.fit(GuiState.title(module.getName()), w - 124), x + 13, top + 18, UiDraw.TITLE, t.text());
-        String description = UiText.stripFormatting(module.getDescription());
-        if (description == null || description.isBlank()) description = "Client settings";
-        UiDraw.text(g, UiDraw.fit(description, w - 100), x, top + 31, UiDraw.SMALL, t.muted());
-        boolean hover = UiDraw.over(mx, my, x + w - 80, top + 10, 80, 18);
-        float on = UiAnim.smooth("cs.on." + module.getName(), module.isToggled() ? 1 : 0, 16);
-        UiDraw.right(g, module.isToggled() ? "Enabled" : "Disabled", x + w - 26, top + 19, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
-        UiDraw.toggle(g, x + w - 20, top + 14, on, hover, t);
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
-        float view = pageBottom() - pageTop(), total = cards.height();
-        if (scrollToFocus) { modScroll = cards.focusOffset(); shownModScroll = modScroll; scrollToFocus = false; }
-        modScroll = Math.clamp(modScroll, 0, Math.max(0, total - view));
-        shownModScroll = UiAnim.approach(shownModScroll, modScroll, 18);
-        g.enableScissor(Math.round(x - 4), Math.round(pageTop()), Math.round(x + w + 4), Math.round(pageBottom()));
-        if (cards.isEmpty()) UiDraw.center(g, "This module has no settings.", x, pageTop() + 16, w, t.muted());
-        else cards.render(g, mx, my, delta, t, x, pageTop() - shownModScroll, w, pageTop(), pageBottom());
-        g.disableScissor();
-        if (shownModScroll > 1) UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownModScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base());
-        if (total > view) {
-            float track = Math.max(16, view * view / total), offset = (view - track) * shownModScroll / Math.max(1, total - view);
-            UiDraw.rounded(g, x + w + 3, pageTop() + offset, 2, track, 1, UiDraw.alpha(t.overlay(), .8f));
-        }
-        cards.popup(g, t, width, height);
-        String message = cards.message();
-        UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click a card's title to fold it · hover a setting for details" : message, w), x, top + panelHeight - 11, UiDraw.SMALL,
-                message.isEmpty() ? UiDraw.alpha(t.muted(), .8f) : t.red());
+        if (page != null) page.render(g, mx, my, delta, t);
     }
 
     // ---- appearance page: a scrolling stack of cards ------------------------------------------
@@ -494,10 +462,7 @@ final class SettingsScreen extends UiScreen {
                 } else for (SettingsList card : appearanceLists) card.stopEditing();
             }
             default -> {
-                if (cards != null) {
-                    if (event.button() == 0 && UiDraw.over(mx, my, contentX() + contentWidth() - 80, top + 10, 80, 18)) { cards.module().toggle(); return true; }
-                    if (cards.mouseClicked(event, doubled, pageTop(), pageBottom())) return true;
-                }
+                if (page != null && page.mouseClicked(event, doubled)) return true;
             }
         }
         return super.mouseClickedUi(event, doubled);
@@ -505,7 +470,7 @@ final class SettingsScreen extends UiScreen {
 
     @Override protected boolean mouseDraggedUi(MouseButtonEvent event, double dx, double dy) {
         if (sliding != null) { slideTo(event.x()); return true; }
-        if (cards != null && cards.mouseDragged(event)) return true;
+        if (page != null && page.mouseDragged(event)) return true;
         for (SettingsList card : appearanceLists) if (card.mouseDragged(event)) return true;
         return super.mouseDraggedUi(event, dx, dy);
     }
@@ -521,7 +486,7 @@ final class SettingsScreen extends UiScreen {
             pendingScale = Double.NaN;
             return true;
         }
-        if (cards != null && cards.mouseReleased()) return true;
+        if (page != null && page.mouseReleased()) return true;
         for (SettingsList card : appearanceLists) if (card.mouseReleased()) return true;
         return super.mouseReleasedUi(event);
     }
@@ -533,14 +498,13 @@ final class SettingsScreen extends UiScreen {
             if (!UiDraw.over(mx, my, contentX() - 4, pageTop(), contentWidth() + 8, pageBottom() - pageTop())) return false;
             pageScroll = Math.max(0, pageScroll - (float) vertical * 40); return true;
         }
-        if (cards != null && UiDraw.over(mx, my, contentX() - 4, pageTop(), contentWidth() + 8, pageBottom() - pageTop())) { modScroll = Math.max(0, modScroll - (float) vertical * 40); return true; }
-        return false;
+        return page != null && page.mouseScrolled(mx, my, vertical);
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
         if (section.equals(PRESETS) && presets.keyPressed(event)) return true;
         if (section.equals(FRIENDS) && friends.keyPressed(event)) return true;
-        if (cards != null && cards.keyPressed(event)) return true;
+        if (page != null && page.keyPressed(event)) return true;
         for (SettingsList card : appearanceLists) if (card.keyPressed(event)) return true;
         return super.keyPressed(event);
     }

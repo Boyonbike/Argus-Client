@@ -34,11 +34,16 @@ tasks.withType(JavaCompile).configureEach {
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
-    withSourcesJar()
 }
 
+// The GUI-only jars are intermediate build steps, so keep them out of build/libs.
+// build/libs then holds just argus-client.jar, the one jar to install.
+def intermediateJars = layout.buildDirectory.dir('intermediates/jars')
+tasks.named('jar') { destinationDirectory = intermediateJars }
+tasks.named('remapJar') { destinationDirectory = intermediateJars }
+
 // Compile/remap the GUI, then combine it with the existing client at runtime names.
-// Only the GUI classes and newly compiled SearchPanel replace packaged content.
+// Only the GUI classes replace packaged content.
 def mergedMetadata = layout.buildDirectory.file('generated/merged/fabric.mod.json')
 tasks.register('prepareMergedMetadata') {
     inputs.file('libs/client-base.jar')
@@ -87,7 +92,7 @@ tasks.register('mergeClient', Jar) {
     destinationDirectory = layout.buildDirectory.dir('libs')
     from(zipTree(file('libs/client-base.jar'))) {
         exclude 'config/**', 'configs/**', 'argusclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
-        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/argus/client/gui/panels/SearchPanel.class', 'dev/argus/client/config/ClientDataDirectory*.class'
+        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/argus/client/config/ClientDataDirectory*.class'
         exclude 'dev/argus/client/modules/movement/ElytraFlyModule*.class'
         exclude 'dev/argus/client/managers/HudModuleRegistry*.class'
     }

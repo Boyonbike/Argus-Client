@@ -5,6 +5,11 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "UIModuleMixin",
+    "LegacyClickGuiMixin",
+    "MinecraftSetScreenMixin",
+    "ClickGuiSearchBoxMixin",
+    "HudEditorProviderMixin",
+    "HudEditorScreenAccessor",
     "EditBoxAccessor",
     "ModuleRegistryMixin",
     "ChestStealerRekitMixin",
