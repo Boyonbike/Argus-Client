@@ -1,5 +1,9 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.ClientContext;
+import dev.argus.client.modules.misc.BetterChatModule;
+import dev.argus.client.modules.misc.ChatToolsModule;
+
 import dev.argus.client.modules.Module;
 import dev.argus.client.settings.Setting;
 import java.util.ArrayList;
@@ -21,10 +25,15 @@ final class SettingsCards {
         final SettingsList list;
         final List<Setting<?>> members;
         final int size;
+        /** Title and icon for a card that isn't one of the module's own groups, or null. */
+        final String title, icon;
         float body;
         float top;
-        Section(Setting<?> group, SettingsList list, List<Setting<?>> members) { this.group = group; this.list = list; this.members = members; this.size = members.size(); }
+        Section(Setting<?> group, SettingsList list, List<Setting<?>> members, String title, String icon) {
+            this.group = group; this.list = list; this.members = members; this.size = members.size(); this.title = title; this.icon = icon;
+        }
         boolean open() { return group == null || group.isExpanded(); }
+        String title() { return title != null ? title : group == null ? "General" : GuiState.title(group.getName()); }
     }
 
     private final UiScreen host;
@@ -45,21 +54,38 @@ final class SettingsCards {
             else members.add(setting);
         }
         add(host, group, members);
+        addBetterChat(host);
         for (Section section : sections) section.body = section.open() ? section.list.contentHeight() + 6 : 0;
     }
 
-    private void add(UiScreen host, Setting<?> group, List<Setting<?>> members) {
+    private void add(UiScreen host, Setting<?> group, List<Setting<?>> members) { add(host, module, group, members, null, null); }
+
+    private void add(UiScreen host, Module owner, Setting<?> group, List<Setting<?>> members, String title, String icon) {
         if (members.isEmpty()) return;
         boolean focused = focusSetting != null && members.stream().anyMatch(s -> s.getName().equals(focusSetting));
         List<Setting<?>> copy = List.copyOf(members);
-        sections.add(new Section(group, new SettingsList(host, module, focused ? focusSetting : null, copy), copy));
+        sections.add(new Section(group, new SettingsList(host, owner, focused ? focusSetting : null, copy), copy, title, icon));
+    }
+
+    /**
+     * BetterChat is hidden and runs inside Chat Tools, so its settings follow Chat Tools' own as extra cards. Each card's
+     * list still belongs to BetterChat, so its descriptions and saving work as before.
+     */
+    private void addBetterChat(UiScreen host) {
+        if (!(module instanceof ChatToolsModule)) return;
+        Module betterChat = ClientContext.getModule(BetterChatModule.class);
+        if (betterChat == null) return;
+        List<Setting<?>> settings = betterChat.getSettings();
+        if (focusSetting != null) GuiSettings.expandGroups(settings);
+        for (var span : ChatSettingsSections.split(settings.stream().map(Setting::getName).toList()))
+            add(host, betterChat, null, settings.subList(span.from(), span.to()), span.title(), span.icon());
     }
 
     // ---- sections, for the module page's section rail -----------------------------------------
 
     int sectionCount() { return sections.size(); }
-    String title(int index) { Section s = sections.get(index); return s.group == null ? "General" : GuiState.title(s.group.getName()); }
-    String icon(int index) { return sections.get(index).group == null ? "sliders" : "misc"; }
+    String title(int index) { return sections.get(index).title(); }
+    String icon(int index) { Section s = sections.get(index); return s.icon != null ? s.icon : s.group == null ? "sliders" : "misc"; }
 
     /** Offset of a card from the top of the stack, using the current (animated) card heights. */
     float offset(int index) {
@@ -118,7 +144,7 @@ final class SettingsCards {
             s.body = UiAnim.approach(s.body, target, 16);
             s.top = y;
             float h = UiDraw.CARD_HEAD + s.body;
-            String title = s.group == null ? "General" : GuiState.title(s.group.getName());
+            String title = s.title();
             // Open cards count the rows showing (options under a switch stay hidden until it is expanded).
             int count = s.open() ? s.list.rowCount() : s.size;
             int changed = changed(index);

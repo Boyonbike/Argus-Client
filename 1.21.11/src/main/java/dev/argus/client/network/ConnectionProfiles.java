@@ -3,12 +3,15 @@ package dev.argus.client.network;
 import com.google.gson.*;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 
 /** Transactional persistence shared by both managers. Never falls back to an empty store on corruption. */
 public final class ConnectionProfiles {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Set<PosixFilePermission> PRIVATE_PERMISSIONS = PosixFilePermissions.fromString("rw-------");
     private final Path path;
     private List<ProxyEntry> proxies = new ArrayList<>();
     private List<AccountEntry> accounts = new ArrayList<>();
@@ -16,6 +19,7 @@ public final class ConnectionProfiles {
     public ConnectionProfiles(Path path) throws IOException {
         this.path = path;
         if (!Files.exists(path)) return;
+        restrictPermissions(path);
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             if (root.get("version").getAsInt() != 1) throw new IllegalArgumentException();
@@ -59,11 +63,18 @@ public final class ConnectionProfiles {
         Files.createDirectories(path.toAbsolutePath().getParent());
         Path temp = Files.createTempFile(path.toAbsolutePath().getParent(), ".connections-", ".tmp");
         try {
-            try { Files.setPosixFilePermissions(temp, PosixFilePermissions.fromString("rw-------")); } catch (UnsupportedOperationException ignored) {}
+            restrictPermissions(temp);
             Files.writeString(temp, GSON.toJson(root));
             try { Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException ignored) { Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING); }
             proxies = new ArrayList<>(p); accounts = new ArrayList<>(a); selected = s;
         } finally { Files.deleteIfExists(temp); }
+    }
+
+    private static void restrictPermissions(Path path) throws IOException {
+        var attributes = Files.getFileAttributeView(path, PosixFileAttributeView.class);
+        if (attributes != null && !attributes.readAttributes().permissions().equals(PRIVATE_PERMISSIONS)) {
+            attributes.setPermissions(PRIVATE_PERMISSIONS);
+        }
     }
 }

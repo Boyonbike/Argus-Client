@@ -49,6 +49,37 @@ class ExternalConfigReaderTest {
         Files.write(temp.resolve("modules.json"), new byte[]{1}); Files.write(temp.resolve("modules.nbt"), new byte[]{1});
         assertThrows(IOException.class, () -> ExternalConfigReader.read(temp));
     }
+    @Test void normalizesLegacyBrandingInImportedModuleSettings() throws Exception {
+        String original = """
+                {
+                  "client": "argusclient", "category": "modules",
+                  "BetterChat": {"settings": {"Suffix": "⋆ ᴍɪᴏ", "Prefix": "Team chat"}},
+                  "AutoSign": {"settings": {"Line1": "get Zio", "Line2": "at",
+                                            "Line3": "github.com/", "Line4": "spectrumdevs/zio"}}
+                }
+                """;
+        Path file = Files.writeString(temp.resolve("legacy.json"), original);
+
+        var modules = ExternalConfigReader.read(file).modules();
+        assertEquals("⋆ Argus Client", modules.getFirst().settings().get("Suffix").getAsString());
+        assertEquals("Team chat", modules.getFirst().settings().get("Prefix").getAsString());
+        var sign = modules.get(1).settings();
+        assertEquals("get Argus Client", sign.get("Line1").getAsString());
+        assertEquals("at github.com/", sign.get("Line2").getAsString());
+        assertEquals("Boyonbike/", sign.get("Line3").getAsString());
+        assertEquals("Argus-Client", sign.get("Line4").getAsString());
+        assertEquals(original, Files.readString(file));
+    }
+
+    @Test void rejectsFractionalAndOverflowingArgusBindCodes() throws Exception {
+        Path file = temp.resolve("bad-bind.json");
+        for (String key : new String[]{"65.5", "4294967361"}) {
+            Files.writeString(file, """
+                    {"client":"argusclient","category":"modules","Sprint":{"key":%s}}
+                    """.formatted(key));
+            assertThrows(IOException.class, () -> ExternalConfigReader.read(file));
+        }
+    }
     @Test void rejectsDepthLimitsDuplicateModulesAndTruncatedNbt() throws Exception {
         Path file=temp.resolve("config.json");
         Files.writeString(file,"[".repeat(66)+"0"+"]".repeat(66)); assertThrows(IOException.class,()->ExternalConfigReader.read(file));

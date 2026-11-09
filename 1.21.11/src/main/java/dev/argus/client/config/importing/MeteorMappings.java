@@ -122,7 +122,68 @@ public final class MeteorMappings {
                 new SettingMapping("General/delay","Delay",v->new JsonPrimitive(seconds(v)%60)));
             result.add(new ModuleMapping(pair[0],pair[1],settings));
         }
+        result.add(chatTools());
         return List.copyOf(result);
+    }
+    /**
+     * Comet's Chat Tools (Meteor addon module chat-tools) → Argus ChatTools. Comet's list and roster settings are
+     * chat data, imported separately by {@link ChatToolsDataImport}; its friend colours belong to BetterChat now.
+     */
+    private static ModuleMapping chatTools() {
+        String[][] fields = {
+            {"General/auto-detect", "Detect player commands", "bool"},
+            {"General/run-complete-commands", "Run complete commands", "bool"},
+            {"General/tpa-request-timeout", "Request timeout", "number"},
+            {"Auto TPY/auto-tpy", "Accept automatically", "bool"},
+            {"Auto TPY/auto-tpy-whitelist-only", "Whitelist only", "bool"},
+            {"Auto TPY/auto-tpy-allow-meteor-friends", "Allow friends", "bool"},
+            {"Auto TPY/auto-tpy-to-me", "Accept teleports to me", "bool"},
+            {"Auto TPY/auto-tpy-to-them", "Accept teleports to them", "bool"},
+            {"Auto TPY/auto-tpy-interval-ms", "Accept interval", "number"},
+            {"Auto TPY/auto-tpy-adaptive", "Adaptive pacing", "bool"},
+            {"Auto TPY/auto-tpy-min-interval-ms", "Fastest interval", "number"},
+            {"Auto TPY/auto-tpy-max-interval-ms", "Slowest interval", "number"},
+            {"Auto TPY/auto-tpy-buffer-limit", "Buffer limit", "number"},
+            {"Auto TPY/auto-tpy-in-flight", "Awaiting replies", "number"},
+            {"Auto TPY/auto-tpy-max-attempts", "Max attempts", "number"},
+            {"Auto TPY/auto-tpy-reply-timeout-ms", "Reply timeout", "number"},
+            {"Auto TPY/auto-tpy-retry-backoff-ms", "Retry backoff", "number"},
+            {"Teleport Cooldowns/home-cooldown-seconds", "Home cooldown", "number"},
+            {"Teleport Cooldowns/tp-cooldown-seconds", "Teleport cooldown", "number"},
+            {"Messages/hide-private-messages", "Hide private messages", "bool"},
+            {"Messages/dm-toasts", "Message notifications", "bool"},
+            {"Messages/message-command", "Message command", "text"},
+            {"Messages/queue-chat", "Queue chat", "bool"},
+            {"Messages/chat-cooldown-ms", "Chat cooldown", "number"},
+            {"Messages/whisper-cooldown-ms", "Message cooldown", "number"},
+            {"Clan/highlight-clan-chat", "Highlight clan in chat", "bool"},
+            {"Clan/clan-chat-color", "Clan chat colour", "colour"},
+            {"Clan/highlight-clan-tab", "Highlight clan in tab", "bool"},
+            {"Clan/clan-tab-color", "Clan tab colour", "colour"},
+            {"Clan/highlight-clan-rows", "Highlight clan rows", "bool"},
+            {"Clan/clan-row-color", "Clan row colour", "colour"},
+        };
+        List<SettingMapping> settings = new ArrayList<>();
+        for (String[] field : fields) settings.add(new SettingMapping(field[0], field[1], switch (field[2]) {
+            case "bool" -> MeteorMappings::bool;
+            case "colour" -> MeteorMappings::colour;
+            default -> value -> value;
+        }));
+        return new ModuleMapping("chat-tools", "ChatTools", List.copyOf(settings));
+    }
+    /** Meteor stores booleans as NBT bytes, which arrive as 0 or 1. */
+    static JsonElement bool(JsonElement value) {
+        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()) return value;
+        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() && (value.getAsInt() == 0 || value.getAsInt() == 1) && value.getAsDouble() == value.getAsInt())
+            return new JsonPrimitive(value.getAsInt() == 1);
+        throw new IllegalArgumentException("Not a boolean");
+    }
+    /** Meteor SettingColor: {r, g, b, a} → Argus's rgba array. Meteor's rainbow flag has no exact match and is dropped. */
+    static JsonElement colour(JsonElement value) {
+        var object = value.getAsJsonObject();
+        var rgba = new com.google.gson.JsonArray();
+        for (String channel : List.of("r", "g", "b", "a")) rgba.add(object.has(channel) ? object.get(channel).getAsInt() : 255);
+        return rgba;
     }
     private static double seconds(JsonElement value) {
         if(!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber() || !Double.isFinite(value.getAsDouble()) || value.getAsDouble()<0 || value.getAsDouble()>959) throw new IllegalArgumentException("Invalid reconnect delay");

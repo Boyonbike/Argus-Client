@@ -25,8 +25,19 @@ final class GuiPreferencesTest {
         var path=temp.resolve("gui.properties");Files.writeString(path,"barTabs=tab\\:Modules,tab\\:Friends,UI,Fonts,Colors,Discord\ntabStyle=ICONS\n");
         var p=GuiPreferences.load(path);
         // UI, Fonts and Colors all moved into Appearance, so they collapse into one tab.
-        assertEquals(java.util.List.of("tab:Modules","Friends","Appearance","Discord"),p.barTabs);
+        assertEquals(java.util.List.of("tab:Modules","tab:Social","Appearance","Discord"),p.barTabs);
         assertEquals(GuiPreferences.TabStyle.ICONS,p.tabStyle);
+    }
+    @Test void friendsChatAndDiscordSyncTabsBecomeSocialAndDiscord() throws Exception {
+        var path=temp.resolve("gui.properties");Files.writeString(path,"barTabs=Friends,tab\\:Chat,DiscordSync,Discord,tab\\:HUD\n");
+        // Friends and the Chat page are both the Social tab now, and Discord Sync shares the Discord page.
+        assertEquals(java.util.List.of("tab:Social","Discord","tab:HUD"),GuiPreferences.load(path).barTabs);
+    }
+    @Test void socialTabChoicePersists() throws Exception {
+        var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
+        assertEquals(GuiPreferences.SocialTab.MENU,p.socialTab,"The Social tab opens the menu by default");
+        p.socialTab=GuiPreferences.SocialTab.SETTINGS;p.save(path);
+        assertEquals(GuiPreferences.SocialTab.SETTINGS,GuiPreferences.load(path).socialTab);
     }
     @Test void gridAndGapSettingsPersistAndClampTheGap() throws Exception {
         var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);

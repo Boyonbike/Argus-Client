@@ -72,8 +72,12 @@ abstract class ProfileManagerScreen extends UiScreen {
         else buildToolbar(left + 12, top + TOOLBAR_Y, panelWidth - 24);
     }
 
-    private int listTop() { return top + LIST_Y; }
-    private int listHeight() { return Math.max(ROW, panelHeight - LIST_Y - FOOTER); }
+    /** Offset of the list from the panel top; subclasses that draw a card above the list push it down. */
+    protected int listY() { return LIST_Y; }
+    /** Drawn between the toolbar and the list when no form is open. */
+    protected void renderAboveList(GuiGraphics g, int mx, int my) {}
+    private int listTop() { return top + listY(); }
+    private int listHeight() { return Math.max(ROW, panelHeight - listY() - FOOTER); }
     private int maxScroll() { return Math.max(0, rowCount() * ROW - listHeight()); }
 
     // ---- widgets and drawing helpers ------------------------------------------------------------
@@ -190,12 +194,12 @@ abstract class ProfileManagerScreen extends UiScreen {
             return;
         }
         if (formOpen()) renderForm(g, left + 12, top + TOOLBAR_Y, panelWidth - 24, mx, my);
-        else renderList(g, mx, my, t);
+        else { renderAboveList(g, mx, my); renderList(g, mx, my, t); }
         footer(g, mx, my, t);
     }
 
     private void renderList(GuiGraphics g, int mx, int my, UiTheme t) {
-        UiDraw.rect(g, left + 12, top + LIST_Y - 6, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.rect(g, left + 12, top + listY() - 6, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
         int start = listTop(), view = listHeight(), n = rowCount();
         scroll = Math.clamp(scroll, 0, maxScroll());
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);

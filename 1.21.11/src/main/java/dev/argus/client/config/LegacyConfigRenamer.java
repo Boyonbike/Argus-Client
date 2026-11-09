@@ -1,6 +1,7 @@
 package dev.argus.client.config;
 
 import com.google.gson.*;
+import dev.argus.client.utils.FileUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -8,12 +9,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Updates names left in saved configs by the clients Argus Client grew out of (Egg Client, Random
- * Stuff Client, Mio, Zio) to Argus Client, including Zio's {@code "client": "zio"} marker. It runs over every .json and .properties file in the data
- * folder, presets included, and only rewrites files that actually change.
+ * Updates legacy client names in saved JSON and properties files, including presets.
+ * Only rewrites files that actually change.
  */
 public final class LegacyConfigRenamer {
     static final String PROJECT_URL = "https://github.com/Boyonbike/Argus-Client";
@@ -26,6 +27,13 @@ public final class LegacyConfigRenamer {
             {"Egg Client", "Argus Client"},
             {"EggClient", "Argus Client"},
             {"eggclient", "argusclient"},
+            {"SHU Client", "Argus Client"},
+            {"Shu Client", "Argus Client"},
+            {"ShuClient", "Argus Client"},
+            {"shuclient", "argusclient"},
+            {"Vortex Client", "Argus Client"},
+            {"Zio Client", "Argus Client"},
+            {"Mio Client", "Argus Client"},
             {"Welcome to ArgusClient.", "Welcome to Argus Client."},
             {"get ArgusClient", "get Argus Client"},
             {"get mioclient", "get Argus Client"},
@@ -36,6 +44,7 @@ public final class LegacyConfigRenamer {
     /** Replaced only when they are the whole key or value (old watermark, welcome, sign and setting names). */
     private static final Map<String, String> WHOLE = Map.of(
             "Mio", "Argus Client",
+            "⋆ ᴍɪᴏ", "⋆ Argus Client",
             "Zio", "Argus Client",
             "ArgusClient", "Argus Client",
             "Welcome to Mio.", "Welcome to Argus Client.",
@@ -44,6 +53,7 @@ public final class LegacyConfigRenamer {
             "IgnoreZio", "IgnoreArgus Client");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Pattern PROPERTY_LINE = Pattern.compile("[^\r\n]+");
 
     private LegacyConfigRenamer() {}
 
@@ -55,6 +65,7 @@ public final class LegacyConfigRenamer {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String name = file.getFileName().toString();
+                    if (name.equalsIgnoreCase("connections.json")) return FileVisitResult.CONTINUE;
                     if (attrs.isRegularFile() && (name.endsWith(".json") || name.endsWith(".properties"))) files.add(file);
                     return FileVisitResult.CONTINUE;
                 }
@@ -69,9 +80,7 @@ public final class LegacyConfigRenamer {
                 String text = Files.readString(file, StandardCharsets.UTF_8);
                 String updated = file.getFileName().toString().endsWith(".json") ? renameJson(text) : renameText(text);
                 if (updated != null && !updated.equals(text)) {
-                    Path temp = file.resolveSibling(file.getFileName() + ".argus-rename");
-                    Files.writeString(temp, updated, StandardCharsets.UTF_8);
-                    Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                    FileUtils.writeUtf8Atomically(file, updated);
                     changed++;
                 }
             } catch (IOException | RuntimeException failure) {
@@ -94,8 +103,8 @@ public final class LegacyConfigRenamer {
     }
 
     static String renameText(String text) {
-        return text.lines().map(LegacyConfigRenamer::renameString)
-                .collect(Collectors.joining("\n", "", text.endsWith("\n") ? "\n" : ""));
+        return PROPERTY_LINE.matcher(text)
+                .replaceAll(line -> Matcher.quoteReplacement(renameString(line.group())));
     }
 
     static String renameString(String value) {
@@ -129,7 +138,7 @@ public final class LegacyConfigRenamer {
     }
 
     /** Rewrites the old Zio/Mio AutoSign text to the Argus sign: "at github.com/" / "Boyonbike/" / "Argus-Client". */
-    private static void updateSign(JsonObject sign) {
+    static void updateSign(JsonObject sign) {
         String line3 = string(sign, "Line3"), line4 = string(sign, "Line4");
         boolean zio = "github.com/".equals(line3) && "spectrumdevs/zio".equals(line4);
         boolean mio = "www.mioclient.me".equals(line3);
@@ -137,6 +146,15 @@ public final class LegacyConfigRenamer {
         if ("at".equals(string(sign, "Line2"))) sign.addProperty("Line2", "at github.com/");
         sign.addProperty("Line3", "Boyonbike/");
         if (zio || ":p".equals(line4)) sign.addProperty("Line4", "Argus-Client");
+    }
+
+    static void renameSettings(JsonObject settings, String... keys) {
+        for (String key : keys) {
+            String old = string(settings, key);
+            if (old == null) continue;
+            String renamed = renameString(old);
+            if (!renamed.equals(old)) settings.addProperty(key, renamed);
+        }
     }
 
     private static String string(JsonObject object, String key) {

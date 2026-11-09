@@ -89,7 +89,28 @@ public final class RebrandLegacyText implements Opcodes {
             if (insn instanceof TableSwitchInsnNode table) { require(cases == null, "Several migration switches"); cases = table; }
         require(cases != null && cases.min == 0 && cases.max == 7, "Unexpected migration switch");
         // Case order follows the name checks: AutoFarm, EntityControl, FeetPlace, Watermark, Welcomer, AutoSign.
-        for (int index = 3; index <= 5; index++) cases.labels.set(index, cases.dflt);
+        // The switch default throws AssertionError, so these cases go to the method's final
+        // `return copy` instead. Throwing there aborted loading of every later module's settings.
+        LabelNode done = returnCopyLabel(migrate);
+        for (int index = 3; index <= 5; index++) cases.labels.set(index, done);
+    }
+
+    /** The label in front of migrateModule's final {@code aload 3; areturn}. */
+    static LabelNode returnCopyLabel(MethodNode migrate) {
+        for (AbstractInsnNode insn = migrate.instructions.getLast(); insn != null; insn = insn.getPrevious()) {
+            if (insn.getOpcode() != ARETURN) continue;
+            AbstractInsnNode load = insn.getPrevious();
+            while (load != null && load.getOpcode() < 0) load = load.getPrevious();
+            if (!(load instanceof VarInsnNode variable && variable.getOpcode() == ALOAD && variable.var == 3)) continue;
+            for (AbstractInsnNode label = load.getPrevious(); label != null; label = label.getPrevious()) {
+                if (label instanceof LabelNode node) return node;
+                if (label.getOpcode() >= 0) break;
+            }
+            LabelNode node = new LabelNode();
+            migrate.instructions.insertBefore(load, node);
+            return node;
+        }
+        throw new IllegalStateException("Missing migrateModule return of the migrated copy");
     }
 
     private static final String[] OLD = {"zio", "spectrumdevs", "cypphi", "mio"};

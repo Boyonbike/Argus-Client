@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.ClientContext;
+import dev.argus.client.modules.exploit.FakeVanillaModule;
 import dev.argus.client.network.*;
 import java.net.URI;
 import net.minecraft.client.gui.GuiGraphics;
@@ -74,6 +76,24 @@ public final class AccountsScreen extends ProfileManagerScreen {
         rebuildWidgets(); setFocused(credential);
     }
 
+    // ---- "Appear as vanilla" card (moved here from the multiplayer screen's Vanilla checkbox) --------
+
+    private static final int CARD_Y = TOOLBAR_Y + 28, CARD_H = 30;
+    private static FakeVanillaModule vanilla() { return ClientContext.getModule(FakeVanillaModule.class); }
+    @Override protected int listY() { return vanilla() == null ? LIST_Y : LIST_Y + CARD_H + 8; }
+    @Override protected void renderAboveList(GuiGraphics g, int mx, int my) {
+        var module = vanilla();
+        if (module == null) return;
+        var t = GuiState.theme();
+        float x = left + 12, y = top + CARD_Y, w = panelWidth - 24;
+        UiDraw.card(g, x, y, w, CARD_H, "shield", "Appear as vanilla", "Tells servers you're playing unmodded Minecraft · applies when you next join", 60, t);
+        boolean hover = UiDraw.over(mx, my, x + w - 70, y + 6, 70, 18);
+        float on = UiAnim.smooth("acc.vanilla", module.isToggled() ? 1 : 0, 16);
+        UiDraw.right(g, module.isToggled() ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        UiDraw.toggle(g, x + w - UiDraw.CARD_PAD - 18, y + 10, on, hover, t);
+        hit(x + w - 70, y + 6, 70, 18, () -> module.setToggled(!module.isToggled()));
+    }
+
     // ---- list ---------------------------------------------------------------------------------
 
     @Override protected int rowCount() { return profiles.accounts().size(); }
@@ -100,8 +120,8 @@ public final class AccountsScreen extends ProfileManagerScreen {
             if (account.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS) { deleting = null; change(() -> profiles.removeAccount(account.id()), "Removed " + account.username() + "."); }
             else { deleting = account.id(); deleteAt = System.nanoTime(); }
         }) + 4;
-        if (active) right -= chip(g, "In use", right - UiDraw.width("In use", 5.5f) - 10, cy, t.green()) + 6;
-        else right -= pill(g, "Log in", right, cy, mx, my, t.accent(), true, !busy, () -> login(account)) + 4;
+        String loginLabel = active ? "Log in again" : "Log in";
+        right -= pill(g, loginLabel, right, cy, mx, my, t.accent(), true, !busy, () -> login(account)) + 4;
         float textX = x + 30, room = right - textX - 6;
         UiDraw.bold(g, UiDraw.fit(account.username(), room), textX, cy - 5, UiDraw.TEXT, active ? t.accent() : t.text());
         float cw = chip(g, typeName(account.type()), textX, cy + 6.5f, typeColour(account.type(), t));

@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.modules.misc.ChatToolsModule;
+
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import net.minecraft.client.gui.GuiGraphics;
@@ -143,7 +145,8 @@ public final class ModulesScreen extends UiScreen {
     }
 
     private List<Module> modules(Window window) {
-        return all.stream().filter(module -> window.kind == Kind.FAVOURITES ? GuiState.preferences().favourites.contains(module.getName()) : module.getCategory() == window.category).toList();
+        // Social (Chat Tools) opens from the top bar or its key, so it isn't listed with the other modules.
+        return all.stream().filter(module -> !(module instanceof ChatToolsModule)).filter(module -> window.kind == Kind.FAVOURITES ? GuiState.preferences().favourites.contains(module.getName()) : module.getCategory() == window.category).toList();
     }
 
     private void refreshSearch() { results = GuiSearch.search(searchIndex, searchInput.getValue()); searchWindow.scroll = 0; selected = results.isEmpty() ? -1 : 0; resultsChanged = System.nanoTime(); }
@@ -372,14 +375,14 @@ public final class ModulesScreen extends UiScreen {
     private void activate(GuiSearch.Hit hit, int button) {
         Module module = GuiState.module(hit.module());
         if (module == null) return;
-        if (module.getCategory() == ModuleCategory.CLIENT) openSettings(module, hit.setting());
+        if (module.getCategory() == ModuleCategory.CLIENT || module instanceof ChatToolsModule) openSettings(module, hit.setting());
         else if (button == 1 || hit.isSetting()) openSettings(module, hit.setting());
         else if (button == 0) module.toggle();
     }
 
-    /** Client-category modules open in the Settings tab; everything else gets its own page. */
+    /** Client-category modules and Social open in the Settings tab; everything else gets its own page. */
     private void openSettings(Module module, String setting) {
-        if (module.getCategory() == ModuleCategory.CLIENT) minecraft.setScreen(new SettingsScreen(this, module.getName(), setting));
+        if (module.getCategory() == ModuleCategory.CLIENT || module instanceof ChatToolsModule) minecraft.setScreen(new SettingsScreen(this, module.getName(), setting));
         else minecraft.setScreen(new ModuleSettingsScreen(this, module, setting));
     }
 

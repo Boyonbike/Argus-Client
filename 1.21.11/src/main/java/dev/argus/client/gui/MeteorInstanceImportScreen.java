@@ -1,6 +1,7 @@
 package dev.argus.client.gui;
 
 import dev.argus.client.config.importing.*;
+import dev.argus.client.config.importing.ChatToolsDataImport;
 import dev.argus.client.config.importing.MeteorDataReader.DataKind;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,7 +27,8 @@ final class MeteorInstanceImportScreen extends UiScreen {
     }
     /** Everything read from one Meteor folder; each part fails on its own so one bad file can't hide the rest. */
     private record Scan(MeteorInstanceScanner.Detection detection, MeteorDataReader.DataSource data,
-                        Map<DataKind, String> errors, List<ConfigImportModel.SourceConfig> modules, List<String> moduleErrors) {}
+                        Map<DataKind, String> errors, List<ConfigImportModel.SourceConfig> modules, List<String> moduleErrors,
+                        ChatToolsDataImport.ChatData chat) {}
 
     private static final int ROW = 20, LIST_ROW = 22, HEADER_H = 40;
     private final Consumer<String> saved;
@@ -37,11 +39,12 @@ final class MeteorInstanceImportScreen extends UiScreen {
     private String listError = "", path = "", presetName = "", message = "", sourceLabel = "";
     private int selectedInstance = -1, moduleSource = -1, scroll, instanceScroll;
     private float shownScroll, shownInstanceScroll;
-    private boolean scanning, importing, done, failed, modulesOn;
+    private boolean scanning, importing, done, failed, modulesOn, previewReady;
     private Scan scan;
     private ArgusModuleCatalog catalog;
     private ConfigImportConverter.ImportPreview preview;
     private ArgusDataPlan.Plan plan;
+    private ChatToolsDataImport.Plan chatPlan = ChatToolsDataImport.Plan.EMPTY;
     private UiInput pathInput, nameInput;
     private UiButton importButton, scanButton;
     // Layout.
@@ -116,12 +119,13 @@ final class MeteorInstanceImportScreen extends UiScreen {
             if (error != null) { fail("Couldn’t read " + label + ": " + cause(error).getMessage()); updateButtons(); return; }
             scan = result; selected.clear();
             for (DataKind kind : result.detection().data().keySet()) if (!result.errors().containsKey(kind) && count(kind) > 0) selected.add(kind);
+            if (result.chat().count() > 0) selected.add(DataKind.CHAT_TOOLS);
             moduleSource = -1;
             for (int i = 0; i < result.modules().size(); i++) if (result.modules().get(i) != null) { moduleSource = i; break; }
             modulesOn = moduleSource >= 0;
             presetName = suggestName(label); nameInput.setValue(presetName);
             refresh();
-            message = result.detection().isEmpty() ? "Nothing in this Meteor folder has an Argus equivalent." : "Tick what to bring over, then Import.";
+            if (previewReady) message = result.detection().isEmpty() ? "Nothing in this Meteor folder has an Argus equivalent." : "Tick what to bring over, then Import.";
         }));
     }
     /** Background thread: reads only; nothing here touches live Argus state. */
@@ -145,19 +149,32 @@ final class MeteorInstanceImportScreen extends UiScreen {
             try { modules.add(MeteorConfigReader.read(source.path())); moduleErrors.add(null); }
             catch (Exception x) { modules.add(null); moduleErrors.add(cause(x).getMessage()); }
         }
-        return new Scan(detection, new MeteorDataReader.DataSource(friends, enemies, waypoints, macros), errors, modules, moduleErrors);
+        // Comet's Chat Tools data lives in the main module config; profiles only hold module toggles and settings.
+        ChatToolsDataImport.ChatData chat = ChatToolsDataImport.ChatData.EMPTY;
+        for (var config : modules) if (config != null) { chat = ChatToolsDataImport.extract(config); break; }
+        return new Scan(detection, new MeteorDataReader.DataSource(friends, enemies, waypoints, macros), errors, modules, moduleErrors, chat);
     }
 
     /** Client thread: recompute the module preview and data plan from current choices, then the rows. */
     private void refresh() {
-        rows.clear(); preview = null; plan = null;
+        rows.clear(); preview = null; plan = null; chatPlan = ChatToolsDataImport.Plan.EMPTY;
+        previewReady = false;
         if (scan == null) { updateButtons(); return; }
+        previewReady = true;
         if (moduleSource >= 0 && scan.modules().get(moduleSource) != null) {
             try { preview = ConfigImportConverter.convert(scan.modules().get(moduleSource), catalog, false); }
             catch (Exception e) { preview = null; }
         }
+        if (modulesOn && preview == null) {
+            previewReady = false;
+            fail("Couldn’t preview the selected module config.");
+        }
         try { plan = ArgusDataPlan.plan(scan.data(), ArgusDataStore.existing(), selected); }
-        catch (Exception e) { plan = null; fail("Couldn’t compare with Argus: " + e.getMessage()); }
+        catch (Exception e) { previewReady = false; fail("Couldn’t compare with Argus: " + e.getMessage()); }
+        if (selected.contains(DataKind.CHAT_TOOLS)) {
+            try { chatPlan = ChatToolsDataImport.plan(scan.chat(), ChatToolsDataImport.current()); }
+            catch (Exception e) { previewReady = false; fail("Couldn’t compare chat data with Argus: " + e.getMessage()); }
+        }
         var d = scan.detection();
         rows.add(Row.header("Will import"));
         if (!d.moduleSources().isEmpty()) {
@@ -168,9 +185,11 @@ final class MeteorInstanceImportScreen extends UiScreen {
             }
         }
         for (DataKind kind : DataKind.values()) if (d.data().containsKey(kind)) rows.add(new Row(Kind.DATA, label(kind), dataDetail(kind), kind, -1));
-        if (d.moduleSources().isEmpty() && d.data().isEmpty()) rows.add(new Row(Kind.NOTE, "Nothing here has an Argus equivalent", "", null, -1));
+        if (scan.chat().count() > 0) rows.add(new Row(Kind.DATA, label(DataKind.CHAT_TOOLS), dataDetail(DataKind.CHAT_TOOLS), DataKind.CHAT_TOOLS, -1));
+        if (d.moduleSources().isEmpty() && d.data().isEmpty() && scan.chat().count() == 0) rows.add(new Row(Kind.NOTE, "Nothing here has an Argus equivalent", "", null, -1));
         List<ConfigImportModel.Issue> warnings = new ArrayList<>();
         if (plan != null) plan.issues().stream().filter(i -> i.severity() == ConfigImportModel.Severity.WARNING).forEach(warnings::add);
+        chatPlan.issues().stream().filter(i -> i.severity() == ConfigImportModel.Severity.WARNING).forEach(warnings::add);
         if (modulesOn && preview != null) preview.issues().stream().filter(i -> i.severity() == ConfigImportModel.Severity.WARNING).forEach(warnings::add);
         if (!warnings.isEmpty()) {
             rows.add(Row.header("Won’t transfer (" + warnings.size() + ")"));
@@ -196,11 +215,11 @@ final class MeteorInstanceImportScreen extends UiScreen {
     }
     private int count(DataKind kind) {
         var data = scan.data();
-        return switch (kind) { case FRIENDS -> data.friends().size(); case ENEMIES -> data.enemies().size(); case WAYPOINTS -> data.waypoints().size(); case MACROS -> data.macros().size(); };
+        return switch (kind) { case FRIENDS -> data.friends().size(); case ENEMIES -> data.enemies().size(); case WAYPOINTS -> data.waypoints().size(); case MACROS -> data.macros().size(); case CHAT_TOOLS -> scan.chat().count(); };
     }
     private int planned(DataKind kind) {
         if (plan == null) return 0;
-        return switch (kind) { case FRIENDS -> plan.friends().size(); case ENEMIES -> plan.enemies().size(); case WAYPOINTS -> plan.waypoints().size(); case MACROS -> plan.macros().size(); };
+        return switch (kind) { case FRIENDS -> plan.friends().size(); case ENEMIES -> plan.enemies().size(); case WAYPOINTS -> plan.waypoints().size(); case MACROS -> plan.macros().size(); case CHAT_TOOLS -> chatPlan.added(); };
     }
     private String dataDetail(DataKind kind) {
         if (scan.errors().containsKey(kind)) return "Couldn’t read · " + scan.errors().get(kind);
@@ -212,10 +231,10 @@ final class MeteorInstanceImportScreen extends UiScreen {
         return (add == 0 ? "Nothing new" : add + " to add" + extra) + (skip > 0 ? " · " + skip + " skipped" : "");
     }
     private static String label(DataKind kind) {
-        return switch (kind) { case FRIENDS -> "Friends"; case ENEMIES -> "Enemies"; case WAYPOINTS -> "Waypoints"; case MACROS -> "Macros"; };
+        return switch (kind) { case FRIENDS -> "Friends"; case ENEMIES -> "Enemies"; case WAYPOINTS -> "Waypoints"; case MACROS -> "Macros"; case CHAT_TOOLS -> "Chat Tools data"; };
     }
     private static String icon(DataKind kind) {
-        return switch (kind) { case FRIENDS -> "people"; case ENEMIES -> "shield"; case WAYPOINTS -> "compass"; case MACROS -> "keyboard"; };
+        return switch (kind) { case FRIENDS -> "people"; case ENEMIES -> "shield"; case WAYPOINTS -> "compass"; case MACROS -> "keyboard"; case CHAT_TOOLS -> "chat"; };
     }
     private boolean available(DataKind kind) { return scan != null && !scan.errors().containsKey(kind) && count(kind) > 0; }
     private static String suggestName(String label) {
@@ -234,14 +253,22 @@ final class MeteorInstanceImportScreen extends UiScreen {
 
     private boolean busy() { return scanning || importing; }
     private boolean modulesReady() { return modulesOn && preview != null; }
-    private boolean anything() { return modulesReady() || (plan != null && plan.total() > 0); }
+    private boolean anything() { return modulesReady() || (plan != null && plan.total() > 0) || !chatPlan.isEmpty(); }
     private void updateButtons() {
-        if (importButton != null) importButton.active = scan != null && !busy() && !done && anything() && (!modulesReady() || ImportedPresetStore.validName(presetName.trim()));
+        if (importButton != null) importButton.active = scan != null && previewReady && !busy() && !done && anything() && (!modulesReady() || ImportedPresetStore.validName(presetName.trim()));
         if (scanButton != null) scanButton.active = !busy();
         if (nameInput != null) nameInput.visible = modulesReady() && !done;
     }
     private void importSelected() {
         if (importButton == null || !importButton.active) return;
+        var previewedPlan = plan;
+        var previewedChatPlan = chatPlan;
+        refresh();
+        if (!previewReady) return;
+        if (!Objects.equals(previewedPlan, plan) || !previewedChatPlan.equals(chatPlan)) {
+            fail("Argus data changed since the preview. Review the updated import, then press Import again.");
+            return;
+        }
         importing = true; updateButtons();
         List<String> done = new ArrayList<>();
         try {
@@ -254,6 +281,11 @@ final class MeteorInstanceImportScreen extends UiScreen {
                 var result = ArgusDataStore.apply(plan);
                 if (!result.success()) { fail((done.isEmpty() ? "" : "Saved " + done.getFirst() + ". ") + result.message()); return; }
                 done.add(ArgusDataStore.summary(plan) + (result.backup() == null ? "" : " (backup: " + result.backup().getFileName() + ")"));
+            }
+            if (!chatPlan.isEmpty()) {
+                var result = ChatToolsDataImport.apply(chatPlan);
+                if (!result.success()) { fail((done.isEmpty() ? "" : "Imported " + String.join(" and ", done) + ". ") + result.message()); return; }
+                done.add(ChatToolsDataImport.summary(chatPlan) + (result.backup() == null ? "" : " (backup: " + result.backup().getFileName() + ")"));
             }
             this.done = true; failed = false;
             message = "Imported " + String.join(" and ", done) + "." + (modulesReady() ? " Load the preset from Presets when you’re ready." : "");
@@ -296,6 +328,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         List<String> parts = new ArrayList<>();
         if (modulesReady()) parts.add("saves “" + presetName.trim() + "” as a Modules preset");
         if (plan != null && plan.total() > 0) parts.add("adds " + ArgusDataStore.summary(plan) + " · backs up first");
+        if (!chatPlan.isEmpty()) parts.add("adds " + ChatToolsDataImport.summary(chatPlan));
         return parts.isEmpty() ? "Nothing selected to import." : Character.toUpperCase(parts.getFirst().charAt(0)) + String.join(" · ", parts).substring(1);
     }
 

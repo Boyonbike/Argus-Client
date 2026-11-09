@@ -52,9 +52,9 @@
 - **Config import:** extend the existing Meteor/Comet import (`MeteorDataReader`, `ArgusDataPlan`) to carry `chat-tools` and `discord-ign-sync` settings, clan list, homes, favourites and saved cooldowns. Old Comet users then keep their data.
 
 ## Merging with BetterChat
-BetterChat lives in the closed `client-base.jar`. Its own mixins (`dev.argus.mixin.ChatComponentMixin`, `ChatScreenMixin`, `ClientPacketListenerChatTimeMixin`, …) call `BetterChatModule.getInstance()` and its package-visible settings. So it can't be deleted or rewritten. Instead, it becomes the engine inside one user-facing **Chat** module:
+BetterChat lives in the closed `client-base.jar`. Its own mixins (`dev.argus.mixin.ChatComponentMixin`, `ChatScreenMixin`, `ClientPacketListenerChatTimeMixin`, …) call `BetterChatModule.getInstance()` and its package-visible settings. So it can't be deleted or rewritten. Instead, it becomes the engine inside one user-facing **ChatTools** module (shown as "Chat Tools"; "Chat" is the HUD module):
 
-- **One module in the list:** `ChatToolsModule` is shown as **Chat** (MISC, aliases "better chat", "chat tools", "dm", "tpa"). `GuiState.modules()` filters `BetterChatModule` out, which hides it from the Modules screen, Favourites and search. Search hits for BetterChat's settings resolve to the Chat page.
+- **One module in the list:** `ChatToolsModule` is shown as **Chat Tools** (MISC, aliases "chat", "better chat", "dm", "tpa"). `GuiState.modules()` filters `BetterChatModule` out, which hides it from the Modules screen, Favourites and search. Search hits for BetterChat's settings resolve to the Chat page.
 - **One switch:** turning Chat on or off also turns the hidden BetterChat on or off. A one-time migration (a `ModuleConfigMixin`-style hook) turns Chat on if an old config had BetterChat enabled.
 - **One settings page:** the Chat page shows BetterChat's existing `Setting` objects (taken from `getSettings()`, no copies) next to Chat Tools' own. They're grouped as Chat style (timestamps, format, brackets, colours, rainbow), Animation, Highlights (self/friends/enemies + clan), Sounds (mention, DM), Prefix & suffix, History, Messages, Teleports, Auto TPY, Clan. BetterChat's settings keep saving under BetterChat's config entry, so presets, Meteor/Egg/Zio import and existing configs carry on working.
 - **Shared behaviour:**
@@ -74,49 +74,123 @@ BetterChat lives in the closed `client-base.jar`. Its own mixins (`dev.argus.mix
 ## Tasks
 
 ### Task 1: Port core logic and tests
-- [ ] Copy `core/Chat*`, `AutoTpy*`, `DiscordRoles`, `DiscordIgn*` into `dev.argus.client.chat`, and rename the package.
-- [ ] Remove any Meteor imports left in the core (expected: none or very few).
-- [ ] Port `ChatMessagesTest`, `ChatSenderTest`, `ChatToolsDataTest`, `ChatToolsStateTest`, `ChatToolsLayoutTest`, `ChatCommandTemplateTest`, `AutoTpy*Test` and `ChatFriendHighlightTest`; run them green.
+- [x] Copy `core/Chat*`, `AutoTpy*`, `DiscordRoles`, `DiscordIgn*`, `DiscordConnection` (29 files) into `dev.argus.client.chat`, and rename the package.
+- [x] Remove any Meteor imports left in the core (none; only Gson and Minecraft `Component`). Rebrand the relay User-Agent to "Argus discord-ign-sync" (the relay worker doesn't check it).
+- [x] Port 25 test classes (all Chat*, AutoTpy*, DiscordIgn*, DiscordRoles, DiscordConnection; not DiscordWebhook): 235 tests green.
+- Deferred: `AutoTpyWiringTest` reads the compiled module class, so it is held back until Task 3. Point it at `ChatToolsModule` and its tick handler then.
 
 ### Task 2: Storage
-- [ ] `ChatToolsStore` holds per-server homes, favourites, recent players and saved cooldowns, plus clan members and the Discord roster, in a JSON file under `ClientDataDirectory`.
-- [ ] Add round-trip and corrupt-file tests.
+- [x] `ChatToolsStore` (`dev.argus.client.chat`) holds homes, favourite homes, saved cooldowns, recent players, clan members, the Auto TPY whitelist/blocklist/role IDs, the Discord-sync ownership lists and the Discord roster/source/usernames. Per-server lists keep the core helpers' `server|value` entries. Keys equal the old Comet setting names, so Task 7's import maps one to one.
+- [x] Behaviour:
+  - a missing file is an empty store
+  - a malformed file throws `IOException` and is never overwritten (same as `ConnectionProfiles`)
+  - wrong-typed values are skipped
+  - unknown keys are kept on save
+  - changes mark the store dirty, and `save()` writes atomically only when dirty
+- [x] 8 tests in `ChatToolsStoreTest`: round trip, missing/empty, dirty tracking, copies, malformed, wrong types + unknown keys, no temp files, key names. All 243 chat tests are green.
+- Task 3 wiring: file at `<gameDir>/argusclient/chat.json`. The module saves dirty data in batches (at most every few seconds, plus on disconnect/disable/close). If the file can't be read, the module shows the error and works in memory without saving, so the broken file is never replaced.
 
 ### Task 3: Module
-- [ ] `ChatToolsModule` in MISC, with groups mirroring Comet: General, Messages, Teleports, Auto TPY, Clan.
-- [ ] Wire `ChatMessageEvent` for capture, hiding, highlighting and request/home/cooldown parsing, and the send events for queueing. Tick drives the whisper/public queues and Auto TPY.
-- [ ] Use `SocialRegistry` for all friend logic. Show DM toasts through Argus notifications.
-- [ ] Register in `ModuleRegistryMixin` before config load. Add descriptions to `descriptions.tsv`.
+- [x] `dev.argus.client.modules.misc.ChatToolsModule`, named **ChatTools** (MISC; aliases chat, better chat, dm, messages, tpa, homes, clan). "Chat" is already taken by the HUD Chat module, so the merged module keeps the ChatTools name. 34 settings in Comet's order: General, Messages, Teleports, Auto TPY (all depend on the Auto TPY switch), Clan highlighting.
+- [x] Events:
+  - `ChatMessageEvent` (Pre stage only) captures DMs and hides refusals and DMs. A second listener at priority -10000 records the lines chat actually shows.
+  - `PacketEvent.Send`/`Receive` handle commands sent, system chat, the action bar and `/home` suggestions.
+  - `MinecraftTickEvent` drives the queues, Auto TPY, the open key and batched saving.
+  - `MinecraftDisconnectEvent` covers leaving. A `ClientboundLoginPacket` arriving while in a world counts as a server transfer.
+- [x] Friends: `SocialRegistry` is used throughout (friends, enemies, toggles; the config is saved after a change). DM toasts use vanilla `SystemToast`, because Argus notifications have no public API for posting.
+- [x] Registered in `ModuleRegistryMixin` (renamed `argus$registerModules`). 34 descriptions added. New `EntityArgumentAccessor` mixin for players-only detection.
+- [x] `AutoTpyWiringTest` is back and points at `ChatToolsModule`. Full suite: 450 tests green. `./gradlew build` produces the jar.
+- Changes from Comet, and why:
+  - **Lists in the store:** command options, DM patterns and extra homes live in `ChatToolsStore`, not settings. Argus's `StringSetSetting` lowercases entries, which would break regexes and labels. The store now tells "emptied" apart from "never set" (`has`), so emptied defaults stay empty.
+  - **Open key:** not bound by default. Comet used Y.
+  - **Window scale:** dropped. The window follows Argus's GUI scale.
+  - **Friend colours:** removed, as decided. Clan colouring skips friends and enemies so BetterChat's colours win.
+  - **Hooks for later tasks:** `ChatToolsModule.Window` (filled in by Task 6) and `ChatToolsModule.DiscordSync` (Task 5). Until then the window key does nothing, and Discord roles are empty.
 
 ### Task 4: Chat and tab hooks
-- [ ] Mixin on `ChatScreen.mouseClicked` (port `ChatScreenMixin`): clicking a player name opens player actions.
-- [ ] Clan highlight: in chat, a mixin on `BetterChatModule.highlightNames`; in the tab list, the same approach on ExtraTab's social colouring.
+- [x] `ChatScreenPlayerClickMixin` (HEAD of `ChatScreen.mouseClicked`): left-clicking an online player's name opens Chat Tools on them. Names count whether styled or plain text. The click is only consumed if the window actually opened, so it does nothing until Task 6 attaches the window. It has a separate name and injector from client-base's `ChatScreenMixin`, which only touches animations, input background and inline suggestions.
+- [x] `BetterChatClanHighlightMixin` (`RETURN` of `BetterChatModule.highlightNames`, `remap = false`): client-base's `ComponentRenderUtilsMixin` calls `highlightNames` on every wrapped chat line, even with BetterChat off. Clan colours are added to its result and skip friends and enemies, so each name is coloured once.
+- [x] `TabListClanHighlightMixin`: a `@WrapOperation` on the `getNameForDisplay` call in `render` colours clan names after ExtraTab's own colouring. A wrap of the third `fill` draws the clan row bar. Render locals (slot 22 = row, slot 5 = list) were checked against the 1.21.11 bytecode in Loom's cache.
+- [x] `openWindow` now returns whether it opened. Build is green. Remapped targets were checked in the jar (`method_25402`, `method_1918`, `method_25294`). 450 tests green.
+- Not yet checked in game. This is part of Task 7's in-game pass: clan colours in chat and tab, row bars, and that clicks on server-styled names still work when Chat Tools is off.
 
 ### Task 4b: Merge BetterChat
-- [ ] Hide `BetterChatModule` in `GuiState.modules()`, link its enabled state to Chat, and migrate old configs.
-- [ ] Chat settings page: group BetterChat's live settings with Chat Tools' settings, and redirect search for BetterChat's settings to that page.
-- [ ] DM sound uses Chat Tools' DM detection. Timestamps and long history carry into the window. The queue works with prefix/suffix.
-- [ ] Tests:
-  - enabling or disabling one module toggles both
-  - an old config with BetterChat enabled migrates to Chat enabled
-  - prefix/suffix applied exactly once to queued messages
-  - BetterChat settings still save and load under its own entry
+- [x] Hiding: `GuiState.hidden` drops `BetterChatModule` from `GuiState.modules()`, so it's gone from the Modules screen, Favourites, the Settings sections and the Modules-screen search. That search only indexes module names and aliases, and "better chat" is a Chat Tools alias, so no redirect was needed. The client-base Classic GUI still lists BetterChat, since it isn't Argus's to change.
+- [x] On/off link: `ChatModuleLink` (pure) plus `ChatToolsModule.syncBetterChat()`, run every client tick from `FriendsMod`.
+  - Whichever module was switched wins, so BetterChat's own keybind or the Classic GUI still work.
+  - The first run turns Chat Tools on if an old config had BetterChat on. It then records `MergedBetterChat` in Chat Tools' module JSON. A partial preset never clears that flag.
+- [x] Settings page: Chat Tools' own settings now sit in group cards (General, Messages, Teleports, Auto TPY, Clan). The Auto TPY switch is renamed "Accept automatically" because the card is called Auto TPY.
+  - `SettingsCards` adds BetterChat's live settings after them as six cards: Chat style, Sounds, Animation, Prefix & suffix, Highlights, History. `ChatSettingsSections` does the split; settings it doesn't recognise join the card before them.
+  - Each card's list still belongs to BetterChat, so descriptions and config saving are unchanged.
+- [x] DM sound: `BetterChatDmSoundMixin` redirects BetterChat's `ChatUtils.isIncomingWhisper` call to `ChatToolsModule.isIncomingPrivateMessage` while Chat Tools is on.
+  - Chat Tools' DM listener now runs at priority -100, after BetterChat, so DM and mention sounds still play for DMs it hides.
+  - It reads `getOriginalText()`, because BetterChat has already put its timestamp in front of the shown message.
+- [x] Window feed: lines are stored without BetterChat's timestamp (the window has its own time column). Long chat history raises the line limit from 300 to 1000 (`chatLineLimit()`). Showing times in BetterChat's format is part of Task 6.
+- [x] Prefix/suffix: the queue sends plain text through `sendChat`, so BetterChat adds its prefix and suffix once, when the message is sent. `ChatPublicQueue.queuedText` maps the decorated packet back to the queued text, so a refusal still re-queues the plain message and the prefix is never doubled.
+- [x] Tests (10 new; 460 total, green):
+  - `ChatModuleLinkTest`: migration, startup, either switch toggles both, a simultaneous change
+  - `ChatSettingsSectionsTest`: six cards, full coverage, unknown settings
+  - `ChatPublicQueuePrefixTest`: decorated match, other chat untouched, refusal re-queues plain text
+  - BetterChat's settings keep saving under their own entry by construction (the same `Setting` objects owned by BetterChat). Can only be checked in game.
+- Not yet checked in game (Task 7):
+  - toggling Chat Tools may show BetterChat's own on/off notification, because `Module.enable()` posts `ModuleToggleEvent`
+  - the six BetterChat cards
+  - the DM sound on 6b6t
+- Found in passing: BetterChat's default Suffix in client-base is still "⋆ ᴍɪᴏ", leftover Mio branding. Not changed here.
 
 ### Task 5: Discord
-- [ ] Port `DiscordIgnSync` and `DiscordIgnClient` as a CLIENT-category module "Discord Sync" (relay URL, apply to clan, apply to Auto TPY, auto-sync hours). It gets its own Settings section beside Discord, using the existing sidebar and `ModulePage`.
-- [ ] Feed the roster into Clan grouping and Auto TPY role filters. Rich Presence (`DiscordModule`) stays unchanged.
-- [ ] Tests for roster parsing, ownership of synced entries (only remove names the sync itself added) and failure handling when the relay is unreachable.
+- [x] `dev.argus.client.modules.client.DiscordSyncModule` ("DiscordSync", CLIENT) has four settings: Relay URL, Apply to clan, Apply to Auto TPY, Auto sync (0–24 h). It shows in Settings beside Discord with the chat icon, and has a "Sync now" button whose label shows the state (Syncing… / Synced N · sync again / Sync failed · try again).
+  - Results go to chat through `ChatUtils.printChat`, only while in a world.
+  - The first sync of a launch waits for the first game tick, because modules switch on while the config loads.
+  - Rich Presence (`DiscordModule`) is untouched.
+- [x] Registered after Chat Tools in `ModuleRegistryMixin`. `attach()` hands Chat Tools the relay (for role access and Discord role groups in Clan) and the current failure (for the waiting notice). Changing the relay re-checks Auto TPY role access at once.
+- [x] Ownership tracking lives in the store (`clan-synced`, `auto-tpy-synced`, plus the new `ownership-version` text), not settings, so presets can't roll it back.
+- [x] The apply step is now pure (`DiscordSyncApply`): unreadable or empty reads change nothing (an empty read clears role access), only names the sync added are removed, and old untrusted tracking keeps everything as hand-added.
+- [x] Tests: 4 new in `DiscordSyncApplyTest`. Roster parsing, retries, rate limits, network failures and overlapping reads were already covered by the ported `DiscordIgnTest`, `DiscordIgnClientTest` and `DiscordIgnSyncStateTest`. A failed read never touches the lists. 464 tests green, build green.
+- Not yet checked in game (Task 7): a real sync against your relay, the Sync now label, and chat output.
 
 ### Task 6: Window
-- [ ] `ChatToolsScreen extends UiScreen`, with sidebar pages as listed above. Port each page's content onto Argus widgets: toolbar, captions, grouped lists, tiles, bubbles.
-- [ ] Embed `SettingsList` for the Settings page. Theme, accent, scale and light/dark come from `UiTheme`/`GuiPreferences`.
-- [ ] Add a "Chat" top-bar tab, `/chattools`, a keybind, and a "Open Chat Tools" button on the module page.
-- [ ] Waiting-pill HUD module.
+- [x] `gui/ChatToolsScreen` (`UiScreen`) uses Settings' frame: panel, sidebar and sliding indicator, page header, edge fades, scrollbar and footer notices. Theme, accent, scale and light/dark all come from `UiTheme`/`GuiPreferences`.
+  - **Sidebar pages:** Overview, Chat, Messages, Players, Clan, Homes, Teleports, Auto TPY, Server, Settings. Badges show unread messages, pending requests and Auto TPY's buffer.
+  - **Server** appears only when the server has `/hotspot` or one of the server-settings commands.
+  - Every control records where it was drawn, so clicks match what's on screen. Anything typed goes through a modal dialog (new/rename/delete home, new message, reply, request teleport, add clan members, ignore, commands that need text).
+  - **Composer and tray:** the composer sends public chat, `/commands` or the open conversation's DMs. Drafts are kept per conversation. A send tray shows up to two queued messages, with cancel buttons.
+- [x] Pages ported from Comet:
+  - **Overview:** quick actions; a waiting list (requests, unread DMs, a Discord problem with a Fix button that opens Settings → Discord Sync); timers; Auto TPY and Clan tiles; favourite-home tiles; recent players.
+  - **Chat:** the server's lines as in-game chat shows them (vanilla font at 0.8 scale, styles kept), bottom-anchored, with a Newest button. Times use BetterChat's format (HH, HH:mm or HH:mm:ss) while its Timestamps setting is on.
+  - **Messages:** a conversation list, plus chat bubbles with pending sends and a request strip.
+  - **Players:** search; an actions card (message, TP, friend and enemy through `SocialRegistry`, clan, `/ignore`, detected and configured commands); recent; Argus friends with a "Manage" link to Settings → Friends; online players only while searching.
+  - **Clan:** a Discord sync bar (Sync now, Discord settings), add members, CSV import (picker or file drop), and members grouped by role with Discord name and role labels.
+  - **Homes, Teleports, Auto TPY, Server:** as Comet. Teleports has requests, timers, and Auto/Manual cooldown lengths with steppers.
+  - **Auto TPY:** Queue, Roles, Lists (with import) and Timing. Timing points to the settings page instead of duplicating the number steppers.
+- [x] Settings page: the Chat Tools `ModulePage`, so its cards include BetterChat's six cards.
+- [x] Entry points: the module key, clicking a name in chat, `/chattools`, a "Chat" top-bar page tab (`PAGE_TABS`, chat icon), and an "Open Chat Tools" button on the module's page. `ChatToolsScreen.attach()` (from the client tick) gives the module its `Window` hook.
+- [x] Waiting indicator: `ChatWaitingHudModule` ("Chat Waiting") is a HUD widget registered next to Volytra Speed, so it can be placed and styled in the HUD editor. It shows a line each for requests, unread messages and a Discord sync problem. It replaces Chat Tools' "Waiting notification" setting, which was removed.
+- [x] `UiInput.placeholder(String)` added, so the composer's hint follows the conversation. Build green, 464 tests green.
+- Changes from Comet:
+  - Icons come from Argus's set (the closest match per page).
+  - The window follows Argus's GUI scale instead of being a resizable floating window.
+  - The Discord connection form lives in Settings → Discord Sync.
+- Not yet checked in game (Task 7): any page rendering, input focus, dialogs, CSV picker and drop, the top-bar tab, HUD widget placement.
 
 ### Task 7: Import, build, review
-- [ ] Extend config import for Comet chat-tools and discord-ign-sync data. Add tests in the style of the existing import tests.
-- [ ] Run the full tests and build the single jar. Test in game on 6b6t: DMs, TPA, homes, Auto TPY.
-- [ ] Code review, then install with the game closed.
+- [x] **Settings import:** `MeteorMappings` maps Comet's `chat-tools` onto ChatTools, covering 31 settings. Meteor's NBT bytes become booleans, and its `{r,g,b,a}` colours become Argus's rgba. The open key is left behind. `discord-ign-sync` is a CLIENT module, so it isn't a preset target; its relay comes over with the data instead.
+- [x] **Data import:** `ChatToolsDataImport` (pure extract and plan, plus a live `apply`) adds a new `DataKind.CHAT_TOOLS` "Chat Tools data" row in Import → From an instance, read from the main modules.nbt. It only adds:
+  - names compare without case
+  - a server Argus already has cooldowns or recent players for keeps its own
+  - Argus's own sync tracking, roster and relay are kept
+  - roster and source come over only together
+  - unreadable Discord JSON is skipped
+  - Comet's command options join Argus's defaults
+  The chat data file is backed up to `import-backups/` first. `ChatToolsModule.dataImported()` refreshes its caches afterwards.
+- [x] Tests: 8 in `ChatToolsImportTest`, covering extraction, an empty Argus, add-only rules, importing twice adds nothing, broken Discord data, settings mapping, colours and booleans, and that every mapped name is a real setting. Full suite: 472 green. `./gradlew build` green.
+- [x] Self-review of the risky paths: threading in the packet handlers, the BetterChat link, config loading, mixin targets, window input routing and saving. No blocking issues found. README has a new Chat Tools section, plus the import note.
+- [x] Installed 2026-11-09 with the game closed (checked for the instance's Java process). The old jar was backed up to `minecraft/mod-backups/argus-client.jar.before-chat-tools-20261109-151827`. Repo release copy `1.21.11/argus-client.jar` updated; all three sha256 match.
+- [ ] **In-game test on 6b6t (needs you):**
+  - DMs (send, receive, hide, sound), TPA accept/deny, homes, Auto TPY
+  - clan colours in chat and tab, clicking names in chat, the window's pages and dialogs
+  - CSV import, Discord sync against your relay, the Chat Waiting HUD widget, BetterChat cards
+  - whether toggling Chat Tools also shows BetterChat's own toggle notification
 
 ## Open questions
 1. ~~**Discord:**~~ Decided 2026-11-09: port the relay sync only; Rich Presence is not touched.

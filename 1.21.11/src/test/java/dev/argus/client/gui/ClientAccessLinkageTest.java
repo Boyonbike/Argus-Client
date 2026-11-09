@@ -13,9 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Check shared client field names without starting Minecraft or initializing its classes. */
 final class ClientAccessLinkageTest {
     @Test
-    void allSharedClientFieldReferencesResolveInThePackagedBase() throws Exception {
+    void allSharedClientFieldReferencesResolveInThePackagedClient() throws Exception {
         String owner = "dev/argus/client/ClientAccess";
-        try (ZipFile jar = new ZipFile(Path.of("libs/client-base.jar").toFile())) {
+        try (ZipFile jar = new ZipFile(Path.of(System.getProperty("argus.release.jar")).toFile())) {
             assertNotNull(jar.getEntry(owner + ".class"), "ClientAccess must use the Argus Client package");
             ClassNode access = new ClassNode();
             new ClassReader(jar.getInputStream(jar.getEntry(owner + ".class"))).accept(access, 0);

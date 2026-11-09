@@ -2041,3 +2041,46 @@ AutoRekit	Replace damaged gear	Replaces damaged tools, worn armour and offhand g
 AutoRekit	Replace with larger stacks	Swaps in a larger matching stack when different names prevent Minecraft from combining the stacks. The displaced stack goes back into storage.
 AutoRekit	Delay	Milliseconds between complete inventory transfers. The client's normal click limit still applies.
 AutoRekit	Active preset	The inventory preset to restore. Use Manage rekit presets to save, update, select or delete a preset.
+ChatTools		Messages, friends, clan, homes, teleport requests and Auto TPY in one window. Open it with its key, or click a player's name in chat.
+ChatTools	Open window key	Key that opens the Chat Tools window while you're in game with no screen open. Not bound by default.
+ChatTools	Detect player commands	Adds commands from the server's command list whose next argument takes a player name, so they appear in each player's actions.
+ChatTools	Run complete commands	Runs a complete player command as soon as you pick it. Off puts it in the window's input so you can check it first.
+ChatTools	Request timeout	How long to keep an incoming teleport request when the server doesn't say when it expires.
+ChatTools	Hide private messages	Hides recognised private messages from normal chat once the window has captured them.
+ChatTools	Message notifications	Shows a notification when a private message arrives and you're not reading that conversation.
+ChatTools	Message command	Command used to send private messages. {player} is replaced by the recipient.
+ChatTools	Queue chat	Pressing Enter adds public chat to a queue that sends at the server's pace, so you can keep typing.
+ChatTools	Chat cooldown	Time between queued public messages. The queue gives unnamed server refusals five seconds to arrive. A longer server cooldown still wins.
+ChatTools	Message cooldown	Time between queued private messages. Without a matching server echo, the queue waits up to five seconds for a refusal. A longer server cooldown still wins.
+ChatTools	Home cooldown	Estimated cooldown after a home teleport, used until the server reports the real one. Learned and manual lengths in the window replace it. 0 turns the estimate off.
+ChatTools	Teleport cooldown	Estimated cooldown after a teleport to a player, used until the server reports the real one. Learned and manual lengths in the window replace it. 0 turns the estimate off.
+ChatTools	Accept automatically	Buffers incoming teleport requests and accepts the eligible ones automatically. Set up the whitelist first.
+ChatTools	Whitelist only	Only accepts whitelisted players, plus friends when Allow friends is on.
+ChatTools	Allow friends	Accepts Argus friends even when they're not on the whitelist. The blocklist still wins.
+ChatTools	Accept teleports to me	Accepts requests from players who want to teleport to you.
+ChatTools	Accept teleports to them	Accepts requests that would teleport you to someone else.
+ChatTools	Accept interval	Minimum time between accept commands. 0 sends at most one per game tick.
+ChatTools	Adaptive pacing	Learns the pace from the server's confirmations and rate-limit replies. Unclear replies never make it faster.
+ChatTools	Fastest interval	The fastest interval Adaptive pacing may use.
+ChatTools	Slowest interval	The slowest interval Adaptive pacing may use. A pause the server asks for can still be longer.
+ChatTools	Buffer limit	Maximum requests held at once. New players are turned away, visibly, when it's full.
+ChatTools	Awaiting replies	Maximum accept commands waiting for the server's reply while new requests keep buffering.
+ChatTools	Max attempts	Total tries for each request, including the first.
+ChatTools	Reply timeout	How long to wait for the server to confirm before retrying.
+ChatTools	Retry backoff	First wait before a retry. It doubles with each retry, up to 30 seconds.
+ChatTools	Highlight clan in chat	Colours clan members' names in chat. Friends and enemies keep BetterChat's colours.
+ChatTools	Clan chat colour	Colour of clan members' names in chat and in the window.
+ChatTools	Highlight clan in tab	Colours clan members' names in the tab list.
+ChatTools	Clan tab colour	Colour of clan members' names in the tab list.
+ChatTools	Highlight clan rows	Draws a coloured bar behind clan members' rows in the tab list.
+ChatTools	Clan row colour	Colour of the bar behind clan members' rows. Its transparency sets how strong the bar is.
+ChatTools	Messages	Private messages, the send queue and notifications.
+ChatTools	Teleports	Fallback cooldowns used until the server reports the real ones.
+ChatTools	Auto TPY	Accept incoming teleport requests automatically, at the server's pace.
+ChatTools	Clan	How clan members stand out in chat and the tab list.
+DiscordSync		Keeps the Chat Tools clan list and Auto TPY whitelist in step with the Minecraft names posted in your Discord's #ign channel. Separate from Discord, which shows Rich Presence.
+DiscordSync	Relay URL	Your clan's relay link (https://…). The relay holds the Discord bot token and reads the server's members and #ign, so no token is stored here.
+DiscordSync	Apply to clan	Keeps the Chat Tools clan list in step with the linked players. Names you added by hand stay; names an earlier sync added are removed when Discord stops listing them.
+DiscordSync	Apply to Auto TPY	Keeps the Auto TPY whitelist in step with the linked players. The Auto TPY blocklist still wins.
+DiscordSync	Auto sync	Syncs once when the game starts, then this many hours apart while you play. 0 syncs only at game start and when you press Sync now.
+Chat Waiting		Shows what Chat Tools is waiting on you for: teleport requests, unread private messages and a Discord sync problem. Each line only appears while it applies.

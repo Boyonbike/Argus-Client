@@ -1,9 +1,12 @@
 package dev.argus.client.network;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class ConnectionProfilesTest {
     @TempDir Path dir;
@@ -31,6 +34,20 @@ class ConnectionProfilesTest {
         Path path = dir.resolve("connections.json"); java.nio.file.Files.writeString(path, "broken");
         assertThrows(java.io.IOException.class, () -> new ConnectionProfiles(path));
         assertEquals("broken", java.nio.file.Files.readString(path));
+    }
+    @Test void openingProfilesRepairsPermissionsLoosenedByOldMigration() throws Exception {
+        assumeTrue(Files.getFileStore(dir).supportsFileAttributeView("posix"));
+        Path path = dir.resolve("connections.json");
+        var store = new ConnectionProfiles(path);
+        store.putProxy(ProxyEntry.parse("127.0.0.1:1080:user:eggclient-secret"));
+        Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-r--r--"));
+        String previous = Files.readString(path);
+
+        var loaded = new ConnectionProfiles(path);
+
+        assertEquals("eggclient-secret", loaded.proxies().getFirst().password());
+        assertEquals(previous, Files.readString(path));
+        assertEquals(PosixFilePermissions.fromString("rw-------"), Files.getPosixFilePermissions(path));
     }
     @Test void storesAccountsAndReplacesDuplicateIdentity() throws Exception {
         var store = new ConnectionProfiles(dir.resolve("connections.json"));

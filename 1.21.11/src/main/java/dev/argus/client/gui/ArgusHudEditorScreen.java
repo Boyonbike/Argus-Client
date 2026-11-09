@@ -707,6 +707,10 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (isClosing() || dragged != null || edgeDrag != null) return false;
         double x = logical(event.x()), y = logical(event.y());
         int button = event.button();
+        if (UIModule.INSTANCE != null) {
+            var bind = UIModule.INSTANCE.getKeybind();
+            if (bind.mouse() && !bind.isUnbound() && bind.code() >= 2 && button == bind.code()) { closeWithTransition(); return true; }
+        }
         if (overUi(x, y)) {
             if (button == 0 || button == 1) handleUiClick(x, y, button);
             return true;

@@ -23,6 +23,7 @@ import dev.argus.client.events.LocalPlayerMoveEvent;
 import dev.argus.client.events.LocalPlayerSendPositionEvent;
 import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.LocalPlayerPreTickEvent;
+import dev.argus.client.events.MinecraftDisconnectEvent;
 import dev.argus.client.events.MinecraftRunTickEvent;
 import dev.argus.client.events.MultiPlayerGameModeUseItemEvent;
 import dev.argus.client.events.SoundEnginePlayEvent;
@@ -159,7 +160,8 @@ public class ElytraFlyModule extends Module {
             this.getActiveMode().onDisable();
          }
       } finally {
-         ClientContext.tickRateController.releaseMultiplier(this);
+         this.takeoffRequested = false;
+         this.cancelTakeoff();
          this.fireworkUseTimer.reset();
       }
    }
@@ -203,21 +205,24 @@ public class ElytraFlyModule extends Module {
 
    private void processTakeoff() {
       if (this.modeSetting.getValue() == ModeChoice.BOUNCE) {
+         this.cancelTakeoff();
          return;
       }
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       if (ClientContext.baritoneBridge.isPathingOrCalculating() || !this.isElytraEquipped()
          || player.isFallFlying() || EntityUtils.hasCollisionBelow(player)
          || this.takeoffSetting.getValue() == TakeoffChoice.NONE && !this.takeoffRequested) {
-         this.takeoffJumpPhase = null;
-         ClientContext.tickRateController.releaseMultiplier(this);
+         this.cancelTakeoff();
          return;
       }
       if (player.isInWater()) {
+         this.cancelTakeoff();
          return;
       }
       if (this.takeoffSetting.getValue() == TakeoffChoice.STRICT) {
          ClientContext.tickRateController.requestMultiplier(this, 0.1F);
+      } else {
+         ClientContext.tickRateController.releaseMultiplier(this);
       }
       long deployDelayMillis = this.modeSetting.getValue() == ModeChoice.STRICT
          ? this.deployTimeSetting.getValue() : 100L;
@@ -235,6 +240,17 @@ public class ElytraFlyModule extends Module {
          PacketSender.sendStartFallFlying();
       }
       this.takeoffRequested = false;
+   }
+
+   private void cancelTakeoff() {
+      this.takeoffJumpPhase = null;
+      ClientContext.tickRateController.releaseMultiplier(this);
+   }
+
+   @EventHandler
+   private void onDisconnect(MinecraftDisconnectEvent event) {
+      this.takeoffRequested = false;
+      this.cancelTakeoff();
    }
 
    public boolean isElytraEquipped() {
@@ -465,17 +481,16 @@ public class ElytraFlyModule extends Module {
       this.jumpPressed = event.getInput().keyPresses.jump();
       this.sneakPressed = event.getInput().keyPresses.shift();
       if (!this.isElytraEquipped()) {
+         this.cancelTakeoff();
          return;
       }
       if (this.modeSetting.getValue() == ModeChoice.VOLYTRA) {
-         ClientContext.tickRateController.releaseMultiplier(this);
-         // Volytra handles takeoff itself; clear any leftover base-module jump override.
-         this.takeoffJumpPhase = null;
+         this.cancelTakeoff();
       } else if (this.modeSetting.getValue() != ModeChoice.PACKET
          || this.packetVerticalSetting.getValue() && this.jumpPressed) {
          this.processTakeoff();
       } else {
-         ClientContext.tickRateController.releaseMultiplier(this);
+         this.cancelTakeoff();
       }
       if (this.takeoffJumpPhase != null) {
          switch (this.takeoffJumpPhase) {

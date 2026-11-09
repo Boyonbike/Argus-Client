@@ -6,12 +6,12 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
- * Resolves the Argus Client data directory. On first start it imports an Egg Client or Zio settings
- * folder found next to it, and on every start it updates old client names inside the saved configs.
+ * Resolves the Argus Client data directory. On first start it imports a sibling legacy settings
+ * folder, and on every start it updates old client names inside the saved configs.
  */
 public final class ClientDataDirectory {
-    /** Folders Egg Client and Zio keep their settings in, in import priority; read, never written to. */
-    static final String[] IMPORT_FOLDERS = {"eggclient", "zio"};
+    /** Legacy settings folders in import priority. */
+    static final String[] IMPORT_FOLDERS = {"eggclient", "zio", "randomstuffclient"};
 
     private ClientDataDirectory() {}
 

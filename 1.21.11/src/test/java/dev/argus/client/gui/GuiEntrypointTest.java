@@ -18,7 +18,7 @@ final class GuiEntrypointTest {
             assertNotNull(resource,"The GUI bind integration needs a packaged Mixin configuration");
             assertTrue(new String(resource.readAllBytes(),StandardCharsets.UTF_8).contains("UIModuleMixin"));
         }
-        try(var jar=new ZipFile("libs/client-base.jar")){
+        try(var jar=new ZipFile(System.getProperty("argus.release.jar"))){
             var node=new ClassNode();new ClassReader(jar.getInputStream(jar.getEntry("dev/argus/client/modules/client/UIModule.class"))).accept(node,0);
             Set<String> names=new HashSet<>();node.methods.forEach(method->names.add(method.name));
             assertTrue(names.containsAll(Set.of("onEnable","onDisable","onLocalPlayerTick")),"The integration must use actual core lifecycle methods");
@@ -31,7 +31,7 @@ final class GuiEntrypointTest {
             assertTrue(json.contains("\"LegacyClickGuiMixin\""),"Legacy GUI open() must be redirected");
             assertTrue(json.contains("\"MinecraftSetScreenMixin\""),"Legacy GUI must never become the active screen");
         }
-        try(var jar=new ZipFile("libs/client-base.jar")){
+        try(var jar=new ZipFile(System.getProperty("argus.release.jar"))){
             var node=new ClassNode();new ClassReader(jar.getInputStream(jar.getEntry("dev/argus/client/gui/screens/ClientScreen.class"))).accept(node,0);
             assertTrue(node.methods.stream().anyMatch(method->method.name.equals("open")&&method.desc.equals("()V")),"The redirect must target the real core open() method");
         }

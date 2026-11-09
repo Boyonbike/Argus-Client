@@ -48,16 +48,16 @@ released under **CC0 1.0 Universal**. See the
 ├── README.md                 Version-specific instructions
 ├── THIRD_PARTY_NOTICES.md    Third-party attribution and licence notices
 ├── licenses/                 Full third-party licence texts
-├── src/main/java/            Available client GUI source
+├── src/main/java/            Editable client source
 ├── src/test/java/            Regression tests
-├── libs/client-base.jar      Compiled underlying client
+├── src/main/resources/       Mod metadata, Mixins and assets
 ├── tools/                    Branding and package verification scripts
 ├── gradle/                   Gradle wrapper files
 ├── gradlew / gradlew.bat      Build launchers
-├── build.gradle              Fabric Loom build and client merge
+├── build.gradle              Fabric Loom build
 ├── gradle.properties         Version and dependency settings
 ├── settings.gradle           Project and plugin configuration
-└── argus-client.jar   Combined installable client
+└── argus-client.jar   Installable client
 ```
 
 ## Build
@@ -69,10 +69,9 @@ cd 1.21.11
 ./gradlew build
 ```
 
-On Windows use `gradlew.bat build`. The combined JAR is generated at
+On Windows use `gradlew.bat build`. The client JAR is generated at
 `1.21.11/build/libs/argus-client.jar`.
 
 See the [1.21.11 README](1.21.11/README.md) for controls, verification commands,
-and details of the available source. The full underlying client's source was
-not provided; its compiled base is included alongside the editable GUI source.
+and details of the source recovery. The core and GUI compile together from Java source.
 In-game appearance and controls have not been verified in a running Minecraft instance.

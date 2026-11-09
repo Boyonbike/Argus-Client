@@ -128,6 +128,6 @@ public final class ImportedPresetStore {
                 if(on && !m.isToggled())m.enable();else if(!on && m.isToggled())m.disable();
             }
         }
-        public void persist() { ClientContext.configurationManager.save(); }
+        public void persist() throws IOException { ClientContext.configurationManager.saveChecked(ClientContext.moduleRegistry); }
     }
 }

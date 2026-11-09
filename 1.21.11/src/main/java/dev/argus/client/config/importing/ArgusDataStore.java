@@ -5,6 +5,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.managers.ConfigurationManager;
 import dev.argus.client.modules.misc.Macro;
 import dev.argus.client.modules.misc.SocialEntry;
+import dev.argus.client.settings.JsonConfigurable;
 import dev.argus.client.utils.world.Waypoint;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,17 +43,29 @@ public final class ArgusDataStore {
             backup = writeBackup(ConfigurationManager.ROOT_DIRECTORY.resolve(BACKUP_FOLDER), snapshot);
         } catch (Exception e) { return new Result(false, "Couldn’t back up friends, waypoints and macros. Nothing was imported. " + e.getMessage(), null); }
         ArgusDataPlan.Existing before = existing();
+        List<JsonConfigurable> changed = new ArrayList<>();
+        if (!plan.friends().isEmpty() || !plan.enemies().isEmpty()) changed.add(ClientContext.socialRegistry);
+        if (!plan.waypoints().isEmpty()) changed.add(ClientContext.waypointRegistry);
+        if (!plan.macros().isEmpty()) changed.add(ClientContext.macroRegistry);
+        JsonConfigurable[] stores = changed.toArray(JsonConfigurable[]::new);
+        boolean saving = false;
         try {
             for (String name : plan.friends()) ClientContext.socialRegistry.addFriend(name);
             for (String name : plan.enemies()) ClientContext.socialRegistry.addEnemy(name);
             for (SourceWaypoint w : plan.waypoints()) ClientContext.waypointRegistry.registerWaypoint(new Waypoint(w.name(), w.x(), w.y(), w.z(), w.dimension(), w.server()));
             if (!plan.macros().isEmpty()) ClientContext.macroRegistry.fromJson(plan.macroJson());
             verify(plan, existing());
-            ClientContext.configurationManager.save();
+            saving = true;
+            ClientContext.configurationManager.saveChecked(stores);
             return new Result(true, "Imported " + summary(plan) + ".", backup);
         } catch (Exception e) {
             String message = "Couldn’t import: " + e.getMessage();
-            try { removeAdded(before); ClientContext.configurationManager.save(); message += " Changes were undone."; }
+            try {
+                removeAdded(before);
+                if (!before.equals(existing())) throw new IllegalStateException("The previous lists could not be restored.");
+                if (saving) ClientContext.configurationManager.saveChecked(stores);
+                message += " Changes were undone.";
+            }
             catch (Exception undo) { message += " Undo failed: " + undo.getMessage() + ". Your previous lists are in " + backup.getFileName() + "."; }
             return new Result(false, message, backup);
         }

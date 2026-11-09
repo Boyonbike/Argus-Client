@@ -34,14 +34,17 @@ public final class GuiPreferences {
     public static final int MAX_SAVED_COLOURS = 18;
     public double uiScale = 1;
     public final Set<String> favourites = new HashSet<>();
-    /** Default tabs between the face and settings circles: the Modules page, Friends, and the HUD editor page. */
-    public static final List<String> DEFAULT_BAR_TABS = List.of("tab:Modules", "Friends", "tab:HUD");
+    /** Default tabs between the face and settings circles: the Modules page, the Social menu, and the HUD editor page. */
+    public static final List<String> DEFAULT_BAR_TABS = List.of("tab:Modules", "tab:Social", "tab:HUD");
     /** How bar tabs are labelled. Names fall back to icons when they don't fit the screen. */
     public enum TabStyle { NAMES, ICONS }
     public TabStyle tabStyle = TabStyle.NAMES;
     /** What the HUD tab in the top bar opens: the on-screen editor or the HUD settings page. */
     public enum HudTab { EDITOR, SETTINGS }
     public HudTab hudTab = HudTab.EDITOR;
+    /** What the Social tab in the top bar opens: the Social menu window or the Social settings page. */
+    public enum SocialTab { MENU, SETTINGS }
+    public SocialTab socialTab = SocialTab.MENU;
     /**
      * The tabs between the face and settings circles, in order: fixed pages as {@code tab:<name>},
      * Settings sections (Appearance, Presets or a client module name) by name.
@@ -58,6 +61,7 @@ public final class GuiPreferences {
         try { result.accent = Accent.valueOf(values.getProperty("accent", "LAVENDER")); } catch (IllegalArgumentException ignored) {}
         try { result.tabStyle = TabStyle.valueOf(values.getProperty("tabStyle", "NAMES")); } catch (IllegalArgumentException ignored) {}
         try { result.hudTab = HudTab.valueOf(values.getProperty("hudTab", "EDITOR")); } catch (IllegalArgumentException ignored) {}
+        try { result.socialTab = SocialTab.valueOf(values.getProperty("socialTab", "MENU")); } catch (IllegalArgumentException ignored) {}
         result.snap = Boolean.parseBoolean(values.getProperty("snap", "true"));
         result.barOpen = Boolean.parseBoolean(values.getProperty("barOpen", "false"));
         result.showGrid = Boolean.parseBoolean(values.getProperty("showGrid", "true"));
@@ -70,8 +74,14 @@ public final class GuiPreferences {
         if (values.containsKey("barTabs")) {
             result.barTabs.clear();
             for (String raw : values.getProperty("barTabs").split(",")) {
-                // Friends became a Settings section; the UI, Colors and Fonts modules now live under Appearance.
-                String tab = switch (raw.trim()) { case "tab:Friends" -> "Friends"; case "UI", "Colors", "Fonts" -> "Appearance"; default -> raw.trim(); };
+                // Friends and the Chat Tools page became the Social tab; the UI, Colors and Fonts modules now live under
+                // Appearance; Discord Sync shares the Discord page.
+                String tab = switch (raw.trim()) {
+                    case "tab:Friends", "Friends", "tab:Chat" -> "tab:Social";
+                    case "UI", "Colors", "Fonts" -> "Appearance";
+                    case "DiscordSync" -> "Discord";
+                    default -> raw.trim();
+                };
                 if (!tab.isBlank() && !result.barTabs.contains(tab)) result.barTabs.add(tab);
             }
         }
@@ -104,6 +114,7 @@ public final class GuiPreferences {
         values.setProperty("barTabs", String.join(",", barTabs));
         values.setProperty("tabStyle", tabStyle.name());
         values.setProperty("hudTab", hudTab.name());
+        values.setProperty("socialTab", socialTab.name());
         windows.forEach((name, window) -> {
             String prefix = "window." + name;
             values.setProperty(prefix + ".x", Integer.toString(window.x)); values.setProperty(prefix + ".y", Integer.toString(window.y));

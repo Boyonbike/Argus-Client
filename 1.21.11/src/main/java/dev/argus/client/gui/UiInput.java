@@ -13,10 +13,12 @@ import net.minecraft.network.chat.Component;
  */
 final class UiInput extends EditBox {
     static final int PAD = 7;
-    private final String placeholder;
+    private String placeholder;
     private String icon;
     private boolean secret;
     UiInput secret(boolean value) { secret = value; return this; }
+    /** Changes the hint shown while the field is empty. */
+    UiInput placeholder(String hint) { placeholder = hint; return this; }
     private String displayValue() { return secret ? "•".repeat(getValue().length()) : getValue(); }
     private int displayStart;
     private float focus, caret;

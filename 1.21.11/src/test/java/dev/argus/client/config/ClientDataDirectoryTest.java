@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
@@ -142,6 +143,29 @@ final class ClientDataDirectoryTest {
     }
 
     @Test
+    void migratesRandomStuffSettingsAndTheOldChatSuffix() throws Exception {
+        Path previous = Files.createDirectory(game.resolve("randomstuffclient"));
+        Path settings = previous.resolve("modules.json");
+        String original = """
+                {
+                  "client": "randomstuffclient",
+                  "BetterChat": {"settings": {"Suffix": "⋆ ᴍɪᴏ"}},
+                  "Watermark": {"settings": {"Text": "ShuClient"}}
+                }
+                """;
+        Files.writeString(settings, original);
+        Path target = game.resolve("argusclient");
+
+        ClientDataDirectory.migrateLegacy(target);
+
+        JsonObject migrated = JsonParser.parseString(Files.readString(target.resolve("modules.json"))).getAsJsonObject();
+        assertEquals("argusclient", migrated.get("client").getAsString());
+        assertEquals("⋆ Argus Client", migrated.getAsJsonObject("BetterChat").getAsJsonObject("settings").get("Suffix").getAsString());
+        assertEquals("Argus Client", migrated.getAsJsonObject("Watermark").getAsJsonObject("settings").get("Text").getAsString());
+        assertEquals(original, Files.readString(settings));
+    }
+
+    @Test
     void leavesOtherValuesNamedZioAlone() {
         String json = "{\"Mode\": \"zio\", \"Text\": \"Zion\"}";
         assertEquals(json, LegacyConfigRenamer.renameJson(json), "Only the client marker is renamed from lowercase zio");
@@ -154,6 +178,44 @@ final class ClientDataDirectoryTest {
         Files.writeString(game.resolve("eggclient"), "ignored: Argus settings already exist");
         ClientDataDirectory.migrateLegacy(target);
         assertEquals("{\n  \"Watermark\": {\n    \"Text\": \"Argus Client\"\n  }\n}\n", Files.readString(target.resolve("hud.json")));
+    }
+
+    @Test
+    void leavesConnectionCredentialsAndFilePermissionsIntact() throws Exception {
+        Path target = Files.createDirectory(game.resolve("argusclient"));
+        String contents = "{\"proxies\":[{\"password\":\"eggclient-password\"}],\"accounts\":[{\"credential\":\"Mio\"}]}";
+        Path connections = Files.writeString(target.resolve("connections.json"), contents);
+        boolean posix = Files.getFileStore(connections).supportsFileAttributeView("posix");
+        var privatePermissions = PosixFilePermissions.fromString("rw-------");
+        if (posix) Files.setPosixFilePermissions(connections, privatePermissions);
+
+        ClientDataDirectory.migrateLegacy(target);
+
+        assertEquals(contents, Files.readString(connections));
+        if (posix) assertEquals(privatePermissions, Files.getPosixFilePermissions(connections));
+    }
+
+    @Test
+    void migrationPreservesPermissionsAndLeavesExistingStagingFilesAlone() throws Exception {
+        Path config = Files.writeString(game.resolve("hud.json"), EGG_HUD);
+        Path existing = Files.writeString(game.resolve("hud.json.argus-rename"), "existing data");
+        boolean posix = Files.getFileStore(config).supportsFileAttributeView("posix");
+        var privatePermissions = PosixFilePermissions.fromString("rw-------");
+        if (posix) Files.setPosixFilePermissions(config, privatePermissions);
+
+        assertEquals(1, LegacyConfigRenamer.renameAll(game));
+
+        assertEquals("existing data", Files.readString(existing));
+        assertTrue(Files.readString(config).contains("Argus Client"));
+        if (posix) assertEquals(privatePermissions, Files.getPosixFilePermissions(config));
+    }
+
+    @Test
+    void preservesPropertiesLineEndingsDuringMigration() {
+        String original = "#EggClient GUI\r\nbarOpen=true\r\n";
+        assertEquals("#Argus Client GUI\r\nbarOpen=true\r\n", LegacyConfigRenamer.renameText(original));
+        String unchanged = "barOpen=true\r\n";
+        assertEquals(unchanged, LegacyConfigRenamer.renameText(unchanged));
     }
 
     @Test

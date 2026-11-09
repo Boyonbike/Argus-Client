@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.modules.misc.ChatToolsModule;
+
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.player.AutoRekitModule;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,6 +22,9 @@ final class ModuleSettingsScreen extends UiScreen {
         if (module instanceof AutoRekitModule rekit)
             page.action("Rekit presets", "star", "Manage rekit presets and save your inventory",
                     () -> minecraft.setScreen(new RekitPresetsScreen(this, rekit)));
+        if (module instanceof ChatToolsModule tools)
+            page.action("Open Social Menu", "people", "Messages, players, clan, homes, teleports and Auto TPY",
+                    () -> minecraft.setScreen(new ChatToolsScreen(this, null)));
     }
 
     @Override protected void buildContent() {

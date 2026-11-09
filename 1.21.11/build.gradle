@@ -4,9 +4,36 @@ plugins {
 
 version = project.mod_version
 group = 'dev.argus'
-base { archivesName = 'argus-client-gui' }
+base { archivesName = 'argus-client' }
 
-repositories { mavenCentral(); maven { url = 'https://maven.lenni0451.net/releases' } }
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.lenni0451.net/releases' }
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    ivy {
+        url = 'https://raw.githubusercontent.com/m1919810/SlimefunHelper/1.21.11/libs'
+        patternLayout { artifact 'baritone-meteor-[revision].jar' }
+        metadataSources { artifact() }
+        content { includeModule 'meteordevelopment', 'baritone' }
+    }
+}
+
+configurations {
+    baritoneDistribution { transitive = false }
+    viaDistribution { transitive = false }
+}
+
+def baritone = providers.provider {
+    def jar = configurations.baritoneDistribution.singleFile
+    def hash = java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex().toString()
+    if (hash != '3e8c7ab86b7c0148f8711ca2e7cb608712dbc2a97253de0f131ec3db41a2bd3c') {
+        throw new GradleException('Baritone artifact does not match the pinned build')
+    }
+    jar
+}
 
 dependencies {
     implementation('io.netty:netty-handler-proxy:4.2.7.Final') { transitive = false }
@@ -21,7 +48,25 @@ dependencies {
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    modCompileOnly files('libs/client-base.jar')
+    compileOnly 'org.jetbrains:annotations:26.0.2'
+    // Optional runtime integrations need their APIs on the source compile classpath.
+    modCompileOnly('maven.modrinth:viafabricplus:YzQYJEjP') { transitive = false }
+    modCompileOnly('maven.modrinth:lithium:Ow7wA0kG') { transitive = false }
+    modCompileOnly('maven.modrinth:immediatelyfast:QwkfUKSj') { transitive = false }
+    modCompileOnly('maven.modrinth:sodium:RB7CDjTS') { transitive = false }
+    modCompileOnly('maven.modrinth:xaeros-minimap:62EynHPJ') { transitive = false }
+    modCompileOnly('maven.modrinth:entityculling:CTabrwB1') { transitive = false }
+    baritoneDistribution 'meteordevelopment:baritone:1.21.11'
+    viaDistribution 'maven.modrinth:viafabricplus:YzQYJEjP'
+    modCompileOnly files(baritone)
+    compileOnly files(baritone.map { jar ->
+        zipTree(jar).matching { include 'META-INF/jars/nether-pathfinder-*.jar' }.files
+    })
+    compileOnly files(providers.provider {
+        zipTree(configurations.viaDistribution.singleFile).matching {
+            include 'META-INF/jars/viaversion-common-*.jar', 'META-INF/jars/Reflect-*.jar'
+        }.files
+    })
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'org.ow2.asm:asm-tree:9.10.1'
     testImplementation 'org.ow2.asm:asm-analysis:9.10.1'
@@ -36,93 +81,26 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-// The GUI-only jars are intermediate build steps, so keep them out of build/libs.
-// build/libs then holds just argus-client.jar, the one jar to install.
-def intermediateJars = layout.buildDirectory.dir('intermediates/jars')
-tasks.named('jar') { destinationDirectory = intermediateJars }
-tasks.named('remapJar') { destinationDirectory = intermediateJars }
-
-// Compile/remap the GUI, then combine it with the existing client at runtime names.
-// Only the GUI classes replace packaged content.
-def mergedMetadata = layout.buildDirectory.file('generated/merged/fabric.mod.json')
-tasks.register('prepareMergedMetadata') {
-    inputs.file('libs/client-base.jar')
-    outputs.file(mergedMetadata)
-    doLast {
-        def zip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
-        try {
-            def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
-            data.name = 'Argus Client'
-            data.version = project.version.toString()
-            data.description = 'Argus Client with module search, a tabbed module menu, and Friends management.'
-            data.entrypoints.client += 'dev.argus.client.gui.FriendsMod'
-            data.mixins += 'argusclient.gui.mixins.json'
-            data.jars = [[file: 'META-INF/jars/netty-handler-proxy-4.2.7.Final.jar'], [file: 'META-INF/jars/netty-codec-socks-4.2.7.Final.jar'], [file: 'META-INF/jars/MinecraftAuth-5.0.2.jar'], [file: 'META-INF/jars/httpclient-1.9.2.jar'], [file: 'META-INF/jars/gson-1.9.2.jar']]
-            def target = mergedMetadata.get().asFile
-            target.parentFile.mkdirs()
-            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)) + '\n'
-        } finally {
-            zip.close()
-        }
-    }
+loom { accessWidenerPath = file('src/main/resources/argusclient.accesswidener') }
+tasks.named('remapJar') { archiveFileName = 'argus-client.jar' }
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
 }
-// The base client's custom loading overlay (splash, progress bar and startup sound) is dropped:
-// Minecraft's own loading screen is shown instead.
-def removedBaseMixins = ['LoadingOverlayMixin']
-def mergedMixins = layout.buildDirectory.file('generated/merged/argusclient.mixins.json')
-tasks.register('prepareMergedMixins') {
-    inputs.file('libs/client-base.jar')
-    outputs.file(mergedMixins)
-    doLast {
-        def zip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
-        try {
-            def data = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('argusclient.mixins.json')))
-            ['mixins', 'client', 'server'].each { key -> if (data[key] != null) data[key] = data[key].findAll { !(it in removedBaseMixins) } }
-            def target = mergedMixins.get().asFile
-            target.parentFile.mkdirs()
-            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)) + '\n'
-        } finally {
-            zip.close()
-        }
-    }
-}
-tasks.register('mergeClient', Jar) {
-    dependsOn tasks.remapJar, tasks.prepareMergedMetadata, tasks.prepareMergedMixins
-    archiveFileName = 'argus-client.jar'
-    destinationDirectory = layout.buildDirectory.dir('libs')
-    from(zipTree(file('libs/client-base.jar'))) {
-        exclude 'config/**', 'configs/**', 'argusclient/**', 'gui.properties'
-        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF'
-        exclude 'dev/argus/client/modules/movement/ElytraFlyModule*.class'
-        exclude 'dev/argus/client/managers/HudModuleRegistry*.class'
-    }
-    from({ zipTree(tasks.remapJar.archiveFile.get().asFile) }) {
-        include 'META-INF/jars/**', 'dev/argus/**', 'THIRD_PARTY_NOTICES.md', 'licenses/**', 'assets/argusclient/descriptions.tsv', 'assets/argusclient/font/**', 'assets/argusclient/fonts/**', 'assets/argusclient/shaders/**', 'assets/argusclient/textures/font/**', 'assets/argusclient/textures/icons/**', 'argusclient.gui.mixins.json'
-    }
-    from(mergedMetadata) { into '' }
-    from(mergedMixins) { into '' }
-    // Preserve the base client's static Mixin remapping and runtime namespace metadata.
-    doFirst {
-        def baseZip = new java.util.zip.ZipFile(file('libs/client-base.jar'))
-        try {
-            def original = new java.util.jar.Manifest(baseZip.getInputStream(baseZip.getEntry('META-INF/MANIFEST.MF')))
-            manifest.attributes(original.mainAttributes.collectEntries { key, value -> [(key.toString()): value.toString()] })
-        } finally {
-            baseZip.close()
-        }
-    }
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-}
-tasks.build { dependsOn tasks.mergeClient }
 
-// Core API tests need the same remapped Minecraft/client classes as compilation.
-tasks.test { useJUnitPlatform(); classpath += sourceSets.main.compileClasspath }
+def releaseJar = tasks.named('remapJar')
+tasks.test {
+    dependsOn releaseJar
+    useJUnitPlatform()
+    classpath += sourceSets.main.compileClasspath
+    inputs.file(releaseJar.flatMap { it.archiveFile })
+    systemProperty 'argus.release.jar', releaseJar.flatMap { it.archiveFile }.get().asFile
+}
 
-// Distribution archives contain defaults/assets, never a player's saved state.
 tasks.register('verifyReleaseConfig') {
-    dependsOn tasks.mergeClient
+    dependsOn releaseJar
     doLast {
-        def zip = new java.util.zip.ZipFile(tasks.mergeClient.archiveFile.get().asFile)
+        def zip = new java.util.zip.ZipFile(releaseJar.get().archiveFile.get().asFile)
         try {
             java.util.Collections.list(zip.entries()).each { entry ->
                 def name = entry.name
@@ -130,14 +108,15 @@ tasks.register('verifyReleaseConfig') {
                 assert !name.endsWith('/gui.properties') : "Saved GUI preferences in release: ${name}"
             }
             def mixins = zip.getInputStream(zip.getEntry('argusclient.mixins.json')).text
-            removedBaseMixins.each { assert !mixins.contains("\"${it}\"") : "Removed mixin still registered: ${it}" }
-            // Accounts/Proxies need their bundled libraries declared and present, and both mixins registered.
+            assert !mixins.contains('LoadingOverlayMixin') : 'Removed loading overlay is still registered'
             def metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
             assert metadata.jars : 'No nested libraries declared'
             metadata.jars.each { assert zip.getEntry(it.file) != null : "Declared nested library missing: ${it.file}" }
             def guiMixins = zip.getInputStream(zip.getEntry('argusclient.gui.mixins.json')).text
-            ['AccountSessionAccessor', 'ConnectionProxyMixin'].each { assert guiMixins.contains("\"${it}\"") : "Mixin not registered: ${it}" }
-        } finally { zip.close() }
+            ['AccountSessionAccessor', 'ConnectionProxyMixin'].each { assert guiMixins.contains('"' + it + '"') : "Mixin not registered: ${it}" }
+        } finally {
+            zip.close()
+        }
     }
 }
 tasks.check { dependsOn tasks.verifyReleaseConfig }

@@ -39,6 +39,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
@@ -477,8 +478,8 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          this.handleAntiSlam(world, player);
          this.handleMaxHeight(player);
 
-         int chunkX = (int)((player.getX() + this.velX) / 16.0);
-         int chunkZ = (int)((player.getZ() + this.velZ) / 16.0);
+         int chunkX = SectionPos.blockToSectionCoord(player.getX() + this.velX);
+         int chunkZ = SectionPos.blockToSectionCoord(player.getZ() + this.velZ);
          if (this.dontGoIntoUnloadedChunks.getValue() && !world.hasChunk(chunkX, chunkZ)) {
             this.velX = 0.0;
             this.velZ = 0.0;
@@ -703,9 +704,12 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.smartLandingSwap(player);
 
       if (this.autoReplenish.getValue() && this.canManageInventory(player)) {
-         int slot = InventoryUtils.findInventorySlot(stack -> stack.is(Items.FIREWORK_ROCKET), true);
-         if (slot >= 0) {
-            InventoryUtils.swapWithHotbarSlot(InventoryUtils.toMenuSlot(slot), this.replenishSlot.getValue() - 1);
+         int targetSlot = this.replenishSlot.getValue() - 1;
+         if (!player.getInventory().getItem(targetSlot).is(Items.FIREWORK_ROCKET)) {
+            int slot = InventoryUtils.findInventorySlot(stack -> stack.is(Items.FIREWORK_ROCKET), true);
+            if (slot >= 0) {
+               InventoryUtils.swapWithHotbarSlot(InventoryUtils.toMenuSlot(slot), targetSlot);
+            }
          }
       }
 

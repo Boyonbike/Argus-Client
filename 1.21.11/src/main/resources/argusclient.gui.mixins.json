@@ -21,7 +21,12 @@
     "ModuleConfigMixin",
     "HudAnchorGroupMixin",
     "HudMarginControllerMixin",
-    "ArmorModuleMixin"
+    "ArmorModuleMixin",
+    "EntityArgumentAccessor",
+    "ChatScreenPlayerClickMixin",
+    "BetterChatClanHighlightMixin",
+    "TabListClanHighlightMixin",
+    "BetterChatDmSoundMixin"
   ],
   "injectors": {
     "defaultRequire": 1

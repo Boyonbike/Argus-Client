@@ -1,5 +1,10 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.modules.client.DiscordModule;
+import dev.argus.client.modules.client.DiscordSyncModule;
+import dev.argus.client.modules.misc.ChatToolsModule;
+
+import dev.argus.client.modules.Keybind;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
@@ -16,11 +21,12 @@ import net.minecraft.client.input.MouseButtonEvent;
 
 /**
  * The Settings page (opened by the gear circle): Appearance (theme, top bar, window placement,
- * and the UI, Colours and Fonts modules), Presets, Friends, and every other Client module.
+ * and the UI, Colours and Fonts modules), Presets, Social (the Chat Tools and BetterChat settings), and every other
+ * Client module. Discord shows Rich Presence and Discord Sync as two cards, each with its own switch.
  */
 final class SettingsScreen extends UiScreen {
-    static final String APPEARANCE = "Appearance", PRESETS = "Presets", FRIENDS = "Friends";
-    private static final int SIDE = 128, ITEM = 20, FIXED = 3; // Appearance, Presets, Friends; client modules follow
+    static final String APPEARANCE = "Appearance", PRESETS = "Presets", SOCIAL = "Social";
+    private static final int SIDE = 128, ITEM = 20, FIXED = 3; // Appearance, Presets, Social; client modules follow
     private static final double MIN_SCALE = .65, MAX_SCALE = 1.4;
     /** Last section shown, so Settings reopens where you left it. */
     private static String remembered = APPEARANCE;
@@ -33,10 +39,11 @@ final class SettingsScreen extends UiScreen {
     private List<Module> modules = List.of();
     /** The selected client module, shown with the same page layout as every other module. */
     private ModulePage page;
-    /** The modules folded into Appearance, shown as cards. */
+    /** The modules folded into Appearance (or, on the Discord page, Rich Presence and Discord Sync), shown as cards. */
     private final List<SettingsList> appearanceLists = new ArrayList<>();
+    /** Whether {@link #appearanceLists} holds the Discord page's two cards rather than Appearance's. */
+    private boolean discordCards;
     private PresetsPanel presets;
-    private FriendsPanel friends;
     private int left, top, panelWidth, panelHeight;
     private long sectionChanged;
 
@@ -44,7 +51,7 @@ final class SettingsScreen extends UiScreen {
     SettingsScreen(Screen parent, String section, String focusSetting) {
         super("Settings", parent, "Settings");
         DescriptionCatalog.ensureApplied();
-        String requested = section == null ? remembered : section;
+        String requested = section == null ? remembered : sectionFor(section);
         if (isAppearanceModule(requested)) { focusModule = requested; requested = APPEARANCE; }
         this.section = requested;
         this.focusSetting = focusSetting;
@@ -70,7 +77,17 @@ final class SettingsScreen extends UiScreen {
     }
 
     static boolean isSection(String name) {
-        return APPEARANCE.equals(name) || PRESETS.equals(name) || FRIENDS.equals(name) || clientModules().stream().anyMatch(m -> m.getName().equals(name));
+        return APPEARANCE.equals(name) || PRESETS.equals(name) || SOCIAL.equals(name) || clientModules().stream().anyMatch(m -> m.getName().equals(name));
+    }
+    /** The section that shows a module: Chat Tools is the Social page, and Discord Sync is a card on the Discord page. */
+    static String sectionFor(String name) {
+        if ("ChatTools".equals(name)) return SOCIAL;
+        if ("DiscordSync".equals(name) && discordModule() != null) return discordModule().getName();
+        return name;
+    }
+    private static Module discordModule() {
+        for (Module module : GuiState.modules()) if (module instanceof DiscordModule) return module;
+        return null;
     }
     /** The Settings section holding the HUD module (its name, normally "HUD"). */
     static String hudSection() {
@@ -84,18 +101,23 @@ final class SettingsScreen extends UiScreen {
     }
     /** Flips the HUD tab's target and re-lays the top bar so the tab's highlight follows at once. */
     private void flipHudTab() { toggleHudTab(); layoutTabs(); }
-    static String sectionLabel(String name) { return APPEARANCE.equals(name) || PRESETS.equals(name) || FRIENDS.equals(name) ? name : GuiState.title(name); }
+    private void flipSocialTab() {
+        var p = GuiState.preferences();
+        p.socialTab = p.socialTab == GuiPreferences.SocialTab.MENU ? GuiPreferences.SocialTab.SETTINGS : GuiPreferences.SocialTab.MENU;
+        GuiState.save(); layoutTabs();
+    }
+    static String sectionLabel(String name) { return APPEARANCE.equals(name) || PRESETS.equals(name) || SOCIAL.equals(name) ? name : GuiState.title(name); }
 
     /** One icon per section, used in the sidebar, the top-bar chips and icon-style tabs. */
     static String icon(String name) {
         return switch (name.toLowerCase(Locale.ROOT)) {
             case "appearance" -> "palette";
             case "presets" -> "star";
-            case "friends" -> "people";
+            case "social" -> "people";
             case "anticheat" -> "shield";
             case "baritone" -> "compass";
             case "colors" -> "drop";
-            case "discord" -> "chat";
+            case "discord", "discordsync" -> "chat";
             case "fonts" -> "font";
             case "hud" -> "render";
             case "notifications" -> "bell";
@@ -106,6 +128,7 @@ final class SettingsScreen extends UiScreen {
 
     @Override protected String activeSection() { return section; }
     @Override protected void openSection(String name) {
+        name = sectionFor(name);
         if (isAppearanceModule(name)) { focusModule = name; name = APPEARANCE; }
         if (!name.equals(section)) select(name, null, true);
     }
@@ -115,7 +138,7 @@ final class SettingsScreen extends UiScreen {
         panelHeight = height - top - 24;
         modules = clientModules();
         if (!isSection(section)) section = APPEARANCE;
-        if (page == null && appearanceLists.isEmpty() && presets == null && friends == null) select(section, focusSetting, false);
+        if (page == null && appearanceLists.isEmpty() && presets == null) select(section, focusSetting, false);
         else layoutSection();
     }
 
@@ -123,16 +146,34 @@ final class SettingsScreen extends UiScreen {
         if (page != null) page.stopEditing();
         for (SettingsList card : appearanceLists) card.stopEditing();
         if (presets != null) presets.detach();
-        if (friends != null) friends.detach();
         section = name; remembered = name;
-        page = null; appearanceLists.clear();
+        page = null; appearanceLists.clear(); discordCards = false;
+        Module selected = modules.stream().filter(m -> m.getName().equals(name)).findFirst().orElse(null);
         if (name.equals(APPEARANCE)) {
             for (Module module : appearanceModules())
                 appearanceLists.add(new SettingsList(this, module, module.getName().equals(focusModule) ? focus : null));
             pageScroll = 0; shownPageScroll = 0;
+        } else if (name.equals(SOCIAL)) {
+            ChatToolsModule tools = ChatToolsModule.get();
+            if (tools != null) page = new ModulePage(this, tools, focus, false).icon(icon(SOCIAL))
+                    .action(() -> "Social tab opens: " + (GuiState.preferences().socialTab == GuiPreferences.SocialTab.MENU ? "Menu" : "Settings"), "sliders",
+                            "Click to switch whether the Social tab in the top bar opens the Social menu or this page", this::flipSocialTab)
+                    .action("Open Social Menu", "people", "Messages, players, clan, homes, teleports and Auto TPY",
+                            () -> minecraft.setScreen(new ChatToolsScreen(rootParent(), null)));
+        } else if (selected instanceof DiscordModule) {
+            // Rich Presence and Discord Sync share one page: a card each, each with its own switch.
+            discordCards = true;
+            appearanceLists.add(new SettingsList(this, selected, focus));
+            DiscordSyncModule sync = DiscordSyncModule.get();
+            if (sync != null) appearanceLists.add(new SettingsList(this, sync, focus));
+            pageScroll = 0; shownPageScroll = 0;
         } else {
-            Module module = modules.stream().filter(m -> m.getName().equals(name)).findFirst().orElse(null);
+            Module module = selected;
             if (module != null) page = new ModulePage(this, module, focus, false).icon(icon(module.getName()));
+            if (module instanceof DiscordSyncModule sync) page
+                    .action(() -> sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Sync failed · try again"
+                                    : sync.lastSuccessfulSync() > 0 ? "Synced " + sync.syncedAccounts() + " · sync again" : "Sync now", "people",
+                            "Read Discord now and update the clan list and Auto TPY whitelist. Details appear in chat.", sync::syncNow);
             if (module instanceof HUDModule) page
                     .action(() -> "HUD tab opens: " + (GuiState.preferences().hudTab == GuiPreferences.HudTab.EDITOR ? "Editor" : "Settings"), "sliders",
                             "Click to switch whether the HUD tab in the top bar opens the on-screen editor or this page", this::flipHudTab)
@@ -140,7 +181,6 @@ final class SettingsScreen extends UiScreen {
                             "Add, remove and arrange HUD elements on your screen", this::openHudEditor);
         }
         if (name.equals(PRESETS) && presets == null) presets = new PresetsPanel(this);
-        if (name.equals(FRIENDS) && friends == null) friends = new FriendsPanel(this);
         layoutSection();
         if (animate) sectionChanged = System.nanoTime();
         sliding = null;
@@ -151,14 +191,13 @@ final class SettingsScreen extends UiScreen {
         if (page != null) page.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth, false);
         for (SettingsList card : appearanceLists) card.panelEdges(left, left + panelWidth);
         if (section.equals(PRESETS)) presets.layout(x, top, w, panelHeight);
-        if (section.equals(FRIENDS)) friends.layout(x, top, w, panelHeight);
     }
 
     private float contentX() { return left + SIDE + 24; }
     private float contentWidth() { return panelWidth - SIDE - 34; }
     private float itemY(int index) { return top + 32 + index * ITEM; }
     private int sections() { return modules.size() + FIXED; }
-    private String sectionName(int index) { return index == 0 ? APPEARANCE : index == 1 ? PRESETS : index == 2 ? FRIENDS : modules.get(index - FIXED).getName(); }
+    private String sectionName(int index) { return index == 0 ? APPEARANCE : index == 1 ? PRESETS : index == 2 ? SOCIAL : modules.get(index - FIXED).getName(); }
 
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
@@ -181,7 +220,7 @@ final class SettingsScreen extends UiScreen {
             int colour = active ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv);
             UiDraw.icon(g, icon(sectionName(i)), left + 16, iy + ITEM / 2f - 4, 8, colour);
             UiDraw.text(g, UiDraw.fit(sectionLabel(sectionName(i)), SIDE - 36), left + 29, iy + ITEM / 2f, colour);
-            if (i >= FIXED && modules.get(i - FIXED).isToggled())
+            if (i >= FIXED && sectionOn(modules.get(i - FIXED)))
                 UiDraw.circle(g, left + SIDE - 4, iy + ITEM / 2f, 2, UiDraw.alpha(t.accent(), active ? 1 : .7f));
         }
         // ---- content, which fades and slides when the section changes
@@ -193,9 +232,8 @@ final class SettingsScreen extends UiScreen {
         try {
             switch (section) {
                 case PRESETS -> presets.render(g, mx, my, delta, t);
-                case FRIENDS -> friends.render(g, mx, my, delta, t);
                 case APPEARANCE -> appearance(g, mx, my, delta, t);
-                default -> module(g, mx, my, delta, t);
+                default -> { if (discordCards) discord(g, mx, my, delta, t); else module(g, mx, my, delta, t); }
             }
         } finally { g.pose().popMatrix(); UiRender.opacity = before; }
     }
@@ -204,6 +242,71 @@ final class SettingsScreen extends UiScreen {
 
     private void module(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
         if (page != null) page.render(g, mx, my, delta, t);
+    }
+
+    /** The sidebar dot: the Discord section is on while either of its cards is. */
+    private static boolean sectionOn(Module module) {
+        if (module instanceof DiscordModule) { DiscordSyncModule sync = DiscordSyncModule.get(); return module.isToggled() || sync != null && sync.isToggled(); }
+        return module.isToggled();
+    }
+
+    // ---- Discord page: Rich Presence and Discord Sync as two cards ---------------------------
+
+    private void discord(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+        hits.clear();
+        float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2;
+        UiDraw.icon(g, icon("discord"), x, top + 13.5f, 9, t.accent());
+        UiDraw.bold(g, "Discord", x + 13, top + 18, UiDraw.TITLE, t.text());
+        UiDraw.text(g, "Rich Presence and the clan's IGN sync, each with its own switch", x, top + 31, UiDraw.SMALL, t.muted());
+        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
+        List<Float> heights = new ArrayList<>();
+        float total = 0;
+        for (SettingsList card : appearanceLists) { float h = CARD_HEAD + card.contentHeight() + 6f; heights.add(h); total += h + CARD_GAP; }
+        float view = pageBottom() - pageTop();
+        pageScroll = Math.clamp(pageScroll, 0, Math.max(0, total - view));
+        shownPageScroll = UiAnim.approach(shownPageScroll, pageScroll, 18);
+        g.enableScissor(Math.round(x - 4), Math.round(pageTop()), Math.round(x + w + 4), Math.round(pageBottom()));
+        float y = pageTop() - shownPageScroll;
+        for (int i = 0; i < appearanceLists.size(); i++) {
+            SettingsList card = appearanceLists.get(i);
+            float h = heights.get(i);
+            if (card.module() instanceof DiscordSyncModule sync) {
+                card(g, x, y, w, h, "people", "IGN Sync", syncStatus(sync), sync, 70 + syncButtonWidth(sync) + 6, mx, my, t);
+                syncButton(g, sync, x + w - PAD - 74, y + 6, mx, my, t);
+            } else card(g, x, y, w, h, icon("discord"), "Rich Presence", "Show Argus Client as your Discord activity", card.module(), mx, my, t);
+            card.embed(ix - 4, y + CARD_HEAD, iw + 8, pageTop(), pageBottom());
+            card.render(g, mx, my, delta, t);
+            y += h + CARD_GAP;
+        }
+        g.disableScissor();
+        if (shownPageScroll > 1) UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0));
+        if (shownPageScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base());
+        for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
+        String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
+        if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.red());
+        else UiDraw.text(g, "Changes apply instantly and are saved automatically", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+    }
+
+    private static String syncStatus(DiscordSyncModule sync) {
+        if (!sync.isToggled()) return "Keeps the clan list and Auto TPY whitelist in step with your Discord's #ign channel";
+        return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed · details are in chat"
+                : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked accounts" : "Not synced yet";
+    }
+    private static String syncLabel(DiscordSyncModule sync) { return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Try again" : "Sync now"; }
+    private static float syncButtonWidth(DiscordSyncModule sync) { return UiDraw.width(syncLabel(sync), UiDraw.SMALL) + 26; }
+
+    /** Discord Sync's "Sync now" button, right-aligned at {@code right} in its card's header. */
+    private void syncButton(GuiGraphics g, DiscordSyncModule sync, float right, float y, int mx, int my, UiTheme t) {
+        String label = syncLabel(sync);
+        float bw = syncButtonWidth(sync), bx = right - bw, bh = 18;
+        boolean hover = UiDraw.over(mx, my, bx, y, bw, bh);
+        float hv = UiAnim.smooth("discord.sync.h", hover ? 1 : 0, 18);
+        UiDraw.rounded(g, bx, y, bw, bh, 8, UiDraw.alpha(t.accent(), .14f + hv * .1f));
+        UiDraw.outline(g, bx, y, bw, bh, 8, .6f, UiDraw.alpha(t.accent(), .35f + hv * .3f));
+        UiDraw.icon(g, "reset", bx + 7, y + 5, 8, t.accent());
+        UiDraw.text(g, label, bx + 19, y + bh / 2, UiDraw.SMALL, t.accent());
+        if (hover) tooltip("discord.sync", "Sync now", "Read Discord now and update the clan list and Auto TPY whitelist. Details appear in chat.");
+        hits.add(new Hit(bx, y, bw, bh, sync::syncNow));
     }
 
     // ---- appearance page: a scrolling stack of cards ------------------------------------------
@@ -215,6 +318,8 @@ final class SettingsScreen extends UiScreen {
     private final List<Hit> hits = new ArrayList<>();
     /** Slider being dragged ("scale" or "gap") and the track it uses. */
     private String sliding;
+    /** True while the Menu card's open-key chip waits for a key press. */
+    private boolean bindingMenuKey;
     private float sliderX, sliderW;
     /** Pointer x when a recorded hit runs, so a slider jumps to where it was clicked. */
     private double pointerX;
@@ -228,7 +333,7 @@ final class SettingsScreen extends UiScreen {
     static List<String> barCandidates() {
         List<String> all = new ArrayList<>();
         for (String page : UiScreen.PAGE_TABS) all.add(UiScreen.PAGE_PREFIX + page);
-        all.add(APPEARANCE); all.add(PRESETS); all.add(FRIENDS);
+        all.add(APPEARANCE); all.add(PRESETS); all.add(SOCIAL);
         for (Module module : clientModules()) all.add(module.getName());
         return all;
     }
@@ -236,10 +341,10 @@ final class SettingsScreen extends UiScreen {
     static String chipLabel(String entry) {
         if (entry.startsWith(UiScreen.PAGE_PREFIX)) { String page = entry.substring(UiScreen.PAGE_PREFIX.length()); return page; }
         String label = sectionLabel(entry);
-        return label.equalsIgnoreCase("HUD") ? "HUD settings" : label;
+        return label.equalsIgnoreCase("HUD") || SOCIAL.equals(entry) ? label + " settings" : label;
     }
     static String tabIcon(String entry) {
-        if (entry.startsWith(UiScreen.PAGE_PREFIX)) return entry.endsWith("HUD") ? "hud" : "modules";
+        if (entry.startsWith(UiScreen.PAGE_PREFIX)) return entry.endsWith("HUD") ? "hud" : entry.endsWith(SOCIAL) ? icon(SOCIAL) : "modules";
         return icon(entry);
     }
 
@@ -261,12 +366,17 @@ final class SettingsScreen extends UiScreen {
 
     /** Card frame with an icon badge, title, subtitle and an optional enable switch on the right. */
     private void card(GuiGraphics g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, int mx, int my, UiTheme t) {
+        card(g, x, y, w, h, icon, title, subtitle, toggle, toggle != null ? 70 : 0, mx, my, t);
+    }
+
+    /** As above, keeping {@code reserve} pixels of the header's right side clear of the subtitle. */
+    private void card(GuiGraphics g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, float reserve, int mx, int my, UiTheme t) {
         UiDraw.rounded(g, x, y, w, h, 8, UiDraw.alpha(t.mantle(), .6f));
         UiDraw.outline(g, x, y, w, h, 8, .6f, UiDraw.alpha(t.overlay(), .4f));
         UiDraw.circle(g, x + PAD + 7, y + 15, 8, UiDraw.alpha(t.accent(), .16f));
         UiDraw.icon(g, icon, x + PAD + 3, y + 11, 8, t.accent());
         UiDraw.bold(g, title, x + PAD + 20, y + 11, UiDraw.TEXT, t.text());
-        UiDraw.text(g, UiDraw.fit(subtitle, w - PAD * 2 - 20 - (toggle != null ? 70 : 0)), x + PAD + 20, y + 21, 6f, t.muted());
+        UiDraw.text(g, UiDraw.fit(subtitle, w - PAD * 2 - 20 - reserve), x + PAD + 20, y + 21, 6f, t.muted());
         if (toggle != null) {
             boolean hover = UiDraw.over(mx, my, x + w - PAD - 70, y + 6, 70, 18);
             float on = UiAnim.smooth("card.on." + toggle.getName(), toggle.isToggled() ? 1 : 0, 16);
@@ -275,6 +385,26 @@ final class SettingsScreen extends UiScreen {
             hits.add(new Hit(x + w - PAD - 70, y + 6, 70, 18, toggle::toggle));
         }
     }
+
+    /** The key that opens this menu: click, then press a key. Backspace restores Right Shift, Escape cancels. */
+    private void menuKeyChip(GuiGraphics g, float right, float y, int mx, int my, UiTheme t) {
+        UIModule ui = UIModule.INSTANCE;
+        if (ui == null) return;
+        Keybind bind = ui.getKeybind();
+        String label = bindingMenuKey ? "Press a key…" : "Open key: " + (bind.isUnbound() ? "None" : bind.getDisplayName());
+        float cw = UiDraw.width(label, UiDraw.SMALL) + 26, cx = right - cw, ch = 18;
+        boolean hover = UiDraw.over(mx, my, cx, y, cw, ch);
+        float hv = UiAnim.smooth("app.menukey.h", hover || bindingMenuKey ? 1 : 0, 18);
+        float pulse = bindingMenuKey ? .5f + .5f * (float) Math.sin(System.nanoTime() / 1.5e8) : 0;
+        UiDraw.rounded(g, cx, y, cw, ch, 8, bindingMenuKey ? UiDraw.alpha(t.accent(), .16f + pulse * .12f) : UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
+        UiDraw.outline(g, cx, y, cw, ch, 8, .6f, bindingMenuKey ? UiDraw.alpha(t.accent(), .5f + pulse * .5f) : UiDraw.alpha(t.overlay(), .5f + hv * .3f));
+        UiDraw.icon(g, "keyboard", cx + 7, y + 5, 8, bindingMenuKey ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv));
+        UiDraw.text(g, label, cx + 19, y + ch / 2, UiDraw.SMALL, bindingMenuKey ? t.accent() : t.text());
+        if (hover && !bindingMenuKey) tooltip("app.menukey", "Open key", "Click, then press a key or mouse button (middle/side) · Backspace resets to Right Shift");
+        hits.add(new Hit(cx, y, cw, ch, () -> { for (SettingsList card : appearanceLists) card.stopEditing(); bindingMenuKey = !bindingMenuKey; }));
+    }
+
+    @Override protected boolean capturingMenuKey() { return bindingMenuKey; }
 
     /** A two-option segmented control with a sliding thumb. */
     private void segmented(GuiGraphics g, String key, String[] labels, int chosen, float x, float y, float w, int mx, int my, UiTheme t, java.util.function.IntConsumer pick) {
@@ -313,7 +443,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
 
         // Card heights, so the page knows how far it can scroll.
-        float themeH = CARD_HEAD + 52, barH = CARD_HEAD + 26 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 46;
+        float themeH = CARD_HEAD + 52, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 46;
         List<Float> listHeights = new ArrayList<>();
         for (SettingsList card : appearanceLists) listHeights.add(CARD_HEAD + card.contentHeight() + 6f);
         float total = themeH + barH + windowsH + CARD_GAP * 3;
@@ -381,6 +511,14 @@ final class SettingsScreen extends UiScreen {
                 i -> { p.hudTab = i == 1 ? GuiPreferences.HudTab.SETTINGS : GuiPreferences.HudTab.EDITOR; GuiState.save(); layoutTabs(); });
         if (UiDraw.over(mx, my, hudLabelX, row, ix + iw - hudLabelX, 18))
             tooltip("app.hudtab.tip", "HUD tab", "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
+        // What the Social tab opens, under the HUD choice.
+        row += 22;
+        float socialLabelX = hudSegX - UiDraw.width("Social tab opens", UiDraw.SMALL) - 8;
+        UiDraw.text(g, "Social tab opens", socialLabelX, row + 9, UiDraw.SMALL, t.muted());
+        segmented(g, "app.socialtab", new String[]{"Menu", "Settings"}, p.socialTab == GuiPreferences.SocialTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
+                i -> { p.socialTab = i == 1 ? GuiPreferences.SocialTab.SETTINGS : GuiPreferences.SocialTab.MENU; GuiState.save(); layoutTabs(); });
+        if (UiDraw.over(mx, my, socialLabelX, row, ix + iw - socialLabelX, 18))
+            tooltip("app.socialtab.tip", "Social tab", "Choose whether the Social tab in the top bar opens the Social menu or the Social settings page");
         float cx = ix, cy = row + 26;
         for (String entry : barCandidates()) {
             float cw = UiDraw.width(chipLabel(entry), UiDraw.SMALL) + 26;
@@ -438,7 +576,8 @@ final class SettingsScreen extends UiScreen {
                     : module instanceof ColorsModule ? "The client's colour scheme for HUD, ESP and other visuals"
                     : "The client's custom font renderer";
             float h = listHeights.get(i);
-            card(g, x, y, w, h, icon(module.getName()), title, subtitle, ui ? null : module, mx, my, t);
+            card(g, x, y, w, h, icon(module.getName()), title, subtitle, ui ? null : module, ui ? 130 : 70, mx, my, t);
+            if (ui) menuKeyChip(g, x + w - PAD, y + 6, mx, my, t);
             card.embed(ix - 4, y + CARD_HEAD, iw + 8, pageTop(), pageBottom());
             card.render(g, mx, my, delta, t);
             y += h + CARD_GAP;
@@ -457,6 +596,9 @@ final class SettingsScreen extends UiScreen {
         else UiDraw.text(g, "Changes apply instantly and are saved automatically · scroll for more", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
     }
 
+    /** Appearance and Discord: a scrolling stack of module cards with clickable regions recorded while drawing. */
+    private boolean cardPage() { return section.equals(APPEARANCE) || discordCards; }
+
     private void startSlider(String which, float trackX, float trackW) {
         sliding = which; sliderX = trackX; sliderW = trackW;
         slideTo(pointerX);
@@ -472,24 +614,28 @@ final class SettingsScreen extends UiScreen {
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         double mx = event.x(), my = event.y();
+        if (bindingMenuKey) {
+            bindingMenuKey = false;
+            // Middle and side buttons can open the menu; left/right click just cancel so the menu stays usable.
+            UIModule ui = UIModule.INSTANCE;
+            if (ui != null && event.button() >= 2) {
+                ui.setKeybind(new Keybind(event.button(), ui.getKeybind().isUnbound() ? Keybind.Mode.TOGGLE : ui.getKeybind().mode(), true));
+                return true;
+            }
+            if (!section.equals(APPEARANCE)) return true;
+        }
         if (event.button() == 0) for (int i = 0; i < sections(); i++)
             if (UiDraw.over(mx, my, left + 8, itemY(i), SIDE, ITEM)) { if (!sectionName(i).equals(section)) select(sectionName(i), null, true); return true; }
-        switch (section) {
-            case PRESETS -> { if (presets.mouseClicked(event, doubled)) return true; }
-            case FRIENDS -> { if (friends.mouseClicked(event, doubled)) return true; }
-            case APPEARANCE -> {
-                if (my >= pageTop() && my < pageBottom()) {
-                    if (event.button() == 0) for (int i = hits.size() - 1; i >= 0; i--) {
-                        Hit hit = hits.get(i);
-                        if (UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) { pointerX = mx; hit.action().run(); return true; }
-                    }
-                    for (SettingsList card : appearanceLists) if (card.mouseClicked(event, doubled)) return true;
-                } else for (SettingsList card : appearanceLists) card.stopEditing();
-            }
-            default -> {
-                if (page != null && page.mouseClicked(event, doubled)) return true;
-            }
-        }
+        if (section.equals(PRESETS)) { if (presets.mouseClicked(event, doubled)) return true; }
+        else if (cardPage()) {
+            if (my >= pageTop() && my < pageBottom()) {
+                if (event.button() == 0) for (int i = hits.size() - 1; i >= 0; i--) {
+                    Hit hit = hits.get(i);
+                    if (UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) { pointerX = mx; hit.action().run(); return true; }
+                }
+                for (SettingsList card : appearanceLists) if (card.mouseClicked(event, doubled)) return true;
+            } else for (SettingsList card : appearanceLists) card.stopEditing();
+        } else if (page != null && page.mouseClicked(event, doubled)) return true;
         return super.mouseClickedUi(event, doubled);
     }
 
@@ -518,8 +664,7 @@ final class SettingsScreen extends UiScreen {
 
     @Override protected boolean mouseScrolledUi(double mx, double my, double horizontal, double vertical) {
         if (section.equals(PRESETS)) return presets.mouseScrolled(mx, my, vertical);
-        if (section.equals(FRIENDS)) return friends.mouseScrolled(mx, my, vertical);
-        if (section.equals(APPEARANCE)) {
+        if (cardPage()) {
             if (!UiDraw.over(mx, my, contentX() - 4, pageTop(), contentWidth() + 8, pageBottom() - pageTop())) return false;
             pageScroll = Math.max(0, pageScroll - (float) vertical * 40); return true;
         }
@@ -527,8 +672,17 @@ final class SettingsScreen extends UiScreen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
+        if (bindingMenuKey) {
+            bindingMenuKey = false;
+            UIModule ui = UIModule.INSTANCE;
+            if (ui != null && event.key() != 256) {
+                // Never leave the menu without a key: Backspace/Delete go back to Right Shift.
+                int code = event.key() == 259 || event.key() == 261 ? 344 : event.key();
+                ui.setKeybind(new Keybind(code, ui.getKeybind().isUnbound() ? Keybind.Mode.TOGGLE : ui.getKeybind().mode(), false));
+            }
+            return true;
+        }
         if (section.equals(PRESETS) && presets.keyPressed(event)) return true;
-        if (section.equals(FRIENDS) && friends.keyPressed(event)) return true;
         if (page != null && page.keyPressed(event)) return true;
         for (SettingsList card : appearanceLists) if (card.keyPressed(event)) return true;
         return super.keyPressed(event);

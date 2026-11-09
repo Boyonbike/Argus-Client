@@ -12,7 +12,7 @@ public final class CheckedPresetLoader {
         String backup(JsonObject snapshot) throws IOException;
         void settings(JsonObject desired);
         void enabled(JsonObject desired);
-        void persist();
+        void persist() throws IOException;
     }
     public static ImportedPresetStore.ImportLoadResult load(JsonObject desired,Backend backend) {
         JsonObject previous; String backup;

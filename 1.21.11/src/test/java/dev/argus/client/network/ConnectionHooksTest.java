@@ -28,6 +28,19 @@ class ConnectionHooksTest {
             assertFalse(result.alive()); assertEquals("Credentials rejected", result.message()); reply.get(3, TimeUnit.SECONDS);
         }
     }
+    @Test void socks4CheckDoesNotAskTheProxyToConnectToItself() throws Exception {
+        try (var server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            var proxy = ProxyEntry.parse("socks4://127.0.0.1:" + server.getLocalPort());
+            var result = ProxyChecker.check(proxy, 1000);
+            assertTrue(result.alive(), result.message());
+            assertEquals("TCP endpoint reachable", result.message());
+            server.setSoTimeout(1000);
+            try (var socket = server.accept()) {
+                socket.setSoTimeout(1000);
+                assertEquals(-1, socket.getInputStream().read(), "Reachability checks should send no proxy request");
+            }
+        }
+    }
     @Test void cancelledOrReplacedLoginCannotComplete() {
         var attempt = new LoginAttempt(); long first = attempt.begin(); attempt.cancel(); assertFalse(attempt.accepts(first));
         long second = attempt.begin(); assertFalse(attempt.accepts(first)); assertTrue(attempt.accepts(second));

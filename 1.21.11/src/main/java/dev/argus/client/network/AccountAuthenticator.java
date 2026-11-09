@@ -46,6 +46,14 @@ public final class AccountAuthenticator {
         var token = manager.getMinecraftToken().getUpToDate(); var profile = manager.getMinecraftProfile().getUpToDate();
         return new Login(new AccountEntry(id, AccountEntry.Type.MICROSOFT, profile.getName(), profile.getId().toString(), manager.getMsaToken().getUpToDate().getRefreshToken()), token.getToken());
     }
+    /** False only when Minecraft services explicitly reject the token; network trouble is not treated as an expired session. */
+    public static boolean tokenAccepted(String token) {
+        try {
+            var response = HTTP.send(HttpRequest.newBuilder(URI.create("https://api.minecraftservices.com/minecraft/profile"))
+                    .header("Authorization", "Bearer " + token).timeout(Duration.ofSeconds(15)).GET().build(), HttpResponse.BodyHandlers.discarding());
+            return response.statusCode() != 401 && response.statusCode() != 403;
+        } catch (Exception e) { return true; }
+    }
     private static JsonObject request(HttpRequest.Builder builder) throws Exception {
         var response = HTTP.send(builder.timeout(Duration.ofSeconds(25)).build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() / 100 != 2) throw new IOException("Account authentication was rejected. Check the token or sign in again.");

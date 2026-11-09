@@ -37,6 +37,7 @@ import dev.argus.client.modules.hud.TextRadarModule;
 import dev.argus.client.modules.hud.TotemsModule;
 import dev.argus.client.modules.hud.WatermarkModule;
 import dev.argus.client.modules.hud.WelcomerModule;
+import dev.argus.client.modules.hud.ChatWaitingHudModule;
 import dev.argus.client.modules.hud.VolytraSpeedHudModule;
 import dev.argus.client.settings.JsonConfigurable;
 
@@ -67,6 +68,7 @@ public final class HudModuleRegistry implements ClientAccess, JsonConfigurable {
       ClientContext.moduleRegistry.registerModule(new TextRadarModule());
       ClientContext.moduleRegistry.registerModule(new MetricsModule());
       ClientContext.moduleRegistry.registerModule(new VolytraSpeedHudModule());
+      ClientContext.moduleRegistry.registerModule(new ChatWaitingHudModule());
       ClientContext.moduleRegistry.registerModule(new TotemsModule());
       ClientContext.moduleRegistry.registerModule(new LagOMeterModule());
       ClientContext.moduleRegistry.registerModule(new InventoryModule());

@@ -120,13 +120,17 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         }) + 4;
         right -= pill(g, "Edit", right, cy, mx, my, t.accent(), false, !busy, () -> edit(p)) + 4;
         right -= pill(g, "Check", right, cy, mx, my, t.blue(), false, !busy,
-                () -> background("Checking " + p.address() + "…", () -> ProxyChecker.check(p, 5000), r -> { results.put(p.id(), r); if (r.alive()) ok(p.address() + " responded in " + r.latency() + " ms."); else error(r.message()); })) + 4;
+                () -> background("Checking " + p.address() + "…", () -> ProxyChecker.check(p, 5000), r -> {
+                    results.put(p.id(), r);
+                    if (r.alive()) ok(r.message() + " · " + r.latency() + " ms"); else error(r.message());
+                })) + 4;
         float textX = x + 36, room = right - textX - 6;
         UiDraw.bold(g, UiDraw.fit(p.name().isBlank() ? p.address() : p.name(), room), textX, cy - 5, UiDraw.TEXT, enabled ? t.accent() : t.text());
         float cx = textX + chip(g, p.type().toString(), textX, cy + 6.5f, t.blue()) + 4;
         var r = results.get(p.id());
-        String state = r == null ? "Unchecked" : r.alive() ? r.latency() + " ms" : "Unreachable";
-        int tint = r == null ? t.muted() : !r.alive() || r.latency() >= 2000 ? t.red() : r.latency() >= 500 ? t.yellow() : t.green();
+        boolean tcpOnly = p.type() == ProxyEntry.Type.SOCKS4;
+        String state = r == null ? "Unchecked" : !r.alive() ? "Unreachable" : tcpOnly ? "TCP reachable" : r.latency() + " ms";
+        int tint = r == null ? t.muted() : shouldCleanUp(p, r) ? t.red() : r.latency() >= 500 ? t.yellow() : t.green();
         float sw = chip(g, state, cx, cy + 6.5f, tint);
         if (r != null && !r.alive() && UiDraw.over(mx, my, cx, cy + 2, sw, 9)) tooltip(key + ".err", "Unreachable", r.message());
         cx += sw + 5;
@@ -175,16 +179,24 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         }, checked -> {
             results.putAll(checked);
             long alive = checked.values().stream().filter(ProxyChecker.Result::alive).count();
-            ok("Checked " + checked.size() + " · " + alive + " responding. Latency measures SOCKS negotiation.");
+            ok("Checked " + checked.size() + " · " + alive + " responding. SOCKS4 checks TCP reachability.");
         });
     }
     private void cleanup() {
         if (!"cleanup".equals(deleting) || System.nanoTime() - deleteAt >= CONFIRM_NANOS * 4 / 3) {
             deleting = "cleanup"; deleteAt = System.nanoTime();
-            error("Press Clean up again to remove checked proxies that are unreachable or 2000 ms and slower.");
+            error("Press Clean up again to remove unreachable proxies and SOCKS5 checks of 2000 ms or more.");
             return;
         }
         deleting = null;
-        change(() -> { for (var p : profiles.proxies()) { var r = results.get(p.id()); if (r != null && (!r.alive() || r.latency() >= 2000)) profiles.removeProxy(p.id()); } }, "Removed unreachable and slow proxies.");
+        change(() -> {
+            for (var p : profiles.proxies()) {
+                if (shouldCleanUp(p, results.get(p.id()))) profiles.removeProxy(p.id());
+            }
+        }, "Removed unreachable and slow proxies.");
+    }
+
+    private static boolean shouldCleanUp(ProxyEntry proxy, ProxyChecker.Result result) {
+        return result != null && (!result.alive() || proxy.type() == ProxyEntry.Type.SOCKS5 && result.latency() >= 2000);
     }
 }

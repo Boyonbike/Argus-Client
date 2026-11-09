@@ -67,6 +67,23 @@ class MeteorDataImportTest {
         assertEquals(1, read.size()); assertNull(read.getFirst().dimension());
     }
 
+    @Test void preservesServerPortsAndRecognizesLocalhost() {
+        assertEquals("example.org:25570", server("example.org_25570"));
+        assertEquals("localhost", server("localhost"));
+        assertEquals("localhost:25570", server("localhost_25570"));
+        assertEquals("singleplayer", server("My World"));
+    }
+
+    @Test void usesSavedServerAddressesToDecodeEscapedWaypointNames() throws Exception {
+        Path game = Files.createDirectory(temp.resolve("game"));
+        var entry = new CompoundTag();
+        entry.putString("ip", "[2001:db8::1]:25570");
+        NbtIo.writeCompressed(list("servers", entry), game.resolve("servers.dat"));
+        Path waypoints = game.resolve("meteor-client/waypoints");
+        write(waypoints.resolve("[2001_db8__1]_25570.nbt"), list("waypoints", waypoint("Base", 0, 64, 0, "Overworld")));
+        assertEquals("[2001:db8::1]:25570", readWaypoints(waypoints).getFirst().server());
+    }
+
     @Test void findsSiblingPrismInstancesAndResolvesAnyFolderLevel() throws Exception {
         Path instances = temp.resolve("instances");
         Path argus = Files.createDirectories(instances.resolve("Argus 1.21.11/minecraft"));

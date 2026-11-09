@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Notification removal must include its registrations, sender and compatibility aliases. */
 final class RemovedNotificationsTest {
     @Test void baseAndReleaseJarsContainNoNotificationImplementationOrReferences() throws Exception {
-        List<Path> jars = new ArrayList<>(List.of(Path.of("libs/client-base.jar")));
+        List<Path> jars = new ArrayList<>(List.of(Path.of(System.getProperty("argus.release.jar"))));
         try (var releases = Files.newDirectoryStream(Path.of("."), "*.jar")) {
             releases.forEach(jars::add);
         }
@@ -46,7 +46,7 @@ final class RemovedNotificationsTest {
     }
 
     @Test void editedStartupAndMigrationClassesHaveValidBytecode() throws Exception {
-        try (ZipFile jar = new ZipFile("libs/client-base.jar")) {
+        try (ZipFile jar = new ZipFile(System.getProperty("argus.release.jar"))) {
             for (String name : List.of("ClientContext", "bootstrap/ClientInitializer", "managers/CommandRegistry",
                     "managers/ConfigurableRegistry", "managers/ModuleRegistry", "config/LegacyBranding")) {
                 ClassNode type = new ClassNode();
@@ -70,6 +70,18 @@ final class RemovedNotificationsTest {
         assertTrue(settings.has("BPT"));
         assertFalse(settings.has("Frequency"));
         assertSame(input, LegacyBranding.migrateModule("ChestStealer", input));
+    }
+
+    /** These cases lost their old-branding rewrites; they must keep settings, not throw and abort config loading. */
+    @Test void rebrandedModulesKeepTheirSettings() {
+        for (String module : List.of("Watermark", "Welcomer", "AutoSign")) {
+            JsonObject input = new JsonObject();
+            JsonObject settings = new JsonObject();
+            settings.addProperty("Text", "custom");
+            input.add("settings", settings);
+            JsonObject migrated = LegacyBranding.migrateModule(module, input).getAsJsonObject();
+            assertEquals("custom", migrated.getAsJsonObject("settings").get("Text").getAsString(), module);
+        }
     }
 
     private static boolean removed(String text) {

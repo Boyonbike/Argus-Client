@@ -13,8 +13,8 @@ client's APIs; no Meteor/add-on implementation or assets are bundled.
 The bundled Lexend Deca font comes from
 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/lexenddeca).
 Copyright and SIL Open Font License 1.1 terms are included in
-[`OFL-Lexend-Deca.txt`](src/main/resources/assets/argusclient/font/OFL-Lexend-Deca.txt)
-and in the client JAR alongside the pre-rendered glyph atlas. The unmodified
+[`OFL-Lexend-Deca.txt`](src/main/resources/licenses/OFL-Lexend-Deca.txt)
+and under `licenses/` in the client JAR. The unmodified
 source font is in `tools/font-source/lexend-deca.ttf`; it is not loaded by Minecraft.
 
 ## VolytraFly

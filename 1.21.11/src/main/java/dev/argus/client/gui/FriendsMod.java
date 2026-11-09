@@ -1,6 +1,7 @@
 package dev.argus.client.gui;
 
 import net.fabricmc.api.ClientModInitializer;
+import dev.argus.client.modules.misc.ChatToolsModule;
 import dev.argus.client.modules.player.AutoRekitModule;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -10,13 +11,13 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 
 /**
- * Registers /argus (module GUI) and /friends (friends window). The screen opens
+ * Registers /argus (module GUI) and /social, /chattools and /friends (the Social menu, /friends on its Players page). The screen opens
  * on the next client tick because the chat screen closes itself right after a
  * command runs and would otherwise replace our window.
  */
 public final class FriendsMod implements ClientModInitializer {
 
-    private enum Request { NONE, MODULES, FRIENDS }
+    private enum Request { NONE, MODULES, FRIENDS, CHAT }
     private static volatile Request request = Request.NONE;
 
     @Override
@@ -27,6 +28,14 @@ public final class FriendsMod implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("argus").executes(ctx -> {
                 request = Request.MODULES;
+                return 1;
+            }));
+            dispatcher.register(ClientCommandManager.literal("social").executes(ctx -> {
+                request = Request.CHAT;
+                return 1;
+            }));
+            dispatcher.register(ClientCommandManager.literal("chattools").executes(ctx -> {
+                request = Request.CHAT;
                 return 1;
             }));
             dispatcher.register(ClientCommandManager.literal("friends").executes(ctx -> {
@@ -40,6 +49,8 @@ public final class FriendsMod implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             GuiNavigation.tick();
+            ChatToolsModule.syncBetterChat();
+            ChatToolsScreen.attach();
             AutoRekitModule rekit = AutoRekitModule.get();
             if (rekit != null) rekit.tick(client);
             Request r = request;
@@ -47,7 +58,8 @@ public final class FriendsMod implements ClientModInitializer {
             request = Request.NONE;
             Minecraft mc = Minecraft.getInstance();
             if (r == Request.MODULES) mc.setScreen(new ModulesScreen(null));
-            else mc.setScreen(new SettingsScreen(null, SettingsScreen.FRIENDS, null));
+            else if (r == Request.CHAT) mc.setScreen(new ChatToolsScreen(null, null));
+            else mc.setScreen(ChatToolsScreen.on(null, ChatToolsScreen.Page.PLAYERS));
         });
     }
 }

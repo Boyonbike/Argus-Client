@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 /** Shared navigation, open/close motion and tooltips for the module menu, friends and theme pages. */
 public abstract class UiScreen extends Screen {
     /** Pages that can sit in the bar, stored in preferences as {@code tab:<name>}. */
-    static final String[] PAGE_TABS = {"Modules", "HUD"};
+    static final String[] PAGE_TABS = {"Modules", "HUD", "Social"};
     static final String PAGE_PREFIX = "tab:";
     /** Bar geometry: the collapsed bar is a circle of {@code BAR} units holding the player's face. */
     private static final float BAR_Y = 7, BAR = 28, FACE = 22, TAB_HEIGHT = 21, GEAR = 13;
@@ -129,6 +129,8 @@ public abstract class UiScreen extends Screen {
             if (section == null && tabSections[i] == null && tabEntries[i].equals(PAGE_PREFIX + activeTab)) return i;
             if (section != null && tabEntries[i].equals(PAGE_PREFIX + "HUD") && GuiState.preferences().hudTab == GuiPreferences.HudTab.SETTINGS
                     && section.equals(SettingsScreen.hudSection())) return i;
+            if (section != null && tabEntries[i].equals(PAGE_PREFIX + "Social") && GuiState.preferences().socialTab == GuiPreferences.SocialTab.SETTINGS
+                    && section.equals(SettingsScreen.SOCIAL)) return i;
         }
         return -1;
     }
@@ -336,9 +338,17 @@ public abstract class UiScreen extends Screen {
 
     private MouseButtonEvent logical(MouseButtonEvent event) { return new MouseButtonEvent(viewport.toLogical(event.x()), viewport.toLogical(event.y()), event.buttonInfo()); }
 
+    /** True while a screen is waiting to record a new menu key, so pressing it doesn't close the menu. */
+    protected boolean capturingMenuKey() { return false; }
+
     @Override public final boolean mouseClicked(MouseButtonEvent raw, boolean doubled) {
         if (closingAt != 0) return true;
         MouseButtonEvent event = logical(raw);
+        // A menu key bound to a mouse button closes the menu, like a keyboard one does.
+        if (!modal() && !capturingMenuKey() && UIModule.INSTANCE != null) {
+            var bind = UIModule.INSTANCE.getKeybind();
+            if (bind.mouse() && !bind.isUnbound() && bind.code() >= 2 && event.button() == bind.code()) { beginClose(rootParent()); return true; }
+        }
         if (modal()) return mouseClickedUi(event, doubled);
         // An open colour picker takes the click first (a click outside it closes it).
         if (ColorPicker.click(event, doubled)) return true;
@@ -354,7 +364,7 @@ public abstract class UiScreen extends Screen {
         return mouseClickedUi(event, doubled);
     }
     private static Class<?> tabScreen(String tab) {
-        return switch (tab) { case "Modules" -> ModulesScreen.class; case "Settings" -> SettingsScreen.class; default -> Object.class; };
+        return switch (tab) { case "Modules" -> ModulesScreen.class; case "Settings" -> SettingsScreen.class; case "Social" -> ChatToolsScreen.class; default -> Object.class; };
     }
     protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) { return super.mouseClicked(event, doubled); }
     @Override public final boolean mouseDragged(MouseButtonEvent raw, double dx, double dy) {
@@ -406,6 +416,7 @@ public abstract class UiScreen extends Screen {
             case "Modules" -> minecraft.setScreen(new ModulesScreen(root));
             case "HUD" -> { if (GuiState.preferences().hudTab == GuiPreferences.HudTab.SETTINGS) openSection(SettingsScreen.hudSection()); else openHudEditor(); }
             case "Settings" -> minecraft.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, null, null));
+            case "Social" -> { if (GuiState.preferences().socialTab == GuiPreferences.SocialTab.SETTINGS) openSection(SettingsScreen.SOCIAL); else minecraft.setScreen(new ChatToolsScreen(root, null)); }
         }
     }
 

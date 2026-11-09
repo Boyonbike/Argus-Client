@@ -3,7 +3,7 @@
 [Repository overview](../README.md)
 
 A Fabric client with a Meteor-style floating-window GUI, a pastel theme,
-ranked search, module settings and Friends management.
+ranked search, module settings and a Social menu for chat, friends and your clan.
 
 ## Install
 
@@ -24,7 +24,7 @@ Use the client's existing GUI keybind or type `/argus` in chat.
 | --- | --- |
 | **Modules** tab | Floating category windows and a Favourites window |
 | **Search** floating panel | Search modules, aliases and settings inside the right-shift menu |
-| **Friends** tab or `/friends` | Add, remove and list friends |
+| **Social** tab, `/social` or `/friends` | Open the Social menu (or Social settings, see below) |
 | **HUD** tab | Open the existing HUD editor |
 | **Theme** tab | Choose Light/Dark, accent colour, grid snapping and reset positions |
 | **Classic** tab | Open the original click GUI and its Search panel |
@@ -96,30 +96,28 @@ python3 tools/verify_branding.py build/libs/argus-client.jar
 python3 tools/verify_merge.py build/libs/argus-client.jar
 ```
 
-On Windows use `gradlew.bat build`. Install the combined output at
-`build/libs/argus-client.jar`. The smaller `argus-client-gui-...jar`
-is an intermediate build artifact.
+On Windows use `gradlew.bat build`. Install the output at
+`build/libs/argus-client.jar`.
 
-The build compiles the GUI against Mojang mappings, remaps it to Fabric
-intermediary names, and merges it into the supplied compiled base. It preserves
-the core Mixin metadata and registers the source-built GUI integration.
+Fabric Loom compiles the core and GUI together against Mojang mappings and
+remaps the result to Fabric intermediary names. Gradle downloads the pinned
+optional integration APIs for compilation. Install the corresponding mods
+separately if you use those integrations.
 JUnit tests cover search ranking, inline placement, GUI/input scaling, font and
 art resolution, settings dependencies, preferences, layout, namespaces, migration
 and shared-field linkage. The build also rejects packaged saved configurations.
 
 ## Source and data
 
-- `src/main/java/dev/argus/client/gui/`: menus, search, theme, controls and GUI integration.
-- `src/main/java/dev/argus/client/config/`: settings-directory migration.
-- `src/test/java/`: regression tests.
-- `src/main/resources/`: GUI Mixin configuration and font assets/license.
-- `libs/client-base.jar`: the compiled underlying client, including existing features and protections.
-- `tools/`: package verification and an optional display-branding utility.
+- `src/main/java/` contains the client core, modules, GUI and Mixins.
+- `src/main/resources/` contains Fabric metadata, the access widener, Mixin configuration and assets.
+- `src/test/java/` contains regression tests.
+- `tools/` contains package verification and legacy binary migration utilities.
 
-The ZIPs did not include the full underlying client's source. This project
-rebuilds the available and newly implemented GUI source and combines it with
-that compiled base. The runtime mod/resource ID is `argusclient`, and
-packages are under `dev.argus`.
+The core Java source was recovered from the compiled Argus base and repaired
+for source compilation. The existing GUI and feature source takes precedence
+where the two previously overlapped. The runtime mod and resource ID is
+`argusclient`, and the client packages are under `dev.argus`.
 
 No user config, preset, saved window layout or friend list is bundled in the
 repository or release JAR; releases start with factory defaults.
@@ -180,9 +178,34 @@ The preview lists modules to enable and unsupported enabled modules. Clear modul
 
 In the import screen choose **From an instance**. Argus lists the other launcher instances (Prism/MultiMC `instances` folder) that have a Meteor folder; pick one, or paste/drop any instance, `minecraft` or `meteor-client` folder and press **Scan**. The screen shows everything in that folder with an Argus equivalent — **Modules** (main config or a saved profile), **Friends**, **Enemies**, **Waypoints** and **Macros** — with counts, and ticks the ones that have entries. Files with no Argus equivalent (HUD layout, Meteor settings, GUI/themes, accounts, proxies, addon data) are listed under *Stays in Meteor* and never read.
 
+If the instance ran Comet, a **Chat Tools data** row brings over its Chat Tools and Discord IGN Sync data: homes and favourites, recent players, saved cooldowns, the clan list, the Auto TPY whitelist, blocklist and role filter, DM patterns, command options, the Discord roster and the relay link. It only adds: names already in Argus stay, servers Argus already has cooldowns or recent players for keep theirs, and Argus's own Discord sync tracking, roster and relay are kept. Comet's Chat Tools settings transfer with the Modules preset. The chat data file is backed up to `argusclient/import-backups/` first.
+
 **Import** saves the modules as a normal Modules preset (load it from Presets when ready, with the usual replacement warning) and **adds** friends, enemies, waypoints and macros to what Argus already has — existing entries are never changed or removed. Duplicates, invalid player names, waypoints with no matching dimension and macros without messages are skipped and listed under *Won’t transfer* with the reason; macro key combinations with modifiers import without a bind. Before adding anything Argus writes the current friends, waypoints and macros to `argusclient/import-backups/`, and stops if it can’t. Waypoints keep their server (from the Meteor file name) and dimension; Meteor icons and colours aren’t carried over. The Meteor folder is only read.
 
 Automatic server/world bindings load imported presets through the checked loader with a recovery backup; they do not interrupt connection with a popup. Import does not copy account/proxy data, friends, macros, themes or waypoints.
+
+## Social
+
+**Social** (formerly Chat Tools) gathers private messages, the server's chat, players, your clan, homes, teleport requests, Auto TPY and the server's own settings in one window, in the same style as Settings. It also contains **BetterChat**: BetterChat no longer appears on its own, it switches on and off with Social, and its settings are the Chat style, Sounds, Animation, Prefix & suffix, Highlights and History cards on the Social settings page.
+
+Social isn't in the module list. Open the Social menu from the **Social** top-bar tab, with its **Open window key** (not bound by default), by clicking a player's name in open chat, with `/social` (or `/chattools`; `/friends` opens it on Players), or with **Open Social Menu** on **Settings → Social**. Like the HUD tab, the Social tab can open either the menu or the settings page: choose under Settings → Appearance → Top bar → *Social tab opens*, or with the *Social tab opens* button on the Social settings page.
+
+| Page | What it does |
+| --- | --- |
+| **Overview** | What's waiting for you (requests, unread messages, a Discord sync problem), running warmups and cooldowns, favourite homes and recent players, with the newest chat in a card at the bottom: click it to open Chat, drag over lines to select them |
+| **Chat** | The server's chat as it appears in game, with times (BetterChat's format when its timestamps are on). Click or drag over lines to select them (Shift+click extends), then **Copy** or Ctrl+C; right-click a line to copy just that one |
+| **Messages** | Conversations as chat bubbles. Messages queue for the server's cooldown and show as pending until the server confirms them |
+| **Players** | Search, recent players, Argus friends, and actions for any player: message, teleport, friend or enemy, clan, `/ignore` and commands found on the server |
+| **Clan** | Members grouped by Discord role, add by hand or import a CSV (pick it or drop it on the window) |
+| **Homes** | Go, rename, delete and star homes; starred homes appear on Overview |
+| **Teleports** | Incoming requests, warmups and cooldowns, and cooldown lengths (learned from the server, or set by you) |
+| **Auto TPY** | Accept teleport requests automatically, with a queue, Discord role filter, whitelist and blocklist (CSV import) |
+| **Server** | Your hotspot and the server's own settings. Only shown on servers that have those commands |
+| **Settings** | All Social and BetterChat settings |
+
+The message box at the bottom sends public chat (queued at the server's pace), `/commands`, or a private message on a conversation. Friends and enemies are Argus friends; BetterChat colours them in chat and ExtraTab in the tab list, and Social adds clan colours in both. The **Chat Waiting** HUD widget shows waiting requests, unread messages and Discord problems. Chat data (homes, contacts, clan, lists) is saved in `argusclient/chat.json`, separately from settings presets.
+
+**Settings → Discord** has two cards, each with its own switch: **Rich Presence** shows Argus Client as your Discord activity, and **IGN Sync** keeps the clan list and Auto TPY whitelist in step with the Minecraft names posted in your Discord's #ign channel, read through your clan's relay link (**Sync now** in its header syncs at once). The sync never empties a list and only removes names a sync added.
 
 ## Credits and licensing
 

@@ -1,5 +1,10 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.modules.misc.BetterChatModule;
+import dev.argus.client.modules.misc.ChatToolsModule;
+import dev.argus.client.modules.client.DiscordModule;
+import dev.argus.client.modules.client.DiscordSyncModule;
+
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.Module;
 import java.nio.file.Path;
@@ -36,10 +41,20 @@ final class GuiState {
     static List<Module> modules() {
         List<Module> modules = new ArrayList<>();
         if (ClientContext.moduleRegistry != null)
-            for (Object value : ClientContext.moduleRegistry.getRegistry()) if (value instanceof Module module) modules.add(module);
+            for (Object value : ClientContext.moduleRegistry.getRegistry()) if (value instanceof Module module && !hidden(module)) modules.add(module);
         modules.sort(Comparator.comparing(Module::getName,String.CASE_INSENSITIVE_ORDER));
         return modules;
     }
+    /**
+     * BetterChat runs inside Chat Tools: its switch follows Chat Tools and its settings are on the Social page. Discord
+     * Sync shares the Discord page with Rich Presence, so it has no section of its own.
+     */
+    static boolean hidden(Module module) {
+        if (module instanceof BetterChatModule) return ClientContext.getModule(ChatToolsModule.class) != null;
+        if (module instanceof DiscordSyncModule) return ClientContext.getModule(DiscordModule.class) != null;
+        return false;
+    }
     static Module module(String name) { return modules().stream().filter(module -> module.getName().equals(name)).findFirst().orElse(null); }
-    static String title(String name) { String text=name.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replace('_',' '); return text.isEmpty()?text:text.substring(0,1).toUpperCase(Locale.ROOT)+text.substring(1); }
+    /** Chat Tools is called Social everywhere in the menu; its saved name stays ChatTools so configs keep working. */
+    static String title(String name) { if ("ChatTools".equals(name)) return "Social"; String text=name.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replace('_',' '); return text.isEmpty()?text:text.substring(0,1).toUpperCase(Locale.ROOT)+text.substring(1); }
 }

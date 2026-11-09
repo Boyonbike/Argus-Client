@@ -1,15 +1,18 @@
 package dev.argus.client.config.importing;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Pattern;
 import net.minecraft.nbt.*;
 import static dev.argus.client.config.importing.ConfigImportModel.*;
 
 /** Reads the Meteor data files that have an Argus equivalent. Read-only; never touches the source. */
 public final class MeteorDataReader {
     private MeteorDataReader() {}
-    public enum DataKind { FRIENDS, ENEMIES, WAYPOINTS, MACROS }
+    /** CHAT_TOOLS is Comet's Chat Tools and Discord IGN Sync data, read from the module config rather than its own file. */
+    public enum DataKind { FRIENDS, ENEMIES, WAYPOINTS, MACROS, CHAT_TOOLS }
     /** {@code dimension} is Argus's name (overworld/nether/end), or null when Meteor's has no clear match. */
     public record SourceWaypoint(String name, int x, int y, int z, String dimension, String server) {}
     public record SourceMacro(String name, List<String> messages, Optional<SourceBind> bind) {
@@ -20,6 +23,8 @@ public final class MeteorDataReader {
         public static final DataSource EMPTY = new DataSource(List.of(), List.of(), List.of(), List.of());
     }
     static final int MAX_ENTRIES = 4096, MAX_WAYPOINT_FILES = 256;
+    private static final Pattern METEOR_FILENAME_ESCAPE = Pattern.compile("[\\s\\\\/:*?\"<>|]");
+    private static final Pattern HOST_PORT = Pattern.compile("([a-z0-9.-]+)_(\\d{1,5})");
 
     /** friends.nbt ({@code friends}) or enemies.nbt ({@code enemies}): a list of {name, id}. */
     public static List<String> readPlayers(Path file, String key) throws IOException {
@@ -39,9 +44,11 @@ public final class MeteorDataReader {
             files = stream.filter(p -> Files.isRegularFile(p) && p.getFileName().toString().endsWith(".nbt")).sorted().limit(MAX_WAYPOINT_FILES + 1).toList();
         }
         if (files.size() > MAX_WAYPOINT_FILES) throw new IOException("Too many waypoint files");
+        Map<String, String> destinations = waypointDestinations(directory.toAbsolutePath().normalize());
         List<SourceWaypoint> result = new ArrayList<>();
         for (Path file : files) {
-            String server = server(file.getFileName().toString().replaceFirst("\\.nbt$", ""));
+            String nameOnDisk = file.getFileName().toString().replaceFirst("\\.nbt$", "");
+            String server = destinations.getOrDefault(nameOnDisk.toLowerCase(Locale.ROOT), server(nameOnDisk));
             for (Tag tag : list(MeteorConfigReader.readNbt(file), "waypoints")) {
                 if (!(tag instanceof CompoundTag entry)) throw new IOException("Invalid waypoint entry");
                 Map<String, Tag> s = flatten(entry);
@@ -114,9 +121,48 @@ public final class MeteorDataReader {
             default -> null;
         };
     }
-    /** Argus keys servers by lower-case host; Meteor singleplayer files are named after the world. */
+    /** Vanilla's saved addresses disambiguate Meteor's escaped filenames, including IPv6 and LAN hostnames. */
+    private static Map<String, String> waypointDestinations(Path directory) {
+        Path meteor = directory.getParent();
+        Path game = meteor == null ? null : meteor.getParent();
+        if (game == null) return Map.of();
+        Map<String, String> destinations = new HashMap<>();
+        Path servers = game.resolve("servers.dat");
+        if (Files.isRegularFile(servers)) {
+            try {
+                for (Tag entry : MeteorConfigReader.readNbt(servers).getListOrEmpty("servers")) {
+                    if (!(entry instanceof CompoundTag server)) continue;
+                    server.getString("ip").filter(ip -> !ip.isBlank())
+                        .ifPresent(ip -> destinations.put(waypointFileKey(ip), ip));
+                }
+            } catch (IOException ignored) {
+                // Waypoint import can still use the filename when the server list is unreadable.
+            }
+        }
+        Path saves = game.resolve("saves");
+        if (Files.isDirectory(saves)) {
+            try (var worlds = Files.list(saves)) {
+                worlds.filter(Files::isDirectory).forEach(world ->
+                    destinations.putIfAbsent(waypointFileKey(world.getFileName().toString()), "singleplayer"));
+            } catch (IOException | UncheckedIOException ignored) {
+                // Singleplayer filenames without matching metadata use the same fallback.
+            }
+        }
+        return destinations;
+    }
+
+    private static String waypointFileKey(String address) {
+        return METEOR_FILENAME_ESCAPE.matcher(address).replaceAll("_").toLowerCase(Locale.ROOT);
+    }
+
+    /** Restore explicit ports for recognizable addresses when there is no saved-server metadata. */
     static String server(String fileName) {
-        String host = fileName.toLowerCase(Locale.ROOT).replaceFirst("_\\d{1,5}$", "");
-        return host.contains(".") ? host.replaceFirst("\\.$", "") : "singleplayer";
+        String lower = fileName.toLowerCase(Locale.ROOT);
+        var address = HOST_PORT.matcher(lower);
+        if (address.matches()) {
+            int port = Integer.parseInt(address.group(2));
+            if (port > 0 && port <= 65535) return address.group(1) + ":" + address.group(2);
+        }
+        return lower.contains(".") || lower.equals("localhost") ? lower : "singleplayer";
     }
 }
