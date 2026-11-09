@@ -116,6 +116,8 @@ final class SettingsList {
 
     static String value(Setting<?> setting) {
         if (setting instanceof KeyBindSetting bind) return bind.displayName();
+        // A labelled end of a slider (such as "MAX" or "Unlimited") shows its label instead of the number.
+        if (setting.shouldDisplayBoundaryLabel()) return setting.getBoundaryLabel();
         Object value = setting.getValue();
         if (value instanceof NamedEntry named) return named.getName();
         if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" · %d%%", Math.round(colour.getAlpha() / 2.55)) : "");

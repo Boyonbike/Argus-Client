@@ -1,4 +1,4 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 /** Lets the server establish a new elytra glide before Sprint can apply its boost. */
 public final class ElytraBoostDelay {

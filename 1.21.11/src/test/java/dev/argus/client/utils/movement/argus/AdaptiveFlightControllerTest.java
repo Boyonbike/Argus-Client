@@ -1,8 +1,8 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
-import dev.argus.client.utils.movement.comet.AdaptiveFlightController.Motion;
-import dev.argus.client.utils.movement.comet.AdaptiveFlightController.Settings;
-import dev.argus.client.utils.movement.comet.AdaptiveFlightController.Status;
+import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Motion;
+import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Settings;
+import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Status;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

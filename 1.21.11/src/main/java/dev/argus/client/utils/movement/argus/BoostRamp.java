@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 /**
  * How far a gliding player may move per tick before a vanilla server sets them back, in blocks per tick.

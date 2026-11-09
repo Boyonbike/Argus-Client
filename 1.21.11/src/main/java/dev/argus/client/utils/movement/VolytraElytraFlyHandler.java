@@ -13,10 +13,10 @@ import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.KeyUtils;
 import dev.argus.client.utils.inventory.InventoryUtils;
-import dev.argus.client.utils.movement.comet.AdaptiveFlightController.Motion;
-import dev.argus.client.utils.movement.comet.CometHorizontalFlight;
-import dev.argus.client.utils.movement.comet.ElytraBoostDelay;
-import dev.argus.client.utils.movement.comet.SmartElytraSwap;
+import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Motion;
+import dev.argus.client.utils.movement.argus.ArgusHorizontalFlight;
+import dev.argus.client.utils.movement.argus.ElytraBoostDelay;
+import dev.argus.client.utils.movement.argus.SmartElytraSwap;
 import dev.argus.client.events.LocalPlayerPreTickEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +30,8 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.ArrayDeque;
+import java.util.Map;
+import com.google.gson.JsonObject;
 import java.util.function.Predicate;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -66,7 +68,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Faithful port of VolytraFly's elytra movement logic (General, Landing, Inventory and
- * Autopilot), plus optional Comet-style adaptive turning, base/boost speed caps and smart
+ * Autopilot), plus optional Argus adaptive turning, base/boost speed caps and smart
  * elytra handling. Highway Mode, HUD and visuals are not part of this handler.
  */
 public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
@@ -77,13 +79,33 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private static final long RUBBERBAND_CAP_TRIGGER_WINDOW_NANOS = 3_000_000_000L;
    private static final int AVOIDANCE_STUCK_TICKS = 3;
    private static final int VERTICAL_STEP_TIMEOUT_TICKS = 40;
+   /** Config keys the Argus tweak settings were saved under before they were renamed, mapped to the current keys. */
+   public static final Map<String, String> RENAMED_CONFIG_KEYS = Map.ofEntries(
+      Map.entry("volytraAdaptiveTurning", "argusAdaptiveTurning"),
+      Map.entry("volytraTurnRate", "argusTurnRate"),
+      Map.entry("volytraCustomSpeeds", "argusBaseBoostSpeeds"),
+      Map.entry("volytraBaseHorizontalSpeed", "argusBaseHorizontalSpeed"),
+      Map.entry("volytraBaseVerticalSpeed", "argusBaseVerticalSpeed"),
+      Map.entry("volytraBoostHorizontalSpeed", "argusBoostHorizontalSpeed"),
+      Map.entry("volytraBoostVerticalSpeed", "argusBoostVerticalSpeed"),
+      Map.entry("volytraBoostKey", "argusBoostKey"),
+      Map.entry("volytraBoostJump", "argusBoostJump"),
+      Map.entry("volytra3dSpeedCap", "argus3dSpeedCap"),
+      Map.entry("volytraMax3dSpeed", "argusMax3dSpeed"),
+      Map.entry("volytraSmartElytra", "argusSmartElytra"),
+      Map.entry("volytraLandingSwapHeight", "argusLandingSwapHeight"),
+      Map.entry("volytraCometMotion", "argusMotion"),
+      Map.entry("volytraCometAcceleration", "argusMotionAcceleration"),
+      Map.entry("volytraCometBraking", "argusMotionBraking"),
+      Map.entry("volytraCometTurnRate", "argusMotionTurnRate")
+   );
    /** Boost H Speed's highest number, in b/s. */
    private static final double BOOST_H_NUMERIC_MAX = 300.0;
    /**
-    * One notch past {@link #BOOST_H_NUMERIC_MAX}: the slider's top, shown as "Volytra Max", which uses Volytra's own
+    * One notch past {@link #BOOST_H_NUMERIC_MAX}: the slider's top, shown as "MAX", which uses Volytra's own
     * Horizontal Speed instead of a number. (The slider snaps in steps of 2 b/s here, so 300 and this are neighbours.)
     */
-   private static final double BOOST_H_VOLYTRA_MAX = 301.0;
+   private static final double BOOST_H_MAX = 301.0;
 
    private final Setting<Double> startSpeed;
    private final Setting<Double> horizontalSpeed;
@@ -111,6 +133,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private final Setting<Double> adaptiveTurnRate;
    private final Setting<Boolean> customSpeeds;
    private final KeyBindSetting boostKey;
+   private final Setting<Integer> boostJump;
    private final Setting<Double> baseHorizontalSpeed;
    private final Setting<Double> baseVerticalSpeed;
    private final Setting<Double> boostHorizontalSpeed;
@@ -136,11 +159,11 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private final Setting<Double> antiSlamMinSpeed;
 
    private final Setting<Boolean> smartElytra;
-   private final Setting<Boolean> cometMotion;
-   private final Setting<Double> cometAcceleration;
-   private final Setting<Double> cometBraking;
-   private final Setting<Double> cometTurnRate;
-   private final Setting<Double> cometBoostRampStep;
+   private final Setting<Double> landingSwapHeight;
+   private final Setting<Boolean> argusMotion;
+   private final Setting<Double> argusMotionAcceleration;
+   private final Setting<Double> argusMotionBraking;
+   private final Setting<Double> argusMotionTurnRate;
    private final Setting<Boolean> replace;
    private final Setting<Integer> replaceDurability;
    private final Setting<Boolean> autoReplenish;
@@ -187,26 +210,24 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private Vec3 lastHorizontalDirection = Vec3.ZERO;
    private final ElytraBoostDelay boostDelay = new ElytraBoostDelay();
    private long clientTicks;
-   private final CometHorizontalFlight cometFlight = new CometHorizontalFlight();
-   private boolean cometFlying;
-   // Diagnostics for the module list: why boost is or isn't running, and recent server setbacks.
-   private final ArrayDeque<Long> cometSetbackTicks = new ArrayDeque<>();
-   private String cometState = null;
+   private long smartTakeoffTick = Long.MIN_VALUE / 2;
+   private final ArgusHorizontalFlight argusFlight = new ArgusHorizontalFlight();
+   private boolean argusFlying;
    // Position corrections arrive on the network thread; the flight consumes them on the client thread.
-   private final AtomicInteger cometCorrections = new AtomicInteger();
+   private final AtomicInteger argusCorrections = new AtomicInteger();
 
    public VolytraElytraFlyHandler(ElytraFlyModule module) {
       super(module);
 
       // General
-      this.startSpeed = this.addDouble("Volytra Start Speed", "volytraStartSpeed", 2.999, 0.0, 50.0, this.nonComet());
+      this.startSpeed = this.addDouble("Volytra Start Speed", "volytraStartSpeed", 2.999, 0.0, 50.0, this.volytraCurve());
       this.horizontalSpeed = this.addDouble("Volytra Horizontal Speed", "volytraHorizontalSpeed", 14.999, 0.0, 100.0, this.modeOnly());
-      this.accelerationPlateau = this.addDouble("Volytra Acceleration Plateau", "volytraAccelerationPlateau", 14.999, 0.01, 100.0, this.nonComet());
-      this.accelerationStep = this.addDouble("Volytra Acceleration Step", "volytraAccelerationStep", 0.3, 0.01, 5.0, this.nonComet());
+      this.accelerationPlateau = this.addDouble("Volytra Acceleration Plateau", "volytraAccelerationPlateau", 14.999, 0.01, 100.0, this.volytraCurve());
+      this.accelerationStep = this.addDouble("Volytra Acceleration Step", "volytraAccelerationStep", 0.3, 0.01, 5.0, this.volytraCurve());
       this.verticalStartSpeed = this.addDouble("Volytra Vertical Start Speed", "volytraVerticalStartSpeed", 5.999, 0.0, 50.0, this.modeOnly());
       this.verticalSpeed = this.addDouble("Volytra Vertical Speed", "volytraVerticalSpeed", 5.999, 0.0, 50.0, this.modeOnly());
-      this.verticalAccelerationPlateau = this.addDouble("Volytra Vertical Acceleration Plateau", "volytraVerticalAccelerationPlateau", 29.999, 0.01, 100.0, this.nonComet());
-      this.verticalAccelerationStep = this.addDouble("Volytra Vertical Acceleration Step", "volytraVerticalAccelerationStep", 1.0, 0.01, 5.0, this.nonComet());
+      this.verticalAccelerationPlateau = this.addDouble("Volytra Vertical Acceleration Plateau", "volytraVerticalAccelerationPlateau", 29.999, 0.01, 100.0, this.nonArgusMotion());
+      this.verticalAccelerationStep = this.addDouble("Volytra Vertical Acceleration Step", "volytraVerticalAccelerationStep", 1.0, 0.01, 5.0, this.nonArgusMotion());
       this.accelerationDelay = this.addInt("Volytra Acceleration Delay", "volytraAccelerationDelay", 1, 0, 100, this.modeOnly());
       this.fallMultiplier = this.addDouble("Volytra Fall Multiplier", "volytraFallMultiplier", 0.0, 0.0, 1.0, this.modeOnly());
       this.accelerateUpward = this.addBool("Volytra Accelerate Upward", "volytraAccelerateUpward", false, this.modeOnly());
@@ -254,29 +275,45 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       // Tweaks
       this.tweaksGroup = this.module.add(new BooleanSetting("Tweaks", false).markAsGroup());
       this.tweaksGroup.expanded = true;
-      this.adaptiveTurning = this.addBool("Volytra Adaptive Turning", "volytraAdaptiveTurning", true, this.modeOnly());
-      this.adaptiveTurnRate = this.addDouble("Volytra Turn Rate", "volytraTurnRate", 15.0, 0.0, 90.0, this.visibleWithoutComet(this.adaptiveTurning));
-      this.customSpeeds = this.addBool("Volytra Base/Boost Speeds", "volytraCustomSpeeds", false, this.modeOnly());
+      this.adaptiveTurning = this.addBool("Argus Adaptive Turning", "argusAdaptiveTurning", true, this.modeOnly());
+      this.adaptiveTurnRate = this.addDouble("Argus Turn Rate", "argusTurnRate", 15.0, 0.0, 90.0, this.visibleWithoutArgusMotion(this.adaptiveTurning));
+      this.customSpeeds = this.addBool("Argus Base/Boost Speeds", "argusBaseBoostSpeeds", false, this.modeOnly());
       // One toggle owns base and boost: off flies Volytra's own speeds with no boost; on shows all four sliders
       // and the boost key.
-      this.baseHorizontalSpeed = this.addSpeed("Volytra Base H Speed", "volytraBaseHorizontalSpeed", 41.2, 0.0, 300.0, this.visibleWith(this.customSpeeds));
-      this.baseVerticalSpeed = this.addSpeed("Volytra Base V Speed", "volytraBaseVerticalSpeed", 21.0, 0.0, 60.0, this.visibleWith(this.customSpeeds));
-      this.boostHorizontalSpeed = this.addSpeed("Volytra Boost H Speed", "volytraBoostHorizontalSpeed", BOOST_H_VOLYTRA_MAX, 0.0, BOOST_H_VOLYTRA_MAX, this.visibleWith(this.customSpeeds));
+      this.baseHorizontalSpeed = this.addSpeed("Argus Base H Speed", "argusBaseHorizontalSpeed", 41.2, 0.0, 300.0, this.visibleWith(this.customSpeeds));
+      this.baseVerticalSpeed = this.addSpeed("Argus Base V Speed", "argusBaseVerticalSpeed", 21.0, 0.0, 60.0, this.visibleWith(this.customSpeeds));
+      this.boostHorizontalSpeed = this.addSpeed("Argus Boost H Speed", "argusBoostHorizontalSpeed", BOOST_H_MAX, 0.0, BOOST_H_MAX, this.visibleWith(this.customSpeeds));
       // The top of the slider is not a number: it is the fastest Volytra Fly goes (its Horizontal Speed).
-      this.boostHorizontalSpeed.setBoundaryLabel("Volytra Max", SettingLabelCondition.MAX);
-      this.boostVerticalSpeed = this.addSpeed("Volytra Boost V Speed", "volytraBoostVerticalSpeed", 60.0, 0.0, 60.0, this.visibleWith(this.customSpeeds));
-      this.boostKey = this.module.add(new KeyBindSetting("Volytra Boost Key", "Sprint", this.visibleWith(this.customSpeeds)));
-      this.boostKey.setConfigName("volytraBoostKey");
-      this.speedCap3d = this.addBool("Volytra 3D Speed Cap", "volytra3dSpeedCap", false, this.modeOnly());
-      this.maxSpeed3d = this.addSpeed("Volytra Max 3D Speed", "volytraMax3dSpeed", 200.0, 0.0, 480.0, this.visibleWith(this.speedCap3d));
-      this.smartElytra = this.addBool("Volytra Smart Elytra", "volytraSmartElytra", false, this.modeOnly());
-      this.cometMotion = this.addBool("Volytra Comet Motion", "volytraCometMotion", true, this.modeOnly());
-      this.cometAcceleration = this.addDouble("Volytra Comet Acceleration", "volytraCometAcceleration", 0.15, 0.01, 2.0, this.visibleWith(this.cometMotion));
-      this.cometBraking = this.addDouble("Volytra Comet Braking", "volytraCometBraking", 0.3, 0.01, 2.0, this.visibleWith(this.cometMotion));
-      this.cometTurnRate = this.addDouble("Volytra Comet Turn Rate", "volytraCometTurnRate", 15.0, 0.0, 45.0, this.visibleWith(this.cometMotion, this.adaptiveTurning));
-      this.cometBoostRampStep = this.addDouble("Volytra Comet Boost Ramp Step", "volytraCometBoostRampStep", 0.3, 0.01, 5.0, this.visibleWith(this.cometMotion, this.customSpeeds));
+      this.boostHorizontalSpeed.setBoundaryLabel("MAX", SettingLabelCondition.MAX);
+      this.boostVerticalSpeed = this.addSpeed("Argus Boost V Speed", "argusBoostVerticalSpeed", 60.0, 0.0, 60.0, this.visibleWith(this.customSpeeds));
+      this.boostKey = this.module.add(new KeyBindSetting("Argus Boost Key", "Sprint", this.visibleWith(this.customSpeeds)));
+      this.boostKey.setConfigName("argusBoostKey");
+      // Ticks of Volytra's acceleration curve skipped the moment boost starts: an instant kick that is large from
+      // base speed and small near the top.
+      this.boostJump = this.addInt("Argus Boost Jump", "argusBoostJump", 0, 0, 40, value -> this.active() && this.customSpeeds.getValue() && this.argusMotionOn());
+      ((NumberSetting<Integer>) this.boostJump).withUnit(" ticks");
+      this.speedCap3d = this.addBool("Argus 3D Speed Cap", "argus3dSpeedCap", false, this.modeOnly());
+      this.maxSpeed3d = this.addSpeed("Argus Max 3D Speed", "argusMax3dSpeed", 200.0, 0.0, 480.0, this.visibleWith(this.speedCap3d));
+      this.smartElytra = this.addBool("Argus Smart Elytra", "argusSmartElytra", false, this.modeOnly());
+      // How close to the floor counts as landed for the chestplate swap; measured, not the onGround flag.
+      this.landingSwapHeight = this.addDouble("Argus Landing Swap Height", "argusLandingSwapHeight", 0.5, 0.0, 3.0, this.visibleWith(this.smartElytra));
+      ((NumberSetting<Double>) this.landingSwapHeight).withUnit(" blocks");
+      this.argusMotion = this.addBool("Argus Motion", "argusMotion", true, this.modeOnly());
+      this.argusMotionAcceleration = this.addDouble("Argus Motion Acceleration", "argusMotionAcceleration", 0.15, 0.01, 2.0, this.visibleWith(this.argusMotion));
+      this.argusMotionBraking = this.addDouble("Argus Motion Braking", "argusMotionBraking", 0.3, 0.01, 2.0, this.visibleWith(this.argusMotion));
+      this.argusMotionTurnRate = this.addDouble("Argus Motion Turn Rate", "argusMotionTurnRate", 15.0, 0.0, 45.0, this.visibleWith(this.argusMotion, this.adaptiveTurning));
 
       module.modeSetting.setChangeCallback(this::onModeChanged);
+   }
+
+   /** A copy of saved ElytraFly settings with values under old tweak keys moved to their current keys. */
+   public static JsonObject migrateRenamedKeys(JsonObject settings) {
+      JsonObject migrated = settings.deepCopy();
+      RENAMED_CONFIG_KEYS.forEach((oldKey, newKey) -> {
+         if (migrated.has(oldKey) && !migrated.has(newKey)) migrated.add(newKey, migrated.get(oldKey));
+         migrated.remove(oldKey);
+      });
+      return migrated;
    }
 
    private boolean active() {
@@ -295,12 +332,22 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return value -> this.active() && first.getValue() && second.getValue();
    }
 
-   private <T> Predicate<T> nonComet() {
-      return value -> this.active() && !this.cometMotion.getValue();
+   /** Volytra's horizontal speed curve: drives flight without Argus Motion, and Argus Motion's boost or speed. */
+   private <T> Predicate<T> volytraCurve() {
+      return this.modeOnly();
    }
 
-   private <T> Predicate<T> visibleWithoutComet(Setting<Boolean> parent) {
-      return value -> this.active() && !this.cometMotion.getValue() && parent.getValue();
+   /** Argus Motion is declared after some settings that depend on it, so read it through a method. */
+   private boolean argusMotionOn() {
+      return this.argusMotion != null && this.argusMotion.getValue();
+   }
+
+   private <T> Predicate<T> nonArgusMotion() {
+      return value -> this.active() && !this.argusMotion.getValue();
+   }
+
+   private <T> Predicate<T> visibleWithoutArgusMotion(Setting<Boolean> parent) {
+      return value -> this.active() && !this.argusMotion.getValue() && parent.getValue();
    }
 
    private BooleanSetting addBool(String name, String configName, boolean defaultValue, Predicate<Boolean> visible) {
@@ -353,7 +400,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.lastForwardPressed = false;
       this.lastHorizontalDirection = Vec3.ZERO;
       this.boostDelay.reset();
-      this.cometFlying = false;
+      this.argusFlying = false;
 
       this.rubberbandCapTicksLeft = 0;
       double currentHorizontalSpeed = player != null
@@ -381,7 +428,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.lastForwardPressed = false;
       this.lastHorizontalDirection = Vec3.ZERO;
       this.boostDelay.reset();
-      this.cometFlying = false;
+      this.argusFlying = false;
       this.rubberbandCapTicksLeft = 0;
    }
 
@@ -415,10 +462,10 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          this.handleFallMultiplier();
          this.handleAutopilot(player);
 
-         if (this.cometMotion.getValue()) {
-            this.handleCometHorizontal(player);
+         if (this.argusMotion.getValue()) {
+            this.handleArgusHorizontal(player);
          } else {
-            this.cometFlying = false;
+            this.argusFlying = false;
             this.resetRampOnCollision(player);
             this.handleAcceleration();
             this.handleHorizontalSpeed();
@@ -455,12 +502,12 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
             }
          }
 
-         if (!this.cometMotion.getValue()) this.applyAdaptiveTurning();
-         if (this.cometMotion.getValue()) this.applyTotalCeiling(this.cometFlight.totalCeiling());
+         if (!this.argusMotion.getValue()) this.applyAdaptiveTurning();
+         if (this.argusMotion.getValue()) this.applyTotalCeiling(this.argusFlight.totalCeiling());
          this.applySpeedCap3d();
-         if (this.cometMotion.getValue()) {
+         if (this.argusMotion.getValue()) {
             // Momentum continues from what was actually sent, including chunk/crash stops and the caps.
-            this.cometFlight.sent(this.velX, this.velZ);
+            this.argusFlight.sent(this.velX, this.velZ);
          }
 
          event.setVelocity(new Vec3(this.velX, this.velY, this.velZ));
@@ -474,75 +521,69 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          this.lastGlidePos = null;
          this.lastGlideIntendedSpeed = 0.0;
          this.lastHorizontalDirection = Vec3.ZERO;
-         this.cometFlying = false;
+         this.argusFlying = false;
       }
    }
 
    /**
-    * Comet's horizontal flight (cruise, unlimited Sprint boost and the transition between them); see
-    * {@link CometHorizontalFlight}. Vertical motion stays on Volytra's model.
+    * Argus Motion's horizontal flight (cruise, boost and the transition between them); see
+    * {@link ArgusHorizontalFlight}. Vertical motion stays on Volytra's model.
     */
-   private void handleCometHorizontal(LocalPlayer player) {
-      if (!this.cometFlying) {
-         // Comet starts each controlled glide from rest with the boost ramp released.
-         this.cometFlight.reset();
-         this.cometFlying = true;
-         this.cometCorrections.set(0);
+   private void handleArgusHorizontal(LocalPlayer player) {
+      if (!this.argusFlying) {
+         // Argus Motion starts each controlled glide from rest with the boost ramp released.
+         this.argusFlight.reset();
+         this.argusFlying = true;
+         this.argusCorrections.set(0);
          this.lastGlidePos = null;
       }
 
-      if (this.cometCorrections.getAndSet(0) > 0) {
+      if (this.argusCorrections.getAndSet(0) > 0) {
          // A correction farther than 64 blocks (a command or portal) is a teleport, not a setback.
          boolean teleport = this.lastGlidePos == null || player.position().distanceToSqr(this.lastGlidePos) > 64.0 * 64.0;
-         this.cometFlight.setback(teleport);
-         this.cometSetbackTicks.addLast(this.clientTicks);
+         this.argusFlight.setback(teleport);
          this.lastGlidePos = null;
       }
 
-      // As in Comet and VolytraFly, only a real wall collision costs speed: keep what got through.
+      // Only a real wall collision costs speed: keep what got through.
       if (this.lastGlidePos != null && player.horizontalCollision) {
-         this.cometFlight.collided(player.getX() - this.lastGlidePos.x, player.getZ() - this.lastGlidePos.z);
+         this.argusFlight.collided(player.getX() - this.lastGlidePos.x, player.getZ() - this.lastGlidePos.z);
       }
 
       Minecraft minecraft = this.minecraft();
       int forward = (minecraft.options.keyUp.isDown() ? 1 : 0) - (minecraft.options.keyDown.isDown() ? 1 : 0);
       int right = (minecraft.options.keyRight.isDown() ? 1 : 0) - (minecraft.options.keyLeft.isDown() ? 1 : 0);
-      // Comet's boost key: the physical Sprint key while playing (no screen open).
-      // Lets the server establish a glide from a fresh elytra swap before Sprint applies its boost.
+      // Lets the server establish a glide from a fresh elytra swap before speed builds past cruise.
       this.observeBoostDelay(player);
-      boolean sprintHeld = this.boostKeyHeld();
-      boolean boostKey = this.boostDelay.ready() && sprintHeld;
+      double turnRate = this.adaptiveTurning.getValue() ? this.argusMotionTurnRate.getValue() : 0.0;
+      ArgusHorizontalFlight.Settings settings;
+      boolean curveKey;
+      if (this.customSpeeds.getValue()) {
+         // Base: Argus Motion's smooth cruise at Base H Speed. Boost: hands over to Volytra Fly's own acceleration
+         // curve (Start Speed, Acceleration Step and Plateau) up to Boost H Speed. Pressing boost jumps at once
+         // to Start Speed, or carries on from the current speed when already faster.
+         settings = new ArgusHorizontalFlight.Settings(this.argusMotionAcceleration.getValue(), this.argusMotionBraking.getValue(),
+            turnRate, this.withRubberbandCap(this.baseHorizontalSpeed.getValue() / 20.0), true,
+            this.withRubberbandCap(this.boostHorizontalCap()), this.accelerationStep.getValue(),
+            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.startSpeed.getValue(),
+            this.boostJump.getValue());
+         curveKey = this.boostKeyHeld();
+      } else {
+         // Volytra's own speeds: its acceleration curve (Start Speed, Acceleration Step and Plateau, up to
+         // Horizontal Speed) runs whenever you move, with Argus Motion's smoothing on top. Using the curve keeps
+         // Volytra's setback rewind, the server's per-move limit and speed-scaled braking; a plain cruise
+         // target of Horizontal Speed has none of them and rubber-bands once it gets fast.
+         settings = new ArgusHorizontalFlight.Settings(this.argusMotionAcceleration.getValue(), this.argusMotionBraking.getValue(),
+            turnRate, this.withRubberbandCap(this.startSpeed.getValue()), true,
+            this.withRubberbandCap(this.horizontalSpeed.getValue()), this.accelerationStep.getValue(),
+            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.startSpeed.getValue());
+         curveKey = true;
+      }
 
-      Motion output = this.cometFlight.step(new CometHorizontalFlight.Settings(
-         this.cometAcceleration.getValue(), this.cometBraking.getValue(),
-         this.adaptiveTurning.getValue() ? this.cometTurnRate.getValue() : 0.0,
-         this.withRubberbandCap(this.customSpeeds.getValue() ? this.baseHorizontalSpeed.getValue() / 20.0 : this.horizontalSpeed.getValue()),
-         this.customSpeeds.getValue(),
-         this.withRubberbandCap(this.boostHorizontalCap()),
-         this.cometBoostRampStep.getValue(),
-         Math.max(this.horizontalSpeed.getValue(), 1.0E-3)), forward, right, player.getYRot(), boostKey);
+      Motion output = this.argusFlight.step(settings, forward, right, player.getYRot(),
+         this.boostDelay.ready() && curveKey);
       this.velX = output.x();
       this.velZ = output.z();
-      if (!this.customSpeeds.getValue()) this.cometState = "Volytra speed";
-      else if (sprintHeld && !this.boostDelay.ready()) this.cometState = "Boost held (swap)";
-      else if (this.cometFlight.boosting()) this.cometState = "Boost " + Math.round(this.cometFlight.boostSpeed() * 20.0);
-      else if (sprintHeld) this.cometState = "Boost key, no boost";
-      else this.cometState = "Cruise";
-   }
-
-   /**
-    * Comet Motion's flight state for the module list, with server setbacks in the last five seconds;
-    * null when not flying with Comet Motion.
-    */
-   public String cometStatus() {
-      if (!this.cometFlying || this.cometState == null) return null;
-      while (!this.cometSetbackTicks.isEmpty() && this.clientTicks - this.cometSetbackTicks.peekFirst() > 100) {
-         this.cometSetbackTicks.pollFirst();
-      }
-      int setbacks = this.cometSetbackTicks.size();
-      String status = this.cometState;
-      if (this.rubberbandCapTicksLeft > 0) status += ", rubberband cap";
-      return setbacks == 0 ? status : status + ", " + setbacks + (setbacks == 1 ? " setback" : " setbacks");
    }
 
    private double withRubberbandCap(double speed) {
@@ -550,7 +591,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return Math.max(0.0, speed);
    }
 
-   /** Holds the whole 3D move to {@code ceiling} blocks per tick, as Comet does while boosting. */
+   /** Holds the whole 3D move to {@code ceiling} blocks per tick, while boosting. */
    private void applyTotalCeiling(double ceiling) {
       double speed = Math.sqrt(this.velX * this.velX + this.velY * this.velY + this.velZ * this.velZ);
       if (!(speed > ceiling)) return;
@@ -610,8 +651,8 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
 
       double cap = this.effectiveVerticalSpeedCap();
       if (Math.abs(this.velY) > cap) {
-         double brakingCap = this.cometMotion.getValue()
-            ? Math.max(cap, Math.abs(this.velY) - this.cometBraking.getValue())
+         double brakingCap = this.argusMotion.getValue()
+            ? Math.max(cap, Math.abs(this.velY) - this.argusMotionBraking.getValue())
             : cap;
          this.velY = Math.copySign(brakingCap, this.velY);
       }
@@ -685,7 +726,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    /**
-    * Comet's smart elytra swap. Called from {@code LocalPlayer.aiStep} just before vanilla checks a Jump press for
+    * Argus smart elytra swap. Called from {@code LocalPlayer.aiStep} just before vanilla checks a Jump press for
     * gliding: equipping here lets vanilla open the wings in the same attempt and send its own normal flight packet,
     * and holding Jump or ordinary jumps never equip wings.
     */
@@ -698,13 +739,63 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          || player.isPassenger() || player.getAbilities().flying || player.hasEffect(MobEffects.LEVITATION)) return;
       if (gliderRemaining(player.getItemBySlot(EquipmentSlot.CHEST)) > 1) return;
       this.swapChest(player, true);
+      this.smartTakeoffTick = this.clientTicks;
    }
 
-   /** Comet's landing swap: back on the ground, wear the best chestplate instead of wings (or nothing). */
+   /** Argus landing swap: back on the ground, wear the best chestplate instead of wings (or nothing). */
    private void smartLandingSwap(LocalPlayer player) {
-      if (!this.smartElytra.getValue() || !this.canSmartSwap(player) || !player.onGround()) return;
+      if (!this.smartElytra.getValue() || !this.canSmartSwap(player)) return;
       ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
-      if (chest.isEmpty() || isGlider(chest)) this.swapChest(player, false);
+      if (!chest.isEmpty() && !isGlider(chest)) return;
+      // Measure the real gap under the hitbox rather than trusting the onGround flag, which hovering and other
+      // modules can report wrongly in both directions.
+      double height = this.landingSwapHeight.getValue();
+      ClientLevel level = this.minecraft().level;
+      double gap = level == null ? Double.POSITIVE_INFINITY : this.groundGap(level, player, height);
+      if (!shouldLandingSwap(gap, height, player.getDeltaMovement().y, player.isFallFlying(),
+         this.clientTicks - this.smartTakeoffTick)) return;
+      this.swapChest(player, false);
+   }
+
+   /** Ticks after a smart takeoff during which a landing swap would strip the wings just equipped. */
+   static final int TAKEOFF_GRACE_TICKS = 10;
+   /** Rising faster than this (blocks/tick) is a jump or climb, never a landing. */
+   static final double LANDING_MAX_RISE = 0.05;
+   /** While still gliding, only a floor this close (touching) counts, so skimming low never drops the wings. */
+   static final double GLIDING_TOUCH_GAP = 0.05;
+
+   /**
+    * Whether to swap back to a chestplate: the floor is within {@code height} blocks (touching, while still gliding),
+    * the player is not rising, and a smart takeoff has not just equipped the wings.
+    */
+   static boolean shouldLandingSwap(double groundGap, double height, double verticalSpeed, boolean gliding,
+                                    long ticksSinceTakeoff) {
+      if (ticksSinceTakeoff < TAKEOFF_GRACE_TICKS) return false;
+      if (verticalSpeed > LANDING_MAX_RISE) return false;
+      double allowed = gliding ? Math.min(height, GLIDING_TOUCH_GAP) : height;
+      return groundGap <= allowed + 1.0E-6;
+   }
+
+   /** Gap between the feet and the nearest floor under the hitbox, or infinity beyond {@code height}. */
+   private double groundGap(ClientLevel world, LocalPlayer player, double height) {
+      // Rays start a little above the feet so a floor the player stands exactly on still counts as zero.
+      double lift = 0.1;
+      double reach = height + lift + 0.01;
+      AABB box = player.getBoundingBox();
+      double top = player.getY() + lift;
+      double nearest = Double.POSITIVE_INFINITY;
+      double[] xs = {box.minX + 1.0E-3, (box.minX + box.maxX) / 2.0, box.maxX - 1.0E-3};
+      double[] zs = {box.minZ + 1.0E-3, (box.minZ + box.maxZ) / 2.0, box.maxZ - 1.0E-3};
+      for (double x : xs) {
+         for (double z : zs) {
+            Vec3 start = new Vec3(x, top, z);
+            BlockHitResult hit = world.clip(new ClipContext(start, start.add(0.0, -reach, 0.0),
+               ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+            if (hit.getType() != HitResult.Type.BLOCK) continue;
+            nearest = Math.min(nearest, Math.max(0.0, player.getY() - hit.getLocation().y));
+         }
+      }
+      return nearest;
    }
 
    private boolean canSmartSwap(LocalPlayer player) {
@@ -771,7 +862,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       if (!(event.getPacket() instanceof ClientboundPlayerPositionPacket)) return;
 
       this.positionCorrections++;
-      this.cometCorrections.incrementAndGet();
+      this.argusCorrections.incrementAndGet();
       Minecraft minecraft = this.minecraft();
       LocalPlayer player = minecraft.player;
       ClientLevel world = minecraft.level;
@@ -1081,7 +1172,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return minecraft.screen == null && this.boostKey.isPhysicallyDown(minecraft.options.keySprint);
    }
 
-   /** Boost H Speed in blocks/tick; at the slider's top ("Volytra Max") it is Volytra's own Horizontal Speed. */
+   /** Boost H Speed in blocks/tick; at the slider's top ("MAX") it is Volytra's own Horizontal Speed. */
    private double boostHorizontalCap() {
       return this.boostHorizontalSpeed.isAtMaximum()
          ? this.horizontalSpeed.getValue()
@@ -1134,9 +1225,9 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       }
 
       double cap = this.effectiveVerticalSpeedCap();
-      if (this.cometMotion.getValue()) {
+      if (this.argusMotion.getValue()) {
          if (this.verticalAcceleration > cap) {
-            this.verticalAcceleration = Math.max(cap, this.verticalAcceleration - this.cometBraking.getValue());
+            this.verticalAcceleration = Math.max(cap, this.verticalAcceleration - this.argusMotionBraking.getValue());
             this.atMaxVerticalSpeed = this.verticalAcceleration >= cap;
             return;
          }
@@ -1145,7 +1236,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
             return;
          }
          if (this.verticalAcceleration < cap) {
-            this.verticalAcceleration = Math.min(cap, this.verticalAcceleration + this.cometAcceleration.getValue());
+            this.verticalAcceleration = Math.min(cap, this.verticalAcceleration + this.argusMotionAcceleration.getValue());
          }
          this.atMaxVerticalSpeed = this.verticalAcceleration >= cap;
          return;

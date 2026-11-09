@@ -1,4 +1,4 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 /** Shared guards for setting values and movement maths that must never propagate NaN or infinity. */
 public final class Finite {

@@ -1,4 +1,4 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 import org.junit.jupiter.api.Test;
 

@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Comet's smart elytra takeoff: equip before vanilla checks the second Jump press, so vanilla opens the wings in
+ * Argus smart elytra takeoff: equip before vanilla checks the second Jump press, so vanilla opens the wings in
  * the same attempt and sends its normal flight packet.
  */
 @Mixin(LocalPlayer.class)

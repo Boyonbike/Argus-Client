@@ -1,4 +1,4 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 /** Inventory selection independent of Minecraft's click and flight handling. */
 public final class SmartElytraSwap {

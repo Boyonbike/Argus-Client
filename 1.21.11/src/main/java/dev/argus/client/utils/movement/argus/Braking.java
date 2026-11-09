@@ -3,7 +3,7 @@
  * core is ported; Comet's terrain envelope, boost ramps, maneuver mode and server glide are not.
  */
 
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 /**
  * One braking policy for all flight, in blocks per tick. {@code comfort} is the gentlest braking, used around cruise

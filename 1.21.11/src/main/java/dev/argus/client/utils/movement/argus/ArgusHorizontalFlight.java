@@ -4,19 +4,19 @@
  * server glide guard and vertical blend deliberately left out.
  */
 
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
-import dev.argus.client.utils.movement.comet.AdaptiveFlightController.Motion;
+import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Motion;
 import java.util.Objects;
 
 /**
- * Comet's horizontal flight: cruise, unlimited Sprint boost and the transition between them.
+ * Argus Motion's horizontal flight: cruise, boost and the transition between them.
  *
  * <ul>
  *   <li>Cruise: momentum approaches the keys' heading at the cruise speed by {@code acceleration} a tick and
  *       slows by the braking policy when the request is slower or reversed.</li>
- *   <li>Boost: VolytraFly's boost curve ({@link BoostRamp}) engages from the current speed (never below
- *       {@value #BOOST_START} blocks/tick), climbs towards the boost top and stops at the boost cap. While
+ *   <li>Boost: VolytraFly's boost curve ({@link BoostRamp}) engages from the current speed (never below the start speed,
+ *       {@value #BOOST_START} blocks/tick by default), climbs towards the boost top and stops at the boost cap. While
  *       boosting and not braking, speed is the ramp speed on the assisted heading.</li>
  *   <li>Boost to cruise: the ramp releases and momentum brakes down to cruise with Comet's speed-scaled braking
  *       (gentle near cruise, much firmer at boost speed) rather than snapping.</li>
@@ -24,7 +24,7 @@ import java.util.Objects;
  *       tick; a teleport stops controlled movement.</li>
  * </ul>
  */
-public final class CometHorizontalFlight {
+public final class ArgusHorizontalFlight {
    /** VolytraFly's 60 b/s boost start and 300 b/s curve top, in blocks per tick (Comet's BOOST_START/BOOST_TOP). */
    public static final double BOOST_START = 2.999;
    public static final double BOOST_TOP = 14.999;
@@ -40,14 +40,29 @@ public final class CometHorizontalFlight {
    /**
     * Speeds are blocks per tick. {@code boostEnabled} is Comet's sprint-boost with unlimited-boost on;
     * {@code boostCap} is its boost-max-bps / 20. {@code boostTop} is the fastest the boost curve goes:
-    * Volytra Fly's Horizontal Speed, {@link #BOOST_TOP} by default.
+    * Volytra Fly's Horizontal Speed, {@link #BOOST_TOP} by default. {@code boostStart} is the lowest speed boost
+    * engages at, {@link #BOOST_START} by default. {@code boostJumpTicks} skips that many ticks along the boost
+    * curve the moment boost engages, an instant kick that shrinks as speed nears the top (0 turns it off).
     */
    public record Settings(double acceleration, double braking, double turnRate, double cruise,
-                          boolean boostEnabled, double boostCap, double boostRampStep, double boostTop) {
-      /** VolytraFly's default top speed ({@link #BOOST_TOP}) as the boost curve's top. */
+                          boolean boostEnabled, double boostCap, double boostRampStep, double boostTop,
+                          double boostStart, int boostJumpTicks) {
+      /** VolytraFly's default curve: {@link #BOOST_START} to {@link #BOOST_TOP}, no jump. */
       public Settings(double acceleration, double braking, double turnRate, double cruise,
                       boolean boostEnabled, double boostCap, double boostRampStep) {
-         this(acceleration, braking, turnRate, cruise, boostEnabled, boostCap, boostRampStep, BOOST_TOP);
+         this(acceleration, braking, turnRate, cruise, boostEnabled, boostCap, boostRampStep, BOOST_TOP, BOOST_START, 0);
+      }
+
+      /** VolytraFly's default start speed ({@link #BOOST_START}), no jump. */
+      public Settings(double acceleration, double braking, double turnRate, double cruise,
+                      boolean boostEnabled, double boostCap, double boostRampStep, double boostTop) {
+         this(acceleration, braking, turnRate, cruise, boostEnabled, boostCap, boostRampStep, boostTop, BOOST_START, 0);
+      }
+
+      /** No jump. */
+      public Settings(double acceleration, double braking, double turnRate, double cruise,
+                      boolean boostEnabled, double boostCap, double boostRampStep, double boostTop, double boostStart) {
+         this(acceleration, braking, turnRate, cruise, boostEnabled, boostCap, boostRampStep, boostTop, boostStart, 0);
       }
    }
 
@@ -67,7 +82,7 @@ public final class CometHorizontalFlight {
          HORIZON, s.boostEnabled() ? s.boostTop() : 0));
       controller.tick();
       // Comet's configureRamps: the boost cap stops the ramp without reshaping its curve.
-      ramp.configure(new BoostRamp.Settings(BOOST_START, s.boostTop(), s.boostRampStep(), BOOST_REWIND_TICKS,
+      ramp.configure(new BoostRamp.Settings(Math.max(0.0, s.boostStart()), s.boostTop(), s.boostRampStep(), BOOST_REWIND_TICKS,
          BOOST_SETBACK_HOLD, Finite.clamp(s.boostCap(), 0, Double.MAX_VALUE, 0)));
 
       Motion direction = requested(forward, right, yawDegrees, 1.0);
@@ -76,10 +91,14 @@ public final class CometHorizontalFlight {
 
       // AdaptiveFlightEngine.updateBoost (horizontal ramp).
       if (s.boostEnabled() && boostKey && moving) {
-         // Comet: boost engages from the current speed (never below BOOST_START) and climbs VolytraFly's
+         // Comet: boost engages from the current speed (never below the start speed) and climbs VolytraFly's
          // curve. Jumping straight to the cap gives the server one huge move and rubber-bands.
          if (ramp.engaged()) ramp.advance();
-         else ramp.engage(previous.horizontalLength());
+         else {
+            ramp.engage(previous.horizontalLength());
+            // Instant kick: skip ahead along the curve, which gains less the nearer speed is to the top.
+            for (int tick = 0; tick < s.boostJumpTicks(); tick++) ramp.advance();
+         }
       } else {
          ramp.disengage();
       }

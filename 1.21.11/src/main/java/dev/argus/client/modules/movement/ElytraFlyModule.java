@@ -138,12 +138,7 @@ public class ElytraFlyModule extends Module {
    @Override
    public String getInfo() {
       try {
-         String mode = FontRenderer.capitalize((this.modeSetting.getValue()).getName());
-         if (this.getActiveMode() instanceof VolytraElytraFlyHandler volytra) {
-            String status = volytra.cometStatus();
-            if (status != null) return mode + " | " + status;
-         }
-         return mode;
+         return FontRenderer.capitalize((this.modeSetting.getValue()).getName());
       } catch (Exception failure) {
          return null;
       }
@@ -543,7 +538,11 @@ public class ElytraFlyModule extends Module {
       // Migrate those once to Volytra Fly; later configs keep the user's explicit mode.
       boolean legacyConfig = true;
       if (json instanceof JsonObject moduleJson && moduleJson.get("settings") instanceof JsonObject settings) {
-         legacyConfig = !settings.has("volytraAdaptiveTurning");
+         legacyConfig = !settings.has("volytraAdaptiveTurning") && !settings.has("argusAdaptiveTurning");
+         // The Argus tweak settings were renamed; carry values saved under the old keys over to the new ones.
+         JsonObject copy = moduleJson.deepCopy();
+         copy.add("settings", VolytraElytraFlyHandler.migrateRenamedKeys(settings));
+         json = copy;
       }
 
       super.fromJson(json);

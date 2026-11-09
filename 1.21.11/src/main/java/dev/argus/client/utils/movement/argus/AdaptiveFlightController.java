@@ -3,7 +3,7 @@
  * core is ported; Comet's terrain envelope, boost ramps, maneuver mode and server glide are not.
  */
 
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
 import java.util.Objects;
 

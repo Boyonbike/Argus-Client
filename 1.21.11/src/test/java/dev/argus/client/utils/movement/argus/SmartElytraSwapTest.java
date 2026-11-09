@@ -1,6 +1,6 @@
-package dev.argus.client.utils.movement.comet;
+package dev.argus.client.utils.movement.argus;
 
-import dev.argus.client.utils.movement.comet.SmartElytraSwap.Candidate;
+import dev.argus.client.utils.movement.argus.SmartElytraSwap.Candidate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
