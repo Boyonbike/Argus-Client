@@ -18,6 +18,9 @@ with zipfile.ZipFile(jar) as archive:
         if name.endswith(('.class', '.ini')):
             data = archive.read(name)
             assert b'Vortex Client' not in data, name
+            # Only the config import/rename classes may name old clients, to update saved settings.
+            if name.startswith(('dev/argus/client/config/ClientDataDirectory', 'dev/argus/client/config/LegacyConfigRenamer')):
+                continue
             for old in (b'zio', b'spectrumdevs', b'mio', b'randomstuff', b'eggclient', b'shuclient'):
                 assert old not in data.lower(), (name, old)
     for old in (b'cypphi', b'discord.com/invite', b'zio', b'mio'):
