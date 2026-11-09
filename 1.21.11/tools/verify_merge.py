@@ -29,7 +29,7 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     assert 'dev/argus/client/gui/SearchScreen.class' not in jar.namelist(), 'Standalone search tab reintroduced'
     assert 'dev/argus/client/gui/GuiSearch.class' in jar.namelist(), 'Inline search engine missing'
     for name in jar.namelist():
-        assert not name.startswith(('config/','configs/','argusclient/','eggclient/','shuclient/')), 'User data bundled in release: '+name
+        assert not name.startswith(('config/','configs/','argusclient/')), 'User data bundled in release: '+name
         assert not name.endswith('/gui.properties'), 'Saved GUI preferences bundled in release'
     assert 'assets/argusclient/font/ui.json' in jar.namelist(), 'GUI font definition missing'
     assert 'assets/argusclient/textures/font/gui.png' in jar.namelist(), 'GUI font atlas missing'

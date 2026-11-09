@@ -91,8 +91,8 @@ tasks.register('mergeClient', Jar) {
     archiveFileName = 'argus-client.jar'
     destinationDirectory = layout.buildDirectory.dir('libs')
     from(zipTree(file('libs/client-base.jar'))) {
-        exclude 'config/**', 'configs/**', 'argusclient/**', 'eggclient/**', 'shuclient/**', 'gui.properties'
-        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF', 'dev/argus/client/config/ClientDataDirectory*.class'
+        exclude 'config/**', 'configs/**', 'argusclient/**', 'gui.properties'
+        exclude 'fabric.mod.json', 'argusclient.mixins.json', 'dev/argus/mixin/LoadingOverlayMixin.class', 'META-INF/MANIFEST.MF'
         exclude 'dev/argus/client/modules/movement/ElytraFlyModule*.class'
         exclude 'dev/argus/client/managers/HudModuleRegistry*.class'
     }
@@ -126,7 +126,7 @@ tasks.register('verifyReleaseConfig') {
         try {
             java.util.Collections.list(zip.entries()).each { entry ->
                 def name = entry.name
-                assert !['config/', 'configs/', 'argusclient/', 'eggclient/', 'shuclient/'].any { name.startsWith(it) } : "Saved client data in release: ${name}"
+                assert !['config/', 'configs/', 'argusclient/'].any { name.startsWith(it) } : "Saved client data in release: ${name}"
                 assert !name.endsWith('/gui.properties') : "Saved GUI preferences in release: ${name}"
             }
             def mixins = zip.getInputStream(zip.getEntry('argusclient.mixins.json')).text

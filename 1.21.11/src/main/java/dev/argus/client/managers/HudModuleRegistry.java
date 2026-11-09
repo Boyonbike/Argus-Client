@@ -2,7 +2,7 @@
  * ─────────────────────────────────────────────
  * Licensed under the MIT License.
  *
- * Zio is not affiliated with or endorsed by Mio.
+ * Part of Argus Client.
  * Provided "as is", without warranty of any kind.
  * ─────────────────────────────────────────────
  */

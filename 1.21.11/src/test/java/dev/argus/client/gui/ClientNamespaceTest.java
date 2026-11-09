@@ -23,6 +23,16 @@ final class ClientNamespaceTest {
                             "Old namespace in " + entry.getName());
                 }
             }
+            for (var entry : java.util.Collections.list(jar.entries())) {
+                if (!entry.getName().endsWith(".class")) continue;
+                String data = new String(jar.getInputStream(entry).readAllBytes(), StandardCharsets.ISO_8859_1)
+                        .toLowerCase(Locale.ROOT);
+                assertFalse(data.contains("zio") || data.contains("spectrumdevs") || data.contains("mio"),
+                        "Zio/Mio branding in " + entry.getName());
+            }
+            String metadata = new String(jar.getInputStream(jar.getEntry("fabric.mod.json")).readAllBytes(),
+                    StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+            assertFalse(metadata.contains("cypphi") || metadata.contains("discord.com/invite"), "Old project in fabric.mod.json");
             assertNotNull(jar.getEntry("dev/argus/client/ArgusClient.class"));
             assertNotNull(jar.getEntry("assets/argusclient/textures/argusclient.png"));
         }

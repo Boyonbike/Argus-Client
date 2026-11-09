@@ -18,9 +18,9 @@ with zipfile.ZipFile(jar) as archive:
         if name.endswith(('.class', '.ini')):
             data = archive.read(name)
             assert b'Vortex Client' not in data, name
-            if name != 'dev/argus/client/config/ClientDataDirectory.class':
-                assert b'randomstuff' not in data.lower(), name
-                assert b'eggclient' not in data.lower(), name
-                assert b'shuclient' not in data.lower(), name
+            for old in (b'zio', b'spectrumdevs', b'mio', b'randomstuff', b'eggclient', b'shuclient'):
+                assert old not in data.lower(), (name, old)
+    for old in (b'cypphi', b'discord.com/invite', b'zio', b'mio'):
+        assert old not in archive.read('fabric.mod.json').lower(), old
     assert 'dev/argus/client/gui/panels/SearchPanel.class' in archive.namelist()
 print('PASS: Argus Client branding, JAR integrity, entrypoints, and Search panel')
