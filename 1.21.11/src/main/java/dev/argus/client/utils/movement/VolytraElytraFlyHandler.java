@@ -1011,10 +1011,12 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    private void handleVerticalSpeed() {
+      // Volytra's own model flies at half the vertical value; the Tweaks base/boost sliders are real speeds.
+      double scale = this.customSpeeds.getValue() ? 1.0 : 0.5;
       if (PlayerMovementKeys.isDown(this.minecraft().options.keyJump)) {
-         this.velY += 0.5 * this.verticalAcceleration;
+         this.velY += scale * this.verticalAcceleration;
       } else if (PlayerMovementKeys.isDown(this.minecraft().options.keyShift)) {
-         this.velY -= 0.5 * this.verticalAcceleration;
+         this.velY -= scale * this.verticalAcceleration;
       }
    }
 

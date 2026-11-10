@@ -149,7 +149,7 @@ public final class ChatToolsScreen extends UiScreen {
         panelWidth = Math.min(700, width - 24); left = (width - panelWidth) / 2; top = 44;
         panelHeight = height - top - 24;
         if (page == Page.SETTINGS && settingsPage == null && tools != null) settingsPage = new ModulePage(this, tools, null, false).icon("chat");
-        if (settingsPage != null) settingsPage.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth, false);
+        if (settingsPage != null) settingsPage.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth);
         placeInputs();
     }
 
@@ -211,7 +211,7 @@ public final class ChatToolsScreen extends UiScreen {
         memo.clear();
         if (next == Page.SETTINGS && settingsPage == null && tools != null) {
             settingsPage = new ModulePage(this, tools, null, false).icon("chat");
-            settingsPage.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth, false);
+            settingsPage.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth);
         }
         if (tools != null && next == Page.HOMES) tools.refreshHomes();
         if (tools != null && next == Page.SERVER && tools.commandAvailable("hotspot")) tools.refreshHotspot();

@@ -82,6 +82,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
             }
 
             graphics.renderItemDecorations(font, item, decorationX, decorationY, countLabel);
+            renderArmourDurability(graphics, font, item, decorationX, decorationY);
          }
 
          if (++column >= 9) {
@@ -97,6 +98,23 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
             graphics.setTooltipForNextFrame(hoverFont, hoveredItem, mouseX, mouseY);
          }
       }
+   }
+
+   private static void renderArmourDurability(GuiGraphics graphics, Font font, ItemStack item, int x, int y) {
+      if (!tooltips.showsDurability() || !item.isDamageableItem() || !item.has(DataComponents.EQUIPPABLE)) {
+         return;
+      }
+
+      int max = item.getMaxDamage();
+      int left = max - item.getDamageValue();
+      int color = item.getBarColor() | 0xFF000000;
+      String text = String.valueOf(left);
+      Matrix3x2fStack poses = graphics.pose();
+      poses.pushMatrix();
+      poses.translate(x + 16, y + 9);
+      poses.scale(0.5F, 0.5F);
+      graphics.drawString(font, text, -font.width(text), 0, color, true);
+      poses.popMatrix();
    }
 
    public static void renderMapOverlay(GuiGraphics graphics, MapItemSavedData data, int id, float x, float y) {

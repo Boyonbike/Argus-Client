@@ -101,6 +101,17 @@ final class SettingsScreen extends UiScreen {
     }
     /** Flips the HUD tab's target and re-lays the top bar so the tab's highlight follows at once. */
     private void flipHudTab() { toggleHudTab(); layoutTabs(); }
+    /** What the module tools need from this window: where opened pages return to, and the top-bar tabs. */
+    private final ModuleTools.Hooks hooks = new ModuleTools.Hooks() {
+        @Override public Screen back() { return rootParent(); }
+        @Override public boolean topBar() { return true; }
+        @Override public boolean socialOpensMenu() { return GuiState.preferences().socialTab == GuiPreferences.SocialTab.MENU; }
+        @Override public void flipSocialTab() { SettingsScreen.this.flipSocialTab(); }
+        @Override public boolean hudOpensEditor() { return GuiState.preferences().hudTab == GuiPreferences.HudTab.EDITOR; }
+        @Override public void flipHudTab() { SettingsScreen.this.flipHudTab(); }
+        @Override public boolean inHudEditor() { return rootParent() instanceof ArgusHudEditorScreen; }
+        @Override public void openHudEditor() { SettingsScreen.this.openHudEditor(); }
+    };
     private void flipSocialTab() {
         var p = GuiState.preferences();
         p.socialTab = p.socialTab == GuiPreferences.SocialTab.MENU ? GuiPreferences.SocialTab.SETTINGS : GuiPreferences.SocialTab.MENU;
@@ -155,11 +166,7 @@ final class SettingsScreen extends UiScreen {
             pageScroll = 0; shownPageScroll = 0;
         } else if (name.equals(SOCIAL)) {
             ChatToolsModule tools = ChatToolsModule.get();
-            if (tools != null) page = new ModulePage(this, tools, focus, false).icon(icon(SOCIAL))
-                    .action(() -> "Social tab opens: " + (GuiState.preferences().socialTab == GuiPreferences.SocialTab.MENU ? "Menu" : "Settings"), "sliders",
-                            "Click to switch whether the Social tab in the top bar opens the Social menu or this page", this::flipSocialTab)
-                    .action("Open Social Menu", "people", "Messages, players, clan, homes, teleports and Auto TPY",
-                            () -> minecraft.setScreen(new ChatToolsScreen(rootParent(), null)));
+            if (tools != null) page = new ModulePage(this, tools, focus, false).icon(icon(SOCIAL));
         } else if (selected instanceof DiscordModule) {
             // Rich Presence and Discord Sync share one page: a card each, each with its own switch.
             discordCards = true;
@@ -170,16 +177,8 @@ final class SettingsScreen extends UiScreen {
         } else {
             Module module = selected;
             if (module != null) page = new ModulePage(this, module, focus, false).icon(icon(module.getName()));
-            if (module instanceof DiscordSyncModule sync) page
-                    .action(() -> sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Sync failed · try again"
-                                    : sync.lastSuccessfulSync() > 0 ? "Synced " + sync.syncedAccounts() + " · sync again" : "Sync now", "people",
-                            "Read Discord now and update the clan list and Auto TPY whitelist. Details appear in chat.", sync::syncNow);
-            if (module instanceof HUDModule) page
-                    .action(() -> "HUD tab opens: " + (GuiState.preferences().hudTab == GuiPreferences.HudTab.EDITOR ? "Editor" : "Settings"), "sliders",
-                            "Click to switch whether the HUD tab in the top bar opens the on-screen editor or this page", this::flipHudTab)
-                    .action(() -> rootParent() instanceof ArgusHudEditorScreen ? "Back to editor" : "Open HUD editor", "hud",
-                            "Add, remove and arrange HUD elements on your screen", this::openHudEditor);
         }
+        if (page != null) ModuleTools.attach(page, this, page.module(), hooks);
         if (name.equals(PRESETS) && presets == null) presets = new PresetsPanel(this);
         layoutSection();
         if (animate) sectionChanged = System.nanoTime();
@@ -188,7 +187,7 @@ final class SettingsScreen extends UiScreen {
 
     private void layoutSection() {
         int x = Math.round(contentX()), w = Math.round(contentWidth() - 8);
-        if (page != null) page.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth, false);
+        if (page != null) page.layout(contentX(), top + 12, contentWidth(), panelHeight - 12, left, left + panelWidth);
         for (SettingsList card : appearanceLists) card.panelEdges(left, left + panelWidth);
         if (section.equals(PRESETS)) presets.layout(x, top, w, panelHeight);
     }

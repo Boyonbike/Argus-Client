@@ -110,10 +110,7 @@ import org.joml.Matrix3x2fStack;
 public class TooltipsModule extends Module {
    // General
    private final EnumSetting<DisplayWhen> displaySetting = this.add(new EnumSetting<>("Display", DisplayWhen.ALWAYS));
-   private final KeyBindSetting previewKeySetting = this.add(
-      new KeyBindSetting("PreviewKey", "Left Alt", value -> this.displaySetting.getValue() == DisplayWhen.KEY_HELD)
-   );
-   private final KeyBindSetting openKeySetting = this.add(new KeyBindSetting("OpenKey", "Middle Click", value -> true));
+   private final KeyBindSetting previewKeySetting = this.add(new KeyBindSetting("PreviewKey", "Middle Click", value -> true));
    private final Setting<Boolean> keepTextSetting = this.add(new BooleanSetting("KeepText", true));
    private final Setting<Boolean> coloredSetting = this.add(new BooleanSetting("Colored", true));
    // Previews: what the tooltip shows for containers and other special items.
@@ -175,8 +172,7 @@ public class TooltipsModule extends Module {
    }
 
    public boolean shouldPinTooltip(ItemStack stack) {
-      return this.shouldInspectContents(stack) || this.isToggled() && this.shulkerContentSetting.getValue()
-         && ItemUtils.isShulkerBox(stack.getItem()) && this.openKeyPressed();
+      return this.shouldInspectContents(stack);
    }
 
    public Color getTooltipColor() {
@@ -205,7 +201,7 @@ public class TooltipsModule extends Module {
             ItemStack hoveredStack = focusedSlot.getItem();
             boolean previewsShown = this.previewsShown();
             boolean previewHidden = false;
-            boolean openPressed = this.openKeyPressed();
+            boolean openPressed = this.previewKeyPressed();
             boolean shulkerHovered = ItemUtils.isShulkerBox(hoveredStack.getItem());
             this.addItemInfo(hoveredStack, event.getTooltipComponents());
             NonNullList<ItemStack> containerItems = NonNullList.withSize(27, ItemStack.EMPTY);
@@ -265,7 +261,7 @@ public class TooltipsModule extends Module {
                   Boolean keepContentsText = this.keepTextSetting.getValue();
                   if (!(shulkerHovered ? openPressed : previewsShown)) {
                      if (shulkerHovered) {
-                        String hint = "Hold " + this.openKeyName() + " to preview";
+                        String hint = "Hold " + this.previewKeyName() + " to preview";
                         event.getTooltipComponents().add(ClientTooltipComponent.create(
                            Component.literal(hint).withStyle(ChatFormatting.YELLOW).getVisualOrderText()));
                      } else {
@@ -427,21 +423,15 @@ public class TooltipsModule extends Module {
       return this.isToggled()
          && this.shulkerContentSetting.getValue()
          && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen
-         && (ItemUtils.isShulkerBox(stack.getItem()) ? this.openKeyPressed() : this.previewsShown());
+         && (ItemUtils.isShulkerBox(stack.getItem()) ? this.previewKeyPressed() : this.previewsShown());
    }
 
    private boolean previewsShown() {
-      if (this.displaySetting.getValue() == DisplayWhen.ALWAYS) {
-         return true;
-      }
-
-      return this.previewKeySetting.followsDefault()
-         ? KeyUtils.isPhysicalKeyDown(LEFT_ALT)
-         : KeyUtils.isPhysicallyDown(this.previewKeySetting.getValue());
+      return this.displaySetting.getValue() == DisplayWhen.ALWAYS || this.previewKeyPressed();
    }
 
    private String previewKeyName() {
-      return this.previewKeySetting.followsDefault() ? "Left Alt" : this.previewKeySetting.getValue().getDisplayName();
+      return this.previewKeySetting.followsDefault() ? "Middle Click" : this.previewKeySetting.getValue().getDisplayName();
    }
 
    public boolean showsDurability() {
@@ -450,18 +440,14 @@ public class TooltipsModule extends Module {
 
    public boolean isShulkerPreviewClick(ItemStack stack, int button) {
       return this.isToggled() && this.shulkerContentSetting.getValue() && ItemUtils.isShulkerBox(stack.getItem())
-         && (this.openKeySetting.followsDefault() ? button == MIDDLE_MOUSE
-            : this.openKeySetting.getValue().mouse() && this.openKeySetting.getValue().code() == button);
+         && (this.previewKeySetting.followsDefault() ? button == MIDDLE_MOUSE
+            : this.previewKeySetting.getValue().mouse() && this.previewKeySetting.getValue().code() == button);
    }
 
-   private String openKeyName() {
-      return this.openKeySetting.followsDefault() ? "Middle Click" : this.openKeySetting.getValue().getDisplayName();
-   }
-
-   private boolean openKeyPressed() {
-      return this.openKeySetting.followsDefault()
+   private boolean previewKeyPressed() {
+      return this.previewKeySetting.followsDefault()
          ? KeyUtils.isPhysicalMouseButtonDown(MIDDLE_MOUSE)
-         : KeyUtils.isPhysicallyDown(this.openKeySetting.getValue());
+         : KeyUtils.isPhysicallyDown(this.previewKeySetting.getValue());
    }
 
    /** Adds hunger, saturation and consume-effect lines under the item's name. */
@@ -663,7 +649,7 @@ public class TooltipsModule extends Module {
       String inspectColor = String.valueOf(ChatFormatting.YELLOW);
       return "Draws advanced tool tips on items.\n"
          + previewColor
-         + "Hold the open key (Middle Click by default) to preview a shulker in place.\n"
+         + "Hold the preview key (Middle Click by default) to preview a shulker in place.\n"
          + inspectColor
          + "Hold Left Alt to pin bundle and ender chest tooltips for inspection.";
    }

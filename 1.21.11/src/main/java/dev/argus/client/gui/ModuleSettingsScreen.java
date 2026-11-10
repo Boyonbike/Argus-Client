@@ -1,10 +1,7 @@
 package dev.argus.client.gui;
 
-import dev.argus.client.modules.misc.ChatToolsModule;
 
 import dev.argus.client.modules.Module;
-import dev.argus.client.modules.player.AutoRekitModule;
-import dev.argus.client.modules.render.TooltipsModule;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -20,21 +17,13 @@ final class ModuleSettingsScreen extends UiScreen {
         super(module.getName(), parent, "Modules");
         DescriptionCatalog.ensureApplied();
         page = new ModulePage(this, module, setting, true);
-        if (module instanceof AutoRekitModule rekit)
-            page.action("Rekit presets", "star", "Manage rekit presets and save your inventory",
-                    () -> minecraft.setScreen(new RekitPresetsScreen(this, rekit)));
-        if (module instanceof TooltipsModule icons)
-            page.action("Shulker icon combos", "star", "Match shulkers by name or contents and edit their overlay icons (needs ShulkerIcons › Overlay)",
-                    () -> minecraft.setScreen(new ShulkerCombosScreen(this, icons)));
-        if (module instanceof ChatToolsModule tools)
-            page.action("Open Social Menu", "people", "Messages, players, clan, homes, teleports and Auto TPY",
-                    () -> minecraft.setScreen(new ChatToolsScreen(this, null)));
+        ModuleTools.attach(page, this, module, () -> this);
     }
 
     @Override protected void buildContent() {
         panelWidth = Math.min(580, width - 24); left = (width - panelWidth) / 2; top = 44;
         panelHeight = height - top - 20;
-        page.layout(left + 14, top + BAR + 8, panelWidth - 28, panelHeight - BAR - 8, left, left + panelWidth, true);
+        page.layout(left + 14, top + BAR + 8, panelWidth - 28, panelHeight - BAR - 8, left, left + panelWidth);
     }
 
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {

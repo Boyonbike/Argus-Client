@@ -16,28 +16,27 @@ import net.minecraft.client.input.MouseButtonEvent;
  *  ┌─────────────────────────────────────────────────────────────┐
  *  │ (icon) Module name                ☆        Enabled  [●──]   │  hero: identity and the main switch
  *  │        Description, up to two lines                         │
- *  │ [⌨ R] [Toggle|Hold|Release] [HUD list]   [actions] [↺ Reset]│  controls: keybind, mode, extras
- *  ├────────────┬────────────────────────────────────────────────┤
- *  │ ▌General   │ ┌ General ─────────────────────────────────┐   │  rail (optional) follows the scroll;
- *  │  Targeting │ │ rows…                                    │   │  cards fold and rise in on open
- *  │  Render  • │ └──────────────────────────────────────────┘   │
- *  ├────────────┴────────────────────────────────────────────────┤
+ *  │ [⌨ R] [Toggle|Hold|Release] [HUD list]          [↺ Reset]   │  controls: keybind, mode, extras
+ *  ├─────────────────────────────────────────────────────────────┤
+ *  │ ┌ Module tools (presets, combos…) ─────────────────────┐    │  tool cards sit by the settings they use
+ *  │ └──────────────────────────────────────────────────────┘    │
+ *  │ ┌ General ─────────────────────────────────────────── ⌄ ┐   │  one foldable card per group
+ *  │ │ rows…                                                │    │
+ *  │ └──────────────────────────────────────────────────────┘    │
+ *  ├─────────────────────────────────────────────────────────────┤
  *  │ hint or error                                               │  footer
  *  └─────────────────────────────────────────────────────────────┘
  * </pre>
  *
- * Hosts give it a rectangle and forward input; modules can add buttons to the controls row with
- * {@link #action}.
+ * Hosts give it a rectangle and forward input; modules add their own tools with {@link #inline}.
  */
 final class ModulePage {
-    private static final float CHIP = 16, RAIL = 108, RAIL_ITEM = 19, FOOTER = 22, PAD = 12;
+    private static final float CHIP = 16, FOOTER = 22;
     private static final Keybind.Mode[] MODES = {Keybind.Mode.TOGGLE, Keybind.Mode.HOLD, Keybind.Mode.HOLD_REVERSE};
     private static final String[] MODE_LABELS = {"Toggle", "Hold", "Hold off"};
     private static final String[] MODE_HINTS = {"Press to switch on, press again to switch off",
             "On only while the key is held", "Off only while the key is held"};
 
-    /** A button a module adds to the controls row. */
-    private record Action(java.util.function.Supplier<String> label, String icon, String hint, Runnable run) {}
     /** A clickable region recorded while drawing, so clicks always match what is on screen. */
     private record Hit(float x, float y, float w, float h, int button, Runnable action) {}
 
@@ -45,23 +44,17 @@ final class ModulePage {
     private final Module module;
     private final SettingsCards cards;
     private final boolean favouritable;
-    private final List<Action> actions = new ArrayList<>();
     private final List<Hit> hits = new ArrayList<>();
     private final String key;
     private String icon;
 
     private float x, y, w, h;
-    private boolean rail;
     private float scroll, shownScroll;
     private boolean binding, scrolledToFocus;
     /** Reset all asks for a second click within a few seconds. */
     private long resetArmedAt;
     private String notice = "";
     private long noticeAt;
-    private float railIndicator = Float.NaN;
-    /** Card being scrolled to from the rail; followed for a moment while a folded card opens. */
-    private int jumpTo = -1;
-    private long jumpAt;
 
     /**
      * @param focusSetting a setting to scroll to and highlight, or null
@@ -82,15 +75,14 @@ final class ModulePage {
     /** Replaces the category icon in the badge. */
     ModulePage icon(String name) { icon = name; return this; }
 
-    /** Adds a button to the controls row, e.g. a module's own manager screen. */
-    ModulePage action(String label, String icon, String hint, Runnable run) { return action(() -> label, icon, hint, run); }
-    /** An action whose label is read every frame, e.g. one that shows a current choice. */
-    ModulePage action(java.util.function.Supplier<String> label, String icon, String hint, Runnable run) { actions.add(new Action(label, icon, hint, run)); return this; }
+    /**
+     * Adds a card of the module's own tools (presets, combos, shortcuts).
+     */
+    ModulePage inline(InlineCard card, Placement placement) { cards.addInline(card, placement); return this; }
 
-    /** Places the page. {@code allowRail} shows the section list when there is room and more than one card. */
-    void layout(float x, float y, float w, float h, float panelLeft, float panelRight, boolean allowRail) {
+    /** Places the page. */
+    void layout(float x, float y, float w, float h, float panelLeft, float panelRight) {
         this.x = x; this.y = y; this.w = w; this.h = h;
-        rail = allowRail && w >= 380 && cards.sectionCount() > 1;
         cards.panelEdges(panelLeft, panelRight);
         cards.reattach();
     }
@@ -107,8 +99,8 @@ final class ModulePage {
     private float controlsY() { return y + 26 + descriptionLines().size() * 9 + 4; }
     private float bodyTop() { return controlsY() + CHIP + 12; }
     private float bodyBottom() { return y + h - FOOTER; }
-    private float cardsX() { return rail ? x + RAIL + 10 : x; }
-    private float cardsW() { return rail ? w - RAIL - 10 : w; }
+    private float cardsX() { return x; }
+    private float cardsW() { return w; }
     private float maxScroll() { return Math.max(0, cards.height() - (bodyBottom() - bodyTop())); }
     private String bindLabel() { return binding ? "Press a key…" : module.getKeybind().isUnbound() ? "Not bound" : module.getKeybind().getDisplayName(); }
 
@@ -123,7 +115,6 @@ final class ModulePage {
         stage(g, 0, base, () -> hero(g, mx, my, t));
         stage(g, 1, base, () -> controls(g, mx, my, t));
         UiDraw.rect(g, x, bodyTop() - 6, w, .6f, UiDraw.alpha(t.overlay(), .6f));
-        if (rail) stage(g, 2, base, () -> rail(g, mx, my, t));
         body(g, mx, my, delta, t);
         footer(g, t);
     }
@@ -248,7 +239,7 @@ final class ModulePage {
             if (hover) host.tooltip(key + "drawn", "HUD list", "Show this module in the on-screen module list while it is on");
         }
 
-        // Right side: reset all, then the module's own actions to its left.
+        // Right side: reset all.
         float rx = right;
         int changed = cards.changed();
         boolean armed = resetArmed();
@@ -274,68 +265,12 @@ final class ModulePage {
         }));
         if (rHover) host.tooltip(key + "reset", "Reset all", changed == 0 ? "Nothing changed from the defaults"
                 : changed + (changed == 1 ? " setting differs" : " settings differ") + " from default · click twice to restore");
-
-        for (int i = actions.size() - 1; i >= 0; i--) {
-            Action action = actions.get(i);
-            String actionLabel = action.label().get();
-            float aw = UiDraw.width(actionLabel, UiDraw.SMALL) + (action.icon() == null ? 14 : 26);
-            rx -= aw + 6;
-            if (rx < cx) break;
-            boolean hover = UiDraw.over(mx, my, rx, cy, aw, CHIP);
-            float hv = UiAnim.smooth(key + "act" + i, hover ? 1 : 0, 18);
-            UiDraw.rounded(g, rx, cy, aw, CHIP, 8, UiDraw.alpha(t.accent(), .14f + hv * .1f));
-            UiDraw.outline(g, rx, cy, aw, CHIP, 8, .6f, UiDraw.alpha(t.accent(), .35f + hv * .3f));
-            float tx = rx + 7;
-            if (action.icon() != null) { UiDraw.icon(g, action.icon(), tx, cy + 4, 8, t.accent()); tx += 12; }
-            UiDraw.text(g, actionLabel, tx, cy + CHIP / 2, UiDraw.SMALL, t.accent());
-            hits.add(new Hit(rx, cy, aw, CHIP, 0, action.run()));
-            if (hover && action.hint() != null) host.tooltip(key + "act" + i, actionLabel, action.hint());
-        }
-    }
-
-    /** Section list: one row per card, with a marker that follows the scroll position. */
-    private void rail(GuiGraphics g, int mx, int my, UiTheme t) {
-        float top = bodyTop(), rx = x;
-        UiDraw.rounded(g, rx, top, RAIL, bodyBottom() - top, 7, UiDraw.alpha(t.mantle(), .6f));
-        UiDraw.text(g, "SECTIONS", rx + 9, top + 10, 5.5f, UiDraw.alpha(t.muted(), .75f));
-        int active = activeSection();
-        float itemTop = top + 18;
-        float target = itemTop + active * RAIL_ITEM;
-        railIndicator = Float.isNaN(railIndicator) ? target : UiAnim.approach(railIndicator, target, 18);
-        UiDraw.rounded(g, rx + 4, railIndicator, RAIL - 8, RAIL_ITEM - 2, 6, UiDraw.alpha(t.accent(), .18f));
-        UiDraw.rounded(g, rx + 4, railIndicator + 4, 2, RAIL_ITEM - 10, 1, t.accent());
-        for (int i = 0; i < cards.sectionCount(); i++) {
-            float iy = itemTop + i * RAIL_ITEM;
-            if (iy + RAIL_ITEM > bodyBottom() - 2) break;
-            boolean hover = UiDraw.over(mx, my, rx + 4, iy, RAIL - 8, RAIL_ITEM - 2);
-            float hv = UiAnim.smooth(key + "rail.h" + i, hover && i != active ? 1 : 0, 20);
-            if (hv > 0) UiDraw.rounded(g, rx + 4, iy, RAIL - 8, RAIL_ITEM - 2, 6, UiDraw.alpha(t.surface(), hv * .8f));
-            int colour = i == active ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv);
-            UiDraw.icon(g, cards.icon(i), rx + 11, iy + (RAIL_ITEM - 2) / 2f - 3.5f, 7, colour);
-            int changed = cards.changed(i);
-            UiDraw.text(g, UiDraw.fit(cards.title(i), RAIL - 38, UiDraw.SMALL), rx + 22, iy + (RAIL_ITEM - 2) / 2f, UiDraw.SMALL, colour);
-            if (changed > 0) UiDraw.circle(g, rx + RAIL - 13, iy + (RAIL_ITEM - 2) / 2f, 2, UiDraw.alpha(t.accent(), i == active ? 1 : .7f));
-            int index = i;
-            hits.add(new Hit(rx + 4, iy, RAIL - 8, RAIL_ITEM - 2, 0, () -> { cards.stopEditing(); cards.open(index); jump(index); }));
-            if (hover && changed > 0) host.tooltip(key + "rail" + i, cards.title(i), changed + (changed == 1 ? " setting changed" : " settings changed") + " from default");
-        }
-    }
-
-    private void jump(int index) { jumpTo = index; jumpAt = System.nanoTime(); }
-
-    /** The card in view: the last one whose top has scrolled past, or the last card at the bottom. */
-    private int activeSection() {
-        if (scroll >= maxScroll() - 1 && maxScroll() > 0) return cards.sectionCount() - 1;
-        int active = 0;
-        for (int i = 0; i < cards.sectionCount(); i++) if (cards.offset(i) <= shownScroll + 12) active = i;
-        return active;
     }
 
     private void body(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
         float top = bodyTop(), bottom = bodyBottom(), cx = cardsX(), cw = cardsW();
         float view = bottom - top, total = cards.height();
         if (!scrolledToFocus) { scroll = cards.focusOffset(); shownScroll = scroll; scrolledToFocus = true; }
-        if (jumpTo >= 0) { scroll = cards.offset(jumpTo); if (System.nanoTime() - jumpAt > 450_000_000L) jumpTo = -1; }
         scroll = Math.clamp(scroll, 0, Math.max(0, total - view));
         shownScroll = UiAnim.approach(shownScroll, scroll, 18);
         g.enableScissor(Math.round(cx - 3), Math.round(top), Math.round(cx + cw + 3), Math.round(bottom));
@@ -366,6 +301,7 @@ final class ModulePage {
         String text; int colour;
         if (!error.isEmpty()) { text = error; colour = t.red(); }
         else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; colour = t.accent(); }
+        else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); colour = t.green(); }
         else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; colour = t.red(); }
         else if (fresh) { text = notice; colour = t.green(); }
         else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; colour = UiDraw.alpha(t.muted(), .8f); }
@@ -393,13 +329,7 @@ final class ModulePage {
     boolean mouseReleased() { return cards.mouseReleased(); }
 
     boolean mouseScrolled(double mx, double my, double vertical) {
-        if (rail && UiDraw.over(mx, my, x, bodyTop(), RAIL, bodyBottom() - bodyTop())) {
-            int next = Math.clamp(activeSection() - (int) Math.signum(vertical), 0, cards.sectionCount() - 1);
-            jump(next);
-            return true;
-        }
         if (!UiDraw.over(mx, my, cardsX(), bodyTop(), cardsW() + 8, bodyBottom() - bodyTop())) return false;
-        jumpTo = -1;
         scroll = Math.max(0, scroll - (float) vertical * 40);
         return true;
     }

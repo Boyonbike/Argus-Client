@@ -100,7 +100,18 @@ final class SettingsList {
     }
     String message() { return message.isEmpty() || (System.nanoTime() - messageAt) / 1e9f >= 4.5f ? "" : message; }
 
+    /**
+     * Options never hide behind a chevron: groups fold only through their card, and the options that belong to a switch are
+     * shown exactly while the switch is on.
+     */
+    private void syncExpansion() {
+        for (Setting<?> setting : module.getSettings()) {
+            if (setting.visibilityDependency && !setting.isGroupOnly()) setting.expanded = !(setting.getValue() instanceof Boolean on) || on;
+        }
+    }
+
     private void refresh() {
+        syncExpansion();
         List<Setting<?>> rows = GuiSettings.rows(source == null ? module.getSettings() : source, focusSetting);
         visible = hideGroups ? rows.stream().filter(setting -> !setting.isGroupOnly()).toList() : rows;
     }
@@ -173,18 +184,10 @@ final class SettingsList {
             if (flash > .01f) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.accent(), .22f * flash));
             float cy = rowY + ROW / 2f;
             float labelX = x + 8;
-            boolean expandable = setting.isGroupOnly() || setting.visibilityDependency;
-            if (expandable) {
-                float open = UiAnim.smooth(key + ".open", setting.isExpanded() ? 1 : 0, 16);
-                UiDraw.icon(g, "chevron_down", labelX - 2, cy - 4, 8, UiDraw.alpha(t.muted(), open));
-                UiDraw.icon(g, "chevron_right", labelX - 2, cy - 4, 8, UiDraw.alpha(t.muted(), 1 - open));
-                labelX += 9;
-            }
             int half = (w - 12) / 2;
             String label = UiDraw.fit(GuiState.title(setting.getName()), half - 12);
             if (setting.isGroupOnly()) {
                 UiDraw.bold(g, label, labelX, cy, UiDraw.TEXT, t.accent());
-                UiDraw.right(g, setting.isExpanded() ? "Collapse" : "Expand", x + w - 8, cy, UiDraw.SMALL, UiDraw.alpha(t.muted(), .6f + hv * .4f));
                 UiRender.opacity = before; continue;
             }
             UiDraw.text(g, label, labelX, cy, setting.isVisible() ? UiDraw.mix(t.text(), 0xffffffff, hv * .1f) : t.muted());
@@ -240,8 +243,13 @@ final class SettingsList {
                 UiDraw.rounded(g, sx, cy - 6, 12, 12, 3.5f, colour.getRGB() | 0xff000000);
                 UiDraw.outline(g, sx, cy - 6, 12, 12, 3.5f, .6f, UiDraw.alpha(t.text(), .25f));
             } else if (setting instanceof SetSetting<?>) {
-                UiDraw.right(g, value(setting), right - 10, cy, UiDraw.mix(t.muted(), t.text(), hv));
-                UiDraw.icon(g, "chevron_right", right - 7, cy - 4, 8, UiDraw.mix(t.muted(), t.accent(), hv));
+                // A list is edited on its own screen, so the row is a labelled button rather than a bare chevron.
+                String text = UiDraw.fit(value(setting), half - 60) + "  ·  Edit";
+                float pw = UiDraw.width(text, UiDraw.SMALL) + 22, px = right - pw;
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.alpha(t.accent(), .1f), UiDraw.alpha(t.accent(), .22f), hv));
+                UiDraw.outline(g, px, cy - 7, pw, 14, 7, .6f, UiDraw.alpha(t.accent(), .3f + hv * .3f));
+                UiDraw.text(g, text, px + 8, cy, UiDraw.SMALL, t.accent());
+                UiDraw.icon(g, "chevron_right", px + pw - 12, cy - 3.5f, 7, t.accent());
             } else {
                 String text = UiDraw.fit(value(setting), half - 20);
                 float pw = Math.max(40, UiDraw.width(text) + 14), px = right - pw;
@@ -505,11 +513,10 @@ final class SettingsList {
         if (i < 0 || i >= visible.size()) { stopEditing(); return true; }
         Setting<?> setting = visible.get(i); Object current = setting.getValue(); message = "";
         if (editing != null && editing != setting) stopEditing();
-        if (setting.isGroupOnly()) { setting.expanded = !setting.isExpanded(); return true; }
+        if (setting.isGroupOnly()) return true;
         float rowY = y + i * ROW - shownScroll;
         if (UiDraw.over(mx, my, resetX() - 3, rowY + 3, 16, ROW - 6)) { if (!isDefault(setting)) reset(setting); return true; }
         if (!setting.isVisible()) { fail("Turn on the option this depends on to change it."); return true; }
-        if (setting.visibilityDependency && event.button() == 0 && mx < x + w / 2.0) { setting.expanded = !setting.isExpanded(); return true; }
         if (event.button() == 1) { reset(setting); return true; }
         if (event.button() != 0) return true;
         if (setting instanceof SetSetting<?> collection) host.hostOpen(new CollectionSettingScreen(host, collection));

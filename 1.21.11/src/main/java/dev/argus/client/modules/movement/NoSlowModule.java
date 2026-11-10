@@ -221,7 +221,19 @@ public class NoSlowModule extends Module {
       }
    }
 
+   private static boolean isTypingInTextField(net.minecraft.client.gui.screens.Screen screen) {
+      net.minecraft.client.gui.components.events.GuiEventListener focused = screen.getFocused();
+      while (focused instanceof net.minecraft.client.gui.components.events.ContainerEventHandler container && container.getFocused() != null) {
+         focused = container.getFocused();
+      }
+      return focused instanceof net.minecraft.client.gui.components.EditBox box && box.isFocused() && box.canConsumeInput();
+   }
+
    public boolean isGuiMoveAllowed() {
+      if (ClientAccess.argusclientMinecraft.screen != null && isTypingInTextField(ClientAccess.argusclientMinecraft.screen)) {
+         return false;
+      }
+
       if (ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen) {
          for (Panel panel : ClientContext.getClickGui().getPanels()) {
             if (panel instanceof GamePanel && panel.isFullyExpanded()) {
