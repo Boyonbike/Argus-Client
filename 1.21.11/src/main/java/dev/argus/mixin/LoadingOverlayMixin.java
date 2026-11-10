@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -18,6 +19,12 @@ abstract class LoadingOverlayMixin {
          "Lnet/minecraft/client/renderer/texture/TextureManager;registerAndLoad(Lnet/minecraft/resources/Identifier;Lnet/minecraft/client/renderer/texture/ReloadableTexture;)V"), index = 1)
    private static ReloadableTexture useArgusLogo(ReloadableTexture original) {
       return new LoadingOverlayRenderer();
+   }
+
+   @ModifyExpressionValue(method = "render", at = @At(value = "INVOKE", target =
+         "Ljava/util/function/IntSupplier;getAsInt()I"), require = 3, allow = 3)
+   private int useArgusBackground(int original) {
+      return 0xFF252D31;
    }
 
    @WrapOperation(method = "render", at = @At(value = "INVOKE", target =
