@@ -4,6 +4,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,5 +62,15 @@ class FastUseModuleTest {
         assertFalse(module.appliesTo(new ItemStack(Items.APPLE)));
         assertEquals(4, module.cooldownFor(new ItemStack(Items.STONE)));
         assertEquals(4, module.cooldownFor(new ItemStack(Items.APPLE)));
+    }
+
+    @Test void chestLikeBlocksAreContainersWithoutAMenuProvider() {
+        assertTrue(FastUseModule.isContainer(Blocks.CHEST.defaultBlockState(), false));
+        assertTrue(FastUseModule.isContainer(Blocks.ENDER_CHEST.defaultBlockState(), false));
+    }
+
+    @Test void menuProviderBlocksAreContainers() {
+        assertTrue(FastUseModule.isContainer(Blocks.SHULKER_BOX.defaultBlockState(), true));
+        assertFalse(FastUseModule.isContainer(Blocks.STONE.defaultBlockState(), false));
     }
 }
