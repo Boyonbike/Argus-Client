@@ -152,6 +152,7 @@ import dev.argus.client.modules.player.AutoTradeModule;
 import dev.argus.client.modules.player.BlockCoatModule;
 import dev.argus.client.modules.player.ChestStealerModule;
 import dev.argus.client.modules.player.FastPlaceModule;
+import dev.argus.client.modules.player.FastUseModule;
 import dev.argus.client.modules.player.FreecamModule;
 import dev.argus.client.modules.player.InventoryCleanerModule;
 import dev.argus.client.modules.player.InventorySorterModule;
@@ -560,6 +561,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new FastSwimModule())) {
          throw new IllegalStateException("Registration rejected FastSwimModule");
+      }
+
+      if (!this.registerModule(new FastUseModule())) {
+         throw new IllegalStateException("Registration rejected FastUseModule");
       }
 
       if (!this.registerModule(new FastWebModule())) {

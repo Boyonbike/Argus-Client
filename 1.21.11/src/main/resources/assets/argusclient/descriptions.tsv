@@ -1984,6 +1984,12 @@ FastPlace	Food	Applies the fast delay to food.
 FastPlace	Tools	Applies the fast delay to right-click tools.
 FastPlace	EnderChests	Applies the fast delay to ender chests.
 FastPlace	AutoReplace	Places a new ender chest at the mined position.
+FastUse		Uses items at high speed without opening containers you just placed.
+FastUse	Mode	Applies the fast cooldown to every item or only to selected items.
+FastUse	Items	Items that receive the fast cooldown in Some mode.
+FastUse	Blocks	Also speeds up all block items in Some mode.
+FastUse	Cooldown	Ticks between item uses; vanilla uses four.
+FastUse	PreventContainerOpen	Keeps Use held after placing a container without opening it; release and click again to open.
 AutoTame	Action	What AutoTame does: tame, sit, or stand.
 AutoTame	Range	Maximum distance to interact with animals.
 AutoTame	Frequency	Maximum interactions attempted per tick.
