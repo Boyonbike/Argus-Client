@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
@@ -16,27 +17,39 @@ class PlacementFallbackTest {
     }
 
     @Test
-    void rewritesAnOutOfRangeClickToALegalPlacementPosition() {
+    void rewritesAnOutOfRangeClickToThePlacementPosition() {
         assertEquals(new BlockPos(5, 0, 0), PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(5, 0, 0), EYE, false));
     }
 
     @Test
-    void refusesWhenBothPositionsAreOutOfRange() {
-        assertNull(PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(7, 0, 0), EYE, false));
+    void rewritesEvenWhenThePlacementPositionIsBeyondTheAssumedEnvelope() {
+        // The server decides whether the placement position is reachable; AirPlace already proves this path works.
+        assertEquals(new BlockPos(7, 0, 0), PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(7, 0, 0), EYE, false));
     }
 
     @Test
     void measuresFromTheNearestFaceOfTheBlock() {
-        // A block at x=6 has its nearest face at 5.5, exactly the survival envelope, so it is outside.
-        assertNull(PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(6, 0, 0), EYE, false));
-
-        // The creative envelope is 6.0, so the same position is inside it.
-        assertEquals(new BlockPos(6, 0, 0), PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(6, 0, 0), EYE, true));
+        // A block at x=6 has its nearest face at 5.5, exactly the survival envelope, so the click is outside it.
+        assertEquals(new BlockPos(6, 0, 0), PlacementFallback.resolveTarget(new BlockPos(7, 0, 0), new BlockPos(6, 0, 0), EYE, false));
     }
 
     @Test
     void envelopeMatchesVanillaRangePlusTheServerPadding() {
         assertEquals(5.5, PlacementFallback.serverEnvelope(false), 1e-9);
         assertEquals(6.0, PlacementFallback.serverEnvelope(true), 1e-9);
+    }
+
+    @Test
+    void placementPositionReplacesTheClickedBlockWhenReplaceable() {
+        BlockPos clicked = new BlockPos(7, 0, 0);
+
+        assertEquals(clicked, PlacementFallback.placementPosition(clicked, Direction.UP, true));
+    }
+
+    @Test
+    void placementPositionUsesTheClickedFaceOtherwise() {
+        BlockPos clicked = new BlockPos(7, 0, 0);
+
+        assertEquals(new BlockPos(7, 1, 0), PlacementFallback.placementPosition(clicked, Direction.UP, false));
     }
 }

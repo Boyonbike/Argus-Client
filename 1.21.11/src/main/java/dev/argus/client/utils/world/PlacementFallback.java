@@ -1,6 +1,7 @@
 package dev.argus.client.utils.world;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -22,10 +23,10 @@ public final class PlacementFallback {
    }
 
    public static BlockPos resolveTarget(BlockPos clickedPos, BlockPos placementPos, Vec3 eyePosition, boolean creative) {
-      if (isWithinServerEnvelope(clickedPos, eyePosition, creative)) {
-         return null;
-      }
+      return isWithinServerEnvelope(clickedPos, eyePosition, creative) ? null : placementPos;
+   }
 
-      return isWithinServerEnvelope(placementPos, eyePosition, creative) ? placementPos : null;
+   public static BlockPos placementPosition(BlockPos clickedPos, Direction face, boolean replaceable) {
+      return replaceable ? clickedPos : clickedPos.relative(face);
    }
 }

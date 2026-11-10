@@ -128,6 +128,13 @@ public class HighlightModule extends Module {
    }
 
    private void renderHighlightBoxes(PoseStack poseStack, HighlightModule.BoxRenderer renderer) {
+      BlockPos assisted = reach != null && reach.isToggled() && reach.placementFallbackSetting.getValue()
+         ? reach.getAssistedPlacementPos() : null;
+      if (assisted != null) {
+         renderer.submit(poseStack, Shapes.block().bounds(), assisted);
+         return;
+      }
+
       if (!this.isWorldUnavailable()) {
          BlockHitResult hitResult = this.getHighlightHitResult();
          if (hitResult != null) {

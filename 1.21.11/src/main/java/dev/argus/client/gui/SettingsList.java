@@ -4,6 +4,7 @@ import dev.argus.client.modules.Module;
 import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.KeyBindSetting;
 import dev.argus.client.settings.NamedEntry;
+import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.SetSetting;
 import dev.argus.client.settings.Setting;
 import java.awt.Color;
@@ -130,13 +131,17 @@ final class SettingsList {
         return GuiSettings.editText(setting);
     }
 
+    private static double sliderMaximum(Setting<?> setting) {
+        return setting instanceof NumberSetting<?> number ? number.getSliderMaximumValue() : ((Number) setting.getMaximumValue()).doubleValue();
+    }
     private static boolean slider(Setting<?> setting) {
         return setting.getValue() instanceof Number && setting.isNumericBoundsEnabled()
                 && setting.getMinimumValue() instanceof Number min && setting.getMaximumValue() instanceof Number max
-                && max.doubleValue() > min.doubleValue();
+                && sliderMaximum(setting) > min.doubleValue();
     }
-    private static double fraction(Setting<?> setting) {
-        double min = ((Number) setting.getMinimumValue()).doubleValue(), max = ((Number) setting.getMaximumValue()).doubleValue();
+    static double fraction(Setting<?> setting) {
+        if (setting instanceof NumberSetting<?> number) return number.sliderFraction();
+        double min = ((Number) setting.getMinimumValue()).doubleValue(), max = sliderMaximum(setting);
         return Math.clamp((((Number) setting.getValue()).doubleValue() - min) / (max - min), 0, 1);
     }
     private static boolean isDefault(Setting<?> setting) { return Objects.equals(setting.getValue(), setting.getDefaultValue()); }
@@ -289,7 +294,7 @@ final class SettingsList {
         facts.add(new String[]{"Current", setting.getValue() instanceof Boolean on ? (on ? "On" : "Off") : value(setting)});
         facts.add(new String[]{"Default", defaultText(setting)});
         if (setting.getValue() instanceof Number && setting.isNumericBoundsEnabled() && setting.getMinimumValue() != null && setting.getMaximumValue() != null)
-            facts.add(new String[]{"Range", number(setting.getMinimumValue()) + " to " + number(setting.getMaximumValue())});
+            facts.add(new String[]{"Range", number(setting.getMinimumValue()) + " to " + number(sliderMaximum(setting))});
         if (setting.getValue() instanceof Enum<?> choice) {
             List<String> names = new ArrayList<>();
             for (Object option : choice.getDeclaringClass().getEnumConstants())
@@ -464,8 +469,16 @@ final class SettingsList {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void slideTo(Setting setting, double mouseX) {
         double f = Math.clamp((mouseX - sliderX()) / SLIDER, 0, 1);
-        double min = ((Number) setting.getMinimumValue()).doubleValue(), max = ((Number) setting.getMaximumValue()).doubleValue();
-        double raw = min + (max - min) * f;
+        Object old = setting.getValue();
+        Object next = slideValue(setting, f);
+        if (!next.equals(old)) change(setting, next);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static Object slideValue(Setting setting, double f) {
+        double minimum = ((Number) setting.getMinimumValue()).doubleValue(), maximum = sliderMaximum(setting);
+        if (maximum <= minimum) return setting.getValue();
+        double raw = minimum + (maximum - minimum) * Math.clamp(f, 0, 1);
         Object old = setting.getValue();
         Object next;
         if (old instanceof Integer) next = (int) Math.round(raw);
@@ -474,12 +487,12 @@ final class SettingsList {
         else if (old instanceof Byte) next = (byte) Math.round(raw);
         else {
             // Snap to a tidy step: 1/100th of the range rounded to 1, 2 or 5 × 10^n.
-            double step = (max - min) / 100, magnitude = Math.pow(10, Math.floor(Math.log10(step))), unit = step / magnitude;
+            double step = (maximum - minimum) / 100, magnitude = Math.pow(10, Math.floor(Math.log10(step))), unit = step / magnitude;
             step = (unit < 1.5 ? 1 : unit < 3.5 ? 2 : 5) * magnitude;
-            double snapped = Math.clamp(Math.round(raw / step) * step, min, max);
+            double snapped = Math.clamp(Math.round(raw / step) * step, minimum, maximum);
             next = old instanceof Float ? (Object) (float) snapped : (Object) snapped;
         }
-        if (!next.equals(old)) change(setting, next);
+        return next;
     }
 
     /** @return true if the click landed in the list (handled or not). */
