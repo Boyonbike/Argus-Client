@@ -108,7 +108,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
       int max = item.getMaxDamage();
       int left = max - item.getDamageValue();
       int color = item.getBarColor() | 0xFF000000;
-      String text = String.valueOf(left);
+      String text = Math.round(left * 100.0F / max) + "%";
       Matrix3x2fStack poses = graphics.pose();
       poses.pushMatrix();
       poses.translate(x + 16, y + 9);

@@ -1,35 +1,47 @@
 package dev.argus.client.modules.render;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
+import dev.argus.client.events.ClientLevelAddEntityEvent;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.HudRenderEvent;
+import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.WorldRenderEvent;
 import dev.argus.client.managers.ModuleRegistry;
-import dev.argus.client.managers.SocialRegistry;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
+import dev.argus.client.modules.render.targets.BlockTargetIndex;
+import dev.argus.client.modules.render.targets.CellIndex;
+import dev.argus.client.modules.render.targets.TargetMatcher;
+import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ColorUtils;
 import dev.argus.client.render.RenderUtils;
 import dev.argus.client.settings.BooleanSetting;
-import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.EnumSetting;
 import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.settings.options.ColorsSchemeChoice;
 import dev.argus.client.settings.options.TracersHitboxChoice;
 import dev.argus.client.settings.options.TracersModeChoice;
-import dev.argus.client.utils.entity.PlayerStateUtils;
+import dev.argus.client.utils.combat.BoundingBoxUtils;
+import dev.argus.client.utils.math.Vec3Utils;
 import java.awt.Color;
-import java.util.function.Predicate;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.util.Mth;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Draws lines (or screen-edge markers) to players, mobs, dropped items and chosen blocks. The four target cards match
+ * ESP's (see {@link TargetSettings}) and can be toggled or mirrored there; the look settings here stay Tracers' own.
+ */
 public class TracersModule extends Module {
    private static ColorsModule colorsModule = ClientContext.getModule(ColorsModule.class);
    final Setting<TracersModeChoice> modeSetting = this.add(new EnumSetting<>("Mode", TracersModeChoice.LINES));
@@ -37,7 +49,6 @@ public class TracersModule extends Module {
       new EnumSetting<>("Hitbox", TracersHitboxChoice.HEAD, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
    );
    private final Setting<Float> minDistanceSetting = this.add(new NumberSetting<>("MinDistance", 0.0F, 0.0F, 128.0F).withUnit("m"));
-   private final Setting<Float> maxDistanceSetting = this.add(new NumberSetting<>("MaxDistance", 256.0F, 8.0F, 256.0F).withUnit("m"));
    public final Setting<Integer> shadowSetting = this.add(
       new NumberSetting<>("Shadow", 1, 0, 3, ignored -> this.modeSetting.getValue() == TracersModeChoice.MARKER)
    );
@@ -47,48 +58,132 @@ public class TracersModule extends Module {
    public final Setting<Float> lineWidthSetting = this.add(
       new NumberSetting<>("LineWidth", 1.0F, 0.1F, 5.0F, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
    );
-   public final Setting<Boolean> stemSetting;
-   private final Setting<Boolean> colorsSetting;
-   private final Setting<Color> colorSetting;
-   private final Setting<Boolean> distanceColorSetting;
-   private final Setting<Boolean> friendColorSetting;
-   private final Setting<Boolean> enemyColorSetting;
-   private final Setting<Boolean> targetsSetting;
-   public final Setting<Boolean> ignoreVisibleSetting;
-   private final Setting<Boolean> ignoreFriendsSetting;
-   private final Setting<Boolean> ignoreNakedsSetting;
+   public final Setting<Boolean> stemSetting = this.add(
+      new BooleanSetting("Stem", true, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
+   );
+   private final Setting<Boolean> distanceColorSetting = this.add(new BooleanSetting("DistanceColor", false));
+   public final Setting<Boolean> ignoreVisibleSetting = this.add(
+      new BooleanSetting("IgnoreVisible", true, ignored -> this.modeSetting.getValue() == TracersModeChoice.MARKER)
+   );
+   public final TargetSettings targets = new TargetSettings(this, TargetSettings.Kind.PLAYERS);
    private final LineTracerRenderer lineRenderer;
    private final MarkerTracerRenderer markerRenderer;
+   private final List<Target> collected = new ArrayList<>();
+   private long alertMark;
 
-   public boolean shouldSkip(Player player) {
-      GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Vec3 capturedCameraPosition = gameRenderer.getMainCamera().position();
-      Vec3 playerPosition = player.position();
-      double distance = capturedCameraPosition.distanceTo(playerPosition);
-      if (player == ClientAccess.argusclientMinecraft.player) {
-         return true;
+   /**
+    * One line's worth of target: where the line aims, the stem drawn along it (null for none), the bounds the marker
+    * mode fades against, and its colour.
+    */
+   public record Target(Vec3 aim, Vec3 stemStart, Vec3 stemEnd, AABB bounds, Color color, Entity entity) {
+   }
+
+   public TracersModule() {
+      super("Tracers", "Draws lines from your crosshair to players, mobs, items and chosen blocks.", ModuleCategory.RENDER);
+      this.lineRenderer = new LineTracerRenderer(this);
+      this.markerRenderer = new MarkerTracerRenderer(this);
+      BlockTargetIndex.get().register(this, this.targets.blocks);
+   }
+
+   public static void bindReferencedModules(ModuleRegistry moduleRegistry) {
+      colorsModule = (ColorsModule)moduleRegistry.getModule(ColorsModule.class);
+   }
+
+   /** Every target to draw this frame. */
+   public List<Target> collect(float tickDelta) {
+      this.collected.clear();
+      if (argusclientMinecraft.level == null || argusclientMinecraft.player == null) {
+         return this.collected;
       }
 
-      Float maximum = this.maxDistanceSetting.getValue();
-      if (distance > maximum.floatValue()) {
-         return true;
-      }
-
-      Float minimum = this.minDistanceSetting.getValue();
-      if (distance < minimum.floatValue()) {
-         return true;
-      }
-
-      Boolean ignoreFriends = this.ignoreFriendsSetting.getValue();
-      if (ignoreFriends) {
-         SocialRegistry friendRegistry = ClientContext.socialRegistry;
-         if (friendRegistry.isFriendPlayer(player)) {
-            return true;
+      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      double minimum = this.minDistanceSetting.getValue();
+      double minimumSquared = minimum * minimum;
+      for (Entity entity : argusclientMinecraft.level.entitiesForRendering()) {
+         TargetSettings.Kind kind = TargetMatcher.kindOf(this.targets, entity, camera);
+         if (kind == null || entity.position().distanceToSqr(camera) < minimumSquared) {
+            continue;
          }
+
+         if (kind == TargetSettings.Kind.ITEMS && this.targets.items.chatAlert.getValue() && entity instanceof ItemEntity item) {
+            TargetMatcher.announceItem(this.targets.items, item);
+         }
+
+         Vec3 start;
+         Vec3 end;
+         if (entity instanceof Player player) {
+            TracerEndpoints endpoints = this.getEndpoints(player);
+            start = endpoints.start();
+            end = endpoints.end();
+         } else {
+            AABB bounds = BoundingBoxUtils.getRenderBounds(entity, tickDelta);
+            start = new Vec3(bounds.getCenter().x, bounds.minY, bounds.getCenter().z);
+            end = new Vec3(bounds.getCenter().x, bounds.maxY, bounds.getCenter().z);
+         }
+
+         Vec3 aim = Vec3Utils.lerp(this.hitboxSetting.getValue().getHeightFraction(), start, end);
+         Color color = this.colorFor(TargetMatcher.entityColor(this.targets, kind, entity, camera), aim);
+         this.collected.add(new Target(aim, start, end, BoundingBoxUtils.getRenderBounds(entity, tickDelta), color, entity));
       }
 
-      Boolean ignoreNakeds = this.ignoreNakedsSetting.getValue();
-      return ignoreNakeds && !PlayerStateUtils.hasArmor(player);
+      this.collectBlocks(camera, minimumSquared);
+      return this.collected;
+   }
+
+   private void collectBlocks(Vec3 camera, double minimumSquared) {
+      TargetSettings.Blocks card = this.targets.blocks;
+      if (!card.active()) {
+         return;
+      }
+
+      int ignored = card.ignoredStructures();
+      ColorsSchemeChoice scheme = colorsModule == null ? null : colorsModule.schemeSetting.getValue();
+      CellIndex<BlockTargetIndex.Entry> index = BlockTargetIndex.get().index();
+      double range = card.range.isAtMaximum() ? -1.0 : card.range.getValue();
+      for (CellIndex.Cell<BlockTargetIndex.Entry> cell : index.cells()) {
+         if (cell.size() == 0) {
+            continue;
+         }
+
+         if (range > 0) {
+            CellIndex.CellKey key = cell.key();
+            double dx = key.minX() + 4.0 - camera.x;
+            double dy = key.minY() + 4.0 - camera.y;
+            double dz = key.minZ() + 4.0 - camera.z;
+            double reach = range + 7.0;
+            if (dx * dx + dy * dy + dz * dz > reach * reach) {
+               continue;
+            }
+         }
+
+         cell.forEach((packed, entry) -> {
+            if (!TargetMatcher.acceptsBlock(card, ignored, packed, entry)) {
+               return;
+            }
+
+            Vec3 center = new Vec3(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5);
+            double distanceSquared = center.distanceToSqr(camera);
+            if (distanceSquared < minimumSquared || !card.inRange(distanceSquared)) {
+               return;
+            }
+
+            Color color = this.colorFor(new Color(TargetMatcher.blockColor(card, scheme, entry), true), center);
+            AABB bounds = new AABB(center.subtract(0.5, 0.5, 0.5), center.add(0.5, 0.5, 0.5));
+            this.collected.add(new Target(center, null, null, bounds, color, null));
+         });
+      }
+   }
+
+   /** Applies Distance colour (red near, green far) when it's on. */
+   private Color colorFor(Color base, Vec3 position) {
+      if (!this.distanceColorSetting.getValue()) {
+         return base;
+      }
+
+      double distance = argusclientMinecraft.player.getEyePosition().distanceTo(position);
+      float fraction = 1.0F - (float)((Math.min(Math.max(distance, 8.0), 64.0) - 8.0) / 56.0);
+      Color gradient = ColorUtils.withAlpha(ColorUtils.blend(Color.red, Color.green, fraction), base.getAlpha());
+      return colorsModule == null ? gradient : colorsModule.schemeSetting.getValue().transform(gradient);
    }
 
    public TracerEndpoints getEndpoints(Player player) {
@@ -103,116 +198,80 @@ public class TracersModule extends Module {
          return TracerEndpoints.sleeping(player);
       }
 
-      double height = bounds.getYsize();
-      return height <= 1.0 ? TracerEndpoints.lowPose(player, position, bounds) : TracerEndpoints.standing(player, position);
+      return bounds.getYsize() <= 1.0 ? TracerEndpoints.lowPose(player, position, bounds) : TracerEndpoints.standing(player, position);
+   }
+
+   @EventHandler
+   private void onTick(LocalPlayerTickEvent event) {
+      TargetSettings.Blocks card = this.targets.blocks;
+      if (!card.active() || !card.sound.getValue() || argusclientMinecraft.player == null) {
+         return;
+      }
+
+      int ignored = card.ignoredStructures();
+      Vec3 eye = argusclientMinecraft.player.getEyePosition();
+      boolean[] alert = new boolean[1];
+      this.alertMark = BlockTargetIndex.get().forEachAddedSince(this.alertMark, packed -> {
+         BlockTargetIndex.Entry entry = BlockTargetIndex.get().index().get(packed);
+         if (!alert[0] && entry != null && TargetMatcher.acceptsBlock(card, ignored, packed, entry)
+            && card.inRange(eye.distanceToSqr(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5))) {
+            alert[0] = true;
+         }
+      });
+      if (alert[0]) {
+         TargetMatcher.playAlert();
+      }
+   }
+
+   @EventHandler
+   private void onEntityAdded(ClientLevelAddEntityEvent event) {
+      if (this.targets.mobs.sound.getValue() && argusclientMinecraft.player != null
+         && TargetMatcher.kindOf(this.targets, event.getEntity(), argusclientMinecraft.player.getEyePosition()) == TargetSettings.Kind.MOBS) {
+         TargetMatcher.playAlert();
+      }
    }
 
    @EventHandler
    private void onRenderMarkers(HudRenderEvent event) {
-      Setting<TracersModeChoice> mode = this.modeSetting;
-      if (mode.getValue() == TracersModeChoice.MARKER) {
-         MarkerTracerRenderer markerRenderer = this.markerRenderer;
-         PoseStack eventPoseStack = event.getPoseStack();
-         float tickDelta = event.getPartialTick();
-         markerRenderer.render(eventPoseStack, tickDelta);
+      if (this.modeSetting.getValue() == TracersModeChoice.MARKER) {
+         this.markerRenderer.render(event.getPoseStack(), event.getPartialTick());
       }
    }
 
    @EventHandler(priority = -9999)
    private void onRenderLines(WorldRenderEvent.Main event) {
-      Setting<TracersModeChoice> mode = this.modeSetting;
-      if (mode.getValue() == TracersModeChoice.LINES) {
-         LineTracerRenderer lineRenderer = this.lineRenderer;
-         PoseStack eventPoseStack = event.getPoseStack();
-         float tickDelta = event.getPartialTick();
-         lineRenderer.render(eventPoseStack, tickDelta);
+      if (this.modeSetting.getValue() == TracersModeChoice.LINES) {
+         this.lineRenderer.render(event.getPoseStack(), event.getPartialTick());
       }
    }
 
-   public Color getColor(Player player, Vec3 position) {
-      Color color = this.colorSetting.getValue();
-      boolean distanceColor = this.distanceColorSetting.getValue();
-      if (distanceColor) {
-         double distance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(position);
-         double distanceOffset = 8.0;
-         double clampedDistance = Mth.clamp(distance, 8.0, 64.0);
-         distanceOffset = clampedDistance - 8.0;
-         float distanceFraction = 1.0F - (float)(distanceOffset / 56.0);
-         Color distanceGradient = ColorUtils.blend(Color.red, Color.green, distanceFraction);
-         Color alphaColor = this.colorSetting.getValue();
-         color = ColorUtils.withAlpha(distanceGradient, alphaColor.getAlpha());
-      }
+   // ---- config migration ------------------------------------------------------------------------------------------
 
-      label23: {
-         SocialRegistry friendRegistry = ClientContext.socialRegistry;
-         if (friendRegistry.isFriendPlayer(player)) {
-            Boolean friendColorEnabled = this.friendColorSetting.getValue();
-            if (friendColorEnabled) {
-               SocialRegistry capturedFriendRegistry = ClientContext.socialRegistry;
-               Color friendColor = capturedFriendRegistry.getFriendColor();
-               Color friendAlphaColor = this.colorSetting.getValue();
-               color = ColorUtils.withAlpha(friendColor, friendAlphaColor.getAlpha());
-               break label23;
-            }
+   @Override
+   public void fromJson(JsonElement json) {
+      if (json != null && json.isJsonObject() && json.getAsJsonObject().get("settings") instanceof JsonObject settings && !settings.has("PlayersEnabled")) {
+         JsonObject migrated = json.getAsJsonObject().deepCopy();
+         JsonObject out = migrated.getAsJsonObject("settings");
+         out.addProperty("PlayersEnabled", true);
+         if (settings.has("Color")) {
+            out.add("PlayersColor", settings.get("Color").deepCopy());
          }
 
-         SocialRegistry capturedEnemyRegistry = ClientContext.socialRegistry;
-         if (capturedEnemyRegistry.isEnemyPlayer(player)) {
-            Boolean enemyColorEnabled = this.enemyColorSetting.getValue();
-            if (enemyColorEnabled) {
-               capturedEnemyRegistry = ClientContext.socialRegistry;
-               Color enemyColor = capturedEnemyRegistry.getEnemyColor();
-               Color enemyAlphaColor = this.colorSetting.getValue();
-               color = ColorUtils.withAlpha(enemyColor, enemyAlphaColor.getAlpha());
-            }
+         if (settings.has("MaxDistance")) {
+            out.add("PlayersRange", settings.get("MaxDistance").deepCopy());
          }
+
+         if (settings.has("IgnoreFriends") && settings.get("IgnoreFriends").getAsBoolean()) {
+            out.addProperty("PlayersFriends", "Hide");
+         }
+
+         if (settings.has("IgnoreNakeds")) {
+            out.add("PlayersIgnoreNaked", settings.get("IgnoreNakeds").deepCopy());
+         }
+
+         super.fromJson(migrated);
+      } else {
+         super.fromJson(json);
       }
-
-      if (distanceColor) {
-         Setting<ColorsSchemeChoice> schemeSetting = colorsModule.schemeSetting;
-         ColorsSchemeChoice configuredScheme = schemeSetting.getValue();
-         color = configuredScheme.transform(color);
-      }
-
-      return color;
-   }
-
-   public static void bindReferencedModules(ModuleRegistry moduleRegistry) {
-      colorsModule = (ColorsModule)moduleRegistry.getModule(ColorsModule.class);
-   }
-
-   public TracersModule() {
-      super("Tracers", "Draws lines from your crosshair to the players nearby.", ModuleCategory.RENDER);
-      Predicate<Object> stemVisibility = ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES;
-      this.stemSetting = this.add(new BooleanSetting("Stem", true, stemVisibility));
-      this.colorsSetting = this.add(new BooleanSetting("Colors", false).markAsGroup());
-      this.colorSetting = this.add(new ColorSetting("Color", new Color(-65536, true)).dependsOn(this.colorsSetting));
-      this.distanceColorSetting = this.add(new BooleanSetting("DistanceColor", false).dependsOn(this.colorsSetting));
-      this.friendColorSetting = this.add(new BooleanSetting("FriendColor", true).dependsOn(this.colorsSetting));
-      this.enemyColorSetting = this.add(new BooleanSetting("EnemyColor", true).dependsOn(this.colorsSetting));
-      this.targetsSetting = this.add(new BooleanSetting("Targets", false).markAsGroup());
-      this.ignoreVisibleSetting = this.add(
-         new BooleanSetting("IgnoreVisible", true, ignored -> this.modeSetting.getValue() == TracersModeChoice.MARKER).dependsOn(this.targetsSetting)
-      );
-      this.ignoreFriendsSetting = this.add(new BooleanSetting("IgnoreFriends", false).dependsOn(this.targetsSetting));
-      this.ignoreNakedsSetting = this.add(new BooleanSetting("IgnoreNakeds", false).dependsOn(this.targetsSetting));
-      this.lineRenderer = new LineTracerRenderer(this);
-      this.markerRenderer = new MarkerTracerRenderer(this);
-      Setting<Float> minimumCallbackSetting = this.minDistanceSetting;
-      Runnable minimumDistanceCallback = () -> {
-         Setting<Float> maximumSetting = this.maxDistanceSetting;
-         float maximum = maximumSetting.getValue();
-         float minimum = this.minDistanceSetting.getValue();
-         maximumSetting.setValue(Math.max(maximum, minimum));
-      };
-      minimumCallbackSetting.setChangeCallback(minimumDistanceCallback);
-      Setting<Float> maximumCallbackSetting = this.maxDistanceSetting;
-      Runnable maximumDistanceCallback = () -> {
-         Setting<Float> capturedMinimumSetting = this.minDistanceSetting;
-         float maximum = this.maxDistanceSetting.getValue();
-         float minimum = this.minDistanceSetting.getValue();
-         capturedMinimumSetting.setValue(Math.min(maximum, minimum));
-      };
-      maximumCallbackSetting.setChangeCallback(maximumDistanceCallback);
    }
 }

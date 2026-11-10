@@ -9,4 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface KeyMappingAccessor {
    @Accessor("key")
    Key getKey();
+
+   /** The key's own pressed state, bypassing {@code isDown()} overrides such as Sprint's forced press. */
+   @Accessor("isDown")
+   boolean argus$isDownRaw();
 }

@@ -4,8 +4,13 @@ import dev.argus.client.modules.Module;
 import dev.argus.client.modules.client.DiscordSyncModule;
 import dev.argus.client.modules.client.HUDModule;
 import dev.argus.client.modules.misc.ChatToolsModule;
+import dev.argus.client.modules.movement.BoatPhaseModule;
 import dev.argus.client.modules.player.AutoRekitModule;
+import dev.argus.client.modules.render.ESPModule;
 import dev.argus.client.modules.render.TooltipsModule;
+import dev.argus.client.modules.render.TracersModule;
+import dev.argus.client.modules.render.targets.TargetLinks;
+import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Style;
@@ -49,7 +54,62 @@ final class ModuleTools {
         if (module instanceof TooltipsModule tooltips) page.inline(shulkerCombos(host, tooltips), Placement.after("ShulkerIcons"));
         if (module instanceof ChatToolsModule) page.inline(social(host, hooks), Placement.first());
         if (module instanceof DiscordSyncModule sync) page.inline(discordSync(host, sync), Placement.last());
+        if (module instanceof BoatPhaseModule boat) page.inline(boatControls(host, boat), Placement.first());
         if (module instanceof HUDModule && hooks.topBar()) page.inline(hud(host, hooks), Placement.first());
+        if (module instanceof ESPModule) page.inline(pairing(host, true), Placement.first());
+        if (module instanceof TracersModule) page.inline(pairing(host, false), Placement.first());
+    }
+
+    // ---- ESP / Tracers pairing ---------------------------------------------------------------------------------
+
+    /**
+     * One row per target card. "Toggle in X" switches the card on or off in the other module (switching on copies this
+     * page's settings for it once); "Mirror" keeps both cards identical until "Break link".
+     */
+    private static InlineCard pairing(UiScreen host, boolean fromEsp) {
+        TargetLinks links = TargetLinks.get();
+        String other = links == null ? (fromEsp ? "Tracers" : "ESP") : links.otherName(fromEsp);
+        return new InlineCard.Items(host, "Pair with " + other, "star",
+                () -> {
+                    if (links == null) return "Unavailable";
+                    long mirrored = java.util.Arrays.stream(TargetSettings.Kind.values()).filter(links::mirrored).count();
+                    return mirrored == 0 ? "Copy a card to " + other + ", or mirror it so both stay the same"
+                            : mirrored + (mirrored == 1 ? " card mirrored" : " cards mirrored") + " with " + other;
+                },
+                "Pairing isn't available.",
+                () -> {
+                    List<InlineCard.Items.Entry> entries = new ArrayList<>();
+                    if (links == null) return entries;
+                    for (TargetSettings.Kind kind : TargetSettings.Kind.values()) {
+                        boolean mirrored = links.mirrored(kind);
+                        boolean on = links.onInOther(fromEsp, kind);
+                        String detail = mirrored ? "Mirrored · changes on either page apply to both"
+                                : on ? "Separate · on in " + other : "Separate · off in " + other;
+                        entries.add(new InlineCard.Items.Entry(kind.title(), detail, mirrored, null, null, null, List.of(
+                                InlineCard.Items.Action.on("Toggle in " + other,
+                                        on ? "Turn " + kind.title() + " off in " + other
+                                           : "Turn " + kind.title() + " on in " + other + (mirrored ? "" : ", starting from this page's settings"),
+                                        on, () -> links.toggleInOther(fromEsp, kind)),
+                                mirrored
+                                        ? InlineCard.Items.Action.danger("Break link", "Stop mirroring; both keep their current settings",
+                                                kind.title() + " is no longer mirrored.", () -> links.breakLink(kind))
+                                        : InlineCard.Items.Action.main("Mirror", "Copy this page's " + kind.title() + " settings to " + other + " and keep them the same",
+                                                kind.title() + " mirrored with " + other + ".", () -> links.mirror(fromEsp, kind)))));
+                    }
+                    return entries;
+                });
+    }
+
+    // ---- Boat Phase --------------------------------------------------------------------------
+
+    private static InlineCard boatControls(UiScreen host, BoatPhaseModule module) {
+        return new InlineCard.Rows(host, "Boat controls", "star", "Act on the boat you are driving; the same actions can be bound to keys below")
+                .open("Quick dive", "Start a dive, or cancel the one in progress", "Dive / cancel", module::toggleDive)
+                .open("Cruise", "Keep flying along your heading until you press WASD", "Cruise / cancel", module::toggleCruise)
+                .open("Rise to a clear pocket", "Rise to the next gap with room for the boat and its passengers", "Rise", module::surface)
+                .open("Return to entry height", "Go back to the height where you boarded", "Return", module::returnHeight)
+                .open("Resume adaptive phase", "Clear the slow-step fallback after a correction", "Resume", module::resumeAdaptivePhase)
+                .open("Retry fast air", "Clear speed fallbacks and try the configured speed again", "Retry", module::retryFastAir);
     }
 
     // ---- Auto Rekit --------------------------------------------------------------------------

@@ -506,60 +506,157 @@ AutoBowRelease	Crossbow	Also releases charged crossbows automatically.
 NoGlitchBlocks	Place	Sends placement packets manually to avoid ghost blocks.
 NoGlitchBlocks	Break	Skips the local break so ghost blocks do not appear.
 Discord	Server	Shows the server address in your Discord status.
-ESP	DrawEntities	Master switch for all entity ESP rendering.
 ESP	EntityMode	Draw entities as 3D boxes or flat 2D boxes.
 ESP	Shadow	Shadow style drawn behind 2D entity boxes.
 ESP	Length	Length of the corner brackets on 2D boxes.
-ESP	Outline	Opacity of the outline color around entities.
-ESP	Fill	Opacity of the fill color inside entity boxes.
-ESP	Tint	Opacity of the color tint on 2D entities.
+ESP	Outline	Opacity of the outline colour around entities.
+ESP	Fill	Opacity of the fill colour inside entity boxes.
+ESP	Tint	Opacity of the colour tint on 2D entities.
+ESP	LineWidth	Thickness of entity box outlines.
+ESP	BlockOutline	Width of the glowing outline around blocks, in pixels.
+ESP	StorageFill	Opacity of the fill inside highlighted blocks.
+ESP	BlockGlow	Strength of the glow around block outlines.
+ESP	RebuildBudget	Time per frame spent preparing changed blocks; lower spreads loading over more frames.
 ESP	Name	Show entity names in the 2D info.
 ESP	HeldItem	Show the item each entity is holding.
 ESP	Distance	Show the distance to each highlighted entity.
 ESP	Effects	Show active potion effects on entities.
 ESP	HealthBar	Draw a vertical health bar beside 2D boxes.
 ESP	HealthText	Show the entity's health as text.
-ESP	HealthColor	Color the health bar by current health.
-ESP	Hostiles	Include hostile mobs in the ESP.
-ESP	HostilesColor	Color used for hostile mob highlights.
-ESP	Players	Include other players in the ESP.
-ESP	Social	Use friend and enemy colors for players.
-ESP	PlayersColor	Color used for highlighted players.
-ESP	Animals	Include passive animals in the ESP.
-ESP	AnimalsColor	Color used for animal highlights.
-ESP	Pearls	Highlight ender pearls; box mode only.
-ESP	PearlsFill	Fill color of ender pearl boxes.
-ESP	PearlsOutline	Outline color of ender pearl boxes.
-ESP	DrawItems	Draw ESP for dropped items.
-ESP	List	Items the item filter applies to.
-ESP	Selection	Treat the item list as any, whitelist or blacklist.
-ESP	ItemsMode	Draw items as boxes, text or both.
-ESP	ItemRange	Maximum distance for item ESP, in metres.
+ESP	HealthColor	Colour the health bar by current health.
+ESP	ItemsMode	Draw dropped items as boxes, text labels or both.
 ESP	Group	Merge identical nearby items into one label.
-ESP	ItemsText	Color of the item text labels.
-ESP	Background	Background color behind item text labels.
+ESP	ItemsText	Colour of the item text labels.
+ESP	Background	Background colour behind item text labels.
 ESP	Scale	Scale of the item text labels.
-ESP	ItemsColor	Color of the item ESP boxes.
-ESP	Exp	Highlight experience orbs on the ground.
-ESP	ExpColor	Color used for experience orb highlights.
-ESP	DrawBlocks	Draw ESP for storage blocks and containers.
-ESP	StorageFill	Fill opacity of highlighted storage blocks.
-ESP	Chests	Highlight chests in the world.
-ESP	Barrels	Highlight barrels in the world.
-ESP	EChests	Highlight ender chests in the world.
-ESP	Shulkers	Highlight shulker boxes in the world.
-ESP	Beds	Highlight beds in the world.
-ESP	Signs	Highlight signs in the world.
-ESP	Dispensers	Highlight dispensers in the world.
-ESP	Hoppers	Highlight hoppers in the world.
-ESP	Furnaces	Highlight furnaces in the world.
-ESP	Pots	Highlight flower pots in the world.
-ESP	Looted	Mark storage that has already been looted.
-ESP	MobOwner	Show the owner of tamed mobs.
-ESP	Light	Show the light level at nearby blocks.
+ESP	Pearls	Highlight ender pearls; box mode only.
+ESP	PearlsFill	Fill colour of ender pearl boxes.
+ESP	PearlsOutline	Outline colour of ender pearl boxes.
+ESP	Exp	Highlight thrown experience bottles.
+ESP	ExpColor	Colour for experience bottle highlights.
+ESP	MobOwner	Show the owner of tamed mobs and pearls.
+ESP	Light	Mark nearby blocks where mobs can spawn.
 ESP	Chorus	Mark chorus fruit teleport destinations.
-ESP	ChorusText	Color of the chorus teleport labels.
-ESP	LineWidth	Thickness of entity box outlines.
+ESP	ChorusText	Colour of the chorus teleport labels.
+ESP	PlayersEnabled	Show other players.
+ESP	PlayersFriends	Show or hide players on your friends list.
+ESP	PlayersEnemies	Show or hide players on your enemies list.
+ESP	PlayersOthers	Show or hide players who are neither friends nor enemies.
+ESP	PlayersIgnoreNaked	Skip players who are not wearing armor.
+ESP	PlayersColor	Colour for players who are neither friends nor enemies.
+ESP	PlayersSocialColors	Use the friend and enemy colours from the Colors module.
+ESP	PlayersFriendColor	Colour for friends when Social colors is off.
+ESP	PlayersEnemyColor	Colour for enemies when Social colors is off.
+ESP	PlayersRange	Furthest player shown, in metres; the maximum shows every loaded player.
+ESP	MobsEnabled	Show mobs.
+ESP	MobsHostile	Include hostile mobs, and neutral mobs while they are angry.
+ESP	MobsHostileColor	Colour for hostile mobs.
+ESP	MobsNeutral	Include neutral mobs that are not angry.
+ESP	MobsNeutralColor	Colour for neutral mobs.
+ESP	MobsPassive	Include passive mobs: animals, villagers and fish.
+ESP	MobsPassiveColor	Colour for passive mobs and listed non-mob entities.
+ESP	MobsFilter	Any uses the toggles above; Whitelist shows only listed entities; Blacklist hides listed ones.
+ESP	MobsList	Entity types the filter applies to.
+ESP	MobsIgnoreVehicles	Skip entities that something is riding.
+ESP	MobsSound	Play a sound when a matching mob appears.
+ESP	MobsRange	Furthest mob shown, in metres; the maximum shows every loaded mob.
+ESP	ItemsEnabled	Show dropped items.
+ESP	ItemsFilter	Any shows every item; Whitelist only listed items; Blacklist hides listed items.
+ESP	ItemsList	Items the filter applies to. Starts with valuable gear and loot.
+ESP	ItemsEnchants	Ignore enchants, require any enchant on gear, or require the enchants listed for its kind.
+ESP	ItemsToolEnchants	Enchants every tool must have, such as mending.
+ESP	ItemsSwordEnchants	Enchants every sword must have.
+ESP	ItemsArmorEnchants	Enchants every armour piece, elytra and shield must have.
+ESP	ItemsMaceEnchants	Enchants a mace must have.
+ESP	ItemsTridentEnchants	Enchants a trident must have.
+ESP	ItemsColor	Colour for items nearby.
+ESP	ItemsDistanceColor	Shift the colour towards Far colour with distance.
+ESP	ItemsFarColor	Colour for items at Far distance and beyond.
+ESP	ItemsFarDistance	Distance where items reach Far colour, in metres.
+ESP	ItemsChatAlert	Say in chat when a matching item is first seen.
+ESP	ItemsCoords	Include the item's coordinates in the chat alert.
+ESP	ItemsRange	Furthest item shown, in metres; the maximum shows every loaded item.
+ESP	BlocksEnabled	Show the chosen blocks (this replaces the Search module).
+ESP	BlocksList	Blocks to show. Starts with storage containers.
+ESP	BlocksColorMode	Auto picks a colour per block (or uses its colour from .color); Custom uses one colour.
+ESP	BlocksColor	Colour for every block when Color mode is Custom.
+ESP	BlocksMarkOpened	Recolour containers you have opened in this world.
+ESP	BlocksOpenedColor	Colour for containers you have opened.
+ESP	BlocksHideOpened	Hide containers you have opened in this world.
+ESP	BlocksIgnoreNatural	Skip chests generated in the structures selected below.
+ESP	BlocksDungeon	Skip dungeon chests.
+ESP	BlocksFortress	Skip nether fortress chests.
+ESP	BlocksBastion	Skip bastion chests.
+ESP	BlocksAncientCity	Skip ancient city chests.
+ESP	BlocksTrialChambers	Skip trial chamber chests.
+ESP	BlocksHeight	1.18 checks the whole world height; 1.12 skips blocks below Y 0.
+ESP	BlocksOnlyOminous	Only show ominous vaults.
+ESP	BlocksSound	Play a sound when a matching block is found nearby.
+ESP	BlocksRange	Furthest block shown, in metres; the maximum shows every loaded block.
+Tracers	Mode	Draw tracers as lines from the crosshair or as markers around it.
+Tracers	Hitbox	Height on the target's body where lines end.
+Tracers	MinDistance	Skip targets closer than this.
+Tracers	Shadow	Offsets markers to draw a shadow; 0 turns it off.
+Tracers	Distance	Screen distance of markers from the centre.
+Tracers	LineWidth	Thickness of tracer lines.
+Tracers	Stem	Add a vertical line through each entity's body.
+Tracers	DistanceColor	Colour tracers red near you through to green far away, instead of their card colours.
+Tracers	IgnoreVisible	Skip markers for targets already on screen.
+Tracers	PlayersEnabled	Show other players.
+Tracers	PlayersFriends	Show or hide players on your friends list.
+Tracers	PlayersEnemies	Show or hide players on your enemies list.
+Tracers	PlayersOthers	Show or hide players who are neither friends nor enemies.
+Tracers	PlayersIgnoreNaked	Skip players who are not wearing armor.
+Tracers	PlayersColor	Colour for players who are neither friends nor enemies.
+Tracers	PlayersSocialColors	Use the friend and enemy colours from the Colors module.
+Tracers	PlayersFriendColor	Colour for friends when Social colors is off.
+Tracers	PlayersEnemyColor	Colour for enemies when Social colors is off.
+Tracers	PlayersRange	Furthest player shown, in metres; the maximum shows every loaded player.
+Tracers	MobsEnabled	Show mobs.
+Tracers	MobsHostile	Include hostile mobs, and neutral mobs while they are angry.
+Tracers	MobsHostileColor	Colour for hostile mobs.
+Tracers	MobsNeutral	Include neutral mobs that are not angry.
+Tracers	MobsNeutralColor	Colour for neutral mobs.
+Tracers	MobsPassive	Include passive mobs: animals, villagers and fish.
+Tracers	MobsPassiveColor	Colour for passive mobs and listed non-mob entities.
+Tracers	MobsFilter	Any uses the toggles above; Whitelist shows only listed entities; Blacklist hides listed ones.
+Tracers	MobsList	Entity types the filter applies to.
+Tracers	MobsIgnoreVehicles	Skip entities that something is riding.
+Tracers	MobsSound	Play a sound when a matching mob appears.
+Tracers	MobsRange	Furthest mob shown, in metres; the maximum shows every loaded mob.
+Tracers	ItemsEnabled	Show dropped items.
+Tracers	ItemsFilter	Any shows every item; Whitelist only listed items; Blacklist hides listed items.
+Tracers	ItemsList	Items the filter applies to. Starts with valuable gear and loot.
+Tracers	ItemsEnchants	Ignore enchants, require any enchant on gear, or require the enchants listed for its kind.
+Tracers	ItemsToolEnchants	Enchants every tool must have, such as mending.
+Tracers	ItemsSwordEnchants	Enchants every sword must have.
+Tracers	ItemsArmorEnchants	Enchants every armour piece, elytra and shield must have.
+Tracers	ItemsMaceEnchants	Enchants a mace must have.
+Tracers	ItemsTridentEnchants	Enchants a trident must have.
+Tracers	ItemsColor	Colour for items nearby.
+Tracers	ItemsDistanceColor	Shift the colour towards Far colour with distance.
+Tracers	ItemsFarColor	Colour for items at Far distance and beyond.
+Tracers	ItemsFarDistance	Distance where items reach Far colour, in metres.
+Tracers	ItemsChatAlert	Say in chat when a matching item is first seen.
+Tracers	ItemsCoords	Include the item's coordinates in the chat alert.
+Tracers	ItemsRange	Furthest item shown, in metres; the maximum shows every loaded item.
+Tracers	BlocksEnabled	Show the chosen blocks (this replaces the Search module).
+Tracers	BlocksList	Blocks to show. Starts with storage containers.
+Tracers	BlocksColorMode	Auto picks a colour per block (or uses its colour from .color); Custom uses one colour.
+Tracers	BlocksColor	Colour for every block when Color mode is Custom.
+Tracers	BlocksMarkOpened	Recolour containers you have opened in this world.
+Tracers	BlocksOpenedColor	Colour for containers you have opened.
+Tracers	BlocksHideOpened	Hide containers you have opened in this world.
+Tracers	BlocksIgnoreNatural	Skip chests generated in the structures selected below.
+Tracers	BlocksDungeon	Skip dungeon chests.
+Tracers	BlocksFortress	Skip nether fortress chests.
+Tracers	BlocksBastion	Skip bastion chests.
+Tracers	BlocksAncientCity	Skip ancient city chests.
+Tracers	BlocksTrialChambers	Skip trial chamber chests.
+Tracers	BlocksHeight	1.18 checks the whole world height; 1.12 skips blocks below Y 0.
+Tracers	BlocksOnlyOminous	Only show ominous vaults.
+Tracers	BlocksSound	Play a sound when a matching block is found nearby.
+Tracers	BlocksRange	Furthest block shown, in metres; the maximum shows every loaded block.
 NewChunks	Distance	Radius in chunks where detected chunks are shown.
 NewChunks	Height	Vertical position of chunk overlays; Auto follows you.
 NewChunks	LineWidth	Thickness of the chunk overlay outlines.
@@ -861,27 +958,6 @@ FishTrap	Outline	Outline color of rendered trap positions.
 FishTrap	LineWidth	Width of rendered trap outlines.
 FishTrap	Fade	Fades rendered trap positions over time.
 FishTrap	FadeTime	Duration of the trap position fade.
-Search	Range	Maximum distance to scan for search targets.
-Search	SearchBlocks	Adds selected block types to the search scanner.
-Search	Blocks	Blocks that Search will highlight.
-Search	Height	Selects the world height format to scan.
-Search	OnlyOminous	Only alerts on ominous vaults.
-Search	IgnoreNatural	Hides naturally generated structure chests.
-Search	Dungeon	Ignores loot chests in dungeons.
-Search	Fortress	Ignores nether fortress loot chests.
-Search	Bastion	Ignores loot chests in bastions.
-Search	AncientCity	Ignores loot chests in ancient cities.
-Search	TrialChambers	Ignores loot chests in trial chambers.
-Search	SearchEntities	Adds selected entity types to the search scanner.
-Search	Entities	Entities that Search will highlight.
-Search	IgnoreVehicles	Ignores vehicles such as boats and minecarts.
-Search	IgnoreNakeds	Ignores unarmored players when searching entities.
-Search	Sound	Plays a sound when a target is found.
-Search	Type	Sound used for Search alerts.
-Search	Volume	Volume of the Search alert sound.
-Search	Fill	Fill opacity of highlighted search results.
-Search	Outline	Outline opacity of highlighted search results.
-Search	Tracers	Tracer opacity for highlighted search results.
 AutoLog	Health	Health threshold that triggers the auto-log.
 AutoLog	InvincTimeout	Seconds after spawn before checks begin.
 AutoLog	Reconnect	Keeps auto-reconnect enabled after logging out.
@@ -1933,21 +2009,6 @@ AutoCraft	Rotate	Rotates toward the crafting table before opening.
 AutoCraft	Limit	Caps how many of the item are crafted.
 AutoCraft	Max	Maximum number of items to craft.
 AutoCraft	StackLimit	Treats Max as stacks instead of single items.
-Tracers	Mode	Draws tracers as screen lines or as markers.
-Tracers	Hitbox	Height on the target body where tracer lines end.
-Tracers	MinDistance	Distance below which no tracer is drawn.
-Tracers	MaxDistance	Distance above which no tracer is drawn.
-Tracers	Shadow	Offsets marker text to create a shadow; 0 disables it.
-Tracers	Distance	Screen distance of markers from the center.
-Tracers	LineWidth	Thickness of the drawn tracer lines.
-Tracers	Stem	Adds a vertical line through the target's body.
-Tracers	Color	Base color of tracer lines and markers.
-Tracers	DistanceColor	Colors tracers according to distance.
-Tracers	FriendColor	Color used for tracers to friends.
-Tracers	EnemyColor	Color used for tracers to enemies.
-Tracers	IgnoreVisible	Skips markers for players you can already see.
-Tracers	IgnoreFriends	Skips drawing tracers to friends.
-Tracers	IgnoreNakeds	Skips players who are not wearing armor.
 AutoMace	Sorting	Order in which AutoMace picks targets.
 AutoMace	Range	Maximum distance to look for targets.
 AutoMace	Smart	Steers the dive automatically while elytra flying.
@@ -2173,3 +2234,45 @@ AutoWasp	SetbackHold	Ticks to hold the rewound speed after a setback before acce
 AutoWasp	PinnedGlide	When two setbacks in a row return you to the same spot, glide with vanilla physics for this many ticks so the server accepts a move. 0 disables.
 AutoWasp	GlideGuard	Keep walls out of reach of the server's own hidden elytra glide, which is what deals fly-into-wall damage.
 AutoWasp	SteerGlide	Near a wall, report a level heading away from it so the server's hidden glide turns away. Your camera does not move; others see your head turned.
+BoatPhase	General	Speed, phasing and safety settings for the boat.
+BoatPhase	Phase	Move the boat through blocks.
+BoatPhase	HorizontalSpeed	Boat speed in blocks per tick when Fast Air Travel sends it as one update.
+BoatPhase	HorizontalLimit	Speed cap for limited travel, used after the server corrects a faster mode.
+BoatPhase	FastAirTravel	Sends the full Horizontal Speed in a single update each tick, without substeps.
+BoatPhase	CorrectionHashTravel	Failed experiment that reuses the last server correction to move faster. Leave off.
+BoatPhase	HashTravelSpeed	Blocks per tick for the Correction Hash Travel experiment.
+BoatPhase	AirSubsteps	Splits fast air travel into several small updates per tick so each one stays within server limits.
+BoatPhase	SubstepSpeed	Horizontal blocks per tick while using air substeps.
+BoatPhase	ExtendedSubsteps	Uses Experimental Speed in clear air, falling back to 3.8 b/t if the server corrects it.
+BoatPhase	ExperimentalSpeed	Clear-air blocks per tick with Extended Substeps, up to 9. Changing it retries after a fallback.
+BoatPhase	VerticalSpeed	Blocks per tick when rising with jump or descending with sprint.
+BoatPhase	PhaseHorizontalSpeed	Horizontal speed while inside blocks. 0.24 is the proven safe step.
+BoatPhase	AdaptivePhase	Moves at full speed where the path is clear and only slows to the phase step where it would hit blocks.
+BoatPhase	PhaseSpeed	Requested speed for adaptive phasing.
+BoatPhase	AirAcceleration	Largest change in horizontal speed per tick in the air, so the boat speeds up and slows down smoothly.
+BoatPhase	LockBoatYaw	Turns the boat to face where you look.
+BoatPhase	StopBeforeLava	Stops the boat before it would cross lava.
+BoatPhase	AntiKick	Makes small real descents while hovering so the server does not kick you for flying.
+BoatPhase	QuickDive	A fast straight descent by a set distance.
+BoatPhase	DiveKey	Starts a quick dive, or cancels one already in progress.
+BoatPhase	DiveDistance	How many blocks a quick dive descends.
+BoatPhase	DiveWithPassenger	Starts one quick dive automatically when a passenger boards.
+BoatPhase	Recovery	What happens after the server corrects the boat, and the debug log.
+BoatPhase	CorrectionHold	Ticks to pause movement after a server correction.
+BoatPhase	RetryAfterLanding	After landing and reboarding, retries air substeps at Landed Retry Speed.
+BoatPhase	RetryAfterRemount	After any reboard, retries the speeds the server corrected earlier.
+BoatPhase	LandedRetrySpeed	Substep speed used when retrying after a landed reboard.
+BoatPhase	PauseConflictingModules	Turns off Entity Control, Flight and Elytra Fly while you drive, and turns them back on when you get out.
+BoatPhase	DebugFile	Writes a log of each ride to .minecraft/boat-phase.
+BoatPhase	Navigation	Keys for cruising and moving to set heights.
+BoatPhase	CruiseKey	Toggles cruising along your current heading. WASD cancels; jump and sprint still change height.
+BoatPhase	SurfaceKey	Rises to the next clear pocket above with room for every passenger.
+BoatPhase	ReturnHeightKey	Returns to the height you boarded at.
+BoatPhase	Speedometer	The speed readout is the Boat Speed HUD element; place and style it in the HUD editor.
+BoatPhase	SpeedometerKey	Shows or hides the Boat Speed HUD element.
+Boat Speed		Boat Phase's speedometer: the speed you send, the speed the server echoes back, the travel mode and the ride status. Shows only while you drive a boat with Boat Phase on. Each line can be moved on its own in the HUD editor.
+Boat Speed	Sent	Speed sent to the server, in blocks per tick and per second.
+Boat Speed	Echo	Speed the server reports the boat moving at, from its position updates.
+Boat Speed	Mode	The travel mode and its speed cap. Gold means a speed fallback is active.
+Boat Speed	Status	What the boat is doing and how many movement updates went out last tick.
+Boat Speed	Tweaks	Chooses which lines the element shows.

@@ -26,8 +26,25 @@ public final class ProxiesScreen extends ProfileManagerScreen {
     @Override protected String[] empty() { return new String[]{"shield", "No proxies yet", "Add a SOCKS proxy, import a text list, or paste one from the clipboard."}; }
 
     @Override protected void buildToolbar(int x, int y, int w) {
-        toolbar(x, y, w, new String[]{"New", "Import file", "Paste", "Check all", "Clean up"}, new String[]{"plus", null, null, "reset", null},
-                new Runnable[]{() -> edit(null), this::importFile, () -> importText(minecraft.keyboardHandler.getClipboard()), this::checkAll, this::cleanup});
+        toolbar(x, y, w, new String[]{"New", "Find free", "Import file", "Paste", "Check all", "Clean up"}, new String[]{"plus", null, null, null, "reset", null},
+                new Runnable[]{() -> edit(null), this::findFree, this::importFile, () -> importText(minecraft.keyboardHandler.getClipboard()), this::checkAll, this::cleanup});
+    }
+
+    /** Downloads ranked free SOCKS proxies, saves them, then checks the list. Free proxies are never switched on automatically. */
+    private void findFree() {
+        background("Finding free proxies…", () -> FreeProxySource.fetch(FreeProxySource.LIMIT, FreeProxySource.MIN_UPTIME, FreeProxySource.MAX_LATENCY, ""), found -> {
+            var entries = new ArrayList<ProxyEntry>();
+            for (var candidate : found) { var entry = candidate.toEntry(); if (entry != null) entries.add(entry); }
+            try {
+                boolean hadActive = profiles.activeProxy() != null;
+                int added = profiles.importProxies(entries);
+                if (!hadActive && profiles.activeProxy() != null) profiles.selectProxy(null);
+                if (added == 0) { info("No new free proxies found."); return; }
+                rebuildWidgets();
+                checkAll();
+                message = "Added " + added + " free proxies, checking them now. Free proxies are untrusted; they can see your traffic.";
+            } catch (java.io.IOException e) { error("Couldn't save the free proxies. No entries were changed."); }
+        });
     }
 
     // ---- edit form ----------------------------------------------------------------------------

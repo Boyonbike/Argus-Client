@@ -10,9 +10,9 @@ public class ESPOutlineShaderPass extends PostProcessShaderPass {
    public void updateUniforms() {
       super.updateUniforms();
       ShaderUniforms widthUniforms = this.uniforms;
-      widthUniforms.set("u_Width", 2);
+      widthUniforms.set("u_Width", espModule.blockOutlineSetting.getValue());
       ShaderUniforms glowUniforms = this.uniforms;
-      glowUniforms.set("u_GlowMultiplier", 1.0F);
+      glowUniforms.set("u_GlowMultiplier", espModule.blockGlowSetting.getValue());
       ShaderUniforms fillOpacityUniforms = this.uniforms;
       float fillOpacity = espModule.blockFillOpacitySetting.getValue();
       fillOpacityUniforms.set("u_FillOpacity", fillOpacity);

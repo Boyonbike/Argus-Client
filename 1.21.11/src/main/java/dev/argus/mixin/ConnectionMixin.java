@@ -55,7 +55,7 @@ public class ConnectionMixin {
    public void onPacketReceive(ChannelHandlerContext context, Packet packet, CallbackInfo callback) {
       if (this.channel.isOpen() && packet != null) {
          try {
-            PacketEvent.Receive event = new PacketEvent.Receive(packet);
+            PacketEvent.Receive event = new PacketEvent.Receive(packet, (Connection)(Object)this);
             ClientAccess.eventBus.post(event);
             if (event.isCancelled()) {
                callback.cancel();
@@ -69,7 +69,7 @@ public class ConnectionMixin {
    private void onPacketSend(Packet packet, ChannelFutureListener listener, boolean flush, CallbackInfo callback) {
       if (this.receiving == PacketFlow.CLIENTBOUND) {
          try {
-            PacketEvent.Send event = new PacketEvent.Send(packet);
+            PacketEvent.Send event = new PacketEvent.Send(packet, (Connection)(Object)this);
             ClientAccess.eventBus.post(event);
             if (event.isCancelled()) {
                callback.cancel();
@@ -83,7 +83,7 @@ public class ConnectionMixin {
    private void onPacketPostSend(Packet packet, ChannelFutureListener listener, boolean flush, CallbackInfo callback) {
       if (this.receiving == PacketFlow.CLIENTBOUND) {
          try {
-            PacketEvent.PostSend event = new PacketEvent.PostSend(packet);
+            PacketEvent.PostSend event = new PacketEvent.PostSend(packet, (Connection)(Object)this);
             ClientAccess.eventBus.post(event);
          } catch (Exception var6) {
          }

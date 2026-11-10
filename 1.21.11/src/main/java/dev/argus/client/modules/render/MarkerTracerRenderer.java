@@ -20,8 +20,6 @@ import dev.argus.client.utils.math.MathUtils;
 import java.awt.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
@@ -103,14 +101,11 @@ public final class MarkerTracerRenderer extends TracerRenderer {
       Vec3 localPosition = ClientAccess.argusclientMinecraft.player.getPosition(tickDelta);
       if (cameraEntity != null) {
          MeshDrawContext.getBuffer().begin(Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-         ClientLevel level = ClientAccess.argusclientMinecraft.level;
-
-         for (AbstractClientPlayer player : level.players()) {
+         for (TracersModule.Target target : this.module.collect(tickDelta)) {
             Vec3 cameraPosition = cameraEntity.getPosition(tickDelta);
-            Vec3 playerPosition = player.getPosition(tickDelta);
-            float targetYaw = RotationManager.calculateRotations(cameraPosition, playerPosition)[0];
-            if (!this.module.shouldSkip(player) && !player.equals(cameraEntity)) {
-               AABB bounds = BoundingBoxUtils.getRenderBounds(player, tickDelta);
+            float targetYaw = RotationManager.calculateRotations(cameraPosition, target.aim())[0];
+            if (target.entity() == null || !target.entity().equals(cameraEntity)) {
+               AABB bounds = target.bounds();
                float opacity = 1.0F;
                Setting<Boolean> ignoreVisibleSetting = this.module.ignoreVisibleSetting;
                Boolean ignoreVisible = ignoreVisibleSetting.getValue();
@@ -130,8 +125,7 @@ public final class MarkerTracerRenderer extends TracerRenderer {
 
                double capturedOpacity = opacity;
                if (!(capturedOpacity < 0.1)) {
-                  Vec3 colorPosition = player.position();
-                  Color color = ColorUtils.multiplyAlpha(this.module.getColor(player, colorPosition), opacity);
+                  Color color = ColorUtils.multiplyAlpha(target.color(), opacity);
                   Setting<Integer> capturedShadowSetting = this.module.shadowSetting;
                   if (!capturedShadowSetting.isAtMinimum()) {
                      poseStack.pushPose();

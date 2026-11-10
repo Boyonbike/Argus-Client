@@ -115,6 +115,7 @@ import dev.argus.client.modules.movement.AutoWalkModule;
 import dev.argus.client.modules.movement.AutoWaspModule;
 import dev.argus.client.modules.movement.AvoidModule;
 import dev.argus.client.modules.movement.ElytraFlyModule;
+import dev.argus.client.modules.movement.BoatPhaseModule;
 import dev.argus.client.modules.movement.EntityControlModule;
 import dev.argus.client.modules.movement.FakeLagModule;
 import dev.argus.client.modules.movement.FastClimbModule;
@@ -187,7 +188,6 @@ import dev.argus.client.modules.render.NoBobModule;
 import dev.argus.client.modules.render.NoRenderModule;
 import dev.argus.client.modules.render.ParticlesModule;
 import dev.argus.client.modules.render.PhaseESPModule;
-import dev.argus.client.modules.render.SearchModule;
 import dev.argus.client.modules.render.ShaderModule;
 import dev.argus.client.modules.render.SkeletonModule;
 import dev.argus.client.modules.render.SkyboxModule;
@@ -519,6 +519,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected ElytraFlyModule");
       }
 
+      if (!this.registerModule(new BoatPhaseModule())) {
+         throw new IllegalStateException("Registration rejected BoatPhaseModule");
+      }
+
       if (!this.registerModule(new EntityControlModule())) {
          throw new IllegalStateException("Registration rejected EntityControlModule");
       }
@@ -827,10 +831,6 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected ScaffoldModule");
       }
 
-      if (!this.registerModule(new SearchModule())) {
-         throw new IllegalStateException("Registration rejected SearchModule");
-      }
-
       if (!this.registerModule(new SelfFillModule())) {
          throw new IllegalStateException("Registration rejected SelfFillModule");
       }
@@ -1015,6 +1015,14 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
             } catch (Exception var8) {
             }
          }
+      }
+
+      // Search was merged into ESP: carry a saved Search section over once.
+      try {
+         if (this.getModule(ESPModule.class) instanceof ESPModule esp) {
+            esp.mergeSearch(LegacyBranding.findModuleConfig(config.getAsJsonObject(), "Search"));
+         }
+      } catch (Exception ignored) {
       }
    }
 

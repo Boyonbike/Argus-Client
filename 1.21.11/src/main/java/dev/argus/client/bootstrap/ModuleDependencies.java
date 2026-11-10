@@ -73,7 +73,6 @@ import dev.argus.client.modules.render.LogoutSpotsModule;
 import dev.argus.client.modules.render.NameTagsModule;
 import dev.argus.client.modules.render.ParticlesModule;
 import dev.argus.client.modules.render.ProjectileTrajectorySimulator;
-import dev.argus.client.modules.render.SearchModule;
 import dev.argus.client.modules.render.ShaderModule;
 import dev.argus.client.modules.render.SkeletonModule;
 import dev.argus.client.modules.render.TracersModule;
@@ -145,7 +144,6 @@ public final class ModuleDependencies {
       ChestSearchController.bindReferencedModules(registry);
       ShaderModule.bindModules(registry);
       HitmarkerModule.bindCrosshair(registry);
-      SearchModule.bindModules(registry);
       AutoArmorModule.bindModuleRegistry(registry);
       NukerModule.bindReferencedModules(registry);
       LogoutSpotsModule.bindFontsModule(registry);
@@ -157,6 +155,10 @@ public final class ModuleDependencies {
       AutoToolModule.bindModules(registry);
       ParticlesModule.bindColorsModule(registry);
       TracersModule.bindReferencedModules(registry);
+      dev.argus.client.modules.render.targets.TargetLinks.bind(
+         (ESPModule)registry.getModule(ESPModule.class), ((ESPModule)registry.getModule(ESPModule.class)).targets,
+         (TracersModule)registry.getModule(TracersModule.class), ((TracersModule)registry.getModule(TracersModule.class)).targets
+      );
       FreeLookModule.bindReferencedModules(registry);
       ProjectileTrajectorySimulator.bindModules(registry);
       ReachModule.bindModuleDependencies(registry);
@@ -166,7 +168,6 @@ public final class ModuleDependencies {
       AntiCheatModule.bindReferencedModules(registry);
       FastWebModule.bindModules(registry);
       RocketExtenderModule.bindReferencedModules(registry);
-      ColorsModule.bindSearchModule(registry);
       AutoDropModule.bindModules(registry);
       PhaseModule.bindReferencedModules(registry);
       AutoMineModule.bindReferencedModules(registry);

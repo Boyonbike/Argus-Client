@@ -283,7 +283,7 @@ public final class ServerStateManager implements ClientAccess {
       if (event.getPacket() instanceof ClientboundBundlePacket bundlePacket) {
          for (Packet<?> subpacket : bundlePacket.subPackets()) {
             EventBus eventBus = ClientAccess.eventBus;
-            PacketEvent.Receive subpacketEvent = new PacketEvent.Receive(subpacket);
+            PacketEvent.Receive subpacketEvent = new PacketEvent.Receive(subpacket, event.getConnection());
             eventBus.post(subpacketEvent);
          }
       }
