@@ -157,18 +157,14 @@ public abstract class PlayerMixin extends LivingEntity implements PlayerState {
       return !((Object)this instanceof FakeplayerCommand.SimulatedPlayer) || entity != ClientAccess.argusclientMinecraft.player;
    }
 
-   @Inject(method = "entityInteractionRange", at = @At("HEAD"), cancellable = true)
-   private void overrideEntityInteractionRange(CallbackInfoReturnable<Double> callback) {
-      if (reachModule.isToggled()) {
-         callback.setReturnValue(reachModule.modifierSetting.getValue().doubleValue());
-      }
+   @ModifyReturnValue(method = "entityInteractionRange", at = @At("RETURN"))
+   private double overrideEntityInteractionRange(double original) {
+      return reachModule.entityReach(original);
    }
 
-   @Inject(method = "blockInteractionRange", at = @At("HEAD"), cancellable = true)
-   private void overrideBlockInteractionRange(CallbackInfoReturnable<Double> callback) {
-      if (reachModule.isToggled()) {
-         callback.setReturnValue(reachModule.modifierSetting.getValue().doubleValue());
-      }
+   @ModifyReturnValue(method = "blockInteractionRange", at = @At("RETURN"))
+   private double overrideBlockInteractionRange(double original) {
+      return reachModule.blockReach(original);
    }
 
    @Inject(method = "isSecondaryUseActive", at = @At("HEAD"), cancellable = true)

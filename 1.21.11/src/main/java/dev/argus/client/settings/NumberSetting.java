@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 public final class NumberSetting<N extends Number> extends Setting<N> implements CyclingTextSetting {
    private String unit = "";
+   private double sliderMaximum = Double.NaN;
 
    @Override
    public boolean matchesText(String text) {
@@ -87,5 +88,39 @@ public final class NumberSetting<N extends Number> extends Setting<N> implements
    public NumberSetting<N> withUnit(String unit) {
       this.unit = unit;
       return this;
+   }
+
+   public NumberSetting<N> withSliderMaximum(double sliderMaximum) {
+      this.sliderMaximum = sliderMaximum;
+      return this;
+   }
+
+   public double getSliderMaximumValue() {
+      double minimum = this.getMinimumValue().doubleValue();
+      double maximum = this.getMaximumValue().doubleValue();
+      double configured = Double.isNaN(this.sliderMaximum) ? maximum : this.sliderMaximum;
+      return Math.max(minimum, Math.min(maximum, configured));
+   }
+
+   public double sliderFraction() {
+      double minimum = this.getMinimumValue().doubleValue();
+      double maximum = this.getSliderMaximumValue();
+      if (maximum <= minimum) {
+         return 0.0;
+      }
+
+      double fraction = (this.getValue().doubleValue() - minimum) / (maximum - minimum);
+      return Math.max(0.0, Math.min(1.0, fraction));
+   }
+
+   public double valueAtSliderFraction(double fraction) {
+      double minimum = this.getMinimumValue().doubleValue();
+      double maximum = this.getSliderMaximumValue();
+      if (maximum <= minimum) {
+         return minimum;
+      }
+
+      double clampedFraction = Math.max(0.0, Math.min(1.0, fraction));
+      return minimum + clampedFraction * (maximum - minimum);
    }
 }

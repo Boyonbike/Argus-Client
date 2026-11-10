@@ -212,13 +212,9 @@ public class NumericSettingComponent<N extends Number> extends SettingComponent<
       double sliderWidth = this.getPanel().getWidth() - 2;
       double mouseOffset = Math.min(sliderWidth, Math.max(0.0, mouseX - this.sliderX));
       double minimumValue = this.setting.getMinimumValue().doubleValue();
-      double maximumValue = this.setting.getMaximumValue().doubleValue();
+      double sliderMaximumValue = this.numberSetting.getSliderMaximumValue();
       double roundingStep = this.setting.getValue().getClass().getSimpleName().equalsIgnoreCase("Integer") ? 1.0 : 0.1;
-      this.sliderFillWidth = (float)(
-         sliderWidth
-            * ((roundingStep == 1.0 ? this.setting.getValue().intValue() : this.setting.getValue().floatValue()) - minimumValue)
-            / (maximumValue - minimumValue)
-      );
+      this.sliderFillWidth = (float)(sliderWidth * this.numberSetting.sliderFraction());
       if (this.dragging) {
          if (mouseOffset == 0.0) {
             if (roundingStep == 1.0) {
@@ -227,9 +223,9 @@ public class NumericSettingComponent<N extends Number> extends SettingComponent<
                this.numberSetting.setNumber(this.setting.getMinimumValue().floatValue());
             }
          } else {
-            float mappedValue = (float)(mouseOffset / sliderWidth * (maximumValue - minimumValue) + minimumValue);
+            float mappedValue = (float)this.numberSetting.valueAtSliderFraction(mouseOffset / sliderWidth);
             float roundingFactor = (float)(1.0 / roundingStep);
-            double clampedValue = Math.max(minimumValue, Math.min(maximumValue, mappedValue));
+            double clampedValue = Math.max(minimumValue, Math.min(sliderMaximumValue, mappedValue));
             if (roundingStep == 0.1) {
                this.numberSetting.setNumber(roundSliderValue((float)Math.round(clampedValue * roundingFactor) / roundingFactor));
             } else {
@@ -238,7 +234,7 @@ public class NumericSettingComponent<N extends Number> extends SettingComponent<
          }
       }
 
-      if (this.setting.getValue().floatValue() >= this.setting.getMaximumValue().floatValue()) {
+      if (this.setting.getValue().floatValue() >= sliderMaximumValue) {
          this.sliderFillWidth = this.getPanel().getWidth() - 2;
       }
 

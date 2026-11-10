@@ -51,7 +51,8 @@ public class LiquidBlockMixin {
             return;
          }
 
-         if (distanceSquared < reach.modifierSetting.getValue() * reach.modifierSetting.getValue() && !hasAdjacentAir) {
+         double blockReach = client.player.blockInteractionRange();
+         if (distanceSquared < blockReach * blockReach && !hasAdjacentAir) {
             return;
          }
 

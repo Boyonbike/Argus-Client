@@ -14,6 +14,7 @@ import dev.argus.client.events.MultiPlayerGameModeUseItemEvent;
 import dev.argus.client.events.MultiPlayerGameModeUseItemOnEvent;
 import dev.argus.client.modules.client.AntiCheatModule;
 import dev.argus.client.modules.combat.AutoClickerModule;
+import dev.argus.client.modules.exploit.ReachModule;
 import dev.argus.client.modules.player.AutoToolModule;
 import dev.argus.client.modules.player.InventoryTweaksModule;
 import dev.argus.client.modules.player.NoInteractModule;
@@ -22,6 +23,8 @@ import dev.argus.client.utils.inventory.InventoryUtils;
 import dev.argus.client.utils.inventory.ItemUtils;
 import dev.argus.client.utils.network.PacketSender;
 import dev.argus.client.utils.world.BlockBreakingState;
+import dev.argus.client.utils.world.BlockInteractionUtils;
+import dev.argus.client.utils.world.PlacementFallback;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -44,11 +47,15 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
@@ -62,6 +69,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    private static final NoInteractModule noInteractModule = ClientContext.getModule(NoInteractModule.class);
    private static final InventoryTweaksModule inventoryTweaksModule = ClientContext.getModule(InventoryTweaksModule.class);
    private static final AntiCheatModule antiCheatModule = ClientContext.getModule(AntiCheatModule.class);
+   private static final ReachModule reachModule = ClientContext.getModule(ReachModule.class);
    private static SpeedMineModule speedmine = ClientContext.getModule(SpeedMineModule.class);
    @Shadow
    private boolean isDestroying;
@@ -153,8 +161,47 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
             }
 
             ClientAccess.argusclientMinecraft.gameMode.useItem(ClientAccess.argusclientMinecraft.player, hand);
+         } else if (tryPlacementFallback(actingPlayer, hand, hit)) {
+            callback.setReturnValue(InteractionResult.FAIL);
+            callback.cancel();
          }
       }
+   }
+
+   @Unique
+   private static boolean tryPlacementFallback(LocalPlayer player, InteractionHand hand, BlockHitResult hit) {
+      if (reachModule == null
+         || !reachModule.isToggled()
+         || !reachModule.placementFallbackSetting.getValue()
+         || player.isSecondaryUseActive()
+         || hit.getType() == HitResult.Type.MISS) {
+         return false;
+      }
+
+      ItemStack heldStack = player.getItemInHand(hand);
+      if (!(heldStack.getItem() instanceof BlockItem)) {
+         return false;
+      }
+
+      if (BlockInteractionUtils.requiresSneakForInteraction(hit.getBlockPos())) {
+         return false;
+      }
+
+      BlockState clickedState = player.level().getBlockState(hit.getBlockPos());
+      if (!clickedState.isSolidRender()
+         || clickedState.isSignalSource()
+         || clickedState.getMenuProvider(player.level(), hit.getBlockPos()) != null) {
+         return false;
+      }
+
+      BlockPlaceContext context = new BlockPlaceContext(player, hand, heldStack, hit);
+      BlockPos placementPos = context.getClickedPos();
+      BlockPos target = PlacementFallback.resolveTarget(hit.getBlockPos(), placementPos, player.getEyePosition(), player.isCreative());
+      if (target == null || !player.level().getBlockState(target).canBeReplaced(context)) {
+         return false;
+      }
+
+      return BlockInteractionUtils.placeBlockIgnoringCrystals(target, null, true, hand);
    }
 
    @ModifyReturnValue(

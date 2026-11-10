@@ -58,7 +58,6 @@ import dev.argus.client.modules.movement.WarpModule;
 import dev.argus.client.modules.player.AutoToolModule;
 import dev.argus.client.modules.player.ChestStealerModule;
 import dev.argus.client.modules.player.FastPlaceModule;
-import dev.argus.client.modules.player.FreecamInput;
 import dev.argus.client.modules.player.InventorySorterModule;
 import dev.argus.client.modules.player.NukerModule;
 import dev.argus.client.modules.player.ReplenishModule;
@@ -157,7 +156,6 @@ public final class ModuleDependencies {
       WarpModule.bindReferencedModules(registry);
       AutoToolModule.bindModules(registry);
       ParticlesModule.bindColorsModule(registry);
-      FreecamInput.bindModules(registry);
       TracersModule.bindReferencedModules(registry);
       FreeLookModule.bindReferencedModules(registry);
       ProjectileTrajectorySimulator.bindModules(registry);

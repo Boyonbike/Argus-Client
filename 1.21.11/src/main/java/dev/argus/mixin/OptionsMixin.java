@@ -2,6 +2,7 @@ package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.argus.client.ClientContext;
+import dev.argus.client.modules.player.FreecamModule;
 import dev.argus.client.modules.render.ViewClipModule;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Options;
@@ -25,6 +26,18 @@ public abstract class OptionsMixin {
 
    @Inject(method = "setCameraType", at = @At("HEAD"), cancellable = true)
    public void skipConfiguredCameraType(CameraType cameraType, CallbackInfo callback) {
+      FreecamModule freecam = ClientContext.getModule(FreecamModule.class);
+      if (freecam != null) {
+         if (freecam.isSettingCameraType()) {
+            return;
+         }
+
+         if (freecam.isToggled()) {
+            callback.cancel();
+            return;
+         }
+      }
+
       if (viewClip.shouldSkipCameraType(cameraType)) {
          CameraType[] cameraTypes = CameraType.values();
          this.setCameraType(cameraTypes[(cameraType.ordinal() + 1) % cameraTypes.length]);

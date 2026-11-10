@@ -73,7 +73,9 @@ public abstract class CameraMixin {
    private void applyViewClipAndFreeLookDistance(
       float originalDistance, CallbackInfoReturnable<Float> callback, @Local(argsOnly = true) LocalFloatRef distanceRef
    ) {
-      if (viewClip.isToggled()) {
+      if (freecam.isToggled()) {
+         callback.setReturnValue(0.0F);
+      } else if (viewClip.isToggled()) {
          float cameraDistance = viewClip.getCameraDistance();
          if (freelook.isScrollEnabled()) {
             cameraDistance += freelook.getCameraDistanceOffset();
