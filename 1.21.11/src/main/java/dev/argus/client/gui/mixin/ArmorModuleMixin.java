@@ -37,7 +37,7 @@ public abstract class ArmorModuleMixin extends HudWidgetModule {
         element.placeIfNew(homeX, homeY - ArmorWidgetRenderer.TEXT);
         argus$poses = event.getPoseStack();
         argus$poses.pushPose();
-        argus$poses.translate(element.getX() - homeX, element.getY() + ArmorWidgetRenderer.TEXT - homeY, 0);
+        argus$poses.translate(element.getX() + element.contentShiftX() - homeX, element.getY() + element.contentShiftY() + ArmorWidgetRenderer.TEXT - homeY, 0);
         argus$shifted = true;
     }
 

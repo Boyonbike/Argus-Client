@@ -552,8 +552,8 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       }
 
       Minecraft minecraft = this.minecraft();
-      int forward = (minecraft.options.keyUp.isDown() ? 1 : 0) - (minecraft.options.keyDown.isDown() ? 1 : 0);
-      int right = (minecraft.options.keyRight.isDown() ? 1 : 0) - (minecraft.options.keyLeft.isDown() ? 1 : 0);
+      int forward = (PlayerMovementKeys.isDown(minecraft.options.keyUp) ? 1 : 0) - (PlayerMovementKeys.isDown(minecraft.options.keyDown) ? 1 : 0);
+      int right = (PlayerMovementKeys.isDown(minecraft.options.keyRight) ? 1 : 0) - (PlayerMovementKeys.isDown(minecraft.options.keyLeft) ? 1 : 0);
       // Lets the server establish a glide from a fresh elytra swap before speed builds past cruise.
       this.observeBoostDelay(player);
       double turnRate = this.adaptiveTurning.getValue() ? this.argusMotionTurnRate.getValue() : 0.0;
@@ -913,7 +913,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private void autoTakeoff(LocalPlayer player) {
       if (this.incrementJumpTimer) this.jumpTimer++;
 
-      this.jumpPressed = this.minecraft().options.keyJump.isDown();
+      this.jumpPressed = PlayerMovementKeys.isDown(this.minecraft().options.keyJump);
 
       // Smart Elytra owns the jump-to-flight path; don't let the older auto-takeoff
       // setting fire a second takeoff from the same jump.
@@ -982,21 +982,21 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       boolean forwardPressed = false;
       boolean sidewaysPressed = false;
 
-      if (this.minecraft().options.keyUp.isDown()) {
+      if (PlayerMovementKeys.isDown(this.minecraft().options.keyUp)) {
          this.velX += this.forward.x * this.acceleration * 10.0;
          this.velZ += this.forward.z * this.acceleration * 10.0;
          forwardPressed = true;
-      } else if (this.minecraft().options.keyDown.isDown()) {
+      } else if (PlayerMovementKeys.isDown(this.minecraft().options.keyDown)) {
          this.velX -= this.forward.x * this.acceleration * 10.0;
          this.velZ -= this.forward.z * this.acceleration * 10.0;
          forwardPressed = true;
       }
 
-      if (this.minecraft().options.keyRight.isDown()) {
+      if (PlayerMovementKeys.isDown(this.minecraft().options.keyRight)) {
          this.velX += this.right.x * this.acceleration * 10.0;
          this.velZ += this.right.z * this.acceleration * 10.0;
          sidewaysPressed = true;
-      } else if (this.minecraft().options.keyLeft.isDown()) {
+      } else if (PlayerMovementKeys.isDown(this.minecraft().options.keyLeft)) {
          this.velX -= this.right.x * this.acceleration * 10.0;
          this.velZ -= this.right.z * this.acceleration * 10.0;
          sidewaysPressed = true;
@@ -1011,9 +1011,9 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    private void handleVerticalSpeed() {
-      if (this.minecraft().options.keyJump.isDown()) {
+      if (PlayerMovementKeys.isDown(this.minecraft().options.keyJump)) {
          this.velY += 0.5 * this.verticalAcceleration;
-      } else if (this.minecraft().options.keyShift.isDown()) {
+      } else if (PlayerMovementKeys.isDown(this.minecraft().options.keyShift)) {
          this.velY -= 0.5 * this.verticalAcceleration;
       }
    }
@@ -1086,10 +1086,10 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    private boolean isMovementKeyPressed() {
-      return this.minecraft().options.keyUp.isDown()
-         || this.minecraft().options.keyDown.isDown()
-         || this.minecraft().options.keyLeft.isDown()
-         || this.minecraft().options.keyRight.isDown();
+      return PlayerMovementKeys.isDown(this.minecraft().options.keyUp)
+         || PlayerMovementKeys.isDown(this.minecraft().options.keyDown)
+         || PlayerMovementKeys.isDown(this.minecraft().options.keyLeft)
+         || PlayerMovementKeys.isDown(this.minecraft().options.keyRight);
    }
 
    private void resetRampOnCollision(LocalPlayer player) {
@@ -1173,7 +1173,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    /** The boost key (Sprint unless rebound) held physically while playing, with no screen open. */
    private boolean boostKeyHeld() {
       Minecraft minecraft = this.minecraft();
-      return minecraft.screen == null && this.boostKey.isPhysicallyDown(minecraft.options.keySprint);
+      return minecraft.screen == null && !PlayerMovementKeys.isFreecamActive() && this.boostKey.isPhysicallyDown(minecraft.options.keySprint);
    }
 
    /** Boost H Speed in blocks/tick; at the slider's top ("MAX") it is Volytra's own Horizontal Speed. */
@@ -1215,8 +1215,8 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    private void handleVerticalAcceleration() {
-      boolean movingUp = this.minecraft().options.keyJump.isDown();
-      boolean movingDown = this.minecraft().options.keyShift.isDown();
+      boolean movingUp = PlayerMovementKeys.isDown(this.minecraft().options.keyJump);
+      boolean movingDown = PlayerMovementKeys.isDown(this.minecraft().options.keyShift);
 
       if (!movingUp && !movingDown) {
          this.resetVerticalAcceleration();

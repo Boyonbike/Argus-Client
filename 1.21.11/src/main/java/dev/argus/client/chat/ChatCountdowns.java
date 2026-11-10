@@ -16,6 +16,17 @@ public final class ChatCountdowns {
         for (var request : requests) result.add(request(request, now));
         return List.copyOf(result);
     }
+    /** The HUD line for one kind (Home, TPA or Hotspot), or "" when nothing of that kind is running. */
+    public static String hud(ChatTeleportState.Kind kind, List<ChatTeleportState.Timer> timers, long now) {
+        return timers.stream().filter(t -> t.kind() == kind).map(t -> t.hud(now)).findFirst().orElse("");
+    }
+    /** Incoming requests in one line: the soonest to time out, and how many are waiting. */
+    public static String requests(List<ChatTpaRequests.Request> requests, long now) {
+        if (requests.isEmpty()) return "";
+        var soonest = requests.stream().min(java.util.Comparator.comparingLong(ChatTpaRequests.Request::expires)).orElseThrow();
+        String first = (soonest.toThem() ? "Travel to " : "Request from ") + soonest.player() + " " + ChatTeleportState.remaining(soonest.expires() - now);
+        return requests.size() == 1 ? first : first + " (+" + (requests.size() - 1) + " more)";
+    }
     public static String player(String player, List<ChatTeleportState.Timer> timers, List<ChatTpaRequests.Request> requests, long now) {
         List<String> result = new ArrayList<>();
         for (var timer : timers) if (timer.kind() == ChatTeleportState.Kind.TPA && timer.target().equalsIgnoreCase(player)) result.add(timer.status(now));

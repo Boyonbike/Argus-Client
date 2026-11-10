@@ -8,6 +8,7 @@ import dev.argus.client.settings.options.HudAnchor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
@@ -34,12 +35,12 @@ public class VolytraSpeedHudModule extends HudWidgetModule {
       this.rows.add(new HudTextRow(() -> Component.literal(format("V Speed", verticalSpeed())), this.showVertical::getValue));
       this.rows.add(new HudTextRow(() -> Component.literal(format("3D Speed", speed3d())), this.show3d::getValue));
 
-      this.setRenderer(new HudTextListRenderer(this, this.rows));
+      this.setRenderer(new HudTextListRenderer(this, this.rows).splittable());
       this.getRenderer().setAnchor(HudAnchor.TOP_RIGHT);
    }
 
    private static String format(String label, double speed) {
-      return String.format(Locale.ROOT, "%s %.1f b/s", label, speed);
+      return String.format(Locale.ROOT, "%s %s%.1f b/s", label, ChatFormatting.WHITE, speed);
    }
 
    private static double horizontalSpeed() {

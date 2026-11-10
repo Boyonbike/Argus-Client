@@ -10,7 +10,8 @@ final class ChatTeleportCooldownTest {
         state.sent("home Base", 0);
         state.message("Teleporting in 5 seconds", 100);
         assertEquals(ChatTeleportState.Phase.Teleport, state.timers(100).getFirst().phase());
-        assertEquals(ChatTeleportState.Phase.Waiting, state.timers(5_100).getFirst().phase());
+        // The warmup running out is the teleport: the cooldown starts then, and the success line doesn't restart it.
+        assertEquals(ChatTeleportState.Phase.Cooldown, state.timers(5_100).getFirst().phase());
         state.message("You have been teleported home", 5_200);
         var timer = state.timers(5_200).getFirst();
         assertEquals(ChatTeleportState.Phase.Cooldown, timer.phase());
@@ -20,6 +21,66 @@ final class ChatTeleportCooldownTest {
         assertEquals("Cooldown ~20s", timer.status(15_200));
         assertFalse(state.canCancel(ChatTeleportState.Kind.Home, 5_201));
         assertTrue(state.timers(35_200).isEmpty());
+    }
+
+    @Test void hotspotWarmupAndCooldownAreTracked() {
+        var state = state(30, 15);
+        state.sent("hotspot", 0);
+        assertEquals("Hotspot: awaiting server", state.timers(0).getFirst().label(0));
+        state.message("Teleporting to the hotspot in 5 seconds", 100);
+        var warmup = state.timers(100).getFirst();
+        assertEquals(ChatTeleportState.Kind.Hotspot, warmup.kind());
+        assertEquals("Hotspot: teleport 5s", warmup.label(100));
+        state.message("You must wait 2 minutes before using the hotspot again", 6_000);
+        var cooldown = state.timers(6_000).getFirst();
+        assertEquals(ChatTeleportState.Phase.Cooldown, cooldown.phase());
+        assertEquals("Hotspot: cooldown 2m", cooldown.label(6_000));
+    }
+
+    @Test void hudLinesNameOnlyTheKind() {
+        var state = state(30, 15);
+        state.sent("home base", 0);
+        assertEquals("Home: waiting for server", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(0), 0));
+        state.message("Teleporting to base in 5 seconds", 10);
+        assertEquals("Home teleport in 5s", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(10), 10));
+        assertEquals("Home cooldown ~30s", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(5_010), 5_010));
+        state.sent("tpa Alice", 6_000);
+        state.message("Teleport request sent. This request expires after 2 minutes.", 6_000);
+        assertEquals("TPA request 2m", ChatCountdowns.hud(ChatTeleportState.Kind.TPA, state.timers(6_000), 6_000));
+        assertEquals("", ChatCountdowns.hud(ChatTeleportState.Kind.Hotspot, List.of(), 0));
+    }
+
+    @Test void beingMovedFarCompletesTheLatestPendingTeleport() {
+        var state = state(30, 15);
+        state.sent("home base", 0);
+        state.teleported(400);
+        var timer = state.timers(400).getFirst();
+        assertEquals(ChatTeleportState.Phase.Cooldown, timer.phase());
+        assertEquals("Home cooldown ~30s", timer.hud(400));
+        var midWarmup = state(30, 15);
+        midWarmup.sent("hotspot", 0);
+        midWarmup.message("Teleporting to the hotspot in 10 seconds", 0);
+        midWarmup.teleported(3_000);
+        assertEquals(ChatTeleportState.Phase.Teleport, midWarmup.timers(3_000).getFirst().phase(), "A jump mid-warmup is not the teleport");
+        var idle = state(30, 15);
+        idle.teleported(100);
+        assertTrue(idle.timers(100).isEmpty());
+    }
+
+    @Test void aFailureJustAfterTheWarmupRunsOutUndoesTheCooldown() {
+        var state = state(30, 15);
+        state.sent("home base", 0);
+        state.message("Teleporting in 3 seconds", 0);
+        assertEquals(ChatTeleportState.Phase.Cooldown, state.timers(3_000).getFirst().phase());
+        state.message("Teleportation cancelled because you moved", 3_400);
+        assertTrue(state.timers(3_400).isEmpty());
+    }
+
+    @Test void hotspotManagementCommandsStartNoCountdown() {
+        var state = state(30, 15);
+        state.sent("hotspot info", 0);
+        state.sent("/hotspot kill", 0);
+        assertTrue(state.timers(0).isEmpty());
     }
 
     @Test void homeAndTpUseSeparateDurationsAndTargets() {
@@ -121,8 +182,8 @@ final class ChatTeleportCooldownTest {
         var state = state(30, 30);
         state.sent("home Base", 0);
         state.message("Teleporting in 2 seconds", 100);
-        assertEquals(ChatTeleportState.Phase.Waiting, state.timers(2_100).getFirst().phase());
-        assertTrue(state.timers(17_100).isEmpty());
+        assertEquals(ChatTeleportState.Phase.Cooldown, state.timers(2_100).getFirst().phase());
+        assertTrue(state.timers(32_100).isEmpty());
     }
 
     @Test void futureAndUnrelatedWaitMessagesCannotConfirmOrChangeTeleportState() {
@@ -216,7 +277,8 @@ final class ChatTeleportCooldownTest {
         state.sent("tpa uriauria", 20_000);
         state.message("You have to wait 4m 30s to teleport again.", 20_000);
         assertEquals("TPA uriauria: cooldown 4m 30s", state.timers(20_000).getFirst().label(20_000));
-        assertEquals(java.util.Map.of(ChatTeleportState.Kind.TPA, 273_500L), state.learned());
+        // The warmup ran out at 16s, which is when the teleport (and its cooldown) happened.
+        assertEquals(java.util.Map.of(ChatTeleportState.Kind.TPA, 274_000L), state.learned());
         var idle = state(30, 30);
         idle.transferred(1_000);
         assertTrue(idle.timers(1_000).isEmpty());

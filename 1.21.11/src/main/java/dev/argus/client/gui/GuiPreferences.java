@@ -28,7 +28,13 @@ public final class GuiPreferences {
     public boolean showGrid = true;
     /** Minimum space (GUI units) kept between windows while dragging; 0 turns it off. */
     public int gap = 0;
+    /** Minimum space kept between HUD elements while dragging in the HUD editor, set apart from windows; 0 turns it off. */
+    public int hudGap = 0;
+    /** Round every HUD element's size up to whole grid steps, so sizes and spacing line up with the grid. */
+    public boolean hudFitGrid = true;
     public static final int MAX_GAP = 24;
+    /** The HUD gap moves in whole grid steps. */
+    public static final int HUD_GAP_STEP = ModulesScreen.GRID;
     /** Colours saved from the colour picker (ARGB), newest last. */
     public final List<Integer> savedColours = new ArrayList<>();
     public static final int MAX_SAVED_COLOURS = 18;
@@ -70,6 +76,8 @@ public final class GuiPreferences {
             try { result.savedColours.add((int) Long.parseLong(hex.trim(), 16)); } catch (NumberFormatException ignored) {}
         }
         try { result.gap = Math.clamp(Integer.parseInt(values.getProperty("gap", "0")), 0, MAX_GAP); } catch (IllegalArgumentException ignored) {}
+        try { result.hudGap = Math.round(Math.clamp(Integer.parseInt(values.getProperty("hudGap", "0")), 0, MAX_GAP) / (float) HUD_GAP_STEP) * HUD_GAP_STEP; } catch (IllegalArgumentException ignored) {}
+        result.hudFitGrid = Boolean.parseBoolean(values.getProperty("hudFitGrid", "true"));
         try { double scale=Double.parseDouble(values.getProperty("uiScale","1")); if(Double.isFinite(scale))result.uiScale=Math.clamp(scale,.65,1.4); } catch(IllegalArgumentException ignored) {}
         if (values.containsKey("barTabs")) {
             result.barTabs.clear();
@@ -109,7 +117,7 @@ public final class GuiPreferences {
         values.setProperty("uiScale",Double.toString(uiScale));
         values.setProperty("mode", mode.name()); values.setProperty("accent", accent.name()); values.setProperty("snap", Boolean.toString(snap)); values.setProperty("barOpen", Boolean.toString(barOpen));
         values.setProperty("showGrid", Boolean.toString(showGrid));
-        values.setProperty("savedColours", String.join(",", savedColours.stream().map(c -> String.format("%08X", c)).toList())); values.setProperty("gap", Integer.toString(gap));
+        values.setProperty("savedColours", String.join(",", savedColours.stream().map(c -> String.format("%08X", c)).toList())); values.setProperty("gap", Integer.toString(gap)); values.setProperty("hudGap", Integer.toString(hudGap)); values.setProperty("hudFitGrid", Boolean.toString(hudFitGrid));
         for (String module : favourites) values.setProperty("favourite." + module, "true");
         values.setProperty("barTabs", String.join(",", barTabs));
         values.setProperty("tabStyle", tabStyle.name());

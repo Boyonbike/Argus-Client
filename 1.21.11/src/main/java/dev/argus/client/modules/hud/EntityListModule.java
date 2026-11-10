@@ -182,6 +182,7 @@ public class EntityListModule extends HudWidgetModule {
       };
       itemSelectionVisibilityOption.addVisibilityPredicate(itemSelectionVisible);
       ResizableHudWidgetRenderer widget = new ResizableHudWidgetRenderer(this);
+      widget.markAlignsContent();
       widget.enableHudScale();
       this.setRenderer(widget);
    }

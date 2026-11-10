@@ -443,7 +443,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
 
         // Card heights, so the page knows how far it can scroll.
-        float themeH = CARD_HEAD + 52, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 46;
+        float themeH = CARD_HEAD + 52, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68;
         List<Float> listHeights = new ArrayList<>();
         for (SettingsList card : appearanceLists) listHeights.add(CARD_HEAD + card.contentHeight() + 6f);
         float total = themeH + barH + windowsH + CARD_GAP * 3;
@@ -540,7 +540,7 @@ final class SettingsScreen extends UiScreen {
         y += barH + CARD_GAP;
 
         // Windows: snapping, grid, auto gap and reset.
-        card(g, x, y, w, windowsH, "misc", "Windows", "How module windows snap and space out while you drag them", null, mx, my, t);
+        card(g, x, y, w, windowsH, "misc", "Windows", "How module windows and HUD elements snap and space out while you drag them", null, mx, my, t);
         row = y + CARD_HEAD + 2;
         toggleRow(g, "Snap to grid", "Windows land on a fine grid when you let go", p.snap, "app.snap", ix, row, half, mx, my, t,
                 () -> { p.snap = !p.snap; GuiState.save(); });
@@ -556,6 +556,17 @@ final class SettingsScreen extends UiScreen {
         UiDraw.right(g, p.gap == 0 ? "Off" : Integer.toString(p.gap), ix + half, row + 9, UiDraw.SMALL, p.gap == 0 ? t.muted() : "gap".equals(sliding) ? t.accent() : t.text());
         if (overGap) tooltip("app.gap", "Auto gap", "Keeps dragged windows at least this far from each other");
         hits.add(new Hit(gapTrackX - 4, row + 1, gapTrackW + 8, 16, () -> startSlider("gap", gapTrackX, gapTrackW)));
+        float hudRow = row + 22;
+        UiDraw.text(g, "HUD gap", ix, hudRow + 9, UiDraw.SMALL, t.text());
+        float hudValue = p.hudGap / (float) GuiPreferences.MAX_GAP;
+        boolean overHud = UiDraw.over(mx, my, gapTrackX - 4, hudRow + 1, gapTrackW + 8, 16);
+        UiDraw.slider(g, gapTrackX, hudRow + 9, gapTrackW, "hudGap".equals(sliding) ? hudValue : UiAnim.smooth("app.hudgap", hudValue, 18),
+                UiAnim.smooth("app.hudgap.h", overHud || "hudGap".equals(sliding) ? 1 : 0, 18), t);
+        UiDraw.right(g, p.hudGap == 0 ? "Off" : Integer.toString(p.hudGap), ix + half, hudRow + 9, UiDraw.SMALL, p.hudGap == 0 ? t.muted() : "hudGap".equals(sliding) ? t.accent() : t.text());
+        if (overHud) tooltip("app.hudgap", "HUD gap", "Keeps HUD elements at least this far from each other while you drag them in the HUD editor");
+        hits.add(new Hit(gapTrackX - 4, hudRow + 1, gapTrackW + 8, 16, () -> startSlider("hudGap", gapTrackX, gapTrackW)));
+        toggleRow(g, "Fit HUD to grid", "HUD element sizes and spacing round to whole grid steps", p.hudFitGrid, "app.hudgrid", ix + half + 16, hudRow, half, mx, my, t,
+                () -> { p.hudFitGrid = !p.hudFitGrid; GuiState.save(); });
         String resetLabel = "Reset window positions";
         float rw = UiDraw.width(resetLabel, UiDraw.SMALL) + 24, rx = ix + iw - rw;
         boolean resetHover = UiDraw.over(mx, my, rx, row + 1, rw, 16);
@@ -608,6 +619,7 @@ final class SettingsScreen extends UiScreen {
         double f = Math.clamp((mx - sliderX) / sliderW, 0, 1);
         if ("scale".equals(sliding)) pendingScale = Math.round((MIN_SCALE + (MAX_SCALE - MIN_SCALE) * f) * 20) / 20.0;
         else if ("gap".equals(sliding)) GuiState.preferences().gap = (int) Math.round(f * GuiPreferences.MAX_GAP / 2) * 2;
+        else if ("hudGap".equals(sliding)) GuiState.preferences().hudGap = (int) Math.round(f * GuiPreferences.MAX_GAP / GuiPreferences.HUD_GAP_STEP) * GuiPreferences.HUD_GAP_STEP;
     }
 
     // ---- input ------------------------------------------------------------------------------

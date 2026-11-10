@@ -713,14 +713,15 @@ public final class ChatToolsScreen extends UiScreen {
             UiDraw.rounded(g, x - 4, y, w + 8, h, 6, UiDraw.alpha(t.yellow(), .1f));
             UiDraw.icon(g, "compass", x + 2, y + h / 2 - 4, 8, t.yellow());
             boolean home = timer.kind() == ChatTeleportState.Kind.Home;
+            boolean hotspot = timer.kind() == ChatTeleportState.Kind.Hotspot;
             var actions = new Actions(g, t, x + w, y + 2);
-            if (home ? tools.canCancelHome() : tools.canCancelTpa())
+            if (!hotspot && (home ? tools.canCancelHome() : tools.canCancelTpa()))
                 actions.add("Cancel", "close", Tone.SECONDARY, true, () -> {
                     if (home) tools.cancelHome(); else tools.cancelTpa();
                     notice(home ? "Home cancellation sent." : "Teleport cancellation sent.");
                 });
             String target = timer.target().isEmpty() ? "" : " " + timer.target();
-            UiDraw.text(g, UiDraw.fit((home ? "Home" : "Teleport to") + target + " · " + timer.status(now), actions.left() - GAP - x - 14), x + 14, y + h / 2, t.yellow());
+            UiDraw.text(g, UiDraw.fit((home ? "Home" : hotspot ? "Hotspot" : "Teleport to") + target + " · " + timer.status(now), actions.left() - GAP - x - 14), x + 14, y + h / 2, t.yellow());
         }
         if (!timers.isEmpty()) cursor += PAD;
     }
@@ -1298,6 +1299,7 @@ public final class ChatToolsScreen extends UiScreen {
             .add(tools.loadingHomes() ? "Refreshing…" : "Refresh", "reset", Tone.GHOST, !tools.loadingHomes(), tools::refreshHomes)
             .add("New home", "plus", Tone.PRIMARY, true, this::newHome);
         timerRows(g, t);
+        tools.loadHomes();
         var homes = tools.homes();
         caption(g, t, "Your homes", homes.isEmpty() ? null : String.valueOf(homes.size()), null, null);
         if (homes.isEmpty()) emptyRow(g, t, tools.loadingHomes() ? "Finding your homes…" : "No homes found", "Create a home, or ask the server for its list.");

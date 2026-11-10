@@ -128,7 +128,8 @@ final class ChatToolsDataTest {
         assertEquals(List.of("Home base: awaiting server"), ChatCountdowns.lines(state.timers(1), List.of(), 1));
         state.message("Teleporting in 2 seconds", 10);
         assertEquals(List.of("Home base: teleport 1s"), ChatCountdowns.lines(state.timers(1_011), List.of(), 1_011));
-        assertEquals(List.of("Home base: awaiting server"), ChatCountdowns.lines(state.timers(2_010), List.of(), 2_010));
+        // The warmup running out is the teleport; with no cooldown length known, nothing is invented.
+        assertTrue(ChatCountdowns.lines(state.timers(2_010), List.of(), 2_010).isEmpty());
         state.message("You have been teleported home", 2_020);
         assertTrue(ChatCountdowns.lines(state.timers(2_021), List.of(), 2_021).isEmpty());
     }

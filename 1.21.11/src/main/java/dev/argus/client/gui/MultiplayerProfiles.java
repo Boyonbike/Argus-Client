@@ -9,9 +9,10 @@ import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 
-/** Meteor's default multiplayer placement, using Argus buttons and typography. */
+/** Account, proxy and profile buttons on the multiplayer screen, using Argus buttons and typography. */
 public final class MultiplayerProfiles {
     /**
      * Fabric fires AFTER_INIT twice when a screen is resized (once from the nested init, once from resize itself)
@@ -22,6 +23,8 @@ public final class MultiplayerProfiles {
     private static final int PAD = 4, SIZE = 20;
     private MultiplayerProfiles() {}
     public static void install(Minecraft client, Screen screen, int width, int height) {
+        // Catch an expired launcher token as soon as the game reaches its menus, not only once you open Multiplayer.
+        if (screen instanceof TitleScreen) { SessionRecovery.checkSoon(client); return; }
         if (!(screen instanceof JoinMultiplayerScreen)) return;
         var renderEvent = ScreenEvents.afterRender(screen);
         if (INSTALLED.get(screen) == renderEvent) return;

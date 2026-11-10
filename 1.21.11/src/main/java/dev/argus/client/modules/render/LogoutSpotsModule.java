@@ -3,6 +3,8 @@ package dev.argus.client.modules.render;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
+import net.minecraft.network.chat.Component;
+import dev.argus.client.utils.chat.ChatUtils;
 import dev.argus.client.ClientContext;
 import dev.argus.client.audio.BuiltinSound;
 import dev.argus.client.commands.FakeplayerCommand;
@@ -153,6 +155,10 @@ public class LogoutSpotsModule extends Module {
       }
    }
 
+   private void notifyChat(String message) {
+      ChatUtils.printChat(Component.literal(message), ChatUtils.moduleSignature(this), ChatUtils.MessagePriority.LOW);
+   }
+
    private static String getCurrentServerAddress() {
       return ServerAddressUtils.getCurrentServerAddress();
    }
@@ -279,7 +285,9 @@ public class LogoutSpotsModule extends Module {
             if (notify) {
                Boolean logoutNotification = this.logoutSetting.getValue();
                if (logoutNotification) {
-                  Boolean playSound = this.loginSoundSetting.getValue();
+                  Vec3 logoutPosition = snapshot.position();
+                  this.notifyChat(String.format(Locale.US, "%s logged out at %.0f, %.0f, %.0f.", capturedPlayerName, logoutPosition.x(), logoutPosition.y(), logoutPosition.z()));
+                  Boolean playSound = this.soundSetting.getValue();
                   if (playSound) {
                      SoundManager capturedSoundManager = ClientContext.soundManager;
                      NamedIdentifier configuredSoundPath = this.soundPathSetting.getValue();
@@ -544,6 +552,14 @@ public class LogoutSpotsModule extends Module {
                }
 
                String playerName = profileName;
+               // A saved spot means this player logged out near us earlier, so this is them logging back in.
+               if (this.getSpot(playerName) != null && this.notifySetting.getValue() && this.loginSetting.getValue()) {
+                  this.notifyChat("%s logged back in.".formatted(playerName));
+                  if (this.loginSoundSetting.getValue()) {
+                     ClientContext.soundManager.playSound(this.loginSoundPathSetting.getValue(), 1.0F);
+                  }
+               }
+
                this.removeSpot(playerName);
             });
          }
@@ -645,6 +661,9 @@ public class LogoutSpotsModule extends Module {
       this.distanceSetting.setBoundaryLabel("Unlimited", SettingLabelCondition.MAX);
       this.loginSoundSetting.setConfigName("LoginSoundPath");
       this.soundSetting.setConfigName("LogoutSoundPath");
+      // The two "Width" and two "Sound Path" settings used to share one saved key each, so one overwrote the other.
+      this.modelWidthSetting.setConfigName("ModelWidth");
+      this.loginSoundPathSetting.setConfigName("LoginSoundFile");
       this.setDrawn(false);
    }
 

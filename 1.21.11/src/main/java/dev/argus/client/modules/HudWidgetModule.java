@@ -63,6 +63,7 @@ public abstract class HudWidgetModule extends Module {
             this.renderer.setY(config.get("y").getAsFloat(), false);
          }
 
+         this.renderer.readLayout(config);
          ClientContext.getHudEditor().requestDirectionRefresh();
       }
    }
@@ -94,6 +95,7 @@ public abstract class HudWidgetModule extends Module {
          hudJson.addProperty("y", this.renderer.getRelativeY());
       }
 
+      this.renderer.writeLayout(hudJson);
       root.add("hud", hudJson);
       return root;
    }

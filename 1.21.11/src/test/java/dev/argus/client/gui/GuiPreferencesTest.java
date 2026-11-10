@@ -46,6 +46,30 @@ final class GuiPreferencesTest {
         var loaded=GuiPreferences.load(path); assertFalse(loaded.showGrid); assertEquals(12,loaded.gap);
         Files.writeString(path,"gap=999\n"); assertEquals(GuiPreferences.MAX_GAP,GuiPreferences.load(path).gap);
     }
+    @Test void hudGapIsSeparateFromWindowGapAndDefaultsOff() throws Exception {
+        var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
+        assertEquals(0,p.hudGap);
+        p.gap=10;p.save(path);
+        assertEquals(0,GuiPreferences.load(path).hudGap);
+        p.hudGap=8;p.save(path);
+        var loaded=GuiPreferences.load(path); assertEquals(10,loaded.gap); assertEquals(8,loaded.hudGap);
+        Files.writeString(path,"hudGap=999\n"); assertEquals(GuiPreferences.MAX_GAP,GuiPreferences.load(path).hudGap);
+        // The HUD gap moves in whole grid steps; an older in-between value rounds to the nearest one.
+        Files.writeString(path,"hudGap=6\n"); assertEquals(8,GuiPreferences.load(path).hudGap);
+        Files.writeString(path,"hudGap=5\n"); assertEquals(4,GuiPreferences.load(path).hudGap);
+    }
+    @Test void fitHudToGridDefaultsOnAndPersists() throws Exception {
+        var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
+        assertTrue(p.hudFitGrid);
+        p.hudFitGrid=false;p.save(path);
+        assertFalse(GuiPreferences.load(path).hudFitGrid);
+    }
+    @Test void hudSizesRoundUpToWholeGridSteps() {
+        assertEquals(7f,HudGrid.fit(5.2f,3.5f),1e-4);
+        assertEquals(7f,HudGrid.fit(7f,3.5f),1e-4);
+        assertEquals(10.5f,HudGrid.fit(7.01f,3.5f),1e-4);
+        assertEquals(0f,HudGrid.fit(0f,3.5f));
+    }
     @Test void savedColoursKeepAlphaAndOrder() throws Exception {
         var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
         p.savedColours.add(0x80FF0000);p.savedColours.add(0xFF00C0FF);p.save(path);

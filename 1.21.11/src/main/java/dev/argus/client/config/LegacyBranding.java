@@ -50,7 +50,7 @@ public final class LegacyBranding {
       }
 
       if (!switch (moduleName) {
-         case "Watermark", "Welcomer", "AutoSign", "BetterChat", "FeetPlace", "AutoFarm", "EntityControl" -> true;
+         case "Watermark", "Welcomer", "AutoSign", "BetterChat", "FeetPlace", "AutoFarm", "EntityControl", "UI" -> true;
          default -> false;
       }) {
          return input;
@@ -64,6 +64,13 @@ public final class LegacyBranding {
          case "AutoSign" -> {
             LegacyConfigRenamer.renameSettings(settings, "Line1", "Line2", "Line3", "Line4");
             LegacyConfigRenamer.updateSign(settings);
+         }
+         case "UI" -> {
+            // The default menu style used to be saved as "Meteor"; an unknown name would fall back to Plain.
+            JsonElement style = settings.get("Style");
+            if (style != null && style.isJsonPrimitive() && "Meteor".equalsIgnoreCase(style.getAsString())) {
+               settings.addProperty("Style", "Argus");
+            }
          }
          case "AutoFarm" -> {
             if (!settings.has("Frequency") && settings.has("BPT")) {

@@ -172,7 +172,7 @@ public class Panel implements RegistryContainer, GuiElement, NamedEntry {
 
    public int getHeaderHeight() {
       UIModule.StyleChoice var1 = this.getUiModule().styleSetting.getValue();
-      return var1 == UIModule.StyleChoice.METEOR ? 17 : (var1 == UIModule.StyleChoice.SLIM ? 12 : 14);
+      return var1 == UIModule.StyleChoice.ARGUS ? 17 : (var1 == UIModule.StyleChoice.SLIM ? 12 : 14);
    }
 
    @Override
@@ -261,7 +261,7 @@ public class Panel implements RegistryContainer, GuiElement, NamedEntry {
       this.headerAlphaAnimation.setTarget(var7 > 0.25F || this.isMouseOverHeader(var2, var4), 200L);
       float var8 = this.getUiModule().lineSetting.getValue() ? 0.0F : 0.5F;
       GuiDrawUtils.fillRect(var1, this.x, this.y, this.x + this.getWidth(), this.y + this.getHeaderHeight() + var8, this.applyHeaderAlpha(var6));
-      boolean var9 = this.getUiModule().styleSetting.getValue() == UIModule.StyleChoice.METEOR;
+      boolean var9 = this.getUiModule().styleSetting.getValue() == UIModule.StyleChoice.ARGUS;
       FontRenderer.INSTANCE
          .drawWithShadow(
             var1,

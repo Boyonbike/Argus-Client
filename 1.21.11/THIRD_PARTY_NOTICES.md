@@ -33,3 +33,47 @@ changes are part of Argus Client.
 
 This notice and the full CC0 text are included inside the built client JAR
 under `THIRD_PARTY_NOTICES.md` and `licenses/VolytraFly-CC0.txt`.
+
+## DEVILS Auto Wasp
+
+- **Project:** DEVILS
+- **Authors:** ThianYong-hub and DEVILS contributors
+- **Source:** <https://github.com/ThianYong-hub/DEVILS>, revision `2440a168c3ba6f051f2adf8249a8e6fb5f3a5b02`
+- **Also based on:** Meteor Client, Copyright (c) Meteor Development,
+  <https://github.com/MeteorDevelopment/meteor-client>
+- **Licence:** GNU GPL version 3 only (GPL-3.0-only)
+- **Full licence text:** [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt)
+
+The **AutoWasp** module (`AutoWaspModule.java`, the `modules/movement/autowasp`
+package and `mixin/AutoWaspFireworkAccessor.java`) is adapted from DEVILS' Auto
+Wasp by way of the Comet add-on. Boyonabike modified it for Comet on 22-23
+October 2026 (boost ramps, setback handling, server-glide wall guard, target
+prediction, chest swapping and a time-budgeted path search) and ported it to
+Argus Client on 10 November 2026, replacing the Meteor settings, events,
+friends, chat and rotation calls with Argus's own. Each file carries its own
+provenance notice.
+
+These files are covered by GPL-3.0-only. A client JAR that contains them is a
+combined work, so distributing that JAR means distributing it as a whole under
+GPL-3.0-only, together with its corresponding source.
+
+This notice and the full GPL text are included inside the built client JAR
+under `THIRD_PARTY_NOTICES.md` and `licenses/GPL-3.0.txt`.
+
+## Meteor Client tooltip previews
+
+- **Project:** Meteor Client
+- **Authors:** Meteor Development and contributors
+- **Source:** <https://github.com/MeteorDevelopment/meteor-client>
+- **Licence:** GNU GPL version 3 (GPL-3.0)
+- **Full licence text:** [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt)
+
+The **Tooltips** module's ender chest, book, banner and bucket-mob previews,
+its food and status-effect lines, the key-held display mode and the rebindable
+open key are ported from Meteor Client's BetterTooltips module. They were
+rewritten for Argus's settings, events and Mojang-mapped rendering calls on
+10 November 2026 (`TooltipsModule.java`, `BookTooltipComponent.java`,
+`BannerTooltipComponent.java`, `EntityTooltipComponent.java` and
+`BookPreviewScreen.java`). These parts are covered by GPL-3.0 on the same
+terms as the AutoWasp files above.
+

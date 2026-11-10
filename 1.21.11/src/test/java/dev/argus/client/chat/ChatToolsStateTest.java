@@ -12,8 +12,8 @@ final class ChatToolsStateTest {
         assertEquals("Home base: awaiting server", state.timers(1_000).getFirst().label(1_000));
         state.message("Teleportation will commence in 5 seconds. Don't move.", 1_100);
         assertEquals("Home base: teleport 4s", state.timers(2_101).getFirst().label(2_101));
-        assertEquals("Home base: awaiting server", state.timers(6_100).getFirst().label(6_100));
-        assertTrue(state.timers(21_100).isEmpty());
+        // The warmup ran out, so the teleport happened; no cooldown length is known, so none is shown.
+        assertTrue(state.timers(6_100).isEmpty());
     }
 
     @Test void futureTeleportIsNotMistakenForCompletion() {

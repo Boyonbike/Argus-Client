@@ -469,6 +469,7 @@ public class TextRadarModule extends HudWidgetModule {
       this.botsSetting = this.add(ignoreBotsSetting.dependsOn(this.ignoreSetting));
       this.radarPlayers = new ArrayList<>();
       ResizableHudWidgetRenderer widget = new ResizableHudWidgetRenderer(this);
+      widget.markAlignsContent();
       widget.enableHudScale();
       this.setRenderer(widget);
    }

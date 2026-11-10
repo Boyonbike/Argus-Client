@@ -224,7 +224,7 @@ public class NewGrimElytraFlyHandler extends ElytraFlyModeHandler {
       KeyMapping leftKey = ClientAccess.argusclientMinecraft.options.keyLeft;
       KeyMapping sneakKey = ClientAccess.argusclientMinecraft.options.keyShift;
       KeyMapping jumpKey = ClientAccess.argusclientMinecraft.options.keyJump;
-      return forwardKey.isDown() || backwardKey.isDown() || rightKey.isDown() || leftKey.isDown() || sneakKey.isDown() || jumpKey.isDown();
+      return PlayerMovementKeys.isDown(forwardKey) || PlayerMovementKeys.isDown(backwardKey) || PlayerMovementKeys.isDown(rightKey) || PlayerMovementKeys.isDown(leftKey) || PlayerMovementKeys.isDown(sneakKey) || PlayerMovementKeys.isDown(jumpKey);
    }
 
    public static void bindModuleReferences(ModuleRegistry registry) {

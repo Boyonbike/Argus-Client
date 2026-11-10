@@ -150,8 +150,8 @@ public class BoostElytraFlyHandler extends ElytraFlyModeHandler {
 
                if (this.module.factorizeSetting.getValue()
                   ? !(this.targetPitch > 0.0F)
-                  : !ClientAccess.argusclientMinecraft.options.keyUp.isDown() && !this.module.alwaysSetting.getValue()) {
-                  if (ClientAccess.argusclientMinecraft.options.keyDown.isDown()) {
+                  : !PlayerMovementKeys.isDown(ClientAccess.argusclientMinecraft.options.keyUp) && !this.module.alwaysSetting.getValue()) {
+                  if (PlayerMovementKeys.isDown(ClientAccess.argusclientMinecraft.options.keyDown)) {
                      motionPlayer = ClientAccess.argusclientMinecraft.player;
                      double backwardYawForSine = movementYawRadians;
                      double backwardX = Mth.sin(backwardYawForSine) * boostMagnitude;

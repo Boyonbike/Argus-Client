@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.gui.GuiElement;
+import dev.argus.client.gui.HudGrid;
 import dev.argus.client.modules.client.HUDModule;
 import dev.argus.client.settings.options.HudAnchor;
 import java.util.ArrayList;
@@ -62,6 +63,10 @@ public class HudAnchorGroup implements ClientAccess, GuiElement {
             size = new float[2];
          } else {
             size = widget.calculateDimensions();
+            // Sizes round up to whole grid steps, so elements line up and stacks space evenly on the grid.
+            float fitW = HudGrid.fit(size[0]), fitH = HudGrid.fit(size[1]);
+            widget.setGridPad(fitW - size[0], fitH - size[1]);
+            size = new float[]{fitW, fitH};
          }
 
          widget.setDimensions(size);
@@ -74,7 +79,11 @@ public class HudAnchorGroup implements ClientAccess, GuiElement {
          this.prepareWidgetRender(enabledProgress);
          if (visible) {
             RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, enabledProgress);
+            float shiftX = widget.contentShiftX(), shiftY = widget.contentShiftY();
+            poseStack.pushPose();
+            poseStack.translate(shiftX, shiftY, 0.0F);
             widget.render(poseStack, mouseX, mouseY);
+            poseStack.popPose();
             this.prepareWidgetRender(enabledProgress);
             if (!HudWidgetRenderer.renderingHud) {
                RenderUtils.getEntityBuffers().endBatch(ClientRenderTypes.guiTriangles());

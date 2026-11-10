@@ -71,3 +71,5 @@ accessible	field	net/minecraft/client/renderer/rendertype/RenderSetup	textureTra
 accessible	field	net/minecraft/client/renderer/rendertype/RenderSetup	sortOnUpload	Z
 accessible	field	net/minecraft/client/renderer/rendertype/RenderSetup	bufferSize	I
 accessible	method	net/minecraft/client/renderer/rendertype/RenderSetup	<init>	(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Ljava/util/Map;ZZLnet/minecraft/client/renderer/rendertype/LayeringTransform;Lnet/minecraft/client/renderer/rendertype/OutputTarget;Lnet/minecraft/client/renderer/rendertype/TextureTransform;Lnet/minecraft/client/renderer/rendertype/RenderSetup$OutlineProperty;ZZI)V
+accessible	field	net/minecraft/world/item/MobBucketItem	type	Lnet/minecraft/world/entity/EntityType;
+accessible	field	net/minecraft/world/entity/Entity	wasTouchingWater	Z

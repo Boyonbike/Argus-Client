@@ -33,6 +33,7 @@ import dev.argus.client.modules.hud.ModuleListModule;
 import dev.argus.client.modules.hud.MusicModule;
 import dev.argus.client.modules.hud.PlayerModelModule;
 import dev.argus.client.modules.hud.PositionModule;
+import dev.argus.client.modules.hud.CoordsModule;
 import dev.argus.client.modules.hud.TextRadarModule;
 import dev.argus.client.modules.hud.TotemsModule;
 import dev.argus.client.modules.hud.WatermarkModule;
@@ -64,6 +65,7 @@ public final class HudModuleRegistry implements ClientAccess, JsonConfigurable {
       ClientContext.moduleRegistry.registerModule(new EffectsModule());
       ClientContext.moduleRegistry.registerModule(new WelcomerModule());
       ClientContext.moduleRegistry.registerModule(new PositionModule());
+      ClientContext.moduleRegistry.registerModule(new CoordsModule());
       ClientContext.moduleRegistry.registerModule(new DirectionModule());
       ClientContext.moduleRegistry.registerModule(new TextRadarModule());
       ClientContext.moduleRegistry.registerModule(new MetricsModule());

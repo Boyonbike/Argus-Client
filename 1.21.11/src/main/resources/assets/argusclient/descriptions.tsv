@@ -1338,7 +1338,8 @@ LogoutSpots	Distance	Maximum distance to render logout spots.
 LogoutSpots	Model	Model style used for logout spots.
 LogoutSpots	Textured	Use the player's skin on the model.
 LogoutSpots	Alpha	Opacity of the textured player model.
-LogoutSpots	Width	Outline width of the rendered model.
+LogoutSpots	ModelWidth	Outline width of the rendered model.
+LogoutSpots	Width	Width of the tracer line.
 LogoutSpots	Tracer	Draw a line to each logout spot.
 LogoutSpots	NameTag	Show a label above each logout spot.
 LogoutSpots	TextScale	Size of the name tag text.
@@ -1349,7 +1350,8 @@ LogoutSpots	Totems	Show the totem pop count on the name tag.
 LogoutSpots	Notify	Send chat notifications for logout spots.
 LogoutSpots	Login	Notify when a saved player logs back in.
 LogoutSpots	LoginSoundPath	Play a sound when a player logs back in.
-LogoutSpots	Sound Path	Sound played for logout spot notifications.
+LogoutSpots	LoginSoundFile	Sound played when a player logs back in.
+LogoutSpots	Sound Path	Sound played when a player logs out.
 LogoutSpots	Logout	Notify when a player logs out.
 LogoutSpots	LogoutSoundPath	Play a sound when a player logs out.
 LogoutSpots	ModelFill	Fill color for the complex logout model.
@@ -1728,13 +1730,27 @@ RotationLock	PitchValue	Pitch angle used by the rotation lock.
 RotationLock	Range	Maximum distance for finding a target to lock.
 RotationLock	DisableRange	Releases the lock when the target is within this distance.
 Tooltips	Colored	Tints tooltip backgrounds based on shulker colors.
-Tooltips	MajorityItem	Highlights the most common item in container previews.
+Tooltips	Previews	What tooltips preview: shulkers, bundles, ender chests, maps, books, banners and more.
+Tooltips	Details	Extra lines added to item tooltips.
+Tooltips	ShulkerIcons	A small item drawn over shulker boxes in inventories.
+Tooltips	Overlay	Draws the most common item inside, or a matching combo icon, over each shulker box.
+Tooltips	IconScale	Size of the shulker overlay relative to the slot.
+Tooltips	IconCorner	Where the overlay sits on the shulker.
 Tooltips	KeepText	Keeps the vanilla tooltip text alongside previews.
 Tooltips	ShulkerContent	Shows shulker box contents in tooltips.
 Tooltips	BundleContent	Shows bundle contents in tooltips.
 Tooltips	BeeNest	Shows bee nest occupant details in tooltips.
 Tooltips	MapOverlay	Shows the map overlay hint in tooltips.
 Tooltips	Size	Shows the item's serialized size in tooltips.
+Tooltips	Display	Shows previews always, or only while the preview key is held.
+Tooltips	PreviewKey	The key to hold for previews when Display is KeyHeld.
+Tooltips	OpenKey	The key or mouse button that opens a hovered shulker, ender chest or book.
+Tooltips	EnderChest	Shows your ender chest's contents on ender chest items, once you have opened it.
+Tooltips	Books	Shows the first page of books in tooltips.
+Tooltips	Banners	Shows the design of banners, shields and banner patterns in tooltips.
+Tooltips	BucketEntities	Shows the mob inside a bucket in tooltips.
+Tooltips	FoodInfo	Shows hunger and saturation values on food.
+Tooltips	StatusEffects	Lists the status effects an item gives when eaten or drunk.
 VoidESP	LineWidth	Thickness of the void block outlines.
 VoidESP	Height	Height of the rendered void columns.
 VoidESP	Radius	Radius around you where void blocks are found.
@@ -2083,4 +2099,71 @@ DiscordSync	Relay URL	Your clan's relay link (https://…). The relay holds the 
 DiscordSync	Apply to clan	Keeps the Chat Tools clan list in step with the linked players. Names you added by hand stay; names an earlier sync added are removed when Discord stops listing them.
 DiscordSync	Apply to Auto TPY	Keeps the Auto TPY whitelist in step with the linked players. The Auto TPY blocklist still wins.
 DiscordSync	Auto sync	Syncs once when the game starts, then this many hours apart while you play. 0 syncs only at game start and when you press Sync now.
-Chat Waiting		Shows what Chat Tools is waiting on you for: teleport requests, unread private messages and a Discord sync problem. Each line only appears while it applies.
+Chat Waiting		One line each for /home, /tpa and /hotspot: the warmup, then the cooldown until you can use it again, starting as soon as the teleport happens. Also incoming request timeouts, unread private messages and a Discord sync problem. Needs Chat Tools on. Each line only shows while it applies.
+Coords		Your X, Y and Z on lines of their own, with the matching Nether or Overworld spot. Each line can be moved on its own in the HUD editor.
+Coords	Labels	Shows X, Y and Z before each number.
+Coords	Decimals	Decimal places shown for each coordinate.
+Coords	Other dimension	Adds the matching spot in the Nether or Overworld.
+Coords	Dimension	Adds a line naming the dimension you are in.
+BlockCoat		Coats exposed terrain with blocks, with priority jump placement, scaffold strips and tunnel backfill.
+BlockCoat	Blocks	Blocks to coat, scaffold and jump-place with. Uses whichever listed block is in your hotbar or offhand.
+BlockCoat	Radius	Cube half-size: radius 5 scans an 11 x 11 x 11 block cube.
+BlockCoat	BPT	Maximum surrounding placement attempts per tick.
+BlockCoat	Reach	Maximum eye-to-face distance, also capped by your interaction range.
+BlockCoat	Surfaces	Exposed terrain faces to coat.
+BlockCoat	AutoSwitch	Sticky holds the block while placing and switches back after a second idle. Silent switches to it and back for every placement (two extra packets each). Normal leaves it selected. Disabled only places from your hands.
+BlockCoat	Order	Order reachable targets, including retries, by distance.
+BlockCoat	Rotate	Rotate toward the support face before interacting. Turn off only to test whether the server needs it.
+BlockCoat	RetryDelay	Ticks before retrying a rejected placement.
+BlockCoat	ConfirmTimeout	Ticks to wait for a server block update before treating an attempt as rejected.
+BlockCoat	PauseItems	Pause all placement and automatic switching while a listed item is held in either hand. Clear the list to disable.
+BlockCoat	PauseTimeout	Seconds before resuming while a pause item is still held. Zero pauses until you switch away.
+BlockCoat	PauseResetOnUse	Restart the pause timeout whenever a listed item is used.
+BlockCoat	ConservativeTNT	Save TNT by skipping placements whose terrain an estimated blast already covers. Jump, scaffold and liquid filling are unchanged.
+BlockCoat	LiquidFiller	Replace isolated water source blocks with TNT. Skips sources touching another source. Only applies while coating with TNT.
+BlockCoat	Scaffold	Build a strip below your movement while still coating surfaces. Disabled during flight.
+BlockCoat	ScaffoldWidth	Strip width in blocks.
+BlockCoat	TunnelBackfill	Coat only behind you. The jump support is exempt.
+BlockCoat	TunnelDirection	Movement follows your actual travel and input; Facing uses your look direction.
+BlockCoat	PreserveCorridors	Keep your lane and two blocks ahead open in one- or two-wide passages, then coat behind you.
+BlockCoat	RespectTNTClearance	Do not immediately replace TNT you mine as an opening; release it after you pass through or a timeout.
+BlockCoat	CoatWhileFlying	Allow coating during flight or airborne movement outside a jump.
+BlockCoat	ExternalFlight	Manually mark another mod's flight as active, including ground spoofing.
+BlockCoat	SmartJump	Place a supported block beneath you during a jump, ahead of everything else.
+BlockCoat	CorrectionCooldown	Ticks to pause after the server corrects your position.
+BlockCoat	Render	Render valid placements in green and pending confirmations in amber.
+BlockCoat	RenderRejected	Also render a sample of rejected targets in red.
+BlockCoat	ServerPacing	Advanced limits on how fast placements are sent.
+BlockCoat	ServerMode	Adaptive learns from server confirmations; Conservative sends one interaction per tick; Fast uses BPT directly.
+BlockCoat	RateCap	Maximum interactions per tick in Adaptive mode.
+BlockCoat	MaxPending	Maximum unconfirmed interactions in Adaptive mode.
+BlockCoat	ContainerSupports	Sneak-use chests and other interactive blocks as supports. Disable if the server rejects these placements.
+BlockCoat	NarrowGaps	Experimental edge sampling for gaps around chests and partial blocks.
+BlockCoat	PacketLimit	Skip placements that would push your packets in the last second above this. ViaVersion's default sustained limit is 200.
+BlockCoat	ExtraRotations	Allow more than one rotated placement per tick. Each one sends its own rotation packet.
+AutoWasp		Follows a target with elytra using obstacle-aware routing.
+AutoWasp	HorizontalMax	Fastest horizontal speed in blocks per second, boosted to along VolytraFly's curve from 60 b/s. The default 240 is the fastest a vanilla server never sets back; up to 300 is faster but set back whenever lag bunches two move packets into one tick.
+AutoWasp	VerticalMax	Fastest climb or descent in blocks per second. Each climb or descent boosts from 30 b/s.
+AutoWasp	Max3D	Fastest total speed while climbing or descending, and for half a second after. Keep it below HorizontalMax.
+AutoWasp	AvoidLanding	Try to avoid landing if your target is on the ground.
+AutoWasp	PredictMovement	Lead the target by its recent movement over your ping, and match its speed when flying straight at it.
+AutoWasp	OnlyFriends	Only follow friends.
+AutoWasp	FriendFilter	When on: OnlyFriends follows friends only, otherwise non-friends only. When off: OnlyFriends alone decides.
+AutoWasp	OnTargetLoss	What to do if you lose the target.
+AutoWasp	KeepSearching	Stay enabled and keep looking for a target instead of disabling when none is loaded.
+AutoWasp	OffsetX	Blocks east (+) or west (-) of the target to wasp at.
+AutoWasp	OffsetY	Blocks above (+) or below (-) the target to wasp at.
+AutoWasp	OffsetZ	Blocks south (+) or north (-) of the target to wasp at.
+AutoWasp	MinDistance	Blocks to hold from the target horizontally, so you can place end crystals instead of ramming it. 0 disables.
+AutoWasp	ChestSwap	Equip a chestplate near the target on stable ground, and an elytra for pursuit, replacing an elytra with 1 durability left. Pauses in containers and with an item on the cursor.
+AutoWasp	SwapHorizontalRange	Maximum horizontal distance to the target before swapping off elytra.
+AutoWasp	SwapVerticalRange	Maximum vertical difference to the target before swapping off elytra.
+AutoWasp	SwapGroundDistance	Only swap off elytra when solid ground is this close below you.
+AutoWasp	SwapHysteresis	Once the chestplate is on, every swap range is this many blocks wider before the elytra goes back on, so you are not swapped back and forth.
+AutoWasp	SpeedRamp	Advanced boost and setback tuning.
+AutoWasp	RampStep	Horizontal boost acceleration in blocks per tick squared, tapering to zero at 300 b/s. The default boosts from 60 to 240 b/s in about 3.5 seconds.
+AutoWasp	SetbackRewind	A server setback rewinds the boost by this many ticks of acceleration instead of restarting it.
+AutoWasp	SetbackHold	Ticks to hold the rewound speed after a setback before accelerating again.
+AutoWasp	PinnedGlide	When two setbacks in a row return you to the same spot, glide with vanilla physics for this many ticks so the server accepts a move. 0 disables.
+AutoWasp	GlideGuard	Keep walls out of reach of the server's own hidden elytra glide, which is what deals fly-into-wall damage.
+AutoWasp	SteerGlide	Near a wall, report a level heading away from it so the server's hidden glide turns away. Your camera does not move; others see your head turned.

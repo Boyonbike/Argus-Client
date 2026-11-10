@@ -76,7 +76,8 @@ public class MetricsModule extends HudWidgetModule {
 
    @Override
    public void onEnable() {
-      this.metricRows.clear();
+      // Built once: the rows keep their identity so lines moved on their own in the HUD editor stay put.
+      if (!this.metricRows.isEmpty()) return;
       List<HudTextRow> rowsForRegistration = this.metricRows;
       HudTextRow speedRow = new HudTextRow(() -> {
          Setting<Boolean> bpsOptionForSuffix = this.bpsSetting;
@@ -146,6 +147,8 @@ public class MetricsModule extends HudWidgetModule {
          String text = format.formatted(formatArguments);
          return Component.literal(text);
       }, this.shulkersSetting::getValue);
+      speedRow.withKey("speed"); tpsRow.withKey("tps"); pingRow.withKey("ping"); fpsRow.withKey("fps");
+      serverBrandRow.withKey("brand"); durabilityRow.withKey("durability"); chestRow.withKey("chests"); shulkerRow.withKey("shulkers");
       rowsForRegistration.addAll(List.of(speedRow, tpsRow, pingRow, fpsRow, serverBrandRow, durabilityRow, chestRow, shulkerRow));
    }
 
@@ -220,7 +223,7 @@ public class MetricsModule extends HudWidgetModule {
 
    public MetricsModule() {
       super("Metrics", createAliases());
-      this.setRenderer(new HudTextListRenderer(this, this.metricRows));
+      this.setRenderer(new HudTextListRenderer(this, this.metricRows).splittable());
       this.getRenderer().setAnchor(HudAnchor.BOTTOM_RIGHT);
    }
 }

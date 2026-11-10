@@ -30,6 +30,9 @@ public abstract class HudWidgetRenderer implements ClientAccess, GuiElement {
    private int verticalDirection;
    private float[] dimensions = new float[2];
    private boolean selected;
+   /** Room added to round the size up to the grid, and whether the renderer already places content by direction. */
+   private float gridPadX, gridPadY;
+   private boolean alignsContent;
    private long hoverStartMillis;
 
    @Override
@@ -133,11 +136,16 @@ public abstract class HudWidgetRenderer implements ClientAccess, GuiElement {
             ClientScreen.cursor = CursorType.POINTER;
          }
 
-         float x = this.getX();
-         float y = this.getY();
+         float x = this.getX() - this.contentShiftX();
+         float y = this.getY() - this.contentShiftY();
          float editorScale = RenderUtils.getRenderColor()[3] / 255.0F;
          float backgroundAlpha = ClientContext.getHudEditor().getTransitionOpacity() * editorScale * editorBackgroundColor.getAlpha() / 255.0F;
-         GuiDrawUtils.fillRect(poses, x, y, x + Math.max(size[0], 4.0F), y + Math.max(size[1], 4.0F), ColorUtils.toArgb(editorBackgroundColor, backgroundAlpha));
+         // The pose may be shifted for the grid's room (see HudAnchorGroup); the backing stays on the element's box.
+         float shiftX = this.contentShiftX(), shiftY = this.contentShiftY();
+         for (float[] raw : this.editorAreas()) {
+            float[] area = {raw[0] - shiftX, raw[1] - shiftY, raw[2], raw[3]};
+            GuiDrawUtils.fillRect(poses, area[0], area[1], area[0] + Math.max(area[2], 4.0F), area[1] + Math.max(area[3], 4.0F), ColorUtils.toArgb(editorBackgroundColor, backgroundAlpha));
+         }
          float selectionProgress = this.selectionAnimation.getValue();
          if (selectionProgress > 0.0F) {
             GuiDrawUtils.drawRectOutline(
@@ -154,6 +162,44 @@ public abstract class HudWidgetRenderer implements ClientAccess, GuiElement {
             GuiDrawUtils.flush();
          }
       }
+   }
+
+   /** Sets the room added to this element's size to round it up to the grid (see HudGrid). */
+   public void setGridPad(float x, float y) {
+      this.gridPadX = x;
+      this.gridPadY = y;
+   }
+
+   /**
+    * Marks a renderer that lays its content out against the element's size and direction (getContentX/Y), so the
+    * grid's extra room already lands on the side away from the screen edge.
+    */
+   public HudWidgetRenderer markAlignsContent() {
+      this.alignsContent = true;
+      return this;
+   }
+
+   /** How far content drawn from the top-left corner is moved so it keeps hugging its screen edge despite the grid room. */
+   public float contentShiftX() {
+      return this.alignsContent || this.getHorizontalDirection() != -1 ? 0.0F : this.gridPadX;
+   }
+
+   public float contentShiftY() {
+      return this.alignsContent || this.getVerticalDirection() != -1 ? 0.0F : this.gridPadY;
+   }
+
+   /** The editor's dark backing, {x, y, w, h} in GUI coordinates: the whole element unless it is split into pieces. */
+   protected java.util.List<float[]> editorAreas() {
+      float[] size = this.getDimensions();
+      return java.util.List.of(new float[]{this.getX(), this.getY(), size[0], size[1]});
+   }
+
+   /** Saves layout beyond position (such as lines moved on their own) into the element's "hud" object. */
+   public void writeLayout(com.google.gson.JsonObject hud) {
+   }
+
+   /** Restores what {@link #writeLayout} saved; called for every loaded element, with or without it. */
+   public void readLayout(com.google.gson.JsonObject hud) {
    }
 
    public void setAnchor(HudAnchor anchor) {

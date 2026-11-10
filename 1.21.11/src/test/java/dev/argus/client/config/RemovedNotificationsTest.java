@@ -72,6 +72,17 @@ final class RemovedNotificationsTest {
         assertSame(input, LegacyBranding.migrateModule("ChestStealer", input));
     }
 
+    /** The default menu style was saved as "Meteor"; without the rename it would silently fall back to Plain. */
+    @Test void oldMeteorMenuStyleBecomesArgus() {
+        JsonObject input = new JsonObject();
+        JsonObject settings = new JsonObject();
+        settings.addProperty("Style", "Meteor");
+        input.add("settings", settings);
+        assertEquals("Argus", LegacyBranding.migrateModule("UI", input).getAsJsonObject().getAsJsonObject("settings").get("Style").getAsString());
+        settings.addProperty("Style", "Slim");
+        assertEquals("Slim", LegacyBranding.migrateModule("UI", input).getAsJsonObject().getAsJsonObject("settings").get("Style").getAsString());
+    }
+
     /** These cases lost their old-branding rewrites; they must keep settings, not throw and abort config loading. */
     @Test void rebrandedModulesKeepTheirSettings() {
         for (String module : List.of("Watermark", "Welcomer", "AutoSign")) {

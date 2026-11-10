@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /** Teleport lifecycle, followed by a server-reported or explicitly estimated cooldown. */
 public final class ChatTeleportState {
-    public enum Kind { Home, TPA }
+    public enum Kind { Home, TPA, Hotspot }
     public enum Phase { Waiting, Request, Teleport, Cooldown }
     public record Timer(Kind kind, Phase phase, String target, long deadline, long expires, boolean estimated) {
         public Timer(Kind kind, Phase phase, String target, long deadline, long expires) {
@@ -24,6 +24,16 @@ public final class ChatTeleportState {
                 case Request -> "Request pending " + time;
                 default -> "Teleporting in " + time;
             };
+        }
+        /** The HUD line: the kind only, never the home or player, e.g. "Home cooldown 25s" or "TPA teleport in 4s". */
+        public String hud(long now) {
+            if (deadline == 0) return kind + ": waiting for server";
+            String time = (estimated ? "~" : "") + remaining(deadline - now);
+            return kind + switch (phase) {
+                case Cooldown -> " cooldown ";
+                case Request -> " request ";
+                default -> " teleport in ";
+            } + time;
         }
         public String label(long now) {
             String title = kind + (target.isEmpty() ? "" : " " + target);
@@ -54,6 +64,10 @@ public final class ChatTeleportState {
     /** What may separate the parts of one compound duration, as in "9m 35s" or "1 minute and 5 seconds". */
     private static final Pattern DURATION_JOIN = Pattern.compile("\\s*(?:,|and)?\\s*");
     private static final Pattern HOME_WORD = Pattern.compile("\\b(?:home|homes|homecancel)\\b");
+    private static final Pattern HOTSPOT_WORD = Pattern.compile("\\bhotspots?\\b");
+    /** /hotspot subcommands that manage or describe a hotspot rather than travel to one. */
+    private static final java.util.Set<String> HOTSPOT_MANAGE = java.util.Set.of("info", "kill", "create", "cancel", "name",
+        "color", "colour", "glow", "balloon", "balloons", "notify", "help", "list");
     private static final Pattern TPA_WORD = Pattern.compile("\\b(?:tpa|tpahere|tpaccept|tpacancel|teleport request|teleportation request)\\b");
     private static final Pattern COOLDOWN_CUE = Pattern.compile("cooldown|\\bwait\\b|can use|can teleport again|cannot teleport|can't teleport");
     // "Teleporting to: base" is 6b6t's line for the moment a home teleport happens; its warmup line has no colon.
@@ -66,6 +80,8 @@ public final class ChatTeleportState {
     private final EnumMap<Kind, Timer> timers = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Operation> operations = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Completed> completed = new EnumMap<>(Kind.class);
+    /** When a warmup ran out with no reply and was taken as the teleport, so a late failure line can undo it. */
+    private final EnumMap<Kind, Long> autoCompleted = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Long> announcedCooldowns = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Long> learnedCooldowns = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Long> configuredCooldowns = new EnumMap<>(Kind.class);
@@ -81,7 +97,7 @@ public final class ChatTeleportState {
 
     /** Session reset removes learned durations so one server never teaches another server's cooldown. */
     public void clear() {
-        timers.clear(); operations.clear(); completed.clear(); announcedCooldowns.clear(); learnedCooldowns.clear(); manualCooldowns.clear();
+        timers.clear(); operations.clear(); completed.clear(); autoCompleted.clear(); announcedCooldowns.clear(); learnedCooldowns.clear(); manualCooldowns.clear();
         lastKind = null;
     }
 
@@ -93,6 +109,7 @@ public final class ChatTeleportState {
         String verb = lower.substring(lower.lastIndexOf(':') + 1);
         if (verb.equals("homecancel")) { stopOperation(Kind.Home); return; }
         if (verb.equals("tpacancel") || verb.equals("tpcancel")) { stopOperation(Kind.TPA); return; }
+        if (verb.equals("hotspot") && tokens.length > 1 && HOTSPOT_MANAGE.contains(tokens[1].toLowerCase(Locale.ROOT))) return;
         if (verb.equals("tpdeny") || verb.equals("tpn") || verb.equals("tpno")) {
             var operation = operations.get(Kind.TPA);
             if (operation != null && tokens.length > 1 && operation.target().equalsIgnoreCase(tokens[1])) stopOperation(Kind.TPA);
@@ -101,6 +118,7 @@ public final class ChatTeleportState {
         Kind kind = switch (verb) {
             case "home" -> Kind.Home;
             case "tpa", "tpahere", "tpaccept", "tpyes", "tpy" -> Kind.TPA;
+            case "hotspot" -> Kind.Hotspot;
             default -> null;
         };
         if (kind == null) return;
@@ -108,6 +126,7 @@ public final class ChatTeleportState {
         String target = tokens.length > 1 ? tokens[1] : "";
         operations.put(kind, new Operation(target, now));
         announcedCooldowns.remove(kind);
+        autoCompleted.remove(kind);
         // A retry must not erase a cooldown while waiting for the server to accept or reject that retry.
         Timer previous = timers.get(kind);
         if (previous == null || previous.phase() != Phase.Cooldown)
@@ -120,15 +139,16 @@ public final class ChatTeleportState {
         String text = ChatSender.plain(raw).toLowerCase(Locale.ROOT);
         boolean home = HOME_WORD.matcher(text).find();
         boolean tpa = TPA_WORD.matcher(text).find();
+        boolean hotspot = HOTSPOT_WORD.matcher(text).find();
         boolean cooldownText = COOLDOWN_CUE.matcher(text).find();
         boolean genericCooldown = text.contains("cooldown") || text.contains("wait") && (text.contains("command") || text.contains("again") || text.contains("before"));
-        if (!home && !tpa && !text.contains("teleport") && !(genericCooldown && now - lastContextAt < 5_000)) return;
-        Kind kind = home ? Kind.Home : tpa ? Kind.TPA : lastKind;
+        if (!home && !tpa && !hotspot && !text.contains("teleport") && !(genericCooldown && now - lastContextAt < 5_000)) return;
+        Kind kind = home ? Kind.Home : tpa ? Kind.TPA : hotspot ? Kind.Hotspot : lastKind;
         Timer previous = timers.get(kind);
         Operation operation = operations.get(kind);
         Completed success = completed.get(kind);
         if (previous == null && operation == null && (success == null || now - success.at() > 120_000)) return;
-        if (home || tpa) { lastKind = kind; lastContextAt = now; }
+        if (home || tpa || hotspot) { lastKind = kind; lastContextAt = now; }
 
         boolean request = text.contains("expir") || text.contains("time out") || text.contains("timeout");
         boolean warmup = text.contains("teleporting") || text.contains("commenc") || text.contains("teleport in")
@@ -155,6 +175,12 @@ public final class ChatTeleportState {
         }
 
         if (failed) {
+            Long auto = autoCompleted.remove(kind);
+            if (cooldown == null && auto != null && now - auto <= 5_000 && previous != null && previous.phase() == Phase.Cooldown && previous.estimated()) {
+                // The warmup ran out just before the server said the teleport failed: it never happened.
+                timers.remove(kind); completed.remove(kind);
+                return;
+            }
             if (cooldown != null) reportCooldown(kind, cooldown.millis(), now);
             else stopOperation(kind);
             return;
@@ -188,6 +214,24 @@ public final class ChatTeleportState {
             if (timer != null && operation != null && timer.phase() == Phase.Teleport && now >= timer.deadline() - 2_000)
                 complete(kind, operation, null, now);
         }
+    }
+
+    /**
+     * The player was moved a long way, as a teleport does. The most recent home, TPA or hotspot still waiting on the
+     * server (or at the end of its warmup) is taken as done, so its cooldown starts the moment the teleport happens.
+     */
+    public void teleported(long now) {
+        expire(now);
+        Kind latest = null;
+        long latestAt = Long.MIN_VALUE;
+        for (Kind kind : Kind.values()) {
+            Timer timer = timers.get(kind);
+            Operation operation = operations.get(kind);
+            if (timer == null || operation == null || now - operation.refreshedAt() > 120_000) continue;
+            boolean ready = timer.phase() == Phase.Waiting || timer.phase() == Phase.Teleport && now >= timer.deadline() - 2_000;
+            if (ready && operation.refreshedAt() >= latestAt) { latest = kind; latestAt = operation.refreshedAt(); }
+        }
+        if (latest != null) complete(latest, operations.get(latest), null, now);
     }
 
     private void complete(Kind kind, Operation operation, Duration cooldown, long now) {
@@ -259,6 +303,15 @@ public final class ChatTeleportState {
     }
 
     private void expire(long now) {
+        // A warmup that runs out without a failure is the teleport: start the cooldown then, not on a later line.
+        for (Kind kind : Kind.values()) {
+            Timer timer = timers.get(kind);
+            Operation operation = operations.get(kind);
+            if (timer != null && operation != null && timer.phase() == Phase.Teleport && timer.deadline() > 0 && now >= timer.deadline()) {
+                complete(kind, operation, null, timer.deadline());
+                autoCompleted.put(kind, timer.deadline());
+            }
+        }
         timers.values().removeIf(timer -> now >= timer.expires());
         for (Kind kind : Kind.values()) {
             Operation operation = operations.get(kind);
@@ -308,11 +361,7 @@ public final class ChatTeleportState {
     public List<Timer> timers(long now) {
         expire(now);
         List<Timer> result = new ArrayList<>();
-        for (Timer timer : timers.values()) {
-            // Reaching zero is not evidence that the server actually teleported the player.
-            result.add(timer.deadline() > 0 && now >= timer.deadline() && timer.phase() == Phase.Teleport
-                ? new Timer(timer.kind(), Phase.Waiting, timer.target(), 0, timer.expires()) : timer);
-        }
+        result.addAll(timers.values());
         return result;
     }
 

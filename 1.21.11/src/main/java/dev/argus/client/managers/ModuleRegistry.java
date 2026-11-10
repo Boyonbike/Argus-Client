@@ -24,6 +24,7 @@ import dev.argus.client.modules.client.HUDModule;
 import dev.argus.client.modules.client.NotificationsModule;
 import dev.argus.client.modules.client.SettingsModule;
 import dev.argus.client.modules.client.UIModule;
+import dev.argus.client.modules.combat.AimAssistModule;
 import dev.argus.client.modules.combat.AnchorAuraModule;
 import dev.argus.client.modules.combat.AntiBotModule;
 import dev.argus.client.modules.combat.AntiFeetPlaceModule;
@@ -50,6 +51,7 @@ import dev.argus.client.modules.combat.FeetPlaceModule;
 import dev.argus.client.modules.combat.FishTrapModule;
 import dev.argus.client.modules.combat.HoleFillModule;
 import dev.argus.client.modules.combat.KeyPearlModule;
+import dev.argus.client.modules.combat.LegacyCrystalModule;
 import dev.argus.client.modules.combat.MainhandModule;
 import dev.argus.client.modules.combat.NoHitDelayModule;
 import dev.argus.client.modules.combat.OffhandModule;
@@ -58,6 +60,7 @@ import dev.argus.client.modules.combat.PusherModule;
 import dev.argus.client.modules.combat.SelfFillModule;
 import dev.argus.client.modules.combat.SelfTrapModule;
 import dev.argus.client.modules.combat.SelfWebModule;
+import dev.argus.client.modules.combat.TriggerModule;
 import dev.argus.client.modules.combat.WebAuraModule;
 import dev.argus.client.modules.exploit.AntiHungerModule;
 import dev.argus.client.modules.exploit.AntiVanishModule;
@@ -107,6 +110,7 @@ import dev.argus.client.modules.misc.StashFinderModule;
 import dev.argus.client.modules.misc.SwingModule;
 import dev.argus.client.modules.misc.VisualRangeModule;
 import dev.argus.client.modules.movement.AutoWalkModule;
+import dev.argus.client.modules.movement.AutoWaspModule;
 import dev.argus.client.modules.movement.AvoidModule;
 import dev.argus.client.modules.movement.ElytraFlyModule;
 import dev.argus.client.modules.movement.EntityControlModule;
@@ -143,6 +147,7 @@ import dev.argus.client.modules.player.AutoTameModule;
 import dev.argus.client.modules.player.AutoTemplateModule;
 import dev.argus.client.modules.player.AutoToolModule;
 import dev.argus.client.modules.player.AutoTradeModule;
+import dev.argus.client.modules.player.BlockCoatModule;
 import dev.argus.client.modules.player.ChestStealerModule;
 import dev.argus.client.modules.player.FastPlaceModule;
 import dev.argus.client.modules.player.FreecamModule;
@@ -231,6 +236,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
    public ModuleRegistry() {
       ClientAccess.eventBus.subscribe(this);
+      if (!this.registerModule(new AimAssistModule())) {
+         throw new IllegalStateException("Registration rejected AimAssistModule");
+      }
+
       if (!this.registerModule(new AmbienceModule())) {
          throw new IllegalStateException("Registration rejected AmbienceModule");
       }
@@ -411,6 +420,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected AutoWalkModule");
       }
 
+      if (!this.registerModule(new AutoWaspModule())) {
+         throw new IllegalStateException("Registration rejected AutoWaspModule");
+      }
+
       if (!this.registerModule(new BedAuraModule())) {
          throw new IllegalStateException("Registration rejected BedAuraModule");
       }
@@ -421,6 +434,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new BlockerModule())) {
          throw new IllegalStateException("Registration rejected BlockerModule");
+      }
+
+      if (!this.registerModule(new BlockCoatModule())) {
+         throw new IllegalStateException("Registration rejected BlockCoatModule");
       }
 
       if (!this.registerModule(new BlurModule())) {
@@ -637,6 +654,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new KillEffectsModule())) {
          throw new IllegalStateException("Registration rejected KillEffectsModule");
+      }
+
+      if (!this.registerModule(new LegacyCrystalModule())) {
+         throw new IllegalStateException("Registration rejected LegacyCrystalModule");
       }
 
       if (!this.registerModule(new LogoutSpotsModule())) {
@@ -887,6 +908,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected TridentModule");
       }
 
+      if (!this.registerModule(new TriggerModule())) {
+         throw new IllegalStateException("Registration rejected TriggerModule");
+      }
+
       if (!this.registerModule(new TunnelsModule())) {
          throw new IllegalStateException("Registration rejected TunnelsModule");
       }
@@ -1032,7 +1057,8 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
                int bindingCode = keybindForCodeCheck.code();
                if (bindingCode == inputEvent.getCode()) {
                   Keybind keybindForModeCheck = module.getKeybind();
-                  if (keybindForModeCheck.mode() == Keybind.Mode.TOGGLE) {
+                  if (keybindForModeCheck.mode() == Keybind.Mode.TOGGLE
+                     && !(module.isToggled() && module.claimsKeyPress(inputEvent.getCode(), inputEvent.isMouse()))) {
                      module.toggle();
                   }
                }

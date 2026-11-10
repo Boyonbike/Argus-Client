@@ -228,7 +228,7 @@ public class ModuleComponent extends AbstractComponent implements CloseState {
          );
       }
 
-      boolean var10 = this.getUiModule().styleSetting.getValue() == UIModule.StyleChoice.METEOR;
+      boolean var10 = this.getUiModule().styleSetting.getValue() == UIModule.StyleChoice.ARGUS;
       if (var10 && var7 > 0.01F) {
          GuiDrawUtils.fillRect(
             var1,

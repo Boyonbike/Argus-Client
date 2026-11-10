@@ -43,7 +43,7 @@ public final class UIModule extends Module {
    public static UIModule INSTANCE;
    private final AtomicBoolean panelResetPending = new AtomicBoolean(false);
    private final Setting<Boolean> resetSetting = this.add(new BooleanSetting("Reset", true));
-   public final Setting<UIModule.StyleChoice> styleSetting = this.add(new EnumSetting<>("Style", UIModule.StyleChoice.METEOR));
+   public final Setting<UIModule.StyleChoice> styleSetting = this.add(new EnumSetting<>("Style", UIModule.StyleChoice.ARGUS));
    public final Setting<Float> animSpeedSetting = this.add(new NumberSetting<>("AnimSpeed", 1.0F, 0.5F, 2.5F));
    public final Setting<Float> scaleSetting = this.add(new NumberSetting<>("Scale", 1.0F, 0.1F, 2.0F));
    public final Setting<Boolean> snowSetting = this.add(new BooleanSetting("Snow", true));
@@ -323,16 +323,16 @@ public final class UIModule extends Module {
    public enum StyleChoice implements NamedEntry {
       PLAIN("Plain"),
       SLIM("Slim"),
-      METEOR("Meteor");
+      ARGUS("Argus");
 
       private final String displayName;
 
       public int getHeightPadding() {
-         return this == SLIM ? 3 : (this == METEOR ? 5 : 4);
+         return this == SLIM ? 3 : (this == ARGUS ? 5 : 4);
       }
 
       public int getWidthPadding() {
-         return this == SLIM ? 4 : (this == METEOR ? 14 : 7);
+         return this == SLIM ? 4 : (this == ARGUS ? 14 : 7);
       }
 
       @Override

@@ -235,6 +235,7 @@ public abstract class GameRendererMixin {
          float savedPitch = cameraEntity.getXRot();
          float savedPreviousYaw = cameraEntity.yRotO;
          float savedPreviousPitch = cameraEntity.xRotO;
+         float savedHeadYaw = cameraEntity.getYHeadRot();
          cameraEntity.xo = freecam.previousCameraPosition.x;
          cameraEntity.yo = freecam.previousCameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose());
          cameraEntity.zo = freecam.previousCameraPosition.z;
@@ -261,6 +262,7 @@ public abstract class GameRendererMixin {
          cameraEntity.yo = savedPreviousY;
          cameraEntity.zo = savedPreviousZ;
          cameraEntity.setYRot(savedYaw);
+         cameraEntity.setYHeadRot(savedHeadYaw);
          cameraEntity.setXRot(savedPitch);
          cameraEntity.yRotO = savedPreviousYaw;
          cameraEntity.xRotO = savedPreviousPitch;

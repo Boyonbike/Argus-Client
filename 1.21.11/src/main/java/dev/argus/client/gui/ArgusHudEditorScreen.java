@@ -7,6 +7,8 @@ import dev.argus.client.modules.HudWidgetModule;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.client.HUDModule;
 import dev.argus.client.modules.client.UIModule;
+import dev.argus.client.modules.hud.HudTextListRenderer;
+import dev.argus.client.modules.hud.HudTextRow;
 import dev.argus.client.render.HudAnchorGroup;
 import dev.argus.client.render.HudHorizontalAlignment;
 import dev.argus.client.render.HudVerticalAlignment;
@@ -16,8 +18,12 @@ import dev.argus.client.settings.options.HudAnchor;
 import dev.argus.client.utils.math.FloatBounds;
 import dev.argus.client.gui.HudSafeZones.Side;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -77,6 +83,21 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     private HudHorizontalAlignment settleH = HudHorizontalAlignment.FREE;
     private HudVerticalAlignment settleV = HudVerticalAlignment.FREE;
 
+    // Selection, like the Modules page: a box picks elements, and dragging a picked one moves them all.
+    private final Set<HudWidgetRenderer> picked = new LinkedHashSet<>();
+    private Set<HudWidgetRenderer> pickedBefore = Set.of();
+    private boolean boxing;
+    private float boxX0, boxY0, boxX1, boxY1;
+    /** The picked elements being dragged together, with where each started (logical units). */
+    private final Map<HudWidgetRenderer, float[]> groupStart = new LinkedHashMap<>();
+    private HudWidgetRenderer groupLead;
+    private float pressX, pressY;
+
+    // One line of a multi-line element being moved on its own.
+    private HudTextListRenderer lineOwner;
+    private HudTextRow line;
+    private float lineGrabX, lineGrabY;
+
     // Safe-zone edge under the pointer, and the one being dragged.
     private HudSafeZones.Side edgeHover, edgeDrag;
 
@@ -102,12 +123,13 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         Minecraft.getInstance().setScreen(this);
     }
 
+    private static boolean shiftDown() { return dev.argus.client.utils.KeyUtils.isPhysicalKeyDown(340) || dev.argus.client.utils.KeyUtils.isPhysicalKeyDown(344); }
     private HudEditorScreenAccessor base() { return (HudEditorScreenAccessor) (Object) this; }
     private float lw() { return viewport.width(); }
     private float lh() { return viewport.height(); }
     private float logical(double raw) { return (float) viewport.toLogical(raw); }
     private float raw(float logical) { return logical * viewport.renderScale(); }
-    private boolean busy() { return dragged != null || edgeDrag != null || base().argus$isDraggingWidget(); }
+    private boolean busy() { return dragged != null || edgeDrag != null || boxing || lineOwner != null || !groupStart.isEmpty() || base().argus$isDraggingWidget(); }
     private static HUDModule hud() { return ClientContext.getModule(HUDModule.class); }
 
     @Override protected void init() {
@@ -216,6 +238,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     @Override public void render(GuiGraphics g, int rawX, int rawY, float delta) {
         settle();
+        syncSelection();
         super.render(g, rawX, rawY, delta);
         UiAnim.frame();
         UiDraw.density = (float) (viewport.renderScale() * minecraft.getWindow().getGuiScale());
@@ -230,6 +253,11 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             drawGrid(g, t);
             drawZones(g, t);
             elementFrames(g, rawX, rawY, t);
+            if (boxing) {
+                float bx = Math.min(boxX0, boxX1), by = Math.min(boxY0, boxY1), bw = Math.abs(boxX1 - boxX0), bh = Math.abs(boxY1 - boxY0);
+                UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(t.accent(), .08f));
+                UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(t.accent(), .7f));
+            }
             toolbar(g, mouseX, mouseY, t);
             panel(g, mouseX, mouseY, t);
             hints(g, t);
@@ -247,7 +275,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
      */
     private void drawGrid(GuiGraphics g, UiTheme theme) {
         var p = GuiState.preferences();
-        boolean active = dragged != null || draggingPanel || edgeDrag != null;
+        boolean active = dragged != null || draggingPanel || edgeDrag != null || lineOwner != null || !groupStart.isEmpty();
         gridFade = UiAnim.approach(gridFade, active && p.showGrid ? 1 : 0, active ? 12 : 8);
         if (gridFade <= .01f) return;
         UiDraw.rect(g, 0, 0, lw(), lh(), UiDraw.alpha(0xff000000, .28f * gridFade));
@@ -309,8 +337,23 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         HudSafeZones.set(edgeDrag, (int) Math.round(raw((float) Math.max(0, distance))));
     }
 
-    /** Accent frame on the hovered element, plus the landing spot of the one being dragged. */
+    /** Accent frame on the hovered element (or line), the picked ones, and the landing spot of the one being dragged. */
     private void elementFrames(GuiGraphics g, int rawX, int rawY, UiTheme t) {
+        for (HudWidgetRenderer widget : picked) {
+            if (widget == dragged) continue;
+            float[] b = bounds(widget);
+            UiDraw.rounded(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, UiDraw.alpha(t.accent(), .1f));
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, t.accent());
+        }
+        if (lineOwner != null) {
+            for (var drawn : lineOwner.lines()) if (drawn.row() == line) {
+                UiDraw.outline(g, logical(drawn.x()) - 2, logical(drawn.y()) - 2, logical(drawn.w()) + 4, logical(drawn.h()) + 4, 3, 1, t.accent());
+            }
+            float[] stack = lineOwner.stackBounds();
+            if (stack != null) UiDraw.outline(g, logical(stack[0]) - 2, logical(stack[1]) - 2, logical(stack[2]) + 4, logical(stack[3]) + 4, 3, .6f, UiDraw.alpha(t.accent(), .45f));
+            return;
+        }
+        if (!groupStart.isEmpty() || boxing) return;
         if (dragged != null) {
             float[] b = bounds(dragged);
             if (Math.abs(targetX - b[0]) > .5f || Math.abs(targetY - b[1]) > .5f) {
@@ -324,6 +367,14 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (overUi(mouseX, mouseY) || base().argus$isDraggingWidget() || edgeDrag != null) return;
         HudWidgetRenderer hovered = widgetAt(rawX, rawY);
         if (hovered == null) { edgeHover = edgeAt(mouseX, mouseY); return; }
+        if (!picked.contains(hovered) && hovered instanceof HudTextListRenderer list && list.isSplittable()) {
+            // An unpicked multi-line element moves line by line: frame just the line under the pointer.
+            var under = list.lineAt(rawX, rawY);
+            if (under != null) {
+                UiDraw.outline(g, logical(under.x()) - 2, logical(under.y()) - 2, logical(under.w()) + 4, logical(under.h()) + 4, 3, 1, UiDraw.alpha(t.accent(), .7f));
+                return;
+            }
+        }
         float[] b = bounds(hovered);
         UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), .7f));
     }
@@ -489,16 +540,20 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             UiDraw.icon(g, "sliders", gx, cy - 4, 8, gearHover ? t.text() : t.muted());
             UiRender.opacity = before;
             if (gearHover) tooltip(key + ".gear", GuiState.title(module.getName()) + " settings", "Or right-click the element on screen");
-            else if (hover) tooltip(key, GuiState.title(module.getName()), module.isToggled() ? "Click to remove it from your screen" : "Click to add it to your screen");
+            else if (hover) tooltip(key, GuiState.title(module.getName()), module.isToggled() ? "Click to select it on screen · the switch removes it" : "Click to add it to your screen");
         }
     }
 
     private void hints(GuiGraphics g, UiTheme t) {
         var p = GuiState.preferences();
         String text = edgeDrag != null ? "Drag to set the " + sideName(edgeDrag).toLowerCase(Locale.ROOT) + " safe zone · each edge has its own"
-                : dragged != null ? (p.snap ? "Snaps to the grid" + (p.gap > 0 ? " · keeps a " + p.gap + " gap" : "") : "Snapping is off in Appearance") + " · drop in a corner to stack"
+                : boxing ? "Drag over elements to select them · Shift adds to the selection"
+                : lineOwner != null ? "Moves just this line · drop it on the rest of the element to put it back"
+                : !groupStart.isEmpty() ? (p.snap ? "Moving " + groupStart.size() + " elements together on the grid" : "Moving " + groupStart.size() + " elements together")
+                : dragged != null ? (p.snap ? "Snaps to the grid" + (p.hudGap > 0 ? " · keeps a " + p.hudGap + " gap" : "") : "Snapping is off in Appearance") + " · drop in a corner to stack"
                 : !hud().isToggled() ? "The HUD is off, so nothing shows in game · switch it on in the toolbar"
-                : "Drag to move · Right-click for settings · Del to remove · Arrows nudge · Drag a screen edge to set its safe zone";
+                : !picked.isEmpty() ? picked.size() + " selected · drag to move together · Del removes · Arrows nudge · Esc clears"
+                : "Drag to move · Drag empty space to select · Lines move on their own · R restacks · Right-click for settings · Drag an edge for its safe zone";
         text = UiDraw.fit(text, lw() - 40, UiDraw.SMALL);
         float w = UiDraw.width(text, UiDraw.SMALL) + 20, h = 16, x = (lw() - w) / 2, y = lh() - h - 8;
         UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(t.mantle(), .78f));
@@ -576,7 +631,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             float[] o = bounds(other);
             others.add(new HudGap.Rect(Math.round(o[0]), Math.round(o[1]), Math.round(o[2]), Math.round(o[3])));
         }
-        return HudGap.resolve(x, y, w, h, others, GuiState.preferences().gap,
+        return HudGap.resolve(x, y, w, h, others, GuiState.preferences().hudGap,
                 (int) Math.ceil(m[0]), (int) Math.floor(m[1]), (int) Math.ceil(m[2]), (int) Math.floor(m[3]));
     }
 
@@ -650,6 +705,168 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         return x < ox + ow && x + w > ox && y < oy + oh && y + h > oy;
     }
 
+    // ---- selection and moving several elements, or one line --------------------------------------
+
+    /** Drops elements that left the screen from the selection, and shows the base editor's outline on picked ones. */
+    private void syncSelection() {
+        picked.removeIf(widget -> !widget.isEnabled());
+        for (HudWidgetRenderer widget : widgets()) widget.setSelected(picked.contains(widget) || widget == dragged);
+    }
+
+    /** Selects one element's renderer, as when it is switched on or picked in the Elements panel. */
+    private void select(HudWidgetModule module, boolean add) {
+        if (!add) picked.clear();
+        if (module.getRenderer() != null && module.isToggled()) picked.add(module.getRenderer());
+    }
+
+    /** Takes an element out of its corner stack where it is now, so it can be moved freely. */
+    private void free(HudWidgetRenderer widget) {
+        if (settling == widget) settling = null;
+        HudAnchor from = widget.getAnchor();
+        if (from != HudAnchor.NONE) {
+            float x = widget.getX(), y = widget.getY();
+            HudAnchorGroup group = getAnchorGroup(from);
+            if (group != null) group.getWidgets().remove(widget);
+            getAnchorGroup(HudAnchor.NONE).getWidgets().addLast(widget);
+            widget.setAnchor(HudAnchor.NONE);
+            widget.setX(x, true); widget.setY(y, true);
+        }
+        widget.resetSnapping();
+    }
+
+    private void boxTo(double x, double y) {
+        boxX1 = (float) x; boxY1 = (float) y;
+        float left = Math.min(boxX0, boxX1), right = Math.max(boxX0, boxX1), top = Math.min(boxY0, boxY1), bottom = Math.max(boxY0, boxY1);
+        picked.clear(); picked.addAll(pickedBefore);
+        for (HudWidgetRenderer widget : widgets()) {
+            if (!widget.isEnabled()) continue;
+            float[] b = bounds(widget);
+            if (b[0] < right && b[0] + b[2] > left && b[1] < bottom && b[1] + b[3] > top) picked.add(widget);
+        }
+    }
+
+    private void beginGroupDrag(HudWidgetRenderer lead, double lx, double ly) {
+        settling = null;
+        groupStart.clear();
+        for (HudWidgetRenderer widget : picked) {
+            free(widget);
+            float[] b = bounds(widget);
+            groupStart.put(widget, new float[]{b[0], b[1]});
+        }
+        groupLead = lead;
+        pressX = (float) lx; pressY = (float) ly;
+    }
+
+    /** Moves the picked elements by the pointer's travel: the grabbed one snaps to the grid and the rest keep their places around it. */
+    private void groupDragTo(double lx, double ly) {
+        float moveX = (float) lx - pressX, moveY = (float) ly - pressY;
+        float minX = -Float.MAX_VALUE, maxX = Float.MAX_VALUE, minY = -Float.MAX_VALUE, maxY = Float.MAX_VALUE;
+        float ux0 = Float.MAX_VALUE, uy0 = Float.MAX_VALUE, ux1 = -Float.MAX_VALUE, uy1 = -Float.MAX_VALUE;
+        for (var entry : groupStart.entrySet()) {
+            float[] start = entry.getValue(), b = bounds(entry.getKey()), m = limits(b[2], b[3]);
+            minX = Math.max(minX, m[0] - start[0]); maxX = Math.min(maxX, m[1] - start[0]);
+            minY = Math.max(minY, m[2] - start[1]); maxY = Math.min(maxY, m[3] - start[1]);
+            ux0 = Math.min(ux0, start[0]); uy0 = Math.min(uy0, start[1]);
+            ux1 = Math.max(ux1, start[0] + b[2]); uy1 = Math.max(uy1, start[1] + b[3]);
+        }
+        if (maxX < minX) maxX = minX;
+        if (maxY < minY) maxY = minY;
+        moveX = Math.clamp(moveX, minX, maxX); moveY = Math.clamp(moveY, minY, maxY);
+        float[] lead = groupStart.get(groupLead);
+        float dx = moveX, dy = moveY;
+        if (GuiState.preferences().snap && lead != null) {
+            dx = Math.round((lead[0] + moveX) / GRID) * GRID - lead[0];
+            dy = Math.round((lead[1] + moveY) / GRID) * GRID - lead[1];
+            dx = Math.clamp(dx, minX, maxX); dy = Math.clamp(dy, minY, maxY);
+        }
+        // The HUD gap applies to the group as a whole, against everything not being moved.
+        int gap = GuiState.preferences().hudGap;
+        if (gap > 0) {
+            List<HudGap.Rect> others = new ArrayList<>();
+            for (HudWidgetRenderer other : widgets()) {
+                if (groupStart.containsKey(other) || !other.isEnabled()) continue;
+                float[] o = bounds(other);
+                others.add(new HudGap.Rect(Math.round(o[0]), Math.round(o[1]), Math.round(o[2]), Math.round(o[3])));
+            }
+            int w = Math.round(ux1 - ux0), h = Math.round(uy1 - uy0);
+            int[] spot = HudGap.resolve(Math.round(ux0 + dx), Math.round(uy0 + dy), w, h, others, gap,
+                    (int) Math.ceil(ux0 + minX), (int) Math.floor(ux0 + maxX), (int) Math.ceil(uy0 + minY), (int) Math.floor(uy0 + maxY));
+            dx = spot[0] - ux0; dy = spot[1] - uy0;
+        }
+        for (var entry : groupStart.entrySet()) place(entry.getKey(), entry.getValue()[0] + dx, entry.getValue()[1] + dy);
+    }
+
+    private void endGroupDrag() {
+        for (HudWidgetRenderer widget : groupStart.keySet()) {
+            float[] b = bounds(widget);
+            widget.setHorizontalAlignment(horizontalAt(b[0], b[2]));
+            widget.setVerticalAlignment(verticalAt(b[1], b[3]));
+        }
+        groupStart.clear();
+        groupLead = null;
+        requestDirectionRefresh();
+    }
+
+    private void beginLineDrag(HudTextListRenderer owner, HudTextListRenderer.Line grabbed, double lx, double ly) {
+        settling = null;
+        free(owner);
+        lineOwner = owner;
+        line = grabbed.row();
+        lineGrabX = (float) lx - logical(grabbed.x());
+        lineGrabY = (float) ly - logical(grabbed.y());
+    }
+
+    private HudTextListRenderer.Line currentLine() {
+        for (var drawn : lineOwner.lines()) if (drawn.row() == line) return drawn;
+        return null;
+    }
+
+    /** Moves the grabbed line on the grid, keeping the HUD gap from other elements and from its own element's pieces. */
+    private void lineDragTo(double lx, double ly) {
+        var drawn = currentLine();
+        float w = drawn != null ? logical(drawn.w()) : 24, h = drawn != null ? logical(drawn.h()) : 8;
+        float[] m = limits(w, h);
+        int tx = Math.round(Math.clamp((float) lx - lineGrabX, m[0], m[1])), ty = Math.round(Math.clamp((float) ly - lineGrabY, m[2], m[3]));
+        if (GuiState.preferences().snap) { tx = Math.round(tx / (float) GRID) * GRID; ty = Math.round(ty / (float) GRID) * GRID; }
+        int gap = GuiState.preferences().hudGap;
+        if (gap > 0) {
+            List<HudGap.Rect> others = new ArrayList<>();
+            for (HudWidgetRenderer other : widgets()) {
+                if (other == lineOwner || !other.isEnabled()) continue;
+                float[] o = bounds(other);
+                others.add(new HudGap.Rect(Math.round(o[0]), Math.round(o[1]), Math.round(o[2]), Math.round(o[3])));
+            }
+            for (var piece : lineOwner.lines()) {
+                if (piece.row() == line || !piece.free()) continue;
+                others.add(new HudGap.Rect(Math.round(logical(piece.x())), Math.round(logical(piece.y())), Math.round(logical(piece.w())), Math.round(logical(piece.h()))));
+            }
+            float[] stack = lineOwner.stackBounds();
+            if (stack != null && drawn != null && drawn.free())
+                others.add(new HudGap.Rect(Math.round(logical(stack[0])), Math.round(logical(stack[1])), Math.round(logical(stack[2])), Math.round(logical(stack[3]))));
+            int[] spot = HudGap.resolve(tx, ty, Math.round(w), Math.round(h), others, gap,
+                    (int) Math.ceil(m[0]), (int) Math.floor(m[1]), (int) Math.ceil(m[2]), (int) Math.floor(m[3]));
+            tx = spot[0]; ty = spot[1];
+        }
+        lineOwner.moveLine(line, raw(tx), raw(ty));
+        lineOwner.updateDirections();
+    }
+
+    /** Drops the line; over the rest of its element's stack, it goes back in. */
+    private void endLineDrag() {
+        var drawn = currentLine();
+        float[] stack = lineOwner.stackBounds();
+        if (drawn != null && drawn.free() && stack != null
+                && drawn.x() < stack[0] + stack[2] && drawn.x() + drawn.w() > stack[0] && drawn.y() < stack[1] + stack[3] && drawn.y() + drawn.h() > stack[1]) {
+            lineOwner.dockLine(line);
+        }
+        float[] b = bounds(lineOwner);
+        lineOwner.setHorizontalAlignment(horizontalAt(b[0], b[2]));
+        lineOwner.setVerticalAlignment(verticalAt(b[1], b[3]));
+        lineOwner = null;
+        line = null;
+        requestDirectionRefresh();
+    }
+
     /** Eases a dropped element into its snapped place, like a Modules window settling. */
     private void settle() {
         if (settling == null) return;
@@ -704,7 +921,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
-        if (isClosing() || dragged != null || edgeDrag != null) return false;
+        if (isClosing() || busy()) return false;
         double x = logical(event.x()), y = logical(event.y());
         int button = event.button();
         if (UIModule.INSTANCE != null) {
@@ -717,14 +934,35 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         }
         searchFocused = false;
         HudWidgetRenderer widget = widgetAt(event.x(), event.y());
+        boolean shift = (event.modifiers() & 1) != 0;
         if (widget != null && button == 1) { openSettings(widget.getWidgetModule()); return true; }
         if (widget != null && button == 0 && !(widget instanceof ResizableHudWidgetRenderer resizable && resizable.isResizeHandleHovered(event.x(), event.y()))) {
+            if (shift) {
+                // Shift-click adds an element to the selection, or takes it out.
+                if (!picked.remove(widget)) picked.add(widget);
+                return true;
+            }
+            if (picked.contains(widget) && picked.size() > 1) { beginGroupDrag(widget, x, y); return true; }
+            if (!picked.contains(widget)) {
+                picked.clear();
+                // A multi-line element that isn't selected moves one line at a time.
+                if (widget instanceof HudTextListRenderer list && list.isSplittable()) {
+                    var grabbed = list.lineAt(event.x(), event.y());
+                    if (grabbed != null) { beginLineDrag(list, grabbed, x, y); return true; }
+                }
+            }
             beginDrag(widget, x, y);
             return true;
         }
         if (widget == null && button == 0) {
             Side edge = edgeAt(x, y);
             if (edge != null) { edgeDrag = edge; dragEdge(x, y); return true; }
+            // Empty space: draw a selection box (Shift adds to the current selection).
+            if (!shift) picked.clear();
+            pickedBefore = Set.copyOf(picked);
+            boxing = true;
+            boxX0 = boxX1 = (float) x; boxY0 = boxY1 = (float) y;
+            return true;
         }
         if (widget == null && button == 1) {
             // Right-click an edge to clear that safe zone.
@@ -773,9 +1011,14 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             float ry = listTop + i * (ROW_H + ROW_GAP) - scroll, rx = x + 8, rw = PANEL_W - 16;
             if (!UiDraw.over(mx, my, rx, ry, rw, ROW_H)) continue;
             HudWidgetModule module = shown.get(i);
-            float gx = rx + rw - 24 - 15, cy = ry + ROW_H / 2;
+            float gx = rx + rw - 24 - 15, cy = ry + ROW_H / 2, tx = rx + rw - 24, ty = cy - 5;
             if (button == 1 || UiDraw.over(mx, my, gx - 2, cy - 6, 12, 12)) openSettings(module);
-            else module.toggle();
+            else if (UiDraw.over(mx, my, tx - 2, ty - 3, 22, 16)) {
+                // The switch adds or removes it; a newly added element starts selected, so its lines move together.
+                module.toggle();
+                if (module.isToggled()) select(module, false); else picked.remove(module.getRenderer());
+            } else if (!module.isToggled()) { module.toggle(); select(module, false); }
+            else select(module, shiftDown());
             return;
         }
     }
@@ -784,6 +1027,9 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         double x = logical(event.x()), y = logical(event.y());
         if (dragged != null) { dragTo(x, y); return true; }
         if (edgeDrag != null) { dragEdge(x, y); return true; }
+        if (boxing) { boxTo(x, y); return true; }
+        if (!groupStart.isEmpty()) { groupDragTo(x, y); return true; }
+        if (lineOwner != null) { lineDragTo(x, y); return true; }
         if (draggingPanel) {
             panelShownX = Math.clamp((float) x - panelGrabX, 10, panelMaxX());
             panelShownY = Math.clamp((float) y - panelGrabY, MIN_Y, panelMaxY());
@@ -798,6 +1044,9 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     @Override public boolean mouseReleased(MouseButtonEvent event) {
         if (dragged != null) { endDrag(); return true; }
         if (edgeDrag != null) { edgeDrag = null; requestDirectionRefresh(); return true; }
+        if (boxing) { boxing = false; return true; }
+        if (!groupStart.isEmpty()) { endGroupDrag(); return true; }
+        if (lineOwner != null) { endLineDrag(); return true; }
         if (draggingPanel) { draggingPanel = false; rememberPanel(); GuiState.save(); return true; }
         return super.mouseReleased(event);
     }
@@ -810,13 +1059,16 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     @Override public boolean keyPressed(KeyEvent event) {
         int key = event.key();
         boolean control = (event.modifiers() & 2) != 0;
-        if (dragged != null || edgeDrag != null) return true;
+        if (busy()) return true;
         if (control && key == 70) { if (panelHidden) setPanelHidden(false); searchFocused = true; return true; }
         if (searchFocused) {
             switch (key) {
                 case 256 -> searchFocused = false;
                 case 259 -> { if (!query.isEmpty()) query = control ? "" : query.substring(0, query.offsetByCodePoints(query.length(), -1)); scrollTarget = 0; }
-                case 257, 335 -> { refreshShown(); if (!shown.isEmpty()) shown.getFirst().toggle(); }
+                case 257, 335 -> {
+                    refreshShown();
+                    if (!shown.isEmpty()) { var first = shown.getFirst(); first.toggle(); if (first.isToggled()) select(first, false); }
+                }
                 default -> { }
             }
             return true;
@@ -829,7 +1081,41 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (overUi(mouseX, mouseY) && (key == 259 || key == 261 || key >= 262 && key <= 265)) return true;
         // I mirrors like the toolbar button (the base editor's version only swapped the corner stacks).
         if (key == 73 && !control) { mirror(); return true; }
+        // Esc clears the selection before it closes the editor.
+        if (key == 256 && !picked.isEmpty()) { picked.clear(); return true; }
+        // Ctrl+A selects everything on screen.
+        if (control && key == 65) { picked.clear(); for (HudWidgetRenderer widget : widgets()) if (widget.isEnabled()) picked.add(widget); return true; }
+        // Del removes the selection.
+        if ((key == 259 || key == 261) && !picked.isEmpty()) {
+            for (HudWidgetRenderer widget : List.copyOf(picked)) widget.getWidgetModule().setToggled(false);
+            picked.clear();
+            return true;
+        }
+        // R puts a moved line back, or (over the rest of an element) restacks all its lines.
+        if (key == 82 && !control) {
+            HudWidgetRenderer widget = widgetAt(raw(mouseX), raw(mouseY));
+            if (widget instanceof HudTextListRenderer list && list.isSplit()) {
+                var under = list.lineAt(raw(mouseX), raw(mouseY));
+                if (under != null && under.free()) list.dockLine(under.row()); else list.restack();
+                requestDirectionRefresh();
+            }
+            return true;
+        }
         // Arrow keys nudge by one grid step (one pixel with Shift), matching the snap grid.
+        if (key >= 262 && key <= 265 && !picked.isEmpty()) {
+            boolean fine = (event.modifiers() & 1) != 0 || !GuiState.preferences().snap;
+            float step = fine ? logical(1) : GRID;
+            float dx = key == 262 ? step : key == 263 ? -step : 0, dy = key == 264 ? step : key == 265 ? -step : 0;
+            for (HudWidgetRenderer widget : picked) {
+                free(widget);
+                float[] b = bounds(widget), m = limits(b[2], b[3]);
+                float nx = Math.clamp(b[0] + dx, m[0], m[1]), ny = Math.clamp(b[1] + dy, m[2], m[3]);
+                place(widget, nx, ny);
+                widget.setHorizontalAlignment(horizontalAt(nx, b[2]));
+                widget.setVerticalAlignment(verticalAt(ny, b[3]));
+            }
+            return true;
+        }
         if (key >= 262 && key <= 265) {
             HudWidgetRenderer widget = widgetAt(raw(mouseX), raw(mouseY));
             if (widget == null) return true;
@@ -861,6 +1147,11 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     @Override public void removed() {
         if (dragged != null) endDrag();
+        if (!groupStart.isEmpty()) endGroupDrag();
+        if (lineOwner != null) endLineDrag();
+        boxing = false;
+        picked.clear();
+        for (HudWidgetRenderer widget : widgets()) widget.setSelected(false);
         edgeDrag = null;
         if (draggingPanel) { draggingPanel = false; rememberPanel(); }
         searchFocused = false;

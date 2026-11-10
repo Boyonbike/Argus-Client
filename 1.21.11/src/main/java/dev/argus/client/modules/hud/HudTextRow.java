@@ -20,6 +20,17 @@ public class HudTextRow {
    private float visibility;
    private Component cachedText = Component.empty();
    public final InterpolatedFloat widthAnimation = new InterpolatedFloat(2.0F, true);
+   /** Stable name a moved line is saved under, for rows a module rebuilds or re-sorts; null saves by position. */
+   private String key;
+
+   public HudTextRow withKey(String key) {
+      this.key = key;
+      return this;
+   }
+
+   public String key() {
+      return this.key;
+   }
 
    public void updateVisibility() {
       int frameRate = ClientContext.frameTiming.getFramesPerSecond();

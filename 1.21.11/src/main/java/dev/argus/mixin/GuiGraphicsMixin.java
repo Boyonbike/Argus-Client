@@ -32,28 +32,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class GuiGraphicsMixin {
    @Unique
    private boolean renderingPreviewItemCount;
-   private static TooltipsModule tooltips = ClientContext.getModule(TooltipsModule.class);
 
    @Shadow
    public abstract void renderItemCount(Font var1, ItemStack var2, int var3, int var4, @Nullable String var5);
 
    @Shadow
    protected abstract Parameters createDefaultTextParameters(float var1);
-
-   @Inject(
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;renderItemBar(Lnet/minecraft/world/item/ItemStack;II)V"),
-      method = "renderItemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V"
-   )
-   private void renderContainerItemPreview(Font font, ItemStack stack, int x, int y, @Nullable String countText, CallbackInfo callback) {
-      if (tooltips.isToggled() && tooltips.majorityItemSetting.getValue()) {
-         for (ShulkerBoxItemPreview preview : tooltips.inventoryContainerSnapshots) {
-            if (preview.containerStack() == stack && preview.previewStack() != null) {
-               tooltips.renderItemPreview((GuiGraphics)(Object)this, preview.previewStack(), x, y);
-               break;
-            }
-         }
-      }
-   }
 
    @Inject(method = "renderItemCount", at = @At("HEAD"), cancellable = true)
    private void renderEmptyPreviewItemCount(Font font, ItemStack stack, int x, int y, String countText, CallbackInfo callback) {

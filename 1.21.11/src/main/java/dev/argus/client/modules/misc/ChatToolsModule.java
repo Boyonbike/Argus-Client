@@ -43,7 +43,7 @@ import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.settings.StringSetting;
 import dev.argus.client.settings.options.SocialRole;
-import dev.argus.client.utils.KeyUtils;
+import dev.argus.client.events.InputPressEvent;
 import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -72,6 +72,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket;
 import net.minecraft.network.protocol.game.ClientboundLoginPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
@@ -205,6 +206,7 @@ public final class ChatToolsModule extends Module {
     private String autoAccount;
     private long autoTick;
     private volatile int homeRequest;
+    private boolean homesRequested;
     private int nextHomeRequest = -1_400_000_000;
     private long homeRequestedAt;
     private ChatHomeEdit pendingHomeEdit;
@@ -218,7 +220,10 @@ public final class ChatToolsModule extends Module {
     private String cachedRoleData, cachedUsernameData;
     private Map<String, List<DiscordRoles.Role>> cachedRoles = Map.of();
     private Map<String, String> cachedUsernames = Map.of();
-    private boolean keyWasDown;
+    /** Set by a press of the window key and handled on the next tick, so even a tap shorter than a tick is caught. */
+    private boolean openRequested;
+    /** How far (squared, in blocks) the server must move the player for it to count as a teleport. */
+    private static final double TELEPORT_JUMP_SQ = 16 * 16;
     private Waiting waitingNow = new Waiting(0, 0, null);
 
     public ChatToolsModule() {
@@ -327,7 +332,10 @@ public final class ChatToolsModule extends Module {
     }
 
     @EventHandler private void onTick(MinecraftTickEvent event) {
-        pollOpenKey();
+        if (openRequested) {
+            openRequested = false;
+            if (mc.screen == null) openWindow(null);
+        }
         checkSession();
         applyCooldowns();
         waitingNow = computeWaiting();
@@ -349,11 +357,23 @@ public final class ChatToolsModule extends Module {
         if (store.dirty() && now() >= nextSave) saveNow();
     }
 
-    /** The window key works like any other bind: only in game, with no screen open. */
-    private void pollOpenKey() {
-        boolean down = !openKey.followsDefault() && KeyUtils.isPhysicallyDown(openKey.getValue());
-        if (down && !keyWasDown && mc.screen == null) openWindow(null);
-        keyWasDown = down;
+    /**
+     * The window key works like any other bind: only in game, with no screen open. It latches the press itself rather
+     * than polling whether the key is held once a tick, so a tap shorter than a tick still opens the window. Opening
+     * waits for the tick so the key's typed character can't land in the new window's text field.
+     */
+    @EventHandler private void onInputPress(InputPressEvent event) {
+        if (mc.screen == null && claimsKeyPress(event.getCode(), event.isMouse())) openRequested = true;
+    }
+
+    /**
+     * The window key. When the module's own bind is the same key, the press opens the window rather than switching the
+     * module off, which used to take a second press to undo.
+     */
+    @Override public boolean claimsKeyPress(int code, boolean mouse) {
+        if (openKey.followsDefault()) return false;
+        var key = openKey.getValue();
+        return key.mouse() == mouse && key.code() == code;
     }
 
     @EventHandler private void onDisconnect(MinecraftDisconnectEvent event) {
@@ -391,6 +411,7 @@ public final class ChatToolsModule extends Module {
         hotspotReadingUntil = 0;
         session = null;
         homeRequest = 0;
+        homesRequested = false;
         discoveredHomes.clear();
         suggestedHomes.clear();
         teleports.clear();
@@ -709,12 +730,18 @@ public final class ChatToolsModule extends Module {
         return ChatHomeNames.merge(suggestedHomes, discoveredHomes, extraHomes(), favoriteHomes());
     }
     public boolean loadingHomes() { return homeRequest != 0 && now() - homeRequestedAt < 5_000; }
+    /** Asks the server once per connection, so Homes is full however the window reached it, not only after a tab click. */
+    public void loadHomes() {
+        checkSession();
+        if (!homesRequested) refreshHomes();
+    }
     public void refreshHomes() {
         checkSession();
         var listener = mc.getConnection();
         if (listener == null || loadingHomes()) return;
         homeRequest = nextHomeRequest--;
         homeRequestedAt = now();
+        homesRequested = true;
         // A private transaction ID, so opening Homes never replaces chat's own tab-completion request.
         listener.send(new ServerboundCommandSuggestionPacket(homeRequest, "/home "));
     }
@@ -762,6 +789,10 @@ public final class ChatToolsModule extends Module {
     public List<ChatTeleportState.Timer> timers() { checkSession(); return teleports.timers(now()); }
     public List<ChatTpaRequests.Request> requests() { checkSession(); return incomingRequests.pending(now()); }
     public List<String> countdowns() { return ChatCountdowns.lines(timers(), requests(), now()); }
+    /** The HUD line for one teleport kind, or "" while none is running. */
+    public String countdown(ChatTeleportState.Kind kind) { return ChatCountdowns.hud(kind, timers(), now()); }
+    /** Incoming teleport requests as one HUD line, or "" with none. */
+    public String requestCountdown() { return ChatCountdowns.requests(requests(), now()); }
     public void requestTeleport(String player) {
         if (!ChatMessages.validName(player) || isSelf(player)) return;
         rememberPlayer(player);
@@ -798,7 +829,11 @@ public final class ChatToolsModule extends Module {
         checkSession();
         syncSavedCooldowns();
         return new CooldownLength(teleports.manual().get(kind), teleports.learned().get(kind),
-            (kind == ChatTeleportState.Kind.Home ? homeCooldown : tpaCooldown).getValue() * 1_000L);
+            switch (kind) {
+                case Home -> homeCooldown.getValue() * 1_000L;
+                case TPA -> tpaCooldown.getValue() * 1_000L;
+                case Hotspot -> 0L;
+            });
     }
     /** Pins a cooldown length for this server and account, or with null goes back to the learned one. */
     public void manualCooldown(ChatTeleportState.Kind kind, Long millis) {
@@ -1061,6 +1096,11 @@ public final class ChatToolsModule extends Module {
                 teleports.message(packet.text().getString(), now());
                 syncSavedCooldowns();
             });
+        } else if (event.getPacket() instanceof ClientboundPlayerPositionPacket packet) {
+            // A long jump is a teleport happening: it ends a pending /home, /tpa or /hotspot and starts its cooldown.
+            var player = mc.player;
+            if (player != null && packet.relatives().isEmpty() && packet.change().position().distanceToSqr(player.position()) >= TELEPORT_JUMP_SQ)
+                mc.execute(() -> { if (isToggled() && mc.getConnection() != null) { checkSession(); teleports.teleported(now()); } });
         } else if (event.getPacket() instanceof ClientboundLoginPacket) {
             // A login while already in a world is a network moving you to another of its servers. Read the world now,
             // before the login is handled and replaces it.

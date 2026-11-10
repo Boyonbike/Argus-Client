@@ -15,6 +15,7 @@
     "ChestStealerRekitMixin",
     "ImportedPresetMixin",
     "AccountSessionAccessor",
+    "HandshakeSessionRecoveryMixin",
     "ConnectionProxyMixin",
     "SmartElytraTakeoffMixin",
     "HUDModuleMixin",

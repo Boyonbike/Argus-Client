@@ -117,6 +117,15 @@ public class Module extends NamedFeature implements Toggleable, ClientAccess, Re
       return this.keybind;
    }
 
+   /**
+    * Whether a press of this key is the module's own action while it is on (for example a key that opens its window).
+    * The module's toggle bind is skipped for such a press, so sharing one key between the two can't switch the module
+    * off instead of doing the action.
+    */
+   public boolean claimsKeyPress(int code, boolean mouse) {
+      return false;
+   }
+
    public void onDisable() {
    }
 
