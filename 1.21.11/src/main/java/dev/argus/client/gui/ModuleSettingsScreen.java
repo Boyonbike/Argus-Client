@@ -24,7 +24,7 @@ final class ModuleSettingsScreen extends UiScreen {
             page.action("Rekit presets", "star", "Manage rekit presets and save your inventory",
                     () -> minecraft.setScreen(new RekitPresetsScreen(this, rekit)));
         if (module instanceof TooltipsModule icons)
-            page.action("Shulker icon combos", "star", "Choose which icon a shulker shows for specific contents (needs ShulkerIcons › Overlay)",
+            page.action("Shulker icon combos", "star", "Match shulkers by name or contents and edit their overlay icons (needs ShulkerIcons › Overlay)",
                     () -> minecraft.setScreen(new ShulkerCombosScreen(this, icons)));
         if (module instanceof ChatToolsModule tools)
             page.action("Open Social Menu", "people", "Messages, players, clan, homes, teleports and Auto TPY",

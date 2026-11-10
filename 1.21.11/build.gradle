@@ -108,7 +108,7 @@ tasks.register('verifyReleaseConfig') {
                 assert !name.endsWith('/gui.properties') : "Saved GUI preferences in release: ${name}"
             }
             def mixins = zip.getInputStream(zip.getEntry('argusclient.mixins.json')).text
-            assert !mixins.contains('LoadingOverlayMixin') : 'Removed loading overlay is still registered'
+            assert mixins.contains('"LoadingOverlayMixin"') : 'Argus loading logo mixin is missing'
             def metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
             assert metadata.jars : 'No nested libraries declared'
             metadata.jars.each { assert zip.getEntry(it.file) != null : "Declared nested library missing: ${it.file}" }

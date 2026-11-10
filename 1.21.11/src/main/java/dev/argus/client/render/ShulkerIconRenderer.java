@@ -1,5 +1,7 @@
 package dev.argus.client.render;
 
+import dev.argus.client.utils.inventory.PixelIcon;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -39,7 +41,29 @@ public final class ShulkerIconRenderer {
       }
    }
 
-   /** Draws an item (optionally as a flat silhouette) at a GUI position, scaled from its 16x16 size. */
+   /** Draws pixel art in the same 16x16 space as a GUI item. */
+   public static void drawPixels(GuiGraphics graphics, PixelIcon icon, float x, float y, float scale) {
+      var pose = graphics.pose();
+      pose.pushMatrix();
+      try {
+         pose.translate(x, y);
+         pose.scale(scale, scale);
+         for (int row = 0; row < PixelIcon.SIZE; row++) {
+            int start = 0;
+            while (start < PixelIcon.SIZE) {
+               int colour = icon.pixel(start, row);
+               int end = start + 1;
+               while (end < PixelIcon.SIZE && icon.pixel(end, row) == colour) end++;
+               if ((colour >>> 24) != 0) graphics.fill(start, row, end, row + 1, colour);
+               start = end;
+            }
+         }
+      } finally {
+         pose.popMatrix();
+      }
+   }
+
+   /** Draws an item (optionally as a flat silhouette) at a GUI position. */
    public static void drawAt(GuiGraphics graphics, ItemStack item, Integer colour, float x, float y, float scale) {
       var pose = graphics.pose();
       pose.pushMatrix();

@@ -87,6 +87,8 @@ import dev.argus.client.modules.misc.AntiAimModule;
 import dev.argus.client.modules.misc.AntiCyrillicModule;
 import dev.argus.client.modules.misc.AntiQuitModule;
 import dev.argus.client.modules.misc.AntiSpamModule;
+import dev.argus.client.modules.misc.AutoLobbyModule;
+import dev.argus.client.modules.misc.AutoSetHomeModule;
 import dev.argus.client.modules.misc.AutoReconnectModule;
 import dev.argus.client.modules.misc.AutoRespawnModule;
 import dev.argus.client.modules.misc.AutoSignModule;
@@ -382,6 +384,14 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new AutoPotModule())) {
          throw new IllegalStateException("Registration rejected AutoPotModule");
+      }
+
+      if (!this.registerModule(new AutoLobbyModule())) {
+         throw new IllegalStateException("Registration rejected AutoLobbyModule");
+      }
+
+      if (!this.registerModule(new AutoSetHomeModule())) {
+         throw new IllegalStateException("Registration rejected AutoSetHomeModule");
       }
 
       if (!this.registerModule(new AutoReconnectModule())) {

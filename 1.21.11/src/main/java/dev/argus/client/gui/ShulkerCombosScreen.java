@@ -12,7 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
-/** Ordered shulker icon combos. The first enabled combo whose required items are all present picks the icon. */
+/** Ordered shulker icon combos. The first enabled matching combo picks the icon. */
 final class ShulkerCombosScreen extends UiScreen {
     private static final int ROW = 26;
     private final TooltipsModule module;
@@ -64,7 +64,7 @@ final class ShulkerCombosScreen extends UiScreen {
             x -= 44; addRenderableWidget(new UiButton(x, y, 40, 20, "Edit", () -> minecraft.setScreen(new ShulkerComboEditScreen(this, module, index))));
             x -= 44; addRenderableWidget(new UiButton(x, y, 40, 20, rule.enabled() ? "On" : "Off", rule.enabled(), () -> {
                 List<Rule<Item>> next = new ArrayList<>(rules);
-                next.set(index, new Rule<>(rule.name(), !rule.enabled(), rule.required(), rule.icon(), rule.style(), rule.colour()));
+                next.set(index, rule.withEnabled(!rule.enabled()));
                 update(next);
             }));
         }
@@ -85,7 +85,7 @@ final class ShulkerCombosScreen extends UiScreen {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         UiDraw.bold(g, "Shulker icon combos", left + 62, top + 19, UiDraw.TITLE, t.text());
-        UiDraw.text(g, "The first matching combo wins. Every required item must be inside; extras are allowed.", left + 14, top + 43, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "The first matching combo wins. Use names, contents, or both.", left + 14, top + 43, UiDraw.SMALL, t.muted());
         List<Rule<Item>> rules = module.getIconRules();
         if (rules.isEmpty()) UiDraw.text(g, "No combos yet. Without one, the most common item is shown.", left + 14, top + 76, UiDraw.SMALL, t.muted());
         int perPage = Math.max(1, (panelHeight - 90) / ROW);
@@ -93,7 +93,11 @@ final class ShulkerCombosScreen extends UiScreen {
             Rule<Item> rule = rules.get(i);
             int y = top + 62 + (i - page * perPage) * ROW;
             int colour = rule.enabled() ? t.text() : t.muted();
-            ShulkerIconRenderer.drawAt(g, rule.icon().getDefaultInstance(), rule.style() == Style.SolidColour ? rule.colour() : null, left + 14, y + 2, 1);
+            if (rule.pixels() == null) {
+                ShulkerIconRenderer.drawAt(g, rule.icon().getDefaultInstance(), rule.style() == Style.SolidColour ? rule.colour() : null, left + 14, y + 2, 1);
+            } else {
+                ShulkerIconRenderer.drawPixels(g, rule.pixels(), left + 14, y + 2, 1);
+            }
             float textRight = left + panelWidth - 14 - 56 - 26 - 26 - 44 - 44 - 6;
             UiDraw.text(g, UiDraw.fit((i + 1) + ". " + rule.name(), textRight - (left + 38)), left + 38, y + 7, colour);
             UiDraw.text(g, rule.required().size() + (rule.required().size() == 1 ? " required item" : " required items"), left + 38, y + 18, UiDraw.SMALL, t.muted());

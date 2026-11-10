@@ -1,6 +1,8 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import dev.argus.client.ClientAccess;
@@ -22,6 +24,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
@@ -49,6 +52,10 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    @Shadow
    @Nullable
    protected Slot hoveredSlot;
+   @Shadow
+   private Slot getHoveredSlot(double x, double y) { throw new AssertionError(); }
+   @Unique
+   private int argusclient$previewButton = -1;
    @Unique
    private int argusclient$mouseX;
    @Unique
@@ -90,20 +97,55 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       ClientAccess.eventBus.post(this.argusclient$containerScreenEvent);
    }
 
-   @Inject(method = "renderContents", at = @At("HEAD"))
+   @Inject(method = "renderContents", at = @At("TAIL"))
    private void argusclient$captureHoveredSlotAndMouse(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
-      if (!KeyUtils.isPhysicalKeyDown(342)) {
+      if (this.argusclient$cachedHoveredSlot == null
+         || !argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          this.argusclient$cachedHoveredSlot = this.hoveredSlot;
+         this.argusclient$tooltipX = mouseX;
+         this.argusclient$tooltipY = mouseY;
       }
 
       this.argusclient$mouseX = mouseX;
       this.argusclient$mouseY = mouseY;
    }
 
+   @WrapMethod(method = "renderTooltip")
+   private void argusclient$pinTooltipSlot(GuiGraphics graphics, int mouseX, int mouseY, Operation<Void> original) {
+      Slot hovered = this.hoveredSlot;
+      if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
+         this.hoveredSlot = this.argusclient$cachedHoveredSlot;
+      }
+
+      try {
+         original.call(graphics, mouseX, mouseY);
+      } finally {
+         this.hoveredSlot = hovered;
+      }
+   }
+
    @Inject(method = "getHoveredSlot", at = @At("HEAD"), cancellable = true)
    private void argusclient$useInspectedHoveredSlot(double mouseX, double mouseY, CallbackInfoReturnable<Slot> callback) {
       if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldInspectContents(this.argusclient$cachedHoveredSlot.getItem())) {
          callback.setReturnValue(this.argusclient$cachedHoveredSlot);
+      }
+   }
+
+   @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+   private void argusclient$consumeShulkerPreviewClick(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> callback) {
+      Slot hovered = this.getHoveredSlot(event.x(), event.y());
+      if (hovered != null && ((AbstractContainerScreen<?>)(Object)this).getMenu().getCarried().isEmpty()
+         && argusclient$tooltips.isShulkerPreviewClick(hovered.getItem(), event.button())) {
+         this.argusclient$previewButton = event.button();
+         callback.setReturnValue(true);
+      }
+   }
+
+   @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
+   private void argusclient$consumeShulkerPreviewRelease(MouseButtonEvent event, CallbackInfoReturnable<Boolean> callback) {
+      if (event.button() == this.argusclient$previewButton) {
+         this.argusclient$previewButton = -1;
+         callback.setReturnValue(true);
       }
    }
 
@@ -160,7 +202,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    private boolean argusclient$renderTooltipWithEvent(
       GuiGraphics graphics, Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background
    ) {
-      if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldInspectContents(this.argusclient$cachedHoveredSlot.getItem())) {
+      if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          tooltipX = this.argusclient$tooltipX;
          tooltipY = this.argusclient$tooltipY;
       } else {

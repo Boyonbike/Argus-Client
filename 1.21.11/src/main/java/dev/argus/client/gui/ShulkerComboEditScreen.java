@@ -1,7 +1,12 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.render.ShulkerIconRenderer;
+import dev.argus.client.utils.inventory.PixelIcon;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.ContentsMode;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.Match;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.NameMode;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Style;
 import java.util.ArrayList;
@@ -18,10 +23,15 @@ final class ShulkerComboEditScreen extends UiScreen {
     private final int index;
     private final UiInput name = new UiInput(0, 0, 100, 16, "Combo name");
     private final UiInput hex = new UiInput(0, 0, 100, 16, "RRGGBB");
+    private final UiInput boxName = new UiInput(0, 0, 100, 16, "Custom shulker name (optional)");
+    private final UiInput minimum = new UiInput(0, 0, 55, 16, "Count");
     private String nameText;
+    private NameMode nameMode;
+    private ContentsMode contentsMode;
+    private PixelIcon pixels;
     private boolean enabled, solid;
     private Item icon;
-    private int colour;
+    private int colour, minimumCount, itemPage;
     private final List<Item> required;
     private int left, top, panelWidth, panelHeight, requiredTop;
 
@@ -32,6 +42,19 @@ final class ShulkerComboEditScreen extends UiScreen {
         Rule<Item> rule = module.getIconRules().get(index);
         nameText = rule.name(); enabled = rule.enabled(); solid = rule.style() == Style.SolidColour;
         icon = rule.icon(); colour = rule.colour(); required = new ArrayList<>(rule.required());
+        pixels = rule.pixels();
+        nameMode = rule.match().nameMode();
+        contentsMode = rule.match().contentsMode();
+        boxName.setValue(rule.match().name());
+        boxName.setResponder(value -> commit());
+        minimumCount = rule.match().minimum();
+        minimum.setMaxLength(9);
+        minimum.setValue(Integer.toString(minimumCount));
+        minimum.setFilter(value -> value.chars().allMatch(digit -> digit >= '0' && digit <= '9'));
+        minimum.setResponder(value -> {
+            minimumCount = value.isEmpty() ? 1 : Math.max(1, Integer.parseInt(value));
+            commit();
+        });
         name.setMaxLength(32); name.setValue(nameText);
         name.setResponder(value -> { nameText = value.isBlank() ? "Combo" : value.trim(); commit(); });
         hex.setMaxLength(6); hex.setValue(String.format("%06X", colour & 0xffffff));
@@ -44,51 +67,107 @@ final class ShulkerComboEditScreen extends UiScreen {
     private void commit() {
         List<Rule<Item>> rules = new ArrayList<>(module.getIconRules());
         if (index >= rules.size()) return;
-        rules.set(index, new Rule<>(nameText, enabled, required, icon, solid ? Style.SolidColour : Style.Normal, colour));
+        rules.set(index, new Rule<>(nameText, enabled, required, icon, solid ? Style.SolidColour : Style.Normal, colour,
+            new Match(boxName.getValue(), nameMode, contentsMode, minimumCount), pixels));
         module.setIconRules(rules);
     }
 
     private Integer iconColour() { return solid ? colour : null; }
 
-    private int perRow() { return Math.max(1, (panelWidth - 28) / CELL); }
-
     @Override protected void buildContent() {
         panelWidth = Math.min(520, width - 24); left = (width - panelWidth) / 2; top = 44;
-        panelHeight = height - top - 24;
-        addRenderableWidget(new UiButton(left + 10, top + 10, 42, 18, "Back", this::onClose));
-        name.place(left + 14, top + 56, panelWidth - 28);
+        panelHeight = height - top - 8;
+        addRenderableWidget(new UiButton(left + 10, top + 8, 42, 18, "Back", this::onClose));
+        addRenderableWidget(new UiButton(left + panelWidth - 61, top + 8, 49, 18, enabled ? "On" : "Off", enabled, () -> {
+            enabled = !enabled;
+            commit();
+            rebuildWidgets();
+        }));
+        name.place(left + 12, top + 39, panelWidth - 24);
         addRenderableWidget(name);
-        addRenderableWidget(new UiButton(left + 14, top + 88, 90, 20, enabled ? "Enabled" : "Disabled", enabled, () -> { enabled = !enabled; commit(); rebuildWidgets(); }));
-        addRenderableWidget(new UiButton(left + 110, top + 88, 110, 20, solid ? "Solid colour: on" : "Solid colour: off", solid, () -> { solid = !solid; commit(); rebuildWidgets(); }));
-        hex.place(left + 262, top + 88, 90);
-        addRenderableWidget(hex);
-        int iconY = top + 124;
-        addRenderableWidget(new UiButton(left + 14, iconY + 2, 100, 20, "Select icon", () ->
-            minecraft.setScreen(new ShulkerIconPickerScreen(this, solid, colour, false, item -> { icon = item; commit(); }))));
-        requiredTop = top + 178;
-        addRenderableWidget(new UiButton(left + panelWidth - 114, requiredTop - 26, 100, 20, "Add item", () ->
-            minecraft.setScreen(new ShulkerIconPickerScreen(this, false, 0xffffffff, true, item -> {
-                if (!required.contains(item)) { required.add(item); commit(); }
+        boxName.place(left + 12, top + 64, panelWidth - 116);
+        addRenderableWidget(boxName);
+        addRenderableWidget(new UiButton(left + panelWidth - 99, top + 62, 87, 20, nameMode.name(), () -> {
+            nameMode = NameMode.values()[(nameMode.ordinal() + 1) % NameMode.values().length];
+            commit();
+            rebuildWidgets();
+        }));
+        addRenderableWidget(new UiButton(left + 12, top + 86, 77, 20, "Choose item", () ->
+            minecraft.setScreen(new ShulkerIconPickerScreen(this, solid, colour, false, item -> {
+                icon = item;
+                pixels = null;
+                commit();
             }))));
+        addRenderableWidget(new UiButton(left + 93, top + 86, 64, 20, "Edit pixels", () ->
+            minecraft.setScreen(new ShulkerPixelEditorScreen(this, icon, pixels, result -> {
+                pixels = result;
+                commit();
+                if (ClientContext.configurationManager != null) ClientContext.configurationManager.save();
+            }))));
+        addRenderableWidget(new UiButton(left + 161, top + 86, 54, 20, solid ? "Solid" : "Normal", solid, () -> {
+            solid = !solid;
+            commit();
+            rebuildWidgets();
+        }));
+        hex.place(left + 219, top + 88, 52);
+        addRenderableWidget(hex);
+        addRenderableWidget(new UiButton(left + 12, top + 113, 82, 20, "Items: " + contentsMode.name(), () -> {
+            contentsMode = ContentsMode.values()[(contentsMode.ordinal() + 1) % ContentsMode.values().length];
+            commit();
+            rebuildWidgets();
+        }));
+        minimum.place(left + 141, top + 115, 41);
+        addRenderableWidget(minimum);
+        addRenderableWidget(new UiButton(left + 187, top + 113, 67, 20, "Add item", () ->
+            minecraft.setScreen(new ShulkerIconPickerScreen(this, false, 0xffffffff, true, item -> {
+                if (!required.contains(item)) {
+                    required.add(item);
+                    itemPage = (required.size() - 1) / itemsPerPage();
+                    commit();
+                }
+            }))));
+        requiredTop = top + 153;
+        int pages = Math.max(1, (required.size() + itemsPerPage() - 1) / itemsPerPage());
+        itemPage = Math.clamp(itemPage, 0, pages - 1);
+        if (pages > 1) {
+            addRenderableWidget(new UiButton(left + panelWidth - 36, requiredTop, 24, 18, ">", () -> {
+                itemPage++;
+                rebuildWidgets();
+            }));
+            addRenderableWidget(new UiButton(left + panelWidth - 62, requiredTop, 24, 18, "<", () -> {
+                itemPage--;
+                rebuildWidgets();
+            }));
+        }
     }
+
+    private int itemsPerPage() { return Math.max(1, (panelWidth - 79) / CELL); }
 
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         UiDraw.bold(g, "Edit combo", left + 62, top + 19, UiDraw.TITLE, t.text());
-        UiDraw.text(g, "Name", left + 14, top + 46, UiDraw.SMALL, t.muted());
-        UiDraw.text(g, "Colour (hex)", left + 232 - 4 + 30, top + 80, UiDraw.SMALL, t.muted());
-        UiDraw.rounded(g, left + panelWidth - 40, top + 88, 26, 20, 6, 0xff000000 | colour);
-        UiDraw.outline(g, left + panelWidth - 40, top + 88, 26, 20, 6, .6f, UiDraw.alpha(t.text(), .25f));
-        int iconY = top + 124;
-        UiDraw.text(g, "Icon", left + 14, iconY - 6, UiDraw.SMALL, t.muted());
-        ShulkerIconRenderer.drawAt(g, icon.getDefaultInstance(), iconColour(), left + 122, iconY + 3, 1.25f);
-        UiDraw.text(g, UiDraw.fit(icon.getDefaultInstance().getHoverName().getString(), panelWidth - 170), left + 148, iconY + 12, t.text());
-        UiDraw.text(g, "Required items (at least one of each; click to remove)", left + 14, requiredTop - 16, UiDraw.SMALL, t.muted());
-        if (required.isEmpty()) UiDraw.text(g, "None yet. A combo with no required items never matches.", left + 14, requiredTop + 10, UiDraw.SMALL, t.muted());
-        int perRow = perRow();
-        for (int i = 0; i < required.size(); i++) {
-            float x = left + 14 + (i % perRow) * CELL, y = requiredTop + (i / perRow) * CELL;
+        UiDraw.text(g, "Rule name", left + 12, top + 33, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Min count", left + 98, top + 123, UiDraw.SMALL, t.muted());
+        if (UiDraw.over(mx, my, left + 12, top + 113, 82, 20)) {
+            String help = switch (contentsMode) {
+                case All -> "Every listed item must reach the minimum count.";
+                case Any -> "At least one listed item must reach the minimum count.";
+                case Exact -> "Every listed item must reach the minimum. Extra item types are excluded.";
+            };
+            tooltip("combo.items", help);
+        }
+        int previewX = left + panelWidth - 23;
+        if (pixels == null) {
+            ShulkerIconRenderer.drawAt(g, icon.getDefaultInstance(), iconColour(), previewX, top + 88, 1);
+        } else {
+            ShulkerIconRenderer.drawPixels(g, pixels, previewX, top + 88, 1);
+        }
+        UiDraw.text(g, "Required items · click to remove", left + 12, requiredTop - 10, UiDraw.SMALL, t.muted());
+        if (required.isEmpty()) UiDraw.text(g, "Add items or enter a shulker name.", left + 12, requiredTop + 8, UiDraw.SMALL, t.muted());
+        int start = itemPage * itemsPerPage();
+        for (int i = start; i < Math.min(required.size(), start + itemsPerPage()); i++) {
+            int x = left + 12 + (i - start) * CELL, y = requiredTop;
             boolean hover = UiDraw.over(mx, my, x, y, CELL - 2, CELL - 2);
             UiDraw.rounded(g, x, y, CELL - 2, CELL - 2, 5, hover ? UiDraw.alpha(t.red(), .35f) : t.surface());
             ShulkerIconRenderer.drawAt(g, required.get(i).getDefaultInstance(), null, x + 1, y + 1, 1);
@@ -98,10 +177,10 @@ final class ShulkerComboEditScreen extends UiScreen {
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         if (event.button() == 0) {
-            int perRow = perRow();
-            for (int i = 0; i < required.size(); i++) {
-                float x = left + 14 + (i % perRow) * CELL, y = requiredTop + (i / perRow) * CELL;
-                if (UiDraw.over(event.x(), event.y(), x, y, CELL - 2, CELL - 2)) { required.remove(i); commit(); return true; }
+            int start = itemPage * itemsPerPage();
+            for (int i = start; i < Math.min(required.size(), start + itemsPerPage()); i++) {
+                int x = left + 12 + (i - start) * CELL, y = requiredTop;
+                if (UiDraw.over(event.x(), event.y(), x, y, CELL - 2, CELL - 2)) { required.remove(i); commit(); rebuildWidgets(); return true; }
             }
         }
         return super.mouseClickedUi(event, doubled);

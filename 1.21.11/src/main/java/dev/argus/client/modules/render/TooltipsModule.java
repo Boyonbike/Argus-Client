@@ -16,7 +16,6 @@ import dev.argus.client.events.MultiPlayerGameModeUseItemOnEvent;
 import dev.argus.client.events.ScreenChangeEvent;
 import dev.argus.client.events.SlotSetEvent;
 import dev.argus.client.gui.screens.BookPreviewScreen;
-import dev.argus.client.gui.screens.ShulkerPreviewScreen;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.settings.BooleanSetting;
@@ -26,6 +25,10 @@ import dev.argus.client.settings.NamedEntry;
 import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconSelector;
+import dev.argus.client.utils.inventory.PixelIcon;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.Match;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.NameMode;
+import dev.argus.client.utils.inventory.ShulkerIconSelector.ContentsMode;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -73,15 +76,12 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffectUtil;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.Bucketable;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.inventory.ShulkerBoxMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.BlockItem;
@@ -130,6 +130,7 @@ public class TooltipsModule extends Module {
    private final Setting<Boolean> detailsGroup = this.add(new BooleanSetting("Details", true).markAsGroup().markVisibilityDependency());
    private final Setting<Boolean> foodInfoSetting = this.add(new BooleanSetting("FoodInfo", true).dependsOn(this.detailsGroup));
    private final Setting<Boolean> statusEffectsSetting = this.add(new BooleanSetting("StatusEffects", true).dependsOn(this.detailsGroup));
+   private final Setting<Boolean> durabilitySetting = this.add(new BooleanSetting("Durability", true).dependsOn(this.detailsGroup));
    private final Setting<Boolean> sizeSetting = this.add(new BooleanSetting("Size", false).dependsOn(this.detailsGroup));
    // Shulker icons: a small item drawn over shulker boxes in every inventory slot. Combos are edited from the module page.
    private final Setting<Boolean> shulkerIconsGroup = this.add(new BooleanSetting("ShulkerIcons", true).markAsGroup().markVisibilityDependency());
@@ -154,16 +155,8 @@ public class TooltipsModule extends Module {
          return false;
       }
 
-      if (!KeyUtils.isPhysicalKeyDown(342)) {
+      if (!KeyUtils.isPhysicalKeyDown(LEFT_ALT)) {
          return false;
-      }
-
-      Boolean containersEnabled = this.shulkerContentSetting.getValue();
-      if (containersEnabled) {
-         Item item = stack.getItem();
-         if (ItemUtils.isShulkerBox(item)) {
-            return true;
-         }
       }
 
       if (this.enderChestKnown && this.enderChestSetting.getValue() && stack.is(Items.ENDER_CHEST)) {
@@ -179,6 +172,11 @@ public class TooltipsModule extends Module {
       }
 
       return false;
+   }
+
+   public boolean shouldPinTooltip(ItemStack stack) {
+      return this.shouldInspectContents(stack) || this.isToggled() && this.shulkerContentSetting.getValue()
+         && ItemUtils.isShulkerBox(stack.getItem()) && this.openKeyPressed();
    }
 
    public Color getTooltipColor() {
@@ -207,7 +205,8 @@ public class TooltipsModule extends Module {
             ItemStack hoveredStack = focusedSlot.getItem();
             boolean previewsShown = this.previewsShown();
             boolean previewHidden = false;
-            boolean openPressed = this.openKeyPressed() && !(event.getScreen() instanceof ShulkerPreviewScreen);
+            boolean openPressed = this.openKeyPressed();
+            boolean shulkerHovered = ItemUtils.isShulkerBox(hoveredStack.getItem());
             this.addItemInfo(hoveredStack, event.getTooltipComponents());
             NonNullList<ItemStack> containerItems = NonNullList.withSize(27, ItemStack.EMPTY);
             if (hoveredStack.getItem() instanceof BlockItem blockItem
@@ -260,22 +259,18 @@ public class TooltipsModule extends Module {
             }
 
             boolean enderChestShown = enderChestHovered && this.enderChestKnown;
-            if (enderChestShown || !enderChestHovered && !containerItems.stream().allMatch(ItemStack::isEmpty)) {
+            if (shulkerHovered || enderChestShown || !enderChestHovered && !containerItems.stream().allMatch(ItemStack::isEmpty)) {
                Boolean contentsEnabled = enderChestShown || this.shulkerContentSetting.getValue();
                if (contentsEnabled) {
-                  if (openPressed) {
-                     Minecraft capturedScreenClient = ClientAccess.argusclientMinecraft;
-                     Inventory menuInventory = ClientAccess.argusclientMinecraft.player.getInventory();
-                     ShulkerBoxMenu previewMenu = new ShulkerBoxMenu(1337, menuInventory, new SimpleContainer(containerItems.toArray(new ItemStack[27])));
-                     Inventory previewInventory = ClientAccess.argusclientMinecraft.player.getInventory();
-                     Component previewTitle = hoveredStack.getHoverName();
-                     ShulkerPreviewScreen previewScreen = new ShulkerPreviewScreen(previewMenu, previewInventory, previewTitle, event.getScreen());
-                     capturedScreenClient.setScreen(previewScreen);
-                  }
-
                   Boolean keepContentsText = this.keepTextSetting.getValue();
-                  if (!previewsShown) {
-                     previewHidden = true;
+                  if (!(shulkerHovered ? openPressed : previewsShown)) {
+                     if (shulkerHovered) {
+                        String hint = "Hold " + this.openKeyName() + " to preview";
+                        event.getTooltipComponents().add(ClientTooltipComponent.create(
+                           Component.literal(hint).withStyle(ChatFormatting.YELLOW).getVisualOrderText()));
+                     } else {
+                        previewHidden = true;
+                     }
                   } else if (keepContentsText) {
                      event.getTooltipComponents().add(new ContainerTooltipComponent(containerItems));
                   } else {
@@ -428,11 +423,11 @@ public class TooltipsModule extends Module {
    }
 
    /** True while the contents grid is being shown, which makes the vanilla list of contents redundant. */
-   public boolean replacesContainerText() {
+   public boolean replacesContainerText(ItemStack stack) {
       return this.isToggled()
          && this.shulkerContentSetting.getValue()
          && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen
-         && this.previewsShown();
+         && (ItemUtils.isShulkerBox(stack.getItem()) ? this.openKeyPressed() : this.previewsShown());
    }
 
    private boolean previewsShown() {
@@ -447,6 +442,20 @@ public class TooltipsModule extends Module {
 
    private String previewKeyName() {
       return this.previewKeySetting.followsDefault() ? "Left Alt" : this.previewKeySetting.getValue().getDisplayName();
+   }
+
+   public boolean showsDurability() {
+      return this.isToggled() && this.durabilitySetting.getValue();
+   }
+
+   public boolean isShulkerPreviewClick(ItemStack stack, int button) {
+      return this.isToggled() && this.shulkerContentSetting.getValue() && ItemUtils.isShulkerBox(stack.getItem())
+         && (this.openKeySetting.followsDefault() ? button == MIDDLE_MOUSE
+            : this.openKeySetting.getValue().mouse() && this.openKeySetting.getValue().code() == button);
+   }
+
+   private String openKeyName() {
+      return this.openKeySetting.followsDefault() ? "Middle Click" : this.openKeySetting.getValue().getDisplayName();
    }
 
    private boolean openKeyPressed() {
@@ -654,9 +663,9 @@ public class TooltipsModule extends Module {
       String inspectColor = String.valueOf(ChatFormatting.YELLOW);
       return "Draws advanced tool tips on items.\n"
          + previewColor
-         + "Press the open key (Middle Click by default) on a shulker, ender chest or book to open it.\n"
+         + "Hold the open key (Middle Click by default) to preview a shulker in place.\n"
          + inspectColor
-         + "Hold Left Alt when hovering over a shulker to inspect it's items.";
+         + "Hold Left Alt to pin bundle and ender chest tooltips for inspection.";
    }
 
    public enum DisplayWhen implements NamedEntry {
@@ -677,12 +686,14 @@ public class TooltipsModule extends Module {
 
    // ---- Shulker icons ---------------------------------------------------------------------------
 
-   private record RenderedIcon(ItemStack stack, Integer colour) {}
+   private record RenderedIcon(ItemStack stack, Integer colour, PixelIcon pixels) {}
+
+   private record IconKey(ItemContainerContents contents, String customName) {}
 
    // Immutable container components are suitable keys; never retain an unbounded history of boxes.
-   private final Map<ItemContainerContents, RenderedIcon> iconCache = new LinkedHashMap<>(256, 0.75F, true) {
+   private final Map<IconKey, RenderedIcon> iconCache = new LinkedHashMap<>(256, 0.75F, true) {
       @Override
-      protected boolean removeEldestEntry(Map.Entry<ItemContainerContents, RenderedIcon> eldest) {
+      protected boolean removeEldestEntry(Map.Entry<IconKey, RenderedIcon> eldest) {
          return this.size() > 256;
       }
    };
@@ -695,13 +706,11 @@ public class TooltipsModule extends Module {
          return;
       }
 
-      ItemContainerContents contents = shulker.get(DataComponents.CONTAINER);
-      if (contents == null) {
-         return;
-      }
-
-      RenderedIcon icon = this.iconCache.computeIfAbsent(contents, this::selectIcon);
-      if (icon.stack().isEmpty()) {
+      ItemContainerContents contents = shulker.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+      Component name = shulker.get(DataComponents.CUSTOM_NAME);
+      IconKey key = new IconKey(contents, name == null ? "" : name.getString());
+      RenderedIcon icon = this.iconCache.computeIfAbsent(key, this::selectIcon);
+      if (icon.stack().isEmpty() && icon.pixels() == null) {
          return;
       }
 
@@ -712,22 +721,28 @@ public class TooltipsModule extends Module {
       boolean bottom = corner == Corner.BOTTOM_LEFT || corner == Corner.BOTTOM_RIGHT;
       this.drawingOverlay = true;
       try {
-         ShulkerIconRenderer.drawAt(graphics, icon.stack(), icon.colour(), x + (right ? offset : 0.0F), y + (bottom ? offset : 0.0F), size);
+         float iconX = x + (right ? offset : 0.0F);
+         float iconY = y + (bottom ? offset : 0.0F);
+         if (icon.pixels() != null) {
+            ShulkerIconRenderer.drawPixels(graphics, icon.pixels(), iconX, iconY, size);
+         } else {
+            ShulkerIconRenderer.drawAt(graphics, icon.stack(), icon.colour(), iconX, iconY, size);
+         }
       } finally {
          this.drawingOverlay = false;
       }
    }
 
    /** The first enabled matching combo wins; otherwise the item with the greatest total quantity (ties: first slot). */
-   private RenderedIcon selectIcon(ItemContainerContents contents) {
+   private RenderedIcon selectIcon(IconKey key) {
       List<ShulkerIconSelector.Entry<Item>> entries = new ArrayList<>();
-      contents.nonEmptyStream().forEach(stack -> entries.add(new ShulkerIconSelector.Entry<>(stack.getItem(), stack.getCount())));
-      ShulkerIconSelector.Icon<Item> selected = ShulkerIconSelector.selectIcon(entries, this.iconRules);
+      key.contents().nonEmptyStream().forEach(stack -> entries.add(new ShulkerIconSelector.Entry<>(stack.getItem(), stack.getCount())));
+      ShulkerIconSelector.Icon<Item> selected = ShulkerIconSelector.selectIcon(entries, key.customName(), this.iconRules);
       if (selected == null) {
-         return new RenderedIcon(ItemStack.EMPTY, null);
+         return new RenderedIcon(ItemStack.EMPTY, null, null);
       }
 
-      return new RenderedIcon(selected.item().getDefaultInstance(), selected.style() == ShulkerIconSelector.Style.SolidColour ? Integer.valueOf(selected.colour()) : null);
+      return new RenderedIcon(selected.item().getDefaultInstance(), selected.style() == ShulkerIconSelector.Style.SolidColour ? Integer.valueOf(selected.colour()) : null, selected.pixels());
    }
 
    public List<Rule<Item>> getIconRules() {
@@ -763,6 +778,11 @@ public class TooltipsModule extends Module {
             }
 
             entry.add("required", required);
+            entry.addProperty("matchName", rule.match().name());
+            entry.addProperty("nameMode", rule.match().nameMode().name());
+            entry.addProperty("contentsMode", rule.match().contentsMode().name());
+            entry.addProperty("minimum", rule.match().minimum());
+            if (rule.pixels() != null) entry.addProperty("pixels", rule.pixels().encode());
             list.add(entry);
          }
 
@@ -802,7 +822,14 @@ public class TooltipsModule extends Module {
                   int colour = entry.has("colour") ? entry.get("colour").getAsInt() : 0xFFFFFFFF;
                   String name = entry.has("name") ? entry.get("name").getAsString() : "Combo";
                   boolean enabled = !entry.has("enabled") || entry.get("enabled").getAsBoolean();
-                  loaded.add(new Rule<>(name, enabled, required, icon, solid ? ShulkerIconSelector.Style.SolidColour : ShulkerIconSelector.Style.Normal, colour));
+                  Match match = new Match(
+                     entry.has("matchName") ? entry.get("matchName").getAsString() : "",
+                     entry.has("nameMode") ? NameMode.valueOf(entry.get("nameMode").getAsString()) : NameMode.Contains,
+                     entry.has("contentsMode") ? ContentsMode.valueOf(entry.get("contentsMode").getAsString()) : ContentsMode.All,
+                     entry.has("minimum") ? entry.get("minimum").getAsInt() : 1);
+                  PixelIcon pixels = entry.has("pixels") ? PixelIcon.decode(entry.get("pixels").getAsString()) : null;
+                  loaded.add(new Rule<>(name, enabled, required, icon,
+                     solid ? ShulkerIconSelector.Style.SolidColour : ShulkerIconSelector.Style.Normal, colour, match, pixels));
                }
             } catch (RuntimeException skipped) {
             }

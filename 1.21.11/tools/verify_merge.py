@@ -41,5 +41,5 @@ with zipfile.ZipFile(sys.argv[1]) as jar:
     assert 'dev/argus/client/modules/hud/VolytraSpeedHudModule.class' in jar.namelist(), 'Volytra speed HUD missing'
     assert 'dev/argus/client/managers/HudModuleRegistry.class' in jar.namelist(), 'HUD registry override missing'
     mixins = json.loads(jar.read('argusclient.mixins.json'))
-    assert 'LoadingOverlayMixin' not in mixins.get('client', []) + mixins.get('mixins', [])
+    assert 'LoadingOverlayMixin' in mixins.get('client', []) + mixins.get('mixins', []), 'Argus loading logo mixin is missing'
 print('PASS: combined initializer, remapped GUI classes, branding, and classic Search panel')

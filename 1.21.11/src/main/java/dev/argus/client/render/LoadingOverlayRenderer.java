@@ -1,33 +1,42 @@
 package dev.argus.client.render;
 
-import java.awt.Color;
+import com.mojang.blaze3d.platform.NativeImage;
+import java.io.IOException;
+import java.io.InputStream;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
+import net.minecraft.client.renderer.texture.ReloadableTexture;
+import net.minecraft.client.renderer.texture.TextureContents;
+import net.minecraft.client.renderer.texture.MipmapStrategy;
+import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
+import net.minecraft.server.packs.resources.ResourceManager;
 
-public class LoadingOverlayRenderer {
-   public static final int BACKGROUND_RGB = 1644825;
-   private static final Identifier LOGO_TEXTURE = Identifier.fromNamespaceAndPath("argusclient", "textures/argusclient.png");
+public final class LoadingOverlayRenderer extends ReloadableTexture {
+   private static final String LOGO_PATH = "/assets/argusclient/textures/argusclient.png";
+   private static final int TEXTURE_SIZE = 256;
 
-   private LoadingOverlayRenderer() {
+   public LoadingOverlayRenderer() {
+      super(LoadingOverlay.MOJANG_STUDIOS_LOGO_LOCATION);
    }
 
-   public static void render(GuiGraphics graphics, float opacity, float backgroundOpacity) {
-      render(graphics, opacity, backgroundOpacity, 0.5F);
+   @Override
+   public TextureContents loadContents(ResourceManager resourceManager) throws IOException {
+      // The startup overlay needs its texture before mod resource packs finish loading.
+      try (InputStream stream = LoadingOverlayRenderer.class.getResourceAsStream(LOGO_PATH)) {
+         if (stream == null) {
+            throw new IOException("Missing loading logo " + LOGO_PATH);
+         }
+         return new TextureContents(NativeImage.read(stream),
+               new TextureMetadataSection(true, false, MipmapStrategy.MEAN, 0.0F));
+      }
    }
 
-   public static void render(GuiGraphics graphics, float opacity, float backgroundOpacity, float logoScale) {
-      opacity = Mth.clamp(opacity, 0.0F, 1.0F);
-      int logoX = (int)((GuiScaleUtils.getScaledWidth() - 256.0F * logoScale) / 2.0F);
-      int logoY = (int)((GuiScaleUtils.getScaledHeight() - 256.0F * logoScale) / 2.0F);
-      int backgroundArgb = ColorUtils.toArgb(new Color(1644825, false), backgroundOpacity * opacity);
-      int logoArgb = ColorUtils.toArgb(Color.white, opacity);
-      graphics.fill(0, 0, GuiScaleUtils.getScaledWidth(), GuiScaleUtils.getScaledHeight(), backgroundArgb);
-      graphics.pose().pushMatrix();
-      graphics.pose().translate(logoX, logoY);
-      graphics.pose().scale(logoScale, logoScale);
-      graphics.blit(RenderPipelines.GUI_TEXTURED, LOGO_TEXTURE, 0, 0, 0.0F, 0.0F, 256, 256, 256, 256, logoArgb);
-      graphics.pose().popMatrix();
+   public static void render(GuiGraphics graphics, int color) {
+      int size = Math.min(graphics.guiWidth(), graphics.guiHeight()) / 2;
+      int x = (graphics.guiWidth() - size) / 2;
+      int y = (graphics.guiHeight() - size) / 2;
+      graphics.blit(RenderPipelines.GUI_TEXTURED, LoadingOverlay.MOJANG_STUDIOS_LOGO_LOCATION,
+            x, y, 0.0F, 0.0F, size, size, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, color);
    }
 }
