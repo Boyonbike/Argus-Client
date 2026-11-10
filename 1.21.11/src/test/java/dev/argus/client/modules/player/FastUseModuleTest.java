@@ -1,6 +1,7 @@
 package dev.argus.client.modules.player;
 
 import net.minecraft.SharedConstants;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -72,5 +73,30 @@ class FastUseModuleTest {
     @Test void menuProviderBlocksAreContainers() {
         assertTrue(FastUseModule.isContainer(Blocks.SHULKER_BOX.defaultBlockState(), true));
         assertFalse(FastUseModule.isContainer(Blocks.STONE.defaultBlockState(), false));
+    }
+
+    @Test void recordsOnlyContainersNearbyWhileUseIsHeld() {
+        assertTrue(FastUseModule.shouldRecord(true, true, 0.0));
+        assertTrue(FastUseModule.shouldRecord(true, true, 64.0));
+        assertFalse(FastUseModule.shouldRecord(false, true, 0.0));
+        assertFalse(FastUseModule.shouldRecord(true, false, 0.0));
+        assertFalse(FastUseModule.shouldRecord(true, true, 64.01));
+    }
+
+    @Test void cancelsOnlyRememberedContainersAndHonoursSneakPlacement() {
+        ContainerUseGuard guard = new ContainerUseGuard();
+        BlockPos pos = new BlockPos(1, 64, 1);
+        guard.placed(pos, true);
+
+        assertTrue(FastUseModule.shouldCancelInteraction(
+            guard, pos, Blocks.CHEST.defaultBlockState(), false, false, false));
+        assertTrue(FastUseModule.shouldCancelInteraction(
+            guard, pos, Blocks.SHULKER_BOX.defaultBlockState(), true, false, false));
+        assertFalse(FastUseModule.shouldCancelInteraction(
+            guard, pos, Blocks.STONE.defaultBlockState(), false, false, false));
+        assertFalse(FastUseModule.shouldCancelInteraction(
+            guard, pos, Blocks.CHEST.defaultBlockState(), false, true, true));
+        assertTrue(FastUseModule.shouldCancelInteraction(
+            guard, pos, Blocks.CHEST.defaultBlockState(), false, true, false));
     }
 }

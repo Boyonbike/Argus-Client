@@ -85,6 +85,21 @@ public final class FastUseModule extends Module {
       return state.getBlock() instanceof AbstractChestBlock<?> || hasMenuProvider;
    }
 
+   static boolean shouldRecord(boolean useHeld, boolean container, double distanceSq) {
+      return useHeld && container && distanceSq <= 64.0;
+   }
+
+   static boolean shouldCancelInteraction(
+      ContainerUseGuard guard,
+      BlockPos pos,
+      BlockState state,
+      boolean hasMenuProvider,
+      boolean secondaryUse,
+      boolean hasHeldItem
+   ) {
+      return guard.shouldBlock(pos, isContainer(state, hasMenuProvider), secondaryUse, hasHeldItem);
+   }
+
    @EventHandler
    private void onPreTick(LocalPlayerPreTickEvent event) {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
@@ -109,7 +124,7 @@ public final class FastUseModule extends Module {
       }
 
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
-      if (minecraft.player == null || minecraft.level == null || !minecraft.options.keyUse.isDown()) {
+      if (minecraft.player == null || minecraft.level == null) {
          return;
       }
 
@@ -120,7 +135,7 @@ public final class FastUseModule extends Module {
       double distanceSq = event.getPos().distToCenterSqr(
          minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ()
       );
-      if (container && distanceSq <= 64.0) {
+      if (shouldRecord(minecraft.options.keyUse.isDown(), container, distanceSq)) {
          this.containerGuard.placed(event.getPos(), true);
       }
    }
@@ -139,10 +154,16 @@ public final class FastUseModule extends Module {
       this.containerGuard.update(minecraft.options.keyUse.isDown());
       BlockPos pos = event.getHitResult().getBlockPos();
       BlockState state = minecraft.level.getBlockState(pos);
-      boolean container = isContainer(state, state.getMenuProvider(minecraft.level, pos) != null);
       boolean hasHeldItem = !minecraft.player.getMainHandItem().isEmpty()
          || !minecraft.player.getOffhandItem().isEmpty();
-      if (this.containerGuard.shouldBlock(pos, container, minecraft.player.isSecondaryUseActive(), hasHeldItem)) {
+      if (shouldCancelInteraction(
+         this.containerGuard,
+         pos,
+         state,
+         state.getMenuProvider(minecraft.level, pos) != null,
+         minecraft.player.isSecondaryUseActive(),
+         hasHeldItem
+      )) {
          event.cancel();
       }
    }
