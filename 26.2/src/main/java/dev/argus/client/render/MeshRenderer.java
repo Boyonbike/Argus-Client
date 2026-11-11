@@ -13,12 +13,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import dev.argus.client.ClientContext;
-import dev.argus.client.modules.render.ChamsModule;
-import dev.argus.client.modules.render.GlintModule;
 import java.util.List;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
@@ -59,35 +54,15 @@ public final class MeshRenderer {
    }
 
    private static void applyColorModifiers(ByteBuffer vertices, MeshData.DrawState state, RenderType renderType) {
-      float red = 1.0F;
-      float green = 1.0F;
-      float blue = 1.0F;
+      if (ClientRenderPipelines.isGlint(renderType.pipeline())) {
+         return; // The RenderType uniform hook applies glint colour and render alpha.
+      }
       float alpha = 1.0F;
       int renderAlpha = RenderUtils.getRenderColor()[3];
       if (renderAlpha != 255) {
          alpha = renderAlpha / 255.0F;
       }
-      if (ClientRenderPipelines.isGlint(renderType.pipeline())) {
-         GlintModule glint = ClientContext.getModule(GlintModule.class);
-         if (glint != null && glint.isToggled()) {
-            Vector4f colour = glint.getGlintColor();
-            red *= colour.x;
-            green *= colour.y;
-            blue *= colour.z;
-            alpha *= colour.w;
-         }
-         if (ChamsModule.renderingGlintBatch) {
-            ChamsModule chams = ClientContext.getModule(ChamsModule.class);
-            if (chams != null) {
-               Vector3f colour = chams.getGlintColor();
-               red = colour.x;
-               green = colour.y;
-               blue = colour.z;
-               alpha = 1.0F;
-            }
-         }
-      }
-      if (red == 1.0F && green == 1.0F && blue == 1.0F && alpha == 1.0F) {
+      if (alpha == 1.0F) {
          return;
       }
       VertexFormat format = state.format();
@@ -103,9 +78,9 @@ public final class MeshRenderer {
          int g = vertices.get(base + 1) & 0xFF;
          int b = vertices.get(base + 2) & 0xFF;
          int a = vertices.get(base + 3) & 0xFF;
-         vertices.put(base, (byte)((int)(r * red)));
-         vertices.put(base + 1, (byte)((int)(g * green)));
-         vertices.put(base + 2, (byte)((int)(b * blue)));
+         vertices.put(base, (byte)r);
+         vertices.put(base + 1, (byte)g);
+         vertices.put(base + 2, (byte)b);
          vertices.put(base + 3, (byte)((int)(a * alpha)));
       }
    }
