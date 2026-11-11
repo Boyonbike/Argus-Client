@@ -167,11 +167,9 @@ public abstract class PlayerMixin extends LivingEntity implements PlayerState {
       return reachModule.blockReach(original);
    }
 
-   @Inject(method = "isSecondaryUseActive", at = @At("HEAD"), cancellable = true)
-   private void forceSecondaryUseWhilePlacing(CallbackInfoReturnable<Boolean> callback) {
-      if (BlockInteractionUtils.isPlacingBlock) {
-         callback.setReturnValue(true);
-      }
+   @ModifyReturnValue(method = "isSecondaryUseActive", at = @At("RETURN"))
+   private boolean forceSecondaryUseWhilePlacing(boolean original) {
+      return original || BlockInteractionUtils.isPlacingBlock;
    }
 
    @Inject(method = "resetOnlyAttackStrengthTicker", at = @At("HEAD"))

@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.TooltipsModule;
@@ -66,12 +67,9 @@ public abstract class ItemStackMixin {
       }
    }
 
-   @Inject(method = "hasFoil", at = @At("HEAD"), cancellable = true)
-   private void overrideItemFoil(CallbackInfoReturnable<Boolean> callback) {
+   @ModifyReturnValue(method = "hasFoil", at = @At("RETURN"))
+   private boolean overrideItemFoil(boolean original) {
       GlintRegistry.GlintMode glintMode = GlintRegistry.getOverride(this.getItem());
-      if (glintMode != null) {
-         callback.setReturnValue(glintMode == GlintRegistry.GlintMode.ALWAYS);
-         callback.cancel();
-      }
+      return glintMode != null ? glintMode == GlintRegistry.GlintMode.ALWAYS : original;
    }
 }

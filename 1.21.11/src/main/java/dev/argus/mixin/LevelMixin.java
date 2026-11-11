@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -21,12 +22,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class LevelMixin {
    private static AmbienceModule ambience = ClientContext.getModule(AmbienceModule.class);
 
-   @Inject(method = "getRainLevel", at = @At("HEAD"), cancellable = true)
-   private void overrideRainLevel(CallbackInfoReturnable<Float> callback) {
-      if (ambience.worldWeatherSetting.getValue() && ambience.isToggled() && !ambience.isWeatherOverrideSuppressed()) {
-         callback.setReturnValue(ambience.weatherSetting.getValue() == AmbienceModule.WeatherChoice.CLEAR ? 0.0F : 1.0F);
-         callback.cancel();
+   @ModifyReturnValue(method = "getRainLevel", at = @At("RETURN"))
+   private float overrideRainLevel(float original) {
+      if (ambience.isToggled() && ambience.worldWeatherSetting.getValue() && !ambience.isWeatherOverrideSuppressed()) {
+         return ambience.weatherSetting.getValue() == AmbienceModule.WeatherChoice.CLEAR ? 0.0F : 1.0F;
       }
+
+      return original;
    }
 
    @WrapOperation(method = "isRaining", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getRainLevel(F)F"))

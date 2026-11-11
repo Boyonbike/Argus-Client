@@ -37,6 +37,7 @@ import dev.argus.client.managers.WaypointRegistry;
 import dev.argus.client.managers.WorldStateManager;
 import dev.argus.client.render.FeatureBoxRenderer;
 import dev.argus.client.render.FontSupport;
+import dev.argus.client.render.LoadingOverlayRenderer;
 import dev.argus.client.render.text.LanguageTable;
 import dev.argus.client.utils.FrameTiming;
 import dev.argus.client.utils.combat.TotemPopTracker;
@@ -58,6 +59,8 @@ public final class ClientInitializer {
    public void initialize() {
       requireEnvironment();
       if (!this.managersInitialized) {
+         // Generate the animated loading screen's atlas while the rest of startup runs.
+         LoadingOverlayRenderer.prewarm();
          ClientContext.baritoneBridge = FabricLoader.getInstance().isModLoaded("baritone-meteor") ? new BaritoneAdapter() : new DisabledBaritoneBridge();
          ClientContext.waypointAdapter = FabricLoader.getInstance().isModLoaded("xaerominimap")
             ? new XaeroWaypointAdapter() : new DisabledWaypointAdapter();

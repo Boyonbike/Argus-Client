@@ -544,10 +544,34 @@ public class NoRenderModule extends Module {
    }
 
    public boolean shouldHideBlockEntity(BlockState state) {
+      if (!this.isToggled() || !this.tileEntitiesSetting.getValue()) {
+         return false;
+      }
+
       Map<Block, BlockEntityType<?>> typesByBlock = BLOCK_ENTITY_TYPES_BY_BLOCK;
       Block block = state.getBlock();
       BlockEntityType<?> type = typesByBlock.get(block);
       return type == null ? false : this.shouldHideBlockEntityType(type);
+   }
+
+   private static NoRenderModule glyphShadowModule;
+
+   /**
+    * Shadow offset for every glyph drawn. Called once per character per frame, so the module is
+    * resolved once instead of through the registry on each call.
+    */
+   public static float textShadowOffset() {
+      NoRenderModule module = glyphShadowModule;
+      if (module == null) {
+         module = ClientContext.getModule(NoRenderModule.class);
+         if (module == null) {
+            return 1.0F;
+         }
+
+         glyphShadowModule = module;
+      }
+
+      return module.isToggled() && module.textShadowSetting.getValue() ? 0.6F : 1.0F;
    }
 
    public NoRenderModule() {

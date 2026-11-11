@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
 import net.minecraft.world.level.lighting.SkyLightEngine;
@@ -12,11 +13,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class SkyLightEngineMixin {
    private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
 
-   @Inject(at = @At("HEAD"), method = "getLowestSourceY", cancellable = true)
-   private void suppressSkyLightSource(int chunkX, int chunkZ, int blockY, CallbackInfoReturnable<Integer> callback) {
-      if (noRenderModule.isToggled() && noRenderModule.skyLightSetting.getValue()) {
-         callback.setReturnValue(15);
-         callback.cancel();
-      }
+   // Hot path of the sky light engine; a return-value modifier avoids a callback allocation per lookup.
+   @ModifyReturnValue(method = "getLowestSourceY", at = @At("RETURN"))
+   private int suppressSkyLightSource(int original) {
+      return noRenderModule.isToggled() && noRenderModule.skyLightSetting.getValue() ? 15 : original;
    }
 }

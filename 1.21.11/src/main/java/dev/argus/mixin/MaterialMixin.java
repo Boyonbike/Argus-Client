@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientContext;
 import dev.argus.client.managers.ModuleRegistry;
 import dev.argus.client.modules.render.NoRenderModule;
@@ -24,12 +25,11 @@ public class MaterialMixin {
    private Identifier atlasLocation;
    private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
 
-   @Inject(method = "renderType", at = @At("HEAD"), cancellable = true)
-   private void applyTranslucentHandMaterial(Function renderTypeFactory, CallbackInfoReturnable<RenderType> callback) {
-      if (noRenderModule.getHandOpacity() != 1.0F && RenderUtils.getRenderColor()[3] != 255) {
-         callback.setReturnValue(RenderTypes.entityTranslucent(this.atlasLocation));
-         callback.cancel();
-      }
+   @ModifyReturnValue(method = "renderType", at = @At("RETURN"))
+   private RenderType applyTranslucentHandMaterial(RenderType original, Function renderTypeFactory) {
+      return noRenderModule.getHandOpacity() != 1.0F && RenderUtils.getRenderColor()[3] != 255
+         ? RenderTypes.entityTranslucent(this.atlasLocation)
+         : original;
    }
 
    @Unique

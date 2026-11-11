@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -165,11 +166,10 @@ public class MinecraftMixin {
       return multiTaskModule.isToggled() ? false : originalHandsBusy;
    }
 
-   @Inject(method = "shouldEntityAppearGlowing", at = @At("HEAD"), cancellable = true)
-   private void suppressEntityGlow(Entity entity, CallbackInfoReturnable<Boolean> callback) {
-      if (noRenderModule.isToggled() && noRenderModule.glowSetting.getValue()) {
-         callback.setReturnValue(false);
-      }
+   // Queried for every rendered entity each frame; a return-value modifier avoids a callback allocation.
+   @ModifyReturnValue(method = "shouldEntityAppearGlowing", at = @At("RETURN"))
+   private boolean suppressEntityGlow(boolean original, Entity entity) {
+      return original && !(noRenderModule.isToggled() && noRenderModule.glowSetting.getValue());
    }
 
    @Inject(method = "close", at = @At("HEAD"))

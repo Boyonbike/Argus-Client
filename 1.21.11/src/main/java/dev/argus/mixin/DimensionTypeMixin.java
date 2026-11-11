@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import org.spongepowered.asm.mixin.Unique;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.SkyboxModule;
 import net.minecraft.client.Minecraft;
@@ -16,10 +17,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(DimensionType.class)
 public class DimensionTypeMixin {
+   // Resolved lazily: DimensionType loads during bootstrap, before modules exist.
+   @Unique
+   private static SkyboxModule argusclient$skybox;
+
    @Inject(method = "timelines", at = @At("HEAD"), cancellable = true)
    private void useOverworldTimelinesForSkybox(CallbackInfoReturnable<HolderSet<Timeline>> callback) {
-      SkyboxModule skybox = ClientContext.getModule(SkyboxModule.class);
-      if (skybox.isToggled() && skybox.typeSetting.getValue() == SkyboxModule.SkyType.OVERWORLD) {
+      SkyboxModule skybox = argusclient$skybox;
+      if (skybox == null) {
+         skybox = argusclient$skybox = ClientContext.getModule(SkyboxModule.class);
+      }
+
+      if (skybox != null && skybox.isToggled() && skybox.typeSetting.getValue() == SkyboxModule.SkyType.OVERWORLD) {
          Minecraft minecraft = Minecraft.getInstance();
          if (minecraft.getConnection() != null) {
             Registry<DimensionType> dimensions = minecraft.getConnection().registryAccess().lookup(Registries.DIMENSION_TYPE).orElse(null);

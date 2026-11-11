@@ -6,6 +6,7 @@ import dev.argus.client.render.loading.LoadingAnimation;
 import dev.argus.client.render.loading.LoadingAtlas;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.renderer.texture.MipmapStrategy;
 import net.minecraft.client.renderer.texture.ReloadableTexture;
@@ -22,6 +23,7 @@ public final class LoadingOverlayRenderer extends ReloadableTexture {
    private static final String GLYPHS_PATH = "/assets/argusclient/textures/loading_glyphs.png";
 
    private static LoadingAtlas cached;
+   private static volatile CompletableFuture<LoadingAtlas> pending;
    private static boolean failed;
 
    public LoadingOverlayRenderer() {
@@ -57,10 +59,44 @@ public final class LoadingOverlayRenderer extends ReloadableTexture {
       return new TextureContents(image, new TextureMetadataSection(true, true, MipmapStrategy.MEAN, 0.0F));
    }
 
+   /**
+    * Starts generating the atlas on a background thread. Building it takes a noticeable fraction of a
+    * second on slower CPUs; started from mod initialisation it is normally finished before the loading
+    * overlay first asks for its texture, so it no longer delays the first frame on the render thread.
+    */
+   public static void prewarm() {
+      if (pending != null) {
+         return;
+      }
+
+      synchronized (LoadingOverlayRenderer.class) {
+         if (pending != null || cached != null || failed) {
+            return;
+         }
+
+         CompletableFuture<LoadingAtlas> future = new CompletableFuture<>();
+         pending = future;
+         Thread worker = new Thread(() -> {
+            try {
+               int[] logo = readPixels(LOGO_PATH, LoadingAtlas.LOGO);
+               future.complete(logo == null ? null : LoadingAtlas.build(logo, readPixels(GLYPHS_PATH, LoadingAtlas.GLYPHS.w())));
+            } catch (Throwable error) {
+               future.completeExceptionally(error);
+            }
+         }, "Argus loading atlas");
+         worker.setDaemon(true);
+         worker.start();
+      }
+   }
+
    private static synchronized LoadingAtlas atlas(int[] logo) {
       if (cached == null && !failed) {
          try {
-            cached = LoadingAtlas.build(logo, readPixels(GLYPHS_PATH, LoadingAtlas.GLYPHS.w()));
+            CompletableFuture<LoadingAtlas> future = pending;
+            cached = future != null ? future.join() : null;
+            if (cached == null) {
+               cached = LoadingAtlas.build(logo, readPixels(GLYPHS_PATH, LoadingAtlas.GLYPHS.w()));
+            }
          } catch (Throwable error) {
             failed = true;
             ArgusClient.LOGGER.error("Failed to build the animated loading screen; using the static logo", error);

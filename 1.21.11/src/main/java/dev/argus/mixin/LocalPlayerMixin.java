@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.ItemUseEvent;
@@ -44,10 +45,8 @@ public class LocalPlayerMixin {
       this.aiStepInputActive = false;
    }
 
-   @Inject(method = "isUsingItem", at = @At("HEAD"), cancellable = true)
-   private void suppressItemUseDuringAiStep(CallbackInfoReturnable<Boolean> callback) {
-      if (this.itemUseSlowdownCancelled && this.aiStepInputActive) {
-         callback.setReturnValue(false);
-      }
+   @ModifyReturnValue(method = "isUsingItem", at = @At("RETURN"))
+   private boolean suppressItemUseDuringAiStep(boolean original) {
+      return original && !(this.itemUseSlowdownCancelled && this.aiStepInputActive);
    }
 }

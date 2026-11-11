@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.modules.movement.SprintModule;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -10,10 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(KeyMapping.class)
 public class KeyMappingMixin {
-   @Inject(method = "isDown", at = @At("HEAD"), cancellable = true)
-   public void overrideSprintKeyState(CallbackInfoReturnable<Boolean> callback) {
-      if ((Object)this == Minecraft.getInstance().options.keySprint && SprintModule.forceSprintKeyDown) {
-         callback.setReturnValue(true);
-      }
+   // Every key's isDown() goes through here, so check the cheap static flag first and avoid a callback object.
+   @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
+   public boolean overrideSprintKeyState(boolean original) {
+      return original || SprintModule.forceSprintKeyDown && (Object)this == Minecraft.getInstance().options.keySprint;
    }
 }

@@ -66,7 +66,7 @@ public final class ModulesScreen extends UiScreen {
         // Resizing rebuilds the screen; windows keep where they were drawn so they can glide to their new places.
         Map<String, Window> previous = new HashMap<>();
         for (Window window : windows) previous.put(window.name, window);
-        all = GuiState.modules(); windows.clear();
+        all = GuiState.modules(); windows.clear(); windowModules.clear();
         int order = 0;
         // Client modules live in the Settings tab rather than a dropdown.
         for (ModuleCategory category : ModuleCategory.values()) if (category != ModuleCategory.HUD && category != ModuleCategory.CLIENT)
@@ -144,7 +144,17 @@ public final class ModulesScreen extends UiScreen {
         for (Window other : windows) if (other.layoutWidth == WindowFit.AUTO) { other.layoutX = other.x; other.layoutY = other.y; other.layoutWidth = width; }
     }
 
+    // A window's modules are needed several times per frame (layout, hit testing, header count, rows), so the
+    // filtered list is computed once per frame and reused. Cleared at the start of every frame and on rebuild.
+    private final Map<Window, List<Module>> windowModules = new IdentityHashMap<>();
+
     private List<Module> modules(Window window) {
+        List<Module> cached = windowModules.get(window);
+        if (cached == null) windowModules.put(window, cached = filterModules(window));
+        return cached;
+    }
+
+    private List<Module> filterModules(Window window) {
         // Social (Chat Tools) opens from the top bar or its key, so it isn't listed with the other modules.
         return all.stream().filter(module -> !(module instanceof ChatToolsModule)).filter(module -> window.kind == Kind.FAVOURITES ? GuiState.preferences().favourites.contains(module.getName()) : module.getCategory() == window.category).toList();
     }
@@ -174,6 +184,7 @@ public final class ModulesScreen extends UiScreen {
     }
 
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+        windowModules.clear();
         UiTheme theme = GuiState.theme();
         int bottom = windows.stream().mapToInt(window -> window.y + panelHeight(window, window.collapsed ? 0 : 1)).max().orElse(height);
         canvasScroll = Math.clamp(canvasScroll, 0, Math.max(0, bottom - height + 28));
@@ -435,7 +446,7 @@ public final class ModulesScreen extends UiScreen {
             Module module = list.get(row);
             if (event.button() == 0) module.toggle();
             else if (event.button() == 1) openSettings(module, null);
-            else if (event.button() == 2) { var favourites = GuiState.preferences().favourites; if (!favourites.add(module.getName())) favourites.remove(module.getName()); GuiState.save(); }
+            else if (event.button() == 2) { var favourites = GuiState.preferences().favourites; if (!favourites.add(module.getName())) favourites.remove(module.getName()); windowModules.clear(); GuiState.save(); }
         }
         return true;
     }

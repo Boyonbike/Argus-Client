@@ -38,13 +38,28 @@ final class GuiState {
         try { preferences().save(path()); saveError = ""; }
         catch (IOException failure) { saveError = "Could not save GUI preferences."; }
     }
-    static List<Module> modules() {
-        List<Module> modules = new ArrayList<>();
-        if (ClientContext.moduleRegistry != null)
-            for (Object value : ClientContext.moduleRegistry.getRegistry()) if (value instanceof Module module && !hidden(module)) modules.add(module);
-        modules.sort(Comparator.comparing(Module::getName,String.CASE_INSENSITIVE_ORDER));
-        return modules;
+    // The module set is fixed after startup, but menus ask for it (and look modules up by name) while rendering,
+    // so the sorted list and name index are rebuilt only when the registry's contents change.
+    private static List<Module> sortedModules = List.of();
+    private static Map<String, Module> modulesByName = Map.of();
+    private static Object cachedRegistry;
+    private static int cachedRegistrySize = -1;
+    private static List<Module> sortedModules() {
+        var registry = ClientContext.moduleRegistry;
+        if (registry == null) return List.of();
+        Collection<?> entries = registry.getRegistry();
+        if (registry != cachedRegistry || entries.size() != cachedRegistrySize) {
+            List<Module> modules = new ArrayList<>();
+            for (Object value : entries) if (value instanceof Module module && !hidden(module)) modules.add(module);
+            modules.sort(Comparator.comparing(Module::getName,String.CASE_INSENSITIVE_ORDER));
+            Map<String, Module> byName = new HashMap<>();
+            for (Module module : modules) byName.putIfAbsent(module.getName(), module);
+            sortedModules = List.copyOf(modules); modulesByName = byName;
+            cachedRegistry = registry; cachedRegistrySize = entries.size();
+        }
+        return sortedModules;
     }
+    static List<Module> modules() { return new ArrayList<>(sortedModules()); }
     /**
      * BetterChat runs inside Chat Tools: its switch follows Chat Tools and its settings are on the Social page. Discord
      * Sync shares the Discord page with Rich Presence, so it has no section of its own.
@@ -54,7 +69,18 @@ final class GuiState {
         if (module instanceof DiscordSyncModule) return ClientContext.getModule(DiscordModule.class) != null;
         return false;
     }
-    static Module module(String name) { return modules().stream().filter(module -> module.getName().equals(name)).findFirst().orElse(null); }
+    static Module module(String name) { sortedModules(); return modulesByName.get(name); }
     /** Chat Tools is called Social everywhere in the menu; its saved name stays ChatTools so configs keep working. */
-    static String title(String name) { if ("ChatTools".equals(name)) return "Social"; String text=name.replaceAll("([a-z0-9])([A-Z])", "$1 $2").replace('_',' '); return text.isEmpty()?text:text.substring(0,1).toUpperCase(Locale.ROOT)+text.substring(1); }
+    // Titles are formatted for every visible row each frame; the regex is compiled once and results are memoised.
+    private static final java.util.regex.Pattern CAMEL_BOUNDARY = java.util.regex.Pattern.compile("([a-z0-9])([A-Z])");
+    private static final Map<String, String> titles = new java.util.concurrent.ConcurrentHashMap<>();
+    static String title(String name) {
+        String cached = titles.get(name);
+        if (cached != null) return cached;
+        String result = formatTitle(name);
+        if (titles.size() >= 4096) titles.clear();
+        titles.put(name, result);
+        return result;
+    }
+    private static String formatTitle(String name) { if ("ChatTools".equals(name)) return "Social"; String text=CAMEL_BOUNDARY.matcher(name).replaceAll("$1 $2").replace('_',' '); return text.isEmpty()?text:text.substring(0,1).toUpperCase(Locale.ROOT)+text.substring(1); }
 }

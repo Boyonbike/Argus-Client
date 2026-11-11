@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientContext;
 import dev.argus.client.managers.ModuleRegistry;
 import dev.argus.client.modules.movement.EntityControlModule;
@@ -14,11 +15,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MobMixin {
    private static EntityControlModule entityControlModule = ClientContext.getModule(EntityControlModule.class);
 
-   @Inject(method = "isSaddled", at = @At("HEAD"), cancellable = true)
-   private void forceSaddledForEntityControl(CallbackInfoReturnable<Boolean> callback) {
-      if (entityControlModule.isToggled()) {
-         callback.setReturnValue(true);
-      }
+   @ModifyReturnValue(method = "isSaddled", at = @At("RETURN"))
+   private boolean forceSaddledForEntityControl(boolean original) {
+      return original || entityControlModule.isToggled();
    }
 
    @Unique

@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReceiver;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -159,12 +160,12 @@ public abstract class EntityMixin implements EntityMotionAccess {
       return collision;
    }
 
-   @Inject(method = "getPose", at = @At("HEAD"), cancellable = true)
-   private void overrideElytraPose(CallbackInfoReturnable<Pose> callback) {
-      if ((Object)this == Minecraft.getInstance().player && (elytraFlyModule.isPacketFlightActive() || elytraFlyModule.isDurabilityBypassActive())) {
-         callback.setReturnValue(Pose.STANDING);
-         callback.cancel();
-      }
+   // getPose() runs many times per entity per tick and frame; avoid a callback allocation on every call.
+   @ModifyReturnValue(method = "getPose", at = @At("RETURN"))
+   private Pose overrideElytraPose(Pose original) {
+      return (Object)this == Minecraft.getInstance().player && (elytraFlyModule.isPacketFlightActive() || elytraFlyModule.isDurabilityBypassActive())
+         ? Pose.STANDING
+         : original;
    }
 
    @ModifyExpressionValue(

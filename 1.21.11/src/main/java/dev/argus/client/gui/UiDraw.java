@@ -22,7 +22,24 @@ final class UiDraw {
     static float width(String text, float size) { return UiFont.width(text, size, density); }
     static float width(String text) { return width(text, TEXT); }
 
+    // fit() and wrap() run for most labels every frame and their results only depend on the inputs below,
+    // so they are memoised. The caches are cleared when they grow large (e.g. many distinct live values).
+    private record TextKey(String text, float available, float size, float density) {}
+    private static final int TEXT_CACHE_LIMIT = 4096;
+    private static final java.util.HashMap<TextKey, String> fitCache = new java.util.HashMap<>();
+    private static final java.util.HashMap<TextKey, java.util.List<String>> wrapCache = new java.util.HashMap<>();
+
     static String fit(String text, float available, float size) {
+        TextKey key = new TextKey(text, available, size, density);
+        String cached = fitCache.get(key);
+        if (cached != null) return cached;
+        String result = computeFit(text, available, size);
+        if (fitCache.size() >= TEXT_CACHE_LIMIT) fitCache.clear();
+        fitCache.put(key, result);
+        return result;
+    }
+
+    private static String computeFit(String text, float available, float size) {
         if (width(text, size) <= available) return text;
         int low = 0, high = text.length();
         while (low < high) {
@@ -35,6 +52,16 @@ final class UiDraw {
 
     /** Word-wraps text (honouring line breaks) to lines no wider than {@code available}. */
     static java.util.List<String> wrap(String text, float available, float size) {
+        TextKey key = new TextKey(text, available, size, density);
+        java.util.List<String> cached = wrapCache.get(key);
+        if (cached != null) return cached;
+        java.util.List<String> result = java.util.List.copyOf(computeWrap(text, available, size));
+        if (wrapCache.size() >= TEXT_CACHE_LIMIT) wrapCache.clear();
+        wrapCache.put(key, result);
+        return result;
+    }
+
+    private static java.util.List<String> computeWrap(String text, float available, float size) {
         java.util.List<String> lines = new java.util.ArrayList<>();
         for (String paragraph : text.split("\n")) {
             StringBuilder line = new StringBuilder();

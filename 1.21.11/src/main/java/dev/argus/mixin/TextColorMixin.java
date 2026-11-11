@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.render.TextColorSupplierAccess;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.TextColor;
@@ -14,11 +15,11 @@ public class TextColorMixin implements TextColorSupplierAccess {
    @Unique
    private Supplier colorSupplier = null;
 
-   @Inject(method = "getValue", at = @At("HEAD"), cancellable = true)
-   private void applySuppliedTextColor(CallbackInfoReturnable<Integer> callback) {
-      if (this.colorSupplier != null) {
-         callback.setReturnValue((Integer)this.colorSupplier.get());
-      }
+   // Called for every styled run of text drawn each frame; a return-value modifier avoids a callback allocation.
+   @ModifyReturnValue(method = "getValue", at = @At("RETURN"))
+   private int applySuppliedTextColor(int original) {
+      Supplier supplier = this.colorSupplier;
+      return supplier != null ? (Integer)supplier.get() : original;
    }
 
    @Override

@@ -14,9 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(ModelBlockRenderer.class)
 public class ModelBlockRendererMixin {
@@ -35,28 +34,32 @@ public class ModelBlockRendererMixin {
       int packedOverlay,
       CallbackInfo callback
    ) {
-      if (XrayModule.getInstance().isToggled()
-         && !XrayModule.getInstance().shouldRenderBlock(blockPos, blockState.getBlock())
-         && XrayModule.getInstance().shouldHideUnselectedBlocks()) {
+      XrayModule xray = XrayModule.getInstance();
+      if (xray.isToggled() && xray.shouldHideUnselectedBlocks() && !xray.shouldRenderBlock(blockPos, blockState.getBlock())) {
          callback.cancel();
       } else if (noRenderModule.shouldHideBlockEntity(blockState)) {
          callback.cancel();
       }
    }
 
-   @ModifyArgs(
+   // Runs for every quad of every block model; @ModifyArg on the single alpha argument avoids the
+   // per-call Args array (and boxing) that @ModifyArgs allocated.
+   @ModifyArg(
       method = "putQuadData",
       at = @At(
          value = "INVOKE",
          target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;[FFFFF[II)V"
-      )
+      ),
+      index = 6
    )
-   private void applyXrayQuadAlpha(Args arguments, @Local(argsOnly = true) BlockPos blockPos, @Local(argsOnly = true) BlockState blockState) {
+   private float applyXrayQuadAlpha(float alpha, @Local(argsOnly = true) BlockPos blockPos, @Local(argsOnly = true) BlockState blockState) {
       if (xrayModule.isToggled()
          && !xrayModule.alphaSetting.isAtMinimum()
          && !xrayModule.alphaSetting.isAtMaximum()
          && !xrayModule.shouldRenderBlock(blockPos, blockState.getBlock())) {
-         arguments.set(6, xrayModule.alphaSetting.getValue().intValue() / 100.0F);
+         return xrayModule.alphaSetting.getValue().intValue() / 100.0F;
       }
+
+      return alpha;
    }
 }

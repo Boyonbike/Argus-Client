@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
 import dev.argus.client.modules.render.XrayModule;
@@ -20,20 +21,19 @@ public class ItemBlockRenderTypesMixin {
    private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
    private static final XrayModule xrayModule = ClientContext.getModule(XrayModule.class);
 
-   @Inject(method = "getRenderType", at = @At("HEAD"), cancellable = true)
-   private static void applyTranslucentHandRenderType(BlockState blockState, CallbackInfoReturnable<RenderType> callback) {
-      if (noRenderModule.getHandOpacity() != 1.0F && RenderUtils.getRenderColor()[3] != 255) {
-         callback.setReturnValue(Sheets.translucentItemSheet());
-      }
+   // Both lookups run per item model / per meshed block, so they use return-value modifiers (no callback allocation).
+   @ModifyReturnValue(method = "getRenderType", at = @At("RETURN"))
+   private static RenderType applyTranslucentHandRenderType(RenderType original, BlockState blockState) {
+      return noRenderModule.getHandOpacity() != 1.0F && RenderUtils.getRenderColor()[3] != 255 ? Sheets.translucentItemSheet() : original;
    }
 
-   @Inject(method = "getChunkRenderType", at = @At("HEAD"), cancellable = true)
-   private static void applyXrayTranslucentChunkLayer(BlockState blockState, CallbackInfoReturnable<ChunkSectionLayer> callback) {
-      if (xrayModule.isToggled()
-         && !xrayModule.alphaSetting.isAtMinimum()
-         && !xrayModule.alphaSetting.isAtMaximum()
-         && !xrayModule.shouldRenderBlock(BlockPos.ZERO, blockState.getBlock())) {
-         callback.setReturnValue(ChunkSectionLayer.TRANSLUCENT);
-      }
+   @ModifyReturnValue(method = "getChunkRenderType", at = @At("RETURN"))
+   private static ChunkSectionLayer applyXrayTranslucentChunkLayer(ChunkSectionLayer original, BlockState blockState) {
+      return xrayModule.isToggled()
+            && !xrayModule.alphaSetting.isAtMinimum()
+            && !xrayModule.alphaSetting.isAtMaximum()
+            && !xrayModule.shouldRenderBlock(BlockPos.ZERO, blockState.getBlock())
+         ? ChunkSectionLayer.TRANSLUCENT
+         : original;
    }
 }

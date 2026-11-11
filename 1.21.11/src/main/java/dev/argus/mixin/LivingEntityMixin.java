@@ -91,21 +91,17 @@ public abstract class LivingEntityMixin extends Entity implements ServerSideDeat
       }
    }
 
-   @Inject(method = "isFallFlying", at = @At("HEAD"), cancellable = true)
-   private void overrideFallFlyingAtHead(CallbackInfoReturnable<Boolean> callback) {
-      if (ClientAccess.isLocalPlayer(this)) {
-         if (efly.isPacketFlightActive() || efly.isDurabilityBypassActive()) {
-            callback.setReturnValue(false);
-            callback.cancel();
-         }
-      }
+   // isFallFlying() is read for every living entity in ticking and rendering. One return-value modifier
+   // replaces the former HEAD and TAIL cancellable injects, which allocated two callbacks per call.
+   @ModifyReturnValue(method = "isFallFlying", at = @At("RETURN"))
+   private boolean overrideFallFlying(boolean original) {
+      return original && !(ClientAccess.isLocalPlayer(this) && (efly.isPacketFlightActive() || efly.isDurabilityBypassActive()));
    }
 
-   @Inject(method = "canStandOnFluid", at = @At("HEAD"), cancellable = true)
-   private void allowStandingOnWater(CallbackInfoReturnable<Boolean> callback) {
-      if ((Object)this == Minecraft.getInstance().player && jesusModule.isToggled() && jesusModule.canWalkOnWater() && !Minecraft.getInstance().player.isInWater()) {
-         callback.setReturnValue(true);
-      }
+   @ModifyReturnValue(method = "canStandOnFluid", at = @At("RETURN"))
+   private boolean allowStandingOnWater(boolean original) {
+      return original
+         || (Object)this == Minecraft.getInstance().player && jesusModule.isToggled() && jesusModule.canWalkOnWater() && !Minecraft.getInstance().player.isInWater();
    }
 
    @Inject(method = "aiStep", at = @At(value = "CONSTANT", args = "stringValue=jump"))
@@ -176,13 +172,6 @@ public abstract class LivingEntityMixin extends Entity implements ServerSideDeat
          this.noJumpDelay = 2;
       } else if (noJumpDelayModule.isToggled() && this.equals(client.player) && !client.player.isFallFlying()) {
          this.noJumpDelay = 0;
-      }
-   }
-
-   @Inject(method = "isFallFlying", at = @At("TAIL"), cancellable = true)
-   public void suppressFallFlyingForDurabilityBypass(CallbackInfoReturnable<Boolean> callback) {
-      if (ClientAccess.isLocalPlayer(this) && efly.isDurabilityBypassActive()) {
-         callback.setReturnValue(false);
       }
    }
 
