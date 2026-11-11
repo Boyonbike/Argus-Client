@@ -1,5 +1,7 @@
 package dev.argus.client.modules.player.blockcoat;
 
+import dev.argus.client.TestBootstrap;
+
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.Bootstrap;
@@ -22,8 +24,7 @@ class TntRedstoneSafetyTest {
     private static final BlockPos TARGET = new BlockPos(10, 64, -10);
 
     @BeforeAll static void bootstrapMinecraft() {
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        TestBootstrap.bootStrap();
     }
 
     @Test void ordinaryTerrainAndNormalContainersRemainUsable() {

@@ -1,5 +1,7 @@
 package dev.argus.client.modules.player.blockcoat;
 
+import dev.argus.client.TestBootstrap;
+
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,8 +24,7 @@ class LiquidFillerTest {
     private static final BlockPos TARGET = new BlockPos(15, 64, 15);
 
     @BeforeAll static void bootstrapMinecraft() {
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        TestBootstrap.bootStrap();
     }
 
     @Test void isolatedPlainWaterSourceCanBeFilled() {

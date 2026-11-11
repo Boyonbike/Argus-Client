@@ -1,5 +1,7 @@
 package dev.argus.client.modules.player.rekit;
 
+import dev.argus.client.TestBootstrap;
+
 import dev.argus.client.modules.player.AutoRekitModule;
 import java.util.List;
 import net.minecraft.SharedConstants;
@@ -14,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RekitItemMatchingTest {
     @BeforeAll static void bootstrap() {
-        SharedConstants.tryDetectVersion(); Bootstrap.bootStrap();
+        TestBootstrap.bootStrap();
         // The core enum codec reads launch flags; unit tests have no running Fabric launcher.
         net.fabricmc.loader.impl.FabricLoaderImpl.INSTANCE.setGameProvider(new net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider() {
             @Override public String[] getLaunchArguments(boolean sanitize) { return new String[0]; }

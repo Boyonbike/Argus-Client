@@ -1,4 +1,4 @@
-# Argus Client — Minecraft 1.21.11
+# Argus Client — Minecraft 26.1.2
 
 [Repository overview](../README.md)
 
@@ -11,10 +11,10 @@ Download [`argus-client.jar`](argus-client.jar), place it in your
 instance's `mods` folder, and replace earlier copies of this client or its
 separate GUI add-on.
 
-- Minecraft **1.21.11**
-- Fabric Loader **0.19.5 or newer**
-- Fabric API for Minecraft 1.21.11 (built against **0.141.3+1.21.11**)
-- Java **21 or newer**
+- Minecraft **26.1.2**
+- Fabric Loader **0.20.1 or newer**
+- Fabric API for Minecraft 26.1.2 (built against **0.155.3+26.1.2**)
+- Java **25 or newer**
 
 ## Open and use the GUI
 
@@ -88,7 +88,7 @@ key or mouse button; Delete/Backspace clears it, and Escape cancels capture.
 
 ## Build and verify
 
-From this `1.21.11` directory:
+From this `26.1.2` directory:
 
 ```sh
 ./gradlew build

@@ -1,5 +1,7 @@
 package dev.argus.client.modules.player;
 
+import dev.argus.client.TestBootstrap;
+
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.Bootstrap;
@@ -15,8 +17,7 @@ class FastUseModuleTest {
     private FastUseModule module;
 
     @BeforeAll static void bootstrapMinecraft() {
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        TestBootstrap.bootStrap();
     }
 
     @BeforeEach void setUp() {
