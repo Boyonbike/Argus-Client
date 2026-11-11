@@ -89,7 +89,6 @@ import dev.argus.mixin.LivingEntityModuleBindings;
 import dev.argus.mixin.MinecraftModuleBindings;
 import dev.argus.mixin.MobModuleBindings;
 import dev.argus.mixin.PlayerModuleBindings;
-import dev.argus.mixin.RenderTypeColorModuleBindings;
 import dev.argus.mixin.SlimeBlockModuleBindings;
 import dev.argus.mixin.SweetBerryBushBlockModuleBindings;
 import dev.argus.mixin.TextureTransformModuleBindings;
@@ -201,7 +200,6 @@ public final class ModuleDependencies {
       LivingEntityModuleBindings.bind(registry);
       TridentItemModuleBindings.bind(registry);
       TextureTransformModuleBindings.bind(registry);
-      RenderTypeColorModuleBindings.bind(registry);
       MobModuleBindings.bind(registry);
       PlayerModuleBindings.bind(registry);
    }

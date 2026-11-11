@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(RenderType.class)
 public class RenderTypeMixin {
@@ -29,7 +30,7 @@ public class RenderTypeMixin {
    }
 
    @Inject(method = "prepare", at = @At("HEAD"))
-   private void beforePrepare(CallbackInfo callback) {
+   private void beforePrepare(CallbackInfoReturnable<PreparedRenderType> callback) {
       if (this.glintPipeline) {
          RenderTypeDrawEvent event = new RenderTypeDrawEvent(EventStage.Pre);
          ClientAccess.eventBus.post(event);
@@ -53,7 +54,7 @@ public class RenderTypeMixin {
    }
 
    @Inject(method = "prepare", at = @At("RETURN"))
-   private void afterPrepare(CallbackInfo callback) {
+   private void afterPrepare(CallbackInfoReturnable<PreparedRenderType> callback) {
       if (this.glintPipeline) {
          ClientAccess.eventBus.post(new RenderTypeDrawEvent(EventStage.Post));
       }

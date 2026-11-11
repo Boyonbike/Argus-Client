@@ -12,6 +12,7 @@ import dev.argus.client.events.MinecraftTickEvent;
 import dev.argus.client.events.ScreenChangeEvent;
 import dev.argus.client.gui.screens.ConfirmGameCloseScreen;
 import dev.argus.client.managers.ModuleRegistry;
+import dev.argus.client.managers.ShaderRegistry;
 import dev.argus.client.modules.client.DiscordModule;
 import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.client.UIModule;
@@ -51,6 +52,13 @@ public class MinecraftMixin {
    @Shadow
    public int missTime;
    private static boolean shutdownSaveStarted = false;
+
+   @Inject(method = "<init>", at = @At("TAIL"))
+   private void initializeShaderRegistry(CallbackInfo callback) {
+      if (ClientContext.shaderRegistry == null) {
+         ClientContext.shaderRegistry = new ShaderRegistry();
+      }
+   }
 
    @Inject(method = "startAttack", at = @At("HEAD"))
    private void markPlayerAttackStart(CallbackInfoReturnable<Boolean> callback) {

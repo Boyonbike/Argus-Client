@@ -36,7 +36,6 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
-import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.ScreenEffectRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -68,7 +67,6 @@ public abstract class GameRendererMixin {
    private static ViewModelModule viewmodel = ClientContext.getModule(ViewModelModule.class);
    private static NoBobModule noBob = ClientContext.getModule(NoBobModule.class);
    private static HUDModule hud = ClientContext.getModule(HUDModule.class);
-   @Unique
    @Final
    @Shadow
    private Minecraft minecraft;
@@ -87,13 +85,6 @@ public abstract class GameRendererMixin {
    @ModifyExpressionValue(method = "bobView", at = @At(value = "INVOKE", target = "Ljava/lang/Math;abs(F)F"))
    private float invertViewBobMagnitude(float originalMagnitude) {
       return RenderUtils.isInverseViewBobbing() ? -originalMagnitude : originalMagnitude;
-   }
-
-   @Inject(method = "<init>", at = @At("RETURN"))
-   public void initializeShaderRegistry(
-      Minecraft client, ItemInHandRenderer handRenderer, RenderBuffers renderBuffers, net.minecraft.client.resources.model.ModelManager modelManager, CallbackInfo callback
-   ) {
-      ClientContext.shaderRegistry = new ShaderRegistry();
    }
 
    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
