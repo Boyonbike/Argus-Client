@@ -28,6 +28,10 @@ MIXIN_CLASS_RE = re.compile(r"@Mixin\(\s*([\w.$]+)\.class\s*\)")
 MIXIN_TARGETS_RE = re.compile(r"@Mixin\([^)]*targets\s*=\s*\{?\s*\"([\w.$]+)\"")
 METHOD_RE = re.compile(r"method\s*=\s*\"([^\"]+)\"")
 AT_TARGET_RE = re.compile(r"target\s*=\s*\"L([^;]+);([^(;\"]+)(\([^\"]*)\"")
+INVOKER_RE = re.compile(r"@(?:Invoker|Accessor)\(\s*(?:value\s*=\s*)?\"([^\"]+)\"")
+SHADOW_RE = re.compile(
+    r"@Shadow\s+(?:@\w+\s+)*(?:(?:public|protected|private|final|abstract|static|transient|volatile)\s+)*"
+    r"[\w.$<>\[\], ?]+\s+(\w+)\s*(?:\(|;)")
 
 
 class Jar:
@@ -100,6 +104,23 @@ def resolve_class(path: pathlib.Path, simple: str) -> str:
     return simple
 
 
+def has_name(jar: Jar, owner: str, name: str, seen=None) -> bool:
+    seen = seen or set()
+    if owner in seen:
+        return False
+    seen.add(owner)
+    members = jar.members(owner)
+    if members is None:
+        return False
+    names, full, supers = members
+    if name in names:
+        return True
+    for sup in supers:
+        if has_name(jar, sup, name, seen):
+            return True
+    return False
+
+
 def has_member(jar: Jar, owner: str, member: str, seen=None) -> bool:
     if member.startswith("<init>("):
         member = owner.split(".")[-1].split("$")[-1] + member[6:]
@@ -153,6 +174,14 @@ def main() -> int:
             if jar.members(owner) is None:
                 errors.append(f"{rel}: mixin target class missing: {owner}")
                 continue
+            for invoker_name in INVOKER_RE.findall(text):
+                if "$" in invoker_name:
+                    continue
+                if not has_name(jar, owner, invoker_name):
+                    errors.append(f"{rel}: @Invoker/@Accessor member not found in {owner}: {invoker_name}")
+            for shadow_name in SHADOW_RE.findall(text):
+                if not has_name(jar, owner, shadow_name):
+                    errors.append(f"{rel}: @Shadow member not found in {owner}: {shadow_name}")
             for member in METHOD_RE.findall(text):
                 if "*" in member or member == "<clinit>":
                     continue
