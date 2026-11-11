@@ -7,7 +7,7 @@ ranked search, module settings and a Social menu for chat, friends and your clan
 
 ## Install
 
-Download [`argus-client.jar`](argus-client.jar), place it in your
+Download [`Argus-2.5.5-mc26.2.jar`](Argus-2.5.5-mc26.2.jar), place it in your
 instance's `mods` folder, and replace earlier copies of this client or its
 separate GUI add-on.
 
@@ -92,12 +92,12 @@ From this `26.2` directory:
 
 ```sh
 ./gradlew build
-python3 tools/verify_branding.py build/libs/argus-client.jar
-python3 tools/verify_merge.py build/libs/argus-client.jar
+python3 tools/verify_branding.py build/libs/Argus-2.5.5-mc26.2.jar
+python3 tools/verify_merge.py build/libs/Argus-2.5.5-mc26.2.jar
 ```
 
 On Windows use `gradlew.bat build`. Install the output at
-`build/libs/argus-client.jar`.
+`build/libs/Argus-2.5.5-mc26.2.jar`.
 
 Fabric Loom compiles the core and GUI together against Mojang mappings and
 remaps the result to Fabric intermediary names. Gradle downloads the pinned
@@ -214,4 +214,4 @@ The **Volytra Fly** ElytraFly mode is ported and adapted from
 released under **CC0 1.0 Universal**. The attribution, third-party notice and
 full licence text are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 and [licenses/VolytraFly-CC0.txt](licenses/VolytraFly-CC0.txt), and are packaged
-inside `argus-client.jar`.
+inside `Argus-2.5.5-mc26.2.jar`.
