@@ -24,7 +24,7 @@ public final class PrintCommand extends Command {
       RequiredArgumentBuilder messageArgument = Command.argument("message", messageType);
       com.mojang.brigadier.Command<Object> printMessage = context -> {
          Gui gui = ClientAccess.argusclientMinecraft.gui;
-         ChatComponent chat = gui.getChat();
+         ChatComponent chat = gui.hud.getChat();
          Class<String> messageClass = String.class;
          String message = (String)context.getArgument("message", messageClass);
          Component component = Component.nullToEmpty(message);

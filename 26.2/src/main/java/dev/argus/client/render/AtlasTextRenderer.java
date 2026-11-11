@@ -1,5 +1,6 @@
 package dev.argus.client.render;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -136,8 +137,8 @@ public final class AtlasTextRenderer {
                ChatFormatting format = FORMATTING_CODES.get(Character.toLowerCase(character));
                if (format == null || format == ChatFormatting.RESET) {
                   color = baseColor;
-               } else if (format.getColor() != null) {
-                  color = format.getColor();
+               } else if (LegacyFormatting.rgb(format) != null) {
+                  color = LegacyFormatting.rgb(format);
                }
             } else if (character == 167) {
                formattingCode = true;
@@ -231,7 +232,7 @@ public final class AtlasTextRenderer {
 
    static {
       for (ChatFormatting format : ChatFormatting.values()) {
-         FORMATTING_CODES.put(format.getChar(), format);
+         FORMATTING_CODES.put(LegacyFormatting.code(format), format);
       }
    }
 }

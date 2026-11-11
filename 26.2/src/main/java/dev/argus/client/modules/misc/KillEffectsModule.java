@@ -43,6 +43,7 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -102,7 +103,7 @@ public class KillEffectsModule extends Module {
                return;
             }
 
-            LightningBolt lightning = new LightningBolt(EntityType.LIGHTNING_BOLT, ClientAccess.argusclientMinecraft.level);
+            LightningBolt lightning = new LightningBolt(EntityTypes.LIGHTNING_BOLT, ClientAccess.argusclientMinecraft.level);
             lightning.setPos(position);
             lightning.snapTo(position);
             ((ClientLightningState)lightning).argusclient$setClient(true);

@@ -799,7 +799,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       Minecraft minecraft = this.minecraft();
       LocalPlayer player = minecraft.player;
       if (!this.active() || !this.module.isToggled() || !this.smartElytra.getValue() || !this.canSmartSwap(player)
-         || minecraft.screen != null || !minecraft.isWindowActive()
+         || minecraft.gui.screen() != null || !minecraft.isWindowActive()
          || player.onGround() || player.isFallFlying() || player.isInWater() || player.isInLava()
          || player.isPassenger() || player.getAbilities().flying || player.hasEffect(MobEffects.LEVITATION)) return;
       if (gliderRemaining(player.getItemBySlot(EquipmentSlot.CHEST)) > 1) return;
@@ -1236,7 +1236,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    /** The boost key (Sprint unless rebound) held physically while playing, with no screen open. */
    private boolean boostKeyHeld() {
       Minecraft minecraft = this.minecraft();
-      return minecraft.screen == null && !PlayerMovementKeys.isFreecamActive() && this.boostKey.isPhysicallyDown(minecraft.options.keySprint);
+      return minecraft.gui.screen() == null && !PlayerMovementKeys.isFreecamActive() && this.boostKey.isPhysicallyDown(minecraft.options.keySprint);
    }
 
    /** Boost H Speed in blocks/tick; at the slider's top ("MAX") it is Volytra's own Horizontal Speed. */
@@ -1621,7 +1621,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    }
 
    private boolean canManageInventory(LocalPlayer player) {
-      return this.minecraft().screen == null && player.containerMenu instanceof InventoryMenu;
+      return this.minecraft().gui.screen() == null && player.containerMenu instanceof InventoryMenu;
    }
 
    private Minecraft minecraft() {

@@ -52,6 +52,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -285,8 +286,8 @@ public final class AuraModule extends Module {
                      Entity capturedAttackTarget = this.target;
                      this.sendAttack(capturedAttackTarget);
                      boolean useMagnet = this.magnetSetting.getValue()
-                        && this.target.getType() != EntityType.CREEPER
-                        && this.target.getType() != EntityType.END_CRYSTAL;
+                        && this.target.getType() != EntityTypes.CREEPER
+                        && this.target.getType() != EntityTypes.END_CRYSTAL;
                      if (this.rotateSetting.getValue() && useMagnet) {
                         float[] rotations = RotationManager.getRotationsToEntity(this.target);
                         float targetYaw = rotations[0];
@@ -489,7 +490,7 @@ public final class AuraModule extends Module {
          changeSprint = false;
       }
 
-      if (target.getType() == EntityType.END_CRYSTAL) {
+      if (target.getType() == EntityTypes.END_CRYSTAL) {
          changeSprint = false;
       }
 

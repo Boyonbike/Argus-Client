@@ -48,7 +48,7 @@ public class ShulkerPlacementController extends ChestStealerController {
             BlockPos shulkerPosition = clickedBlockPosition.relative(placementDirection);
             Direction fallbackDirection = Direction.UP;
             Direction openDirection = BlockInteractionUtils.getStrictDirectionsOrFallback(shulkerPosition, fallbackDirection).getFirst();
-            Vec3 hitPosition = shulkerPosition.getCenter().relative(openDirection, 0.5);
+            Vec3 hitPosition = Vec3.atCenterOf(shulkerPosition).relative(openDirection, 0.5);
             BlockHitResult openHit = new BlockHitResult(hitPosition, openDirection, shulkerPosition, false);
             InteractionHand openHand = event.getHand();
             PacketSender.sendUseItemOn(openHand, openHit);

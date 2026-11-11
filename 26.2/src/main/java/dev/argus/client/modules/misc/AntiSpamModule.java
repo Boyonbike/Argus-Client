@@ -62,7 +62,7 @@ public class AntiSpamModule extends Module {
 
          if (this.indicatorSetting.getValue()) {
             this.messageStacks.computeIfPresent(this.pendingMessage, (message, stack) -> {
-               ((VisibleChatLinesAccess)ClientAccess.argusclientMinecraft.gui.getChat()).getVisible().remove(stack.line());
+               ((VisibleChatLinesAccess)ClientAccess.argusclientMinecraft.gui.hud.getChat()).getVisible().remove(stack.line());
                return (AntiSpamModule.MessageStack)stack;
             });
             this.messageStacks.putIfAbsent(this.pendingMessage, new AntiSpamModule.MessageStack(1L, event.getLine()));

@@ -31,7 +31,7 @@ public class TradeActionsPanel extends Panel implements ClientAccess {
          .orElse(null);
       TradeEditorScreen editorScreen = new TradeEditorScreen(registeredTrade);
       editorScreen.setParentScreen(this.managerScreen);
-      ClientAccess.argusclientMinecraft.setScreen(editorScreen);
+      ClientAccess.argusclientMinecraft.gui.setScreen(editorScreen);
    }
 
    private void deleteIfConfirmed() {

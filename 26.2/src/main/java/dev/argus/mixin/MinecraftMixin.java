@@ -152,8 +152,8 @@ public class MinecraftMixin {
    @WrapWithCondition(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;stop()V"))
    private boolean confirmGameClose(Minecraft client) {
       if (antiQuitModule.isToggled() && antiQuitModule.gameCloseSetting.getValue()) {
-         if (!(client.screen instanceof ConfirmGameCloseScreen)) {
-            client.setScreen(new ConfirmGameCloseScreen());
+         if (!(client.gui.screen() instanceof ConfirmGameCloseScreen)) {
+            client.gui.setScreen(new ConfirmGameCloseScreen());
          }
 
          return false;

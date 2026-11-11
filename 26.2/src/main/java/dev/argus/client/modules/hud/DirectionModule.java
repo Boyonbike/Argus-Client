@@ -17,10 +17,10 @@ public class DirectionModule extends HudWidgetModule {
    private final Setting<Boolean> prefixSetting;
 
    private String formatYawPitch() {
-      Camera cameraForYaw = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera cameraForYaw = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       float cameraYaw = cameraForYaw.yRot();
       float wrappedYaw = Mth.wrapDegrees(cameraYaw);
-      Camera cameraForPitch = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera cameraForPitch = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       float pitch = cameraForPitch.xRot();
       Setting<Boolean> preciseOption = this.preciseSetting;
       Boolean precise = preciseOption.getValue();
@@ -34,7 +34,7 @@ public class DirectionModule extends HudWidgetModule {
 
    private String formatDirection() {
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = gameRenderer.getMainCamera();
+      Camera camera = gameRenderer.mainCamera();
       float cameraYawCapture = camera.yRot();
       int sector = RotationManager.getYawSector(cameraYawCapture);
       String prefix = this.getCardinalPrefix(sector);

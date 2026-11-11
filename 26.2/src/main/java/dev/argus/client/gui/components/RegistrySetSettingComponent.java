@@ -49,7 +49,7 @@ public class RegistrySetSettingComponent<E> extends SettingComponent<Set<E>> {
       if (!this.isUnavailable()) {
          super.mouseClicked(mouseX, mouseY, button);
          if (this.isMouseOver(mouseX, mouseY) && (button == 0 || button == 1)) {
-            new RegistrySetScreen<>(ClientAccess.argusclientMinecraft.screen, this.registrySetting).open();
+            new RegistrySetScreen<>(ClientAccess.argusclientMinecraft.gui.screen(), this.registrySetting).open();
          }
       }
    }

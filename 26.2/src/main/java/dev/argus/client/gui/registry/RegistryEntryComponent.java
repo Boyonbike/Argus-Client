@@ -14,6 +14,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -122,7 +123,7 @@ class RegistryEntryComponent<E> extends ButtonComponent {
 
    private static ItemStack createIconStack(Identifier identifier, Object entry) {
       if (entry instanceof EntityType entityType) {
-         if (entityType == EntityType.ITEM) {
+         if (entityType == EntityTypes.ITEM) {
             return Items.STICK.getDefaultInstance();
          }
 

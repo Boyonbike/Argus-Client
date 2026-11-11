@@ -25,6 +25,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -166,7 +167,7 @@ public final class FeetPlaceFireworkSupport implements ClientAccess {
 
    void observeSpawnPacket(PacketEvent.Receive event) {
       long receivedAt = System.currentTimeMillis();
-      if (event.getPacket() instanceof ClientboundAddEntityPacket itemPacket && itemPacket.getType() == EntityType.ITEM) {
+      if (event.getPacket() instanceof ClientboundAddEntityPacket itemPacket && itemPacket.getType() == EntityTypes.ITEM) {
          double itemX = itemPacket.getX();
          double itemY = itemPacket.getY();
          double itemZ = itemPacket.getZ();

@@ -21,12 +21,12 @@ public class ConfirmGameCloseScreen extends ConfirmScreen {
       public void accept(boolean confirmed) {
          if (!((MinecraftAccessor)ClientAccess.argusclientMinecraft).argusclient$isDisconnecting()) {
             Minecraft client = ClientAccess.argusclientMinecraft;
-            client.setScreen(null);
+            client.gui.setScreen(null);
          }
 
          if (confirmed) {
             Minecraft client = ClientAccess.argusclientMinecraft;
-            client.destroy();
+            client.close();
          } else {
             Minecraft client = ClientAccess.argusclientMinecraft;
             long windowHandle = client.getWindow().handle();

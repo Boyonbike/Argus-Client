@@ -177,7 +177,7 @@ public class FastPlaceModule extends Module {
             BlockPos relativeOrigin = hit.getBlockPos();
             Direction directionForRelativePosition = supportDirection;
             BlockPos supportPosition = relativeOrigin.relative(directionForRelativePosition);
-            Vec3 center = supportPosition.getCenter();
+            Vec3 center = Vec3.atCenterOf(supportPosition);
             Direction opposite = supportDirection.getOpposite();
             double halfBlock = 0.5;
             Direction oppositeDirection = opposite;
@@ -287,7 +287,7 @@ public class FastPlaceModule extends Module {
                         int slotToRestore = previousSlot;
                         InventoryUtils.selectHotbarSlotForPlacement(slotToRestore);
                         RotationManager managerForRequest = ClientContext.rotationManager;
-                        Vec3 miningCenter = miningPosition.getCenter();
+                        Vec3 miningCenter = Vec3.atCenterOf(miningPosition);
                         double halfBlock = 0.5;
                         Direction directionForOffset = supportDirection;
                         Vec3 rotationTarget = miningCenter.relative(directionForOffset, halfBlock);

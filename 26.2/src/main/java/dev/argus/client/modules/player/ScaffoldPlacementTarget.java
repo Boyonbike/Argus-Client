@@ -59,7 +59,7 @@ public record ScaffoldPlacementTarget(BlockPos position, Direction side, boolean
       }
 
       targets.sort(Comparator.comparing(target -> {
-         Vec3 center = target.position().getCenter();
+         Vec3 center = Vec3.atCenterOf(target.position());
          double deltaX = origin.x - center.x;
          double deltaZ = origin.z - center.z;
          return (float)(deltaX * deltaX + deltaZ * deltaZ);

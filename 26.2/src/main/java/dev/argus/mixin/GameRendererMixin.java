@@ -222,7 +222,7 @@ public abstract class GameRendererMixin {
    )
    private void beforeScreenRendering(DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo callback, @Local GuiGraphicsExtractor graphics) {
       NameProtectModule.replacementBypassed = true;
-      if (this.minecraft.screen instanceof ClientScreen clientScreen) {
+      if (this.minecraft.gui.screen() instanceof ClientScreen clientScreen) {
          if (clientScreen.hasMenuParent()) {
             clientScreen.getParentScreen().extractRenderStateWithTooltipAndSubtitles(graphics, -99, -99, RenderUtils.getPartialTick());
          }
@@ -241,7 +241,7 @@ public abstract class GameRendererMixin {
    )
    private void afterScreenRendering(DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo callback) {
       NameProtectModule.replacementBypassed = false;
-      if (this.minecraft.screen instanceof ClientScreen) {
+      if (this.minecraft.gui.screen() instanceof ClientScreen) {
          GuiProjectionUtils.restoreProjection();
       }
    }
@@ -267,7 +267,7 @@ public abstract class GameRendererMixin {
       }
 
       if (ClientAccess.argusclientMinecraft.level != null
-         && !ClientAccess.argusclientMinecraft.options.hideGui
+         && !ClientAccess.argusclientMinecraft.gui.hud.isHidden
          && !ClientAccess.argusclientMinecraft.debugEntries.isOverlayVisible()) {
          PoseStack poses = GuiProjectionUtils.toPoseStack(graphics);
          GuiProjectionUtils.beginGuiProjection();
@@ -277,24 +277,24 @@ public abstract class GameRendererMixin {
          GuiProjectionUtils.restoreProjection();
       }
 
-      if (this.minecraft.screen != null) {
+      if (this.minecraft.gui.screen() != null) {
          this.renderClientHud(graphics, true);
-         RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
+         RenderUtils.clearDepth(this.minecraft.gameRenderer.mainRenderTarget());
       }
    }
 
    /** On top of the vanilla GUI when no screen is open (the old post-incrementFrameNumber hook). */
    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;endFrame()V", shift = Shift.AFTER))
    private void renderHudWithoutScreen(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
-      if (this.minecraft.screen == null && this.hudGraphics != null) {
-         RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
+      if (this.minecraft.gui.screen() == null && this.hudGraphics != null) {
+         RenderUtils.clearDepth(this.minecraft.gameRenderer.mainRenderTarget());
          this.renderClientHud(this.hudGraphics, true);
       }
    }
 
    @Inject(method = "render", at = @At("HEAD"))
    private void updateFrameTimingAndChatHeight(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
-      hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.screen instanceof ChatScreen ? 12.0F : 0.0F);
+      hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen ? 12.0F : 0.0F);
       ClientContext.frameTiming.recordFrame();
    }
 
@@ -311,7 +311,7 @@ public abstract class GameRendererMixin {
          }
 
          PoseStack poses = GuiProjectionUtils.toPoseStack(graphics);
-         if (!ClientAccess.argusclientMinecraft.options.hideGui && !ClientAccess.argusclientMinecraft.debugEntries.isOverlayVisible()) {
+         if (!ClientAccess.argusclientMinecraft.gui.hud.isHidden && !ClientAccess.argusclientMinecraft.debugEntries.isOverlayVisible()) {
             HudRenderEvent hudEvent = HudRenderEvent.create(poses, graphics, RenderUtils.getPartialTick());
             ClientAccess.eventBus.post(hudEvent);
          }

@@ -37,7 +37,7 @@ public class PlayerModelModule extends HudWidgetModule {
 
    @Override
    public void renderContent(PoseStack poses) {
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       if (camera.position() != null) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
          Quaternionf quaternion = new Quaternionf();
@@ -64,11 +64,11 @@ public class PlayerModelModule extends HudWidgetModule {
       float modelX = modelTranslation.x;
       poses.translate(modelX, modelY, modelZ);
       poses.mulPose(rotation);
-      Lighting lighting = ClientAccess.argusclientMinecraft.gameRenderer.getLighting();
+      Lighting lighting = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
       Entry entityLightingEntry = Entry.ENTITY_IN_UI;
       lighting.setupFor(entityLightingEntry);
       SubmitNodeStorage submitNodes = ClientAccess.argusclientMinecraft.gameRenderer.getSubmitNodeStorage();
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
       Minecraft clientForEntityRenderer = Minecraft.getInstance();
       EntityRenderDispatcher entityRenderer = clientForEntityRenderer.getEntityRenderDispatcher();
       float partialTick = RenderUtils.getPartialTick();
@@ -78,7 +78,7 @@ public class PlayerModelModule extends HudWidgetModule {
       RenderUtils.INSTANCE.flushEntities();
       poses.popPose();
       GameRenderer rendererForItemLighting = ClientAccess.argusclientMinecraft.gameRenderer;
-      lighting = rendererForItemLighting.getLighting();
+      lighting = rendererForItemLighting.lighting();
       Entry itemLightingEntry = Entry.ITEMS_FLAT;
       lighting.setupFor(itemLightingEntry);
       RenderTargetUtils.restoreRenderTargets();

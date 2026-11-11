@@ -112,7 +112,7 @@ public final class MacroRegistry extends Registry<Macro> implements ClientAccess
 
    @EventHandler
    private void onInputPress(InputPressEvent event) {
-      if (ClientAccess.argusclientMinecraft.screen == null && !this.isWorldUnavailable()) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() == null && !this.isWorldUnavailable()) {
          for (Macro macro : this.entries) {
             if (macro.isToggled()) {
                Keybind keybind = macro.getKeybind();
@@ -132,7 +132,7 @@ public final class MacroRegistry extends Registry<Macro> implements ClientAccess
 
    @EventHandler
    private void onTick(WorldRenderEvent.Main event) {
-      if (ClientAccess.argusclientMinecraft.screen == null && !this.isWorldUnavailable()) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() == null && !this.isWorldUnavailable()) {
          for (Macro macro : this.entries) {
             if (macro instanceof HoldMacro holdMacro && holdMacro.isToggled()) {
                Keybind keybind = holdMacro.getKeybind();

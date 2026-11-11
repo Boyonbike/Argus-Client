@@ -26,7 +26,7 @@ public abstract class PauseScreenMixin extends Screen {
    private void confirmOrInterceptDisconnect(net.minecraft.client.gui.components.Button button, CallbackInfo callback) {
       Minecraft client = Minecraft.getInstance();
       if (antiQuitModule.isToggled() && antiQuitModule.disconnectSetting.getValue() && !disconnectConfirmed) {
-         client.setScreen(new DisconnectConfirmationScreen(() -> {
+         client.gui.setScreen(new DisconnectConfirmationScreen(() -> {
             disconnectConfirmed = true;
             client.getReportingContext().draftReportHandled(client, this, () -> this.minecraft.disconnectFromWorld(ClientLevel.DEFAULT_QUIT_MESSAGE), true);
          }));

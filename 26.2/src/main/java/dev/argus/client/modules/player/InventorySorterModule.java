@@ -153,7 +153,7 @@ public class InventorySorterModule extends Module {
       }
 
       Boolean silent = this.silentSetting.getValue();
-      if (!silent && !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)) {
+      if (!silent && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)) {
          return true;
       }
 

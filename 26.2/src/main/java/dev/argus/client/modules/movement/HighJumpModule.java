@@ -68,7 +68,7 @@ public class HighJumpModule extends Module {
 
    private boolean isShulkerInRange(BlockEntity blockEntity) {
       Vec3 playerPositionSnapshot = ClientAccess.argusclientMinecraft.player.position();
-      Vec3 blockCenterSnapshot = blockEntity.getBlockPos().getCenter();
+      Vec3 blockCenterSnapshot = Vec3.atCenterOf(blockEntity.getBlockPos());
       float distance = Vec3Utils.horizontalDistance(playerPositionSnapshot, blockCenterSnapshot);
       return distance <= 1.0F;
    }
@@ -147,7 +147,7 @@ public class HighJumpModule extends Module {
    private void interactWithShulker(BlockPos position) {
       List<Direction> directions = BlockInteractionUtils.getStrictDirections(position);
       Direction direction = directions.isEmpty() ? Direction.UP : directions.getFirst();
-      Vec3 hitPoint = position.getCenter().relative(direction, 0.5);
+      Vec3 hitPoint = Vec3.atCenterOf(position).relative(direction, 0.5);
       int interactionCount = this.infiniteSetting.getValue() ? 3 : 1;
 
       for (int i = 0; i < interactionCount; i++) {

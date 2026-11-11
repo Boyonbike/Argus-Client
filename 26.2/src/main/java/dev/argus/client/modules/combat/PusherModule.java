@@ -104,7 +104,7 @@ public class PusherModule extends Module {
             if (this.rotateSetting.getValue()) {
                RotationManager rotationSnapshot = ClientContext.rotationManager;
                BlockPos anglePosition = placement.position();
-               Vec3 angleCenterSnapshot = anglePosition.getCenter();
+               Vec3 angleCenterSnapshot = Vec3.atCenterOf(anglePosition);
                Direction angleDirection = placement.direction();
                rotationSnapshot.requestRotation(RotationManager.getRotationsToFace(angleCenterSnapshot, angleDirection), 500);
             }
@@ -235,7 +235,7 @@ public class PusherModule extends Module {
 
    private boolean isInvalidPistonPosition(LivingEntity target, BlockPos position, Direction direction) {
       Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-      Vec3 center = position.getCenter();
+      Vec3 center = Vec3.atCenterOf(position);
       double distance = eyeSnapshot.distanceTo(center);
       if (distance > this.getRange()) {
          return true;

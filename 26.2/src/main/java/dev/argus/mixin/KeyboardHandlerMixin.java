@@ -29,7 +29,7 @@ public class KeyboardHandlerMixin {
       cancellable = true
    )
    private void postKeyPressEvent(long windowHandle, int action, KeyEvent keyEvent, CallbackInfo callback) {
-      if (keyEvent.key() >= 0 && this.minecraft.screen == null && action == 1) {
+      if (keyEvent.key() >= 0 && this.minecraft.gui.screen() == null && action == 1) {
          InputPressEvent event = new InputPressEvent(keyEvent.key(), false);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
@@ -40,7 +40,7 @@ public class KeyboardHandlerMixin {
 
    @Inject(method = "charTyped", at = @At("HEAD"))
    public void postCharTypedEvent(long windowHandle, CharacterEvent characterEvent, CallbackInfo callback) {
-      if (this.minecraft.screen == null && windowHandle == this.minecraft.getWindow().handle()) {
+      if (this.minecraft.gui.screen() == null && windowHandle == this.minecraft.getWindow().handle()) {
          KeyboardHandlerCharTypedEvent event = new KeyboardHandlerCharTypedEvent(characterEvent.codepoint());
          ClientAccess.eventBus.post(event);
       }

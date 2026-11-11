@@ -60,7 +60,7 @@ public class RegistrySetScreen<E> extends ClientScreen {
       if (this.parentScreen instanceof ClientScreen parentClientScreen) {
          parentClientScreen.open();
       } else {
-         ClientAccess.argusclientMinecraft.setScreen(this.parentScreen);
+         ClientAccess.argusclientMinecraft.gui.setScreen(this.parentScreen);
       }
    }
 

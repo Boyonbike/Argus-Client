@@ -252,7 +252,7 @@ public class SelfFillModule extends Module {
 
          for (BlockPos position : positions) {
             Vec3 playerPosition = ClientAccess.argusclientMinecraft.player.position();
-            Vec3 center = position.getCenter();
+            Vec3 center = Vec3.atCenterOf(position);
             double distanceSquared = playerPosition.distanceToSqr(center);
             if (distanceSquared < nearestDistanceSquared) {
                nearestPosition = position;
@@ -393,7 +393,7 @@ public class SelfFillModule extends Module {
                      initialRotation[1] = 90.0F;
                      float[] rotation = initialRotation;
                      if (this.obstructionPosition != null && this.rotateSetting.getValue()) {
-                        Vec3 targetCenter = this.obstructionPosition.getCenter();
+                        Vec3 targetCenter = Vec3.atCenterOf(this.obstructionPosition);
                         rotation = RotationManager.getRotationsToPosition(targetCenter);
                      }
 

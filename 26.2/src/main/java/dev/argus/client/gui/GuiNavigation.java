@@ -12,18 +12,18 @@ import net.minecraft.client.gui.screens.Screen;
 public final class GuiNavigation {
     private static boolean deferred;
     private GuiNavigation() {}
-    public static boolean isOpen(){return deferred||Minecraft.getInstance().screen instanceof UiScreen;}
+    public static boolean isOpen(){return deferred||Minecraft.getInstance().gui.screen() instanceof UiScreen;}
     public static void openFromBind(){
         Minecraft mc=Minecraft.getInstance();
         if(mc.level==null||mc.player==null)return;
-        if(mc.screen instanceof ChatScreen){deferred=true;return;}
-        mc.setScreen(new ModulesScreen(mc.screen));
+        if(mc.gui.screen() instanceof ChatScreen){deferred=true;return;}
+        mc.gui.setScreen(new ModulesScreen(mc.gui.screen()));
     }
     /** Opens the Argus GUI over whatever screen is showing, with or without a world loaded. */
     public static void openAnywhere(){
         Minecraft mc=Minecraft.getInstance();
-        if(mc.screen instanceof UiScreen)return;
-        mc.setScreen(replacementFor(mc.screen));
+        if(mc.gui.screen() instanceof UiScreen)return;
+        mc.gui.setScreen(replacementFor(mc.gui.screen()));
     }
     /** The Argus screen to show in place of the legacy GUI, returning to {@code current} on close. */
     public static Screen replacementFor(Screen current){
@@ -31,10 +31,10 @@ public final class GuiNavigation {
     }
     public static void closeFromBind(){
         Minecraft mc=Minecraft.getInstance();
-        if(mc.screen instanceof UiScreen screen)screen.beginClose(screen.rootParent());
+        if(mc.gui.screen() instanceof UiScreen screen)screen.beginClose(screen.rootParent());
         deferred=false;
     }
     static void tick(){
-        if(deferred&&!(Minecraft.getInstance().screen instanceof ChatScreen)){deferred=false;openFromBind();}
+        if(deferred&&!(Minecraft.getInstance().gui.screen() instanceof ChatScreen)){deferred=false;openFromBind();}
     }
 }

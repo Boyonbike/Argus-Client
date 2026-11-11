@@ -342,7 +342,7 @@ public class BounceElytraFlyHandler extends ElytraFlyModeHandler {
    public Vec3 getBounceTarget() {
       Direction openSide = this.getOpenHorizontalSide();
       BlockPos localPosition = PlayerStateUtils.getLocalRoundedBlockPosition();
-      return openSide == null ? localPosition.getBottomCenter() : localPosition.relative(openSide).getBottomCenter();
+      return openSide == null ? Vec3.atBottomCenterOf(localPosition) : Vec3.atBottomCenterOf(localPosition.relative(openSide));
    }
 
    public Direction getOpenHorizontalSide() {

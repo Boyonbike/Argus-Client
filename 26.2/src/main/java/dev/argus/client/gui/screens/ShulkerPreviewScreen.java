@@ -34,7 +34,7 @@ public class ShulkerPreviewScreen extends ShulkerBoxScreen implements ClientAcce
       int keyCode = event.key();
       if (keyCode == 256) {
          Screen capturedParent = this.parentScreen;
-         ClientAccess.argusclientMinecraft.setScreen(capturedParent);
+         ClientAccess.argusclientMinecraft.gui.setScreen(capturedParent);
          return true;
       } else {
          return super.keyPressed(event);

@@ -24,7 +24,7 @@ public class BaritoneComeCommandMixin {
    )
    private void useFreecamGoal(Args args) {
       if (freecam.isToggled()) {
-         BlockPos cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().blockPosition();
+         BlockPos cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().blockPosition();
          if (WorldUtils.isAir(cameraPosition) && WorldUtils.isAir(cameraPosition.below()) && !WorldUtils.isAir(cameraPosition.below(2))) {
             args.set(0, new GoalBlock(cameraPosition.below()));
          } else {

@@ -197,7 +197,7 @@ final class ColorPicker {
         }
     }
 
-    private static UiScreen host() { return (UiScreen) net.minecraft.client.Minecraft.getInstance().screen; }
+    private static UiScreen host() { return (UiScreen) net.minecraft.client.Minecraft.getInstance().gui.screen(); }
 
     private void knob(GuiGraphicsExtractor g, float cx, float y, int colour) {
         UiDraw.rounded(g, cx - 2.5f, y - 2, 5, BAR + 4, 2.5f, 0xffffffff);

@@ -46,7 +46,7 @@ public class AimAssistModule extends Module {
 
    @EventHandler
    private void onWorldRender(WorldRenderEvent.Main event) {
-      if (ClientAccess.argusclientMinecraft.screen == null) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() == null) {
          if (ClientAccess.argusclientMinecraft.player.getMainHandItem().getItem() instanceof AxeItem
             || ItemUtils.isSword(ClientAccess.argusclientMinecraft.player.getMainHandItem())
             || !this.onlyWeaponSetting.getValue()) {

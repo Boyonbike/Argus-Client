@@ -70,7 +70,7 @@ final class ConfigImportScreen extends UiScreen {
                 return new ReadResult(List.of(), ExternalConfigReader.read(source));
             } catch (Exception e) { throw new java.util.concurrent.CompletionException(e); }
         }).whenComplete((result, error) -> minecraft.execute(() -> {
-            if (!session.accepts(token) || minecraft.screen != this) return; busy = false;
+            if (!session.accepts(token) || minecraft.gui.screen() != this) return; busy = false;
             if (error != null) { fail("Couldn’t read config: " + cause(error).getMessage()); updateButtons(); return; }
             if (result.source() == null) {
                 if (!result.candidates().isEmpty()) rows.add(new Row("Configs in this folder (" + result.candidates().size() + ")", Kind.HEADER, null));

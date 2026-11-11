@@ -33,6 +33,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 import net.minecraft.world.level.ClipContext.Block;
 import net.minecraft.world.phys.AABB;
@@ -234,7 +235,7 @@ public class AntiPearlModule extends PlacementModule {
       placementExpiries.removeIf(expiresAt -> System.currentTimeMillis() > expiresAt);
       Predicate<BlockPos> isUnavailable = position -> {
          BlockPos positionArgument = position;
-         Vec3 positionCenterSnapshot = positionArgument.getCenter();
+         Vec3 positionCenterSnapshot = Vec3.atCenterOf(positionArgument);
          double distance = positionCenterSnapshot.distanceTo(ClientAccess.argusclientMinecraft.player.getEyePosition());
          Float range = this.rangeSetting.getValue();
          return distance > range.floatValue() || this.placementExpiryByPosition.containsKey(position);
@@ -245,7 +246,7 @@ public class AntiPearlModule extends PlacementModule {
 
    @EventHandler
    public void onPearlSpawnPacket(PacketEvent.Receive event) {
-      if (event.getPacket() instanceof ClientboundAddEntityPacket spawnPacket && spawnPacket.getType() == EntityType.ENDER_PEARL) {
+      if (event.getPacket() instanceof ClientboundAddEntityPacket spawnPacket && spawnPacket.getType() == EntityTypes.ENDER_PEARL) {
          Vec3 spawnPosition = new Vec3(spawnPacket.getX(), spawnPacket.getY(), spawnPacket.getZ());
          Minecraft taskExecutor = ClientAccess.argusclientMinecraft;
          Runnable processSpawn = () -> {

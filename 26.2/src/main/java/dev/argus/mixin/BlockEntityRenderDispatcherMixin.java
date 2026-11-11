@@ -28,7 +28,7 @@ public class BlockEntityRenderDispatcherMixin {
             callback.cancel();
          } else if (noRenderModule.isToggled()
             && noRenderModule.tileEntitiesSetting.getValue()
-            && renderState.blockPos.distSqr(Minecraft.getInstance().gameRenderer.getMainCamera().blockPosition())
+            && renderState.blockPos.distSqr(Minecraft.getInstance().gameRenderer.mainCamera().blockPosition())
                > noRenderModule.tileDistanceSetting.getValue() * noRenderModule.tileDistanceSetting.getValue()) {
             callback.cancel();
          }

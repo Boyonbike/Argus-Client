@@ -343,7 +343,7 @@ public final class RotationManager implements ClientAccess {
    }
 
    public void requestRotation(float[] angles, int priority, boolean force) {
-      if (!antiCheat.is2b2tEnabled() || !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen) || force) {
+      if (!antiCheat.is2b2tEnabled() || !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen) || force) {
          if (!isSilentRotationMode() || force) {
             RotationRequest rotationRequest = new RotationRequest(angles, priority);
             this.requestRotation(rotationRequest);

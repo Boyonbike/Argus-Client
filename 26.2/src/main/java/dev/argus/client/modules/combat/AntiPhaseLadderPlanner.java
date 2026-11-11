@@ -34,7 +34,7 @@ public class AntiPhaseLadderPlanner implements ClientAccess, AntiPhasePlacementP
          if (!this.shouldRejectPlacement(targetPosition, target, shape)
             && (!BlockInteractionUtils.isStrictDirectionEnabled() || !this.isUnsupportedDirection(supportPosition, supportDirection))) {
             Vec3 targetPositionVector = target.position();
-            Vec3 supportCenter = supportPosition.getCenter();
+            Vec3 supportCenter = Vec3.atCenterOf(supportPosition);
             float distanceSquared = (float)targetPositionVector.distanceToSqr(supportCenter);
             if (distanceSquared < bestDistanceSquared) {
                bestBounds = shape.bounds();

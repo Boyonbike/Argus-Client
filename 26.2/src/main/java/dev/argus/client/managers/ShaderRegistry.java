@@ -43,7 +43,7 @@ public final class ShaderRegistry implements ClientAccess {
             NoOpOutlineBufferSource.INSTANCE,
             DiscardingBufferSource.INSTANCE,
             ClientAccess.argusclientMinecraft.font,
-            ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
+            ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState()
          );
       }
 

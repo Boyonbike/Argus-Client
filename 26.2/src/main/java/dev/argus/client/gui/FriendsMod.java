@@ -57,9 +57,9 @@ public final class FriendsMod implements ClientModInitializer {
             if (r == Request.NONE) return;
             request = Request.NONE;
             Minecraft mc = Minecraft.getInstance();
-            if (r == Request.MODULES) mc.setScreen(new ModulesScreen(null));
-            else if (r == Request.CHAT) mc.setScreen(new ChatToolsScreen(null, null));
-            else mc.setScreen(ChatToolsScreen.on(null, ChatToolsScreen.Page.PLAYERS));
+            if (r == Request.MODULES) mc.gui.setScreen(new ModulesScreen(null));
+            else if (r == Request.CHAT) mc.gui.setScreen(new ChatToolsScreen(null, null));
+            else mc.gui.setScreen(ChatToolsScreen.on(null, ChatToolsScreen.Page.PLAYERS));
         });
     }
 }

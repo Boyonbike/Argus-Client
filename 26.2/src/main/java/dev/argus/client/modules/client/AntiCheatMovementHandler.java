@@ -45,7 +45,7 @@ public final class AntiCheatMovementHandler implements ClientAccess {
       }
 
       if (packet != null) {
-         boolean inventoryScreenWithPlayerMenu = ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen
+         boolean inventoryScreenWithPlayerMenu = ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen
             && ClientAccess.argusclientMinecraft.player.containerMenu == ClientAccess.argusclientMinecraft.player.inventoryMenu;
          if (!packet.hasRotation() && !inventoryScreenWithPlayerMenu) {
             return false;

@@ -147,7 +147,7 @@ public class ClientScreen extends Screen implements ClientAccess {
          }
 
          if (this.parentScreen != null) {
-            ClientAccess.argusclientMinecraft.setScreen(this.parentScreen);
+            ClientAccess.argusclientMinecraft.gui.setScreen(this.parentScreen);
          } else {
             this.onClose();
          }
@@ -419,15 +419,15 @@ public class ClientScreen extends Screen implements ClientAccess {
    }
 
    public void open() {
-      if (ClientAccess.argusclientMinecraft.screen instanceof ClientScreen previousScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen previousScreen) {
          this.setParentScreen(previousScreen.parentScreen);
          previousScreen.setParentScreen(null);
          this.skipOpeningTransition = true;
       } else {
-         this.setParentScreen(ClientAccess.argusclientMinecraft.screen);
+         this.setParentScreen(ClientAccess.argusclientMinecraft.gui.screen());
       }
 
-      ClientAccess.argusclientMinecraft.setScreen(this);
+      ClientAccess.argusclientMinecraft.gui.setScreen(this);
    }
 
    public void closeWithTransition() {

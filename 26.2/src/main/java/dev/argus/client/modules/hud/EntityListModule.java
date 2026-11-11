@@ -30,13 +30,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public class EntityListModule extends HudWidgetModule {
-   private final Setting<Set<EntityType<?>>> entitiesSetting = this.add(new RegistrySetSetting<>("Entities", BuiltInRegistries.ENTITY_TYPE, EntityType.PLAYER));
+   private final Setting<Set<EntityType<?>>> entitiesSetting = this.add(new RegistrySetSetting<>("Entities", BuiltInRegistries.ENTITY_TYPE, EntityTypes.PLAYER));
    private final Setting<Set<Item>> itemsSetting = this.add(new RegistrySetSetting<>("Items", BuiltInRegistries.ITEM, Items.OBSIDIAN));
    private final Setting<ListFilterMode> selectionSetting = this.add(new EnumSetting<>("Selection", ListFilterMode.BLACKLIST));
    private final Setting<ListFilterMode> itemSelectionSetting = this.add(new EnumSetting<>("ItemSelection", ListFilterMode.ANY));
@@ -175,7 +176,7 @@ public class EntityListModule extends HudWidgetModule {
       Predicate<Object> itemSelectionVisible = ignoredValue -> {
          Setting<ListFilterMode> visibilitySelectionOption = this.selectionSetting;
          ListFilterMode visibilitySelection = visibilitySelectionOption.getValue();
-         EntityType visibilityItemType = EntityType.ITEM;
+         EntityType visibilityItemType = EntityTypes.ITEM;
          Setting<Set<EntityType<?>>> visibilityEntityTypesOption = this.entitiesSetting;
          Collection<?> visibleEntityTypes = visibilityEntityTypesOption.getValue();
          return ListFilterMode.matches(visibilitySelection, visibilityItemType, visibleEntityTypes);

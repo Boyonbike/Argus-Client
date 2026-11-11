@@ -112,11 +112,11 @@ public final class AutoSetHomeModule extends Module {
             return;
         }
         confirmationScreen = null;
-        if (mc.screen != null || !scheduler.ready(timing.getValue() == HomeTiming.FIXED, intervalMillis(), bufferMillis())) return;
+        if (mc.gui.screen() != null || !scheduler.ready(timing.getValue() == HomeTiming.FIXED, intervalMillis(), bufferMillis())) return;
         String name = ChatHomeNames.valid(home.getValue());
         if (name == null) {
             if (!invalidHomeWarning) {
-                mc.gui.getChat().addClientSystemMessage(Component.literal("[AutoSetHome] Choose a valid single home name."));
+                mc.gui.hud.getChat().addClientSystemMessage(Component.literal("[AutoSetHome] Choose a valid single home name."));
             }
             invalidHomeWarning = true;
             return;
@@ -181,7 +181,7 @@ public final class AutoSetHomeModule extends Module {
     }
 
     private boolean tryOverride() {
-        Screen screen = mc.screen;
+        Screen screen = mc.gui.screen();
         if (!(screen instanceof DialogScreen<?>) || screen != confirmationScreen) return false;
 
         String phrase = dialogMatch.getValue();

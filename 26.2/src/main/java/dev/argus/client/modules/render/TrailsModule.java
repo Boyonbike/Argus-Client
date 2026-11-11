@@ -186,7 +186,7 @@ public class TrailsModule extends Module {
       if (!this.isWorldUnavailable()) {
          Boolean renderEnabled = this.renderSetting.getValue();
          if (renderEnabled) {
-            RenderTarget mainTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+            RenderTarget mainTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
             RenderTarget maskTarget = MaskShaderRenderer.MASK_TARGET;
             Setting<Color> maskColor = this.colorSetting;
             RenderUtils.clearColor(maskTarget, maskColor.getValue());

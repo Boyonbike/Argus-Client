@@ -14,7 +14,7 @@ public class DepthOfFieldPipeline extends ShaderPipeline {
    private static final AmbienceModule ambience = ClientContext.getModule(AmbienceModule.class);
 
    public DepthOfFieldPipeline() {
-      super(ClientAccess.argusclientMinecraft.getMainRenderTarget());
+      super(ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
       CompiledShaderProgram program = CompiledShaderProgram.fromResources("base.vert", "multi/dof.frag");
       ShaderStage verticalStage = new DepthOfFieldPipeline.DirectionalStage(program, false, MaskShaderRenderer.VERTICAL_TARGET);
       this.addStage(verticalStage);

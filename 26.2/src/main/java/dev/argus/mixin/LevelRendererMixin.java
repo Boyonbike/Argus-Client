@@ -85,7 +85,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       }
 
       return freecam.isToggled()
-         || viewClip.isToggled() && ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().isDetached()
+         || viewClip.isToggled() && ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().isDetached()
          || player.isSpectator();
    }
 
@@ -147,11 +147,11 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       RenderUtils.applyCameraRotation(poses);
       WorldRenderEvent.BeforeDepthClear beforeDepthEvent = WorldRenderEvent.BeforeDepthClear.create(poses, partialTick);
       ClientAccess.eventBus.post(beforeDepthEvent);
-      RenderUtils.clearDepth(ClientAccess.argusclientMinecraft.getMainRenderTarget());
+      RenderUtils.clearDepth(ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
       WorldRenderEvent.Main mainEvent = WorldRenderEvent.Main.create(poses, partialTick);
       ClientAccess.eventBus.post(mainEvent);
-      RenderUtils.clearDepth(ClientAccess.argusclientMinecraft.getMainRenderTarget());
+      RenderUtils.clearDepth(ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
       WorldRenderEvent.Overlay overlayEvent = WorldRenderEvent.Overlay.create(poses, partialTick);
       ClientAccess.eventBus.post(overlayEvent);
       poses.popPose();
@@ -356,8 +356,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    ) {
       if (freecam.shouldHideHands() && IrisShaderBridge.isHandRendererAvailable()) {
          this.savedHideGui = new AtomicBoolean();
-         this.savedHideGui.setPlain(ClientAccess.argusclientMinecraft.options.hideGui);
-         ClientAccess.argusclientMinecraft.options.hideGui = true;
+         this.savedHideGui.setPlain(ClientAccess.argusclientMinecraft.gui.hud.isHidden);
+         ClientAccess.argusclientMinecraft.gui.hud.isHidden = true;
       }
    }
 
@@ -375,7 +375,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       CallbackInfo callback
    ) {
       if (freecam.shouldHideHands() && this.savedHideGui != null) {
-         ClientAccess.argusclientMinecraft.options.hideGui = this.savedHideGui.getPlain();
+         ClientAccess.argusclientMinecraft.gui.hud.isHidden = this.savedHideGui.getPlain();
          this.savedHideGui = null;
       }
    }

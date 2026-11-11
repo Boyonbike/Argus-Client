@@ -37,7 +37,7 @@ public class ViewClipModule extends Module {
    private void onMouseHandlerOnScrollEvent(MouseHandlerOnScrollEvent event) {
       Boolean enabled = this.scrollSetting.getValue();
       if (enabled) {
-         Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+         Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
          if (camera.isDetached()) {
             if (KeyUtils.isPhysicalKeyDown(341)) {
                float currentTarget = this.scrollTargetOffset;
@@ -77,7 +77,7 @@ public class ViewClipModule extends Module {
       float difference = this.scrollTargetOffset - this.scrollOffset;
       double exponent = -10.0F * frameFactor;
       this.scrollOffset = currentOffset + difference * (1.0F - (float)Math.exp(exponent));
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       if (camera.isDetached()) {
          ClampedInterpolatedFloat animation = this.clipAnimation;
          animation.setTarget(true);

@@ -60,7 +60,7 @@ public class HoleESPModule extends Module {
       double previousPlayerY = ClientAccess.argusclientMinecraft.player.yo;
       double currentPlayerY = ClientAccess.argusclientMinecraft.player.getY();
       double interpolatedPlayerY = Mth.lerp(renderPartialTick, previousPlayerY, currentPlayerY);
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       AABB ownBlockBounds = new AABB(ownBlockPosition());
       HoleManager holeManagerSnapshot = ClientContext.holeManager;
 
@@ -95,7 +95,7 @@ public class HoleESPModule extends Module {
                   }
 
                   BlockPos distancePosition = hole.pos();
-                  Vec3 holeCenter = distancePosition.getCenter();
+                  Vec3 holeCenter = Vec3.atCenterOf(distancePosition);
                   double cameraDistance = cameraPosition.distanceTo(holeCenter);
                   AABB ownFadeHoleBounds = hole.bounds();
                   boolean fadeOwnHole = ownFadeHoleBounds.intersects(ownBlockBounds) && this.hideOwnSetting.getValue();

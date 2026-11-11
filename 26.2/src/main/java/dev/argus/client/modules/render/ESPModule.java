@@ -75,6 +75,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 import net.minecraft.world.level.LightLayer;
@@ -359,7 +360,7 @@ public class ESPModule extends Module {
 
       // Stacked labels are gathered per target group, since each group has its own label style.
       Map<RuleSettings, List<ESPItemGroup>> itemGroups = new IdentityHashMap<>();
-      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 camera = argusclientMinecraft.gameRenderer.mainCamera().position();
       for (Entity entity : this.renderEntities) {
          ESPRenderHelper.Resolved target = this.renderHelper.resolve(entity);
          RuleSettings settings = target.settings();
@@ -461,7 +462,7 @@ public class ESPModule extends Module {
 
    private void renderGroupedItemLabels(WorldRenderEvent event, List<ESPItemGroup> groups, RuleSettings settings) {
       Color background = settings.labelBackground();
-      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 camera = argusclientMinecraft.gameRenderer.mainCamera().position();
       for (ESPItemGroup group : groups) {
          Vec3 labelPosition = group.getRenderBounds().getCenter().add(0.0, 0.5, 0.0);
          double labelScale = MathUtils.getDistanceScale(camera, labelPosition, settings.labelScale());
@@ -529,7 +530,7 @@ public class ESPModule extends Module {
 
                above.set(position.getX(), position.getY() + 1, position.getZ());
                if (level.getBlockState(above).isAir() && blockLight.getLightValue(above) <= maximumSpawnLight
-                  && state.isValidSpawn(level, position, EntityType.ZOMBIE) && !level.getBiome(position).is(Biomes.MUSHROOM_FIELDS)) {
+                  && state.isValidSpawn(level, position, EntityTypes.ZOMBIE) && !level.getBiome(position).is(Biomes.MUSHROOM_FIELDS)) {
                   this.lightSpots.add(position.asLong());
                }
             }

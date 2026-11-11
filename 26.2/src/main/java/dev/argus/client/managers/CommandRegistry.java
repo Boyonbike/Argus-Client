@@ -211,7 +211,7 @@ public final class CommandRegistry extends Registry<Command> implements ClientAc
             if (prefixCharacter == inputEvent.getCharacter()) {
                Minecraft minecraft = ClientAccess.argusclientMinecraft;
                ChatScreen chatScreen = new ChatScreen("", false);
-               minecraft.setScreen(chatScreen);
+               minecraft.gui.setScreen(chatScreen);
             }
          }
       }

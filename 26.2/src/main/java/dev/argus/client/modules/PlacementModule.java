@@ -62,6 +62,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -356,7 +357,7 @@ public abstract class PlacementModule extends Module {
    private void onInboundPacket(PacketEvent.Receive event) {
       if (this.placementAttackSetting.getValue()
          && event.getPacket() instanceof ClientboundAddEntityPacket spawnPacket
-         && spawnPacket.getType() == EntityType.END_CRYSTAL
+         && spawnPacket.getType() == EntityTypes.END_CRYSTAL
          && this.shouldHandleCrystalSpawn()) {
          if (OffhandModule.isRecentSwapWindowActive()) {
             return;
@@ -505,7 +506,7 @@ public abstract class PlacementModule extends Module {
 
       for (BlockPos candidatePos : candidates) {
          Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-         Vec3 blockCenter = candidatePos.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(candidatePos);
          double squaredDistance = eyeSnapshot.distanceToSqr(blockCenter);
          boolean allowAttack = this.placementAttackSetting.getValue();
          if (!BlockInteractionUtils.canPlaceBlock(candidatePos, placementBlock, true, allowAttack) || !(squaredDistance <= 36.0)) {
@@ -584,7 +585,7 @@ public abstract class PlacementModule extends Module {
          return PlacementModule.PlacementResult.FAILED;
       }
 
-      Vec3 blockCenterSnapshot = blockPos.getCenter();
+      Vec3 blockCenterSnapshot = Vec3.atCenterOf(blockPos);
       Direction rotationDirection = this.placementDirection;
       float[] rotations = RotationManager.getRotationsToFace(blockCenterSnapshot, rotationDirection);
       boolean raytraceRequired = this.placementRaytraceSetting.getValue();
@@ -637,7 +638,7 @@ public abstract class PlacementModule extends Module {
             ClientContext.featureBoxRenderer.addBox(this, blockPos);
          }
 
-         this.lastPlacementHitPosition = blockPos.getCenter();
+         this.lastPlacementHitPosition = Vec3.atCenterOf(blockPos);
          if (this.placementDirection != null) {
             double aimPointOffset = 0.5;
             Direction aimPointDirection = this.placementDirection;

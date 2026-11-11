@@ -51,7 +51,7 @@ public final class AutoMineBurrowProvider extends AutoMineProviderBase {
                   return -1.0;
                }
 
-               Vec3 center = position.getCenter();
+               Vec3 center = Vec3.atCenterOf(position);
                double distanceSquared = target.distanceToSqr(center);
                return distanceSquared;
             }))

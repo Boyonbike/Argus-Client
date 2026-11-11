@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReceiver;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -138,7 +139,7 @@ public class PlayerTabOverlayMixin {
          } else {
             int latencyColor = extraTabModule.coloredSetting.getValue()
                ? ColorUtils.getLatencyColor(playerInfo.getLatency()).hashCode()
-               : ChatFormatting.YELLOW.getColor();
+               : LegacyFormatting.rgb(ChatFormatting.YELLOW);
             MutableComponent latencyText = Component.literal(String.valueOf(playerInfo.getLatency())).withColor(latencyColor);
             graphics.text(this.minecraft.font, latencyText, entryX + entryWidth - this.minecraft.font.width(latencyText), entryY, -1);
             callback.cancel();

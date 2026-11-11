@@ -16,7 +16,7 @@ public class DisconnectConfirmationScreen extends ConfirmScreen {
 
    private record ConfirmationCallback(Runnable confirmationAction) implements BooleanConsumer, ClientAccess {
       public void accept(boolean confirmed) {
-         ClientAccess.argusclientMinecraft.setScreen(null);
+         ClientAccess.argusclientMinecraft.gui.setScreen(null);
          if (confirmed) {
             this.confirmationAction.run();
          }

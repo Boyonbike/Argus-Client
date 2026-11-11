@@ -108,7 +108,7 @@ public class EntityControlModule extends Module {
                      }
 
                      boolean descend = KeyUtils.isPhysicallyDown(ClientAccess.argusclientMinecraft.options.keySprint);
-                     if (ClientAccess.argusclientMinecraft.screen instanceof ChatScreen || ClientAccess.argusclientMinecraft.screen instanceof ClientScreen) {
+                     if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen || ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen) {
                         descend = false;
                      }
 

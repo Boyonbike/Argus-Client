@@ -112,7 +112,7 @@ public class TracersModule extends Module {
          return this.collected;
       }
 
-      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 camera = argusclientMinecraft.gameRenderer.mainCamera().position();
       double minimum = this.minDistanceSetting.getValue();
       double minimumSquared = minimum * minimum;
       SpecificTargets specific = this.targets.specific;

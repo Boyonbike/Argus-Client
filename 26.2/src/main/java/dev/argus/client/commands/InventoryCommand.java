@@ -93,7 +93,7 @@ public class InventoryCommand extends Command {
 
    private int closeInventory(CommandContext context) {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
-      minecraft.setScreen(null);
+      minecraft.gui.setScreen(null);
       return 1;
    }
 

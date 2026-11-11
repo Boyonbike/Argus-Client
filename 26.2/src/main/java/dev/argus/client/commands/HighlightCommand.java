@@ -58,7 +58,7 @@ public final class HighlightCommand extends Command {
          CommandContext argumentContext = context;
          Position argumentPosition = (Position)argumentContext.getArgument(positionName, positionType);
          BlockPos blockPosition = BlockPos.containing(argumentPosition);
-         Vec3 blockCenter = blockPosition.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(blockPosition);
          AABB box = AABB.ofSize(blockCenter, 0.5, 0.5, 0.5);
          AABB pointBox = box;
          HighlightCommand pointFeature = this;
@@ -84,7 +84,7 @@ public final class HighlightCommand extends Command {
    public void onWorldRender(WorldRenderEvent.Main event) {
       if (this.trackedPosition != null) {
          GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-         Camera camera = gameRenderer.getMainCamera();
+         Camera camera = gameRenderer.mainCamera();
          Vec3 cameraPosition = camera.position();
          Vec3 targetPosition = this.trackedPosition;
          float distance = Vec3Utils.horizontalDistance(cameraPosition, targetPosition);

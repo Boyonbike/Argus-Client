@@ -1,5 +1,6 @@
 package dev.argus.client.modules.combat;
 
+import net.minecraft.util.Mth;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.utils.combat.DamageUtils;
@@ -8,8 +9,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.BedBlock;
-import net.minecraft.world.level.block.entity.BedBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -37,32 +36,36 @@ public class BedBreakScanner implements ClientAccess {
       this.refreshSettings();
       float bestDamage = 0.0F;
       BlockPos bestPosition = null;
+      BlockPos eyeBlock = BlockPos.containing(this.eyePosition);
+      int rangeBlocks = Mth.ceil(this.range);
 
-      for (BlockEntity candidate : ClientContext.worldStateManager.getBlockEntities()) {
-         if (candidate instanceof BedBlockEntity) {
-            BlockState stateSnapshot = candidate.getBlockState();
-            EnumProperty partProperty = BedBlock.PART;
-            if ((BedPart)stateSnapshot.getValue(partProperty) != BedPart.FOOT) {
-               BlockPos rangePosition = candidate.getBlockPos();
-               Vec3 rangeCenterSnapshot = rangePosition.getCenter();
-               if (!(rangeCenterSnapshot.distanceTo(this.eyePosition) > this.range)) {
-                  BlockPos targetPosition = candidate.getBlockPos();
-                  Vec3 targetCenterSnapshot = targetPosition.getCenter();
-                  LivingEntity damageTarget = target;
-                  float targetDamage = DamageUtils.getBedDamage(targetCenterSnapshot, damageTarget);
-                  BlockPos selfPosition = candidate.getBlockPos();
-                  Vec3 selfCenterSnapshot = selfPosition.getCenter();
-                  LocalPlayer selfPlayer = ClientAccess.argusclientMinecraft.player;
-                  float selfDamage = DamageUtils.getBedDamage(selfCenterSnapshot, selfPlayer);
-                  if ((!(selfDamage >= EntityUtils.getPlayerHealthWithAbsorption()) || !this.module.antiSuicideSetting.getValue())
-                     && !(selfDamage > this.maximumSelfDamage)
-                     && !(targetDamage < this.minimumDamage)
-                     && (bestPosition == null || targetDamage > bestDamage)) {
-                     bestPosition = candidate.getBlockPos();
-                     bestDamage = targetDamage;
-                  }
-               }
-            }
+      for (BlockPos candidate : BlockPos.betweenClosed(
+         eyeBlock.offset(-rangeBlocks, -rangeBlocks, -rangeBlocks),
+         eyeBlock.offset(rangeBlocks, rangeBlocks, rangeBlocks))) {
+         BlockState stateSnapshot = ClientAccess.argusclientMinecraft.level.getBlockState(candidate);
+         if (!(stateSnapshot.getBlock() instanceof BedBlock)) {
+            continue;
+         }
+         EnumProperty partProperty = BedBlock.PART;
+         if ((BedPart)stateSnapshot.getValue(partProperty) == BedPart.FOOT) {
+            continue;
+         }
+         Vec3 rangeCenterSnapshot = Vec3.atCenterOf(candidate);
+         if (rangeCenterSnapshot.distanceTo(this.eyePosition) > this.range) {
+            continue;
+         }
+         Vec3 targetCenterSnapshot = Vec3.atCenterOf(candidate);
+         LivingEntity damageTarget = target;
+         float targetDamage = DamageUtils.getBedDamage(targetCenterSnapshot, damageTarget);
+         Vec3 selfCenterSnapshot = Vec3.atCenterOf(candidate);
+         LocalPlayer selfPlayer = ClientAccess.argusclientMinecraft.player;
+         float selfDamage = DamageUtils.getBedDamage(selfCenterSnapshot, selfPlayer);
+         if ((!(selfDamage >= EntityUtils.getPlayerHealthWithAbsorption()) || !this.module.antiSuicideSetting.getValue())
+            && !(selfDamage > this.maximumSelfDamage)
+            && !(targetDamage < this.minimumDamage)
+            && (bestPosition == null || targetDamage > bestDamage)) {
+            bestPosition = candidate.immutable();
+            bestDamage = targetDamage;
          }
       }
 

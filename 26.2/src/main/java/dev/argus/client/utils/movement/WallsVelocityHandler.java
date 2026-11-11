@@ -165,7 +165,7 @@ public class WallsVelocityHandler extends VelocityModeHandler {
    @Override
    public void onSendPosition(LocalPlayerSendPositionEvent event) {
       if (EventStage.Post != event.getStage()
-         && !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)
+         && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)
          && this.canApplyWallVelocity()
          && this.velocityModule.reduceSetting.getValue()) {
          if (RotationManager.isSilentRotationMode()) {

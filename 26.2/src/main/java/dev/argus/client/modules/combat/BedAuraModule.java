@@ -94,7 +94,7 @@ public final class BedAuraModule extends Module {
       if (position != null) {
          Direction fallbackSnapshot = Direction.UP;
          Direction direction = selectInteractionDirection(position, fallbackSnapshot);
-         BlockHitResult hit = new BlockHitResult(position.getCenter(), direction, position, false);
+         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(position), direction, position, false);
          PlayerStateTracker interactionScheduler = ClientContext.playerStateTracker;
          Runnable interactionCallback = () -> {
             MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
@@ -243,7 +243,7 @@ public final class BedAuraModule extends Module {
             Vec3 hitPoint = placementHit.getLocation();
             if (hitPoint == null) {
                BlockPos fallbackFoot = placement.foot();
-               fallbackFoot.getCenter();
+               Vec3.atCenterOf(fallbackFoot);
             }
 
             Boolean rotate = this.rotateSetting.getValue();
@@ -252,9 +252,9 @@ public final class BedAuraModule extends Module {
                angles = RotationManager.getRotationsToPosition(hitPoint);
             } else {
                BlockPos directionFoot = placement.foot();
-               Vec3 footCenterSnapshot = directionFoot.getCenter();
+               Vec3 footCenterSnapshot = Vec3.atCenterOf(directionFoot);
                BlockPos directionHead = placement.head();
-               Vec3 headCenterSnapshot = directionHead.getCenter();
+               Vec3 headCenterSnapshot = Vec3.atCenterOf(directionHead);
                angles = RotationManager.calculateRotations(footCenterSnapshot, headCenterSnapshot);
             }
 
@@ -286,7 +286,7 @@ public final class BedAuraModule extends Module {
                   BlockPos instantFootSnapshot = placement.foot();
                   Direction instantFallbackSnapshot = Direction.UP;
                   Direction instantDirection = selectInteractionDirection(instantFootSnapshot, instantFallbackSnapshot);
-                  BlockHitResult instantHit = new BlockHitResult(placement.foot().getCenter(), instantDirection, placement.foot(), false);
+                  BlockHitResult instantHit = new BlockHitResult(Vec3.atCenterOf(placement.foot()), instantDirection, placement.foot(), false);
                   InteractionHand instantInteractionHand = InteractionHand.MAIN_HAND;
                   PacketSender.sendUseItemOn(instantInteractionHand, instantHit);
                   LocalPlayer instantSwingPlayer = ClientAccess.argusclientMinecraft.player;

@@ -147,7 +147,7 @@ public class PositionModule extends HudWidgetModule {
             Vec3 displayPosition = ClientAccess.argusclientMinecraft.player.position();
             FreecamModule freecamForEnabledCheck = freecam;
             if (freecamForEnabledCheck.isToggled()) {
-               Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+               Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
                Vec3 cameraPosition = camera.position();
                double playerHeight = ClientAccess.argusclientMinecraft.player.getBbHeight();
                displayPosition = cameraPosition.subtract(0.0, playerHeight, 0.0);

@@ -244,7 +244,7 @@ public class SkeletonModule extends Module {
          }
       }
 
-      RenderTarget mainTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+      RenderTarget mainTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
       RenderTarget maskTarget = MaskShaderRenderer.MASK_TARGET;
       RenderUtils.clearColor(maskTarget, this.colorSetting.getValue());
       RenderUtils.clearDepth(MaskShaderRenderer.MASK_TARGET);
@@ -263,7 +263,7 @@ public class SkeletonModule extends Module {
    private Vec3 getCameraRelativePosition(Entity entity, float partialTick) {
       Vec3 entityPosition = entity.getPosition(partialTick);
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Vec3 cameraPosition = gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = gameRenderer.mainCamera().position();
       return entityPosition.subtract(cameraPosition);
    }
 

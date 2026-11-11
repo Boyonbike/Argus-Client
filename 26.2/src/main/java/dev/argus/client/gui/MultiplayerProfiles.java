@@ -33,8 +33,8 @@ public final class MultiplayerProfiles {
         var buttons=Screens.getWidgets(screen);
         // The base client's "Vanilla" checkbox lives in the Accounts menu as "Appear as vanilla" now.
         buttons.removeIf(b -> b instanceof Checkbox && "Vanilla".equals(b.getMessage().getString()));
-        buttons.add(new UiIconButton(PAD,PAD,SIZE,"shield","Proxies",()->client.setScreen(new ProxiesScreen(screen))));
-        buttons.add(new UiIconButton(width-PAD-SIZE,PAD,SIZE,"player","Accounts",()->client.setScreen(new AccountsScreen(screen))));
+        buttons.add(new UiIconButton(PAD,PAD,SIZE,"shield","Proxies",()->client.gui.setScreen(new ProxiesScreen(screen))));
+        buttons.add(new UiIconButton(width-PAD-SIZE,PAD,SIZE,"player","Accounts",()->client.gui.setScreen(new AccountsScreen(screen))));
         ScreenEvents.beforeExtract(screen).register((s,g,mx,my,delta)-> {
             UiAnim.frame(); UiRender.opacity=1; UiDraw.density=(float)client.getWindow().getGuiScale();
         });

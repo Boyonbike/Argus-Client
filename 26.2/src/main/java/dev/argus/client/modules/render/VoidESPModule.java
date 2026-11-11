@@ -48,7 +48,7 @@ public class VoidESPModule extends Module {
 
    private boolean shouldRemoveVoidBlock(BlockPos position) {
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Vec3 cameraPosition = gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = gameRenderer.mainCamera().position();
       Integer radiusValue = this.radiusSetting.getValue();
       return !position.closerToCenterThan(cameraPosition, radiusValue.intValue()) ? true : isBedrock(position);
    }
@@ -100,7 +100,7 @@ public class VoidESPModule extends Module {
 
       this.voidBlocks.removeIf(this::shouldRemoveVoidBlock);
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Vec3 cameraPosition = gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = gameRenderer.mainCamera().position();
       int scanRadius = this.radiusSetting.getValue();
       // Void holes can only be on the bottom layer, so scan that flat disc of the sphere
       // instead of every block in it (about 20x fewer lookups at radius 16).
@@ -141,10 +141,10 @@ public class VoidESPModule extends Module {
          AABB box = blockBox.setMaxY(maxY);
          if (RotationManager.isVisible(box)) {
             GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-            Vec3 cameraPosition = gameRenderer.getMainCamera().position();
+            Vec3 cameraPosition = gameRenderer.mainCamera().position();
             Color fillColor = this.fillSetting.getValue();
             Color lineColor = this.lineSetting.getValue();
-            Vec3 blockCenter = position.getCenter();
+            Vec3 blockCenter = Vec3.atCenterOf(position);
             double distance = cameraPosition.distanceTo(blockCenter);
             Boolean fadeEnabled = this.fadeSetting.getValue();
             if (fadeEnabled) {

@@ -75,7 +75,7 @@ public class AutoTrapModule extends PlacementModule {
 
       Player targetSnapshot = this.targetPlayer;
       AABB boundsSnapshot = this.getTargetTopBounds(targetSnapshot);
-      Vec3 blockCenter = blockPos.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(blockPos);
       return boundsSnapshot.contains(blockCenter);
    }
 
@@ -98,7 +98,7 @@ public class AutoTrapModule extends PlacementModule {
       Setting<Boolean> raytraceSetting = this.placementRaytraceSetting;
       if (raytraceSetting.getValue()) {
          Vec3 positionSnapshot = ClientAccess.argusclientMinecraft.player.position();
-         Vec3 blockCenter = blockPos.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(blockPos);
          return -positionSnapshot.distanceToSqr(blockCenter);
       } else {
          return blockPos.getY();
@@ -208,7 +208,7 @@ public class AutoTrapModule extends PlacementModule {
       }
 
       Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-      Vec3 blockCenter = blockPos.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(blockPos);
       double distance = eyeSnapshot.distanceTo(blockCenter);
       Float configuredRange = this.rangeSetting.getValue();
       if (distance > configuredRange.floatValue()) {
@@ -509,7 +509,7 @@ public class AutoTrapModule extends PlacementModule {
          } else {
             positions.sort(Comparator.comparingDouble(sortPosition -> {
                BlockPos positionForCenter = sortPosition;
-               Vec3 centerSnapshot = positionForCenter.getCenter();
+               Vec3 centerSnapshot = Vec3.atCenterOf(positionForCenter);
                Vec3 centerArgument = centerSnapshot;
                float angleYaw = RotationManager.getRotationsToPosition(centerArgument)[0];
                return Mth.degreesDifferenceAbs(targetYaw, angleYaw);
@@ -526,7 +526,7 @@ public class AutoTrapModule extends PlacementModule {
                LocalPlayer sortPosition = ClientAccess.argusclientMinecraft.player;
                Vec3 positionValue = sortPosition.position();
                BlockPos positionForCenter = sortPos;
-               Vec3 positionCenter = positionForCenter.getCenter();
+               Vec3 positionCenter = Vec3.atCenterOf(positionForCenter);
                Vec3 centerArgument = positionValue;
                return -centerArgument.distanceTo(positionCenter);
             }));

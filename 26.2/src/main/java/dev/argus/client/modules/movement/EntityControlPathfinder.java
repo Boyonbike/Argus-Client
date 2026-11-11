@@ -534,7 +534,7 @@ final class EntityControlPathfinder implements ClientAccess, AbstractGameEventLi
 
    private static Vec3 target(Goal goal, Vec3 position) {
       if (goal instanceof IGoalRenderPos rendered) {
-         return rendered.getGoalPos().getBottomCenter();
+         return Vec3.atBottomCenterOf(rendered.getGoalPos());
       } else if (goal instanceof GoalXZ horizontal) {
          int x = horizontal.getX();
          int z = horizontal.getZ();

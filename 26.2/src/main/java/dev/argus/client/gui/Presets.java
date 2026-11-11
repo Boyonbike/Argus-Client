@@ -176,7 +176,7 @@ final class Presets {
         for (PresetCategory category : PresetCategory.values()) {
             String preset = bindings(category).get(target);
             if (preset != null && load(category, preset))
-                mc.gui.getChat().addClientSystemMessage(Component.literal("Preset " + preset + " has been loaded for this world."));
+                mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Preset " + preset + " has been loaded for this world."));
         }
     }
 }

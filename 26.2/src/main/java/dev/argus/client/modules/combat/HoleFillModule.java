@@ -107,7 +107,7 @@ public class HoleFillModule extends PlacementModule {
                this.candidateCount = positions.size();
                positions.sort(Comparator.comparing(sortPos -> {
                   Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-                  Vec3 blockCenter = sortPos.getCenter();
+                  Vec3 blockCenter = Vec3.atCenterOf(sortPos);
                   double distance = eyeSnapshot.distanceTo(blockCenter);
                   return distance;
                }));

@@ -68,8 +68,8 @@ public final class SourceFillModule extends Module {
       Iterator<BlockPos> spongeIterator = this.spongeExpiryByPosition.keySet().iterator();
 
       while (spongeIterator.hasNext()) {
-         Vec3 spongeCenter = spongeIterator.next().getCenter();
-         Vec3 targetCenter = position.getCenter();
+         Vec3 spongeCenter = Vec3.atCenterOf(spongeIterator.next());
+         Vec3 targetCenter = Vec3.atCenterOf(position);
          if (spongeCenter.distanceTo(targetCenter) <= 4.0) {
             return false;
          }
@@ -86,7 +86,7 @@ public final class SourceFillModule extends Module {
 
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       Vec3 eyePosition = player.getEyePosition();
-      Vec3 blockCenter = position.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(position);
       double distance = eyePosition.distanceTo(blockCenter);
       Float wallRangeValue = this.wallRangeSetting.getValue();
       return distance <= wallRangeValue.floatValue();
@@ -143,7 +143,7 @@ public final class SourceFillModule extends Module {
       boolean airPlaceFlag = this.airPlaceSetting.getValue();
       BlockInteractionUtils.placeBlockIgnoringCrystals(position, supportDirection, airPlaceFlag, hand);
       if (this.rotateSetting.getValue()) {
-         Vec3 rotationCenter = position.getCenter();
+         Vec3 rotationCenter = Vec3.atCenterOf(position);
          float[] rotations = RotationManager.getRotationsToFace(rotationCenter, supportDirection);
          RotationManager rotationManager = ClientContext.rotationManager;
          rotationManager.requestRotation(rotations, 100);

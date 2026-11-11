@@ -80,6 +80,7 @@ import net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket;
 import net.minecraft.network.protocol.game.ServerboundChatPacket;
 import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.storage.LevelResource;
 
 /**
@@ -341,14 +342,14 @@ public final class ChatToolsModule extends Module {
         clanNames = Set.of();
         clanInChat = false;
         autoTpy.enabled(false);
-        if (mc.gui != null) mc.gui.getChat().rescaleChat();
+        if (mc.gui != null) mc.gui.hud.getChat().rescaleChat();
         saveNow();
     }
 
     @EventHandler private void onTick(MinecraftTickEvent event) {
         if (openRequested) {
             openRequested = false;
-            if (mc.screen == null) openWindow(null);
+            if (mc.gui.screen() == null) openWindow(null);
         }
         checkSession();
         applyCooldowns();
@@ -377,7 +378,7 @@ public final class ChatToolsModule extends Module {
      * waits for the tick so the key's typed character can't land in the new window's text field.
      */
     @EventHandler private void onInputPress(InputPressEvent event) {
-        if (mc.screen == null && claimsKeyPress(event.getCode(), event.isMouse())) openRequested = true;
+        if (mc.gui.screen() == null && claimsKeyPress(event.getCode(), event.isMouse())) openRequested = true;
     }
 
     /**
@@ -940,13 +941,13 @@ public final class ChatToolsModule extends Module {
     /** The plain text this module last handed to Minecraft to send, until its packet goes out. */
     private volatile String sentRaw;
     private void sendChatNow(String text) {
-        mc.gui.getChat().addRecentChat(text);
+        mc.gui.hud.getChat().addRecentChat(text);
         sentRaw = text;
         mc.getConnection().sendChat(text);
     }
     public void send(String command) {
         if (mc.getConnection() == null) return;
-        mc.gui.getChat().addRecentChat(command);
+        mc.gui.hud.getChat().addRecentChat(command);
         mc.getConnection().sendCommand(withoutSlash(command));
     }
 
@@ -1030,7 +1031,7 @@ public final class ChatToolsModule extends Module {
         boolean read = window != null && window.showing() && window.reading(message.player());
         messages.add(message, read);
         if (message.incoming() && !read && messageToasts.getValue())
-            SystemToast.addOrUpdate(mc.getToastManager(), DM_TOAST,
+            SystemToast.addOrUpdate(mc.gui.toastManager(), DM_TOAST,
                 Component.literal("Message from " + message.player()), Component.literal("Open Chat Tools to reply."));
         if (hideMessages.getValue()) event.cancel();
     }
@@ -1162,7 +1163,7 @@ public final class ChatToolsModule extends Module {
         clanNames = clan;
         clanColor = rgb;
         clanInChat = shown;
-        if (chatChanged && mc.gui != null) mc.gui.getChat().rescaleChat();
+        if (chatChanged && mc.gui != null) mc.gui.hud.getChat().rescaleChat();
     }
 
     /**
@@ -1242,7 +1243,7 @@ public final class ChatToolsModule extends Module {
         if (mc.getConnection() == null || style == null) return null;
         String insertion = onlineName(style.getInsertion());
         if (insertion != null) return insertion;
-        if (style.getHoverEvent() instanceof HoverEvent.ShowEntity show && show.entity().type == EntityType.PLAYER) {
+        if (style.getHoverEvent() instanceof HoverEvent.ShowEntity show && show.entity().type == EntityTypes.PLAYER) {
             PlayerInfo info = mc.getConnection().getPlayerInfo(show.entity().uuid);
             if (info != null && !isSelf(info.getProfile().name())) return info.getProfile().name();
             if (show.entity().name.isPresent()) {

@@ -16,7 +16,7 @@ public class HeavenModule extends Module {
 
    @EventHandler
    private void onCameraSetupEvent(CameraSetupEvent event) {
-      if (ClientAccess.argusclientMinecraft.screen instanceof DeathScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof DeathScreen) {
          long elapsedSinceDeath = System.currentTimeMillis() - this.deathTimeMillis;
          float clampedElapsed = (float)Mth.clamp(elapsedSinceDeath, 0L, 10000L);
          float riseProgress = clampedElapsed / 10000.0F;

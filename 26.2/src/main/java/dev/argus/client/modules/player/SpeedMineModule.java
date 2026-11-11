@@ -206,7 +206,7 @@ public class SpeedMineModule extends Module {
                BlockSampleMode sampleMode = BlockSampleMode.X8;
                Vec3 targetPoint = WorldUtils.findVisiblePoint(blockPos, sampleMode);
                if (targetPoint == null) {
-                  targetPoint = blockPos.getCenter();
+                  targetPoint = Vec3.atCenterOf(blockPos);
                }
 
                float[] rotations = RotationManager.getRotationsToPosition(targetPoint);
@@ -911,7 +911,7 @@ public class SpeedMineModule extends Module {
                            float[] rotations = RotationManager.getRotationsToBlock(requestedPosition);
                            float yaw = rotations[0];
                            float pitch = rotations[1];
-                           Vec3 blockCenter = requestedPosition.getCenter();
+                           Vec3 blockCenter = Vec3.atCenterOf(requestedPosition);
                            Vec3 lookDirection = Vec3.directionFromRotation(pitch, yaw);
                            Position containingPosition = blockCenter.add(lookDirection);
                            BlockPos extendedPosition = BlockPos.containing(containingPosition);
@@ -1197,7 +1197,7 @@ public class SpeedMineModule extends Module {
          }
 
          boolean lastBreakWasShulker = this.extraBreakTracker.getLastBlock() instanceof ShulkerBoxBlock;
-         boolean blockedByContainer = RotationManager.is2b2tMode() && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen;
+         boolean blockedByContainer = RotationManager.is2b2tMode() && ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen;
          currentMiningPosition = this.miningPos;
          boolean canContinueMining = WorldUtils.canMineBlock(currentMiningPosition);
          if (this.asyncSetting.getValue() && !blockedByContainer && !lastBreakWasShulker) {
@@ -1435,7 +1435,7 @@ public class SpeedMineModule extends Module {
 
                      if (this.rotateSetting.getValue() && RotationManager.isSilentRotationMode() && WorldUtils.canMineBlock(statePosition)) {
                         RotationManager rotationManager = ClientContext.rotationManager;
-                        Vec3 blockCenter = statePosition.getCenter();
+                        Vec3 blockCenter = Vec3.atCenterOf(statePosition);
                         float[] rotations = RotationManager.getRotationsToPosition(blockCenter);
                         rotationManager.requestRotation(rotations, 150);
                      }

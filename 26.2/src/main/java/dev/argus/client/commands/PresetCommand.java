@@ -148,7 +148,7 @@ public final class PresetCommand extends Command {
          command.scheduleRotationTask(() -> {
             Minecraft minecraft = ClientAccess.argusclientMinecraft;
             PresetScreen screen = new PresetScreen();
-            minecraft.setScreen(screen);
+            minecraft.gui.setScreen(screen);
          });
          return 1;
       });

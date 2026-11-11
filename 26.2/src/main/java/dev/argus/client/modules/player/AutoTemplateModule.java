@@ -48,7 +48,7 @@ public final class AutoTemplateModule extends Module {
 
    @EventHandler
    private void onPlayerTick(LocalPlayerPreTickEvent event) {
-      if (!this.isWorldUnavailable() && ClientAccess.argusclientMinecraft.screen instanceof SmithingScreen) {
+      if (!this.isWorldUnavailable() && ClientAccess.argusclientMinecraft.gui.screen() instanceof SmithingScreen) {
          AbstractContainerMenu menu = ClientAccess.argusclientMinecraft.player.containerMenu;
          if (this.actionTimer.hasElapsed(this.delaySetting.getValue().longValue())) {
             if (!menu.getSlot(3).getItem().isEmpty()) {

@@ -16,17 +16,17 @@ import net.minecraft.world.phys.Vec3;
 public enum HoleSnapPriorityChoice implements ClientAccess, NamedEntry {
    DISTANCE("Distance", Comparator.comparing(hole -> {
       BlockPos block = hole.pos();
-      Vec3 center = block.getCenter();
+      Vec3 center = Vec3.atCenterOf(block);
       LocalPlayer capturedPlayer = ClientAccess.argusclientMinecraft.player;
       Vec3 playerPosition = capturedPlayer.position();
       return Vec3Utils.horizontalDistance(center, playerPosition);
    })),
    CROSSHAIR("Crosshair", Comparator.comparing(hole -> {
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = gameRenderer.getMainCamera();
+      Camera camera = gameRenderer.mainCamera();
       float cameraYaw = camera.yaw();
       BlockPos block = hole.pos();
-      Vec3 center = block.getCenter();
+      Vec3 center = Vec3.atCenterOf(block);
       float targetYaw = RotationManager.getRotationsToPosition(center)[0];
       float yawDifference = Mth.degreesDifferenceAbs(cameraYaw, targetYaw);
       return yawDifference;

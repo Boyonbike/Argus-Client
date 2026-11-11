@@ -131,7 +131,7 @@ public final class AutoMineModule extends Module {
 
    private void startMining(BlockPos position, Direction direction, boolean miningFlag) {
       if (this.rotateSetting.getValue()) {
-         Vec3 centerSnapshot = position.getCenter();
+         Vec3 centerSnapshot = Vec3.atCenterOf(position);
          float[] angles = RotationManager.getRotationsToPosition(centerSnapshot);
          if (this.raytraceSetting.getValue()) {
             BlockSampleMode samplingMode = BlockSampleMode.X8;

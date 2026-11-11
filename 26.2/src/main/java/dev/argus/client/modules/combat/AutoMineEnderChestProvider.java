@@ -23,7 +23,7 @@ public final class AutoMineEnderChestProvider extends AutoMineProviderBase {
       for (BlockEntity blockEntity : ClientContext.worldStateManager.getBlockEntities()) {
          Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
          BlockPos blockPosition = blockEntity.getBlockPos();
-         Vec3 blockCenter = blockPosition.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(blockPosition);
          double distance = eyeSnapshot.distanceTo(blockCenter);
          Setting<Float> rangeSetting = this.autoMine.rangeSetting;
          Float range = rangeSetting.getValue();

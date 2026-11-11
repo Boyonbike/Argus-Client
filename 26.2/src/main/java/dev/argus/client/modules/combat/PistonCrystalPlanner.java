@@ -59,7 +59,7 @@ final class PistonCrystalPlanner {
       for (PistonCrystalPlanner.Candidate candidate : this.candidates(target)) {
          BlockPos position = candidate.position().offset(0, height, 0);
          Direction outward = candidate.outward();
-         double candidateScore = -ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(position.getCenter());
+         double candidateScore = -ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(Vec3.atCenterOf(position));
          if (candidateScore < score) {
             if (!this.hasVerticalClearance(position, outward.getOpposite(), height)) {
                return null;
@@ -83,12 +83,12 @@ final class PistonCrystalPlanner {
          BlockPos base = crystalPosition.below();
          List<Direction> directions = BlockInteractionUtils.getStrictDirections(base);
          Direction face = directions.isEmpty() ? Direction.UP : directions.getFirst();
-         Vec3 crystalHit = base.getCenter().relative(face, 0.5);
+         Vec3 crystalHit = Vec3.atCenterOf(base).relative(face, 0.5);
          if (ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(crystalHit) > this.module.placeRangeSetting.getValue().floatValue()) {
             return null;
          }
 
-         Vec3 attackPosition = crystalPosition.getCenter().relative(outward.getOpposite(), 0.02);
+         Vec3 attackPosition = Vec3.atCenterOf(crystalPosition).relative(outward.getOpposite(), 0.02);
          if (attackPosition.distanceTo(ClientAccess.argusclientMinecraft.player.getEyePosition()) > this.module.attackRangeSetting.getValue().floatValue()) {
             return null;
          }
@@ -125,7 +125,7 @@ final class PistonCrystalPlanner {
       double distance = Double.MAX_VALUE;
 
       for (BlockPos position : this.pistonPositions(crystalPosition, outward)) {
-         double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(position.getCenter());
+         double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(Vec3.atCenterOf(position));
          if (!(candidateDistance >= distance)) {
             Direction inward = outward.getOpposite();
             if (!position.relative(inward).equals(crystalPosition) || !WorldUtils.isPlacementOccupied(position.relative(inward, 2))) {
@@ -216,7 +216,7 @@ final class PistonCrystalPlanner {
          if (direction != facing && direction != Direction.DOWN) {
             BlockPos position = piston.relative(direction);
             if (!position.equals(crystalPosition)) {
-               double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(position.getCenter());
+               double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(Vec3.atCenterOf(position));
                if (!(candidateDistance >= distance)) {
                   BlockState state = ClientAccess.argusclientMinecraft.level.getBlockState(position);
                   if (state.canBeReplaced() || state.getBlock() instanceof RedstoneTorchBlock || state.getBlock() instanceof FireBlock) {
@@ -249,7 +249,7 @@ final class PistonCrystalPlanner {
          if (direction != facing) {
             BlockPos position = piston.relative(direction);
             if (!position.equals(crystalPosition) && position.getY() >= crystalPosition.getY()) {
-               double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(position.getCenter());
+               double candidateDistance = ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(Vec3.atCenterOf(position));
                if (!(candidateDistance >= distance)) {
                   BlockState state = ClientAccess.argusclientMinecraft.level.getBlockState(position);
                   if ((state.canBeReplaced() || state.is(Blocks.REDSTONE_BLOCK)) && !this.module.hasBlockingEntities(new AABB(position), this::isPlayer)) {
@@ -271,7 +271,7 @@ final class PistonCrystalPlanner {
       boolean strict = BlockInteractionUtils.isStrictDirectionEnabled();
       if (this.module.airPlaceSetting.getValue() && allowAir) {
          List<Direction> directions = BlockInteractionUtils.getStrictDirectionsOrFallback(position, Direction.UP);
-         return new BlockHitResult(position.getCenter(), directions.getFirst(), position, false);
+         return new BlockHitResult(Vec3.atCenterOf(position), directions.getFirst(), position, false);
       }
 
       for (Direction direction : Direction.values()) {

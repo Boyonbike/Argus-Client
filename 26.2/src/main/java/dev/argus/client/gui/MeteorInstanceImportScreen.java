@@ -114,7 +114,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         CompletableFuture.supplyAsync(() -> {
             try { return read(meteor); } catch (Exception e) { throw new CompletionException(e); }
         }).whenComplete((result, error) -> minecraft.execute(() -> {
-            if (!session.accepts(token) || minecraft.screen != this) return;
+            if (!session.accepts(token) || minecraft.gui.screen() != this) return;
             scanning = false;
             if (error != null) { fail("Couldn’t read " + label + ": " + cause(error).getMessage()); updateButtons(); return; }
             scan = result; selected.clear();

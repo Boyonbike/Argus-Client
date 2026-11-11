@@ -1,5 +1,6 @@
 package dev.argus.client.commands;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -306,7 +307,7 @@ public final class MacroCommand extends Command {
       String hoverText = "click to edit";
       MutableComponent labelComponent = Component.literal("[Edit]");
       ChatFormatting labelColor = ChatFormatting.GRAY;
-      int color = labelColor.getColor();
+      int color = LegacyFormatting.rgb(labelColor);
       return labelComponent.withColor(color)
          .withStyle(style -> style.withClickEvent(new SuggestCommand(suggestedCommand)))
          .withStyle(hoverStyle -> hoverStyle.withHoverEvent(new ShowText(Component.literal(hoverText))));
@@ -411,7 +412,7 @@ public final class MacroCommand extends Command {
       String hoverText = "click to remove";
       MutableComponent labelComponent = Component.literal("[Remove]");
       ChatFormatting labelColor = ChatFormatting.GRAY;
-      int color = labelColor.getColor();
+      int color = LegacyFormatting.rgb(labelColor);
       return labelComponent.withColor(color)
          .withStyle(style -> style.withClickEvent(new SuggestCommand(suggestedCommand)))
          .withStyle(hoverStyle -> hoverStyle.withHoverEvent(new ShowText(Component.literal(hoverText))));

@@ -68,6 +68,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
@@ -538,7 +539,7 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler
    private void onIncomingPacket(PacketEvent.Receive event) {
-      if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityType.FIREWORK_ROCKET) {
+      if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityTypes.FIREWORK_ROCKET) {
          Vec3 rocketPosition = new Vec3(packet.getX(), packet.getY(), packet.getZ());
          if (rocketPosition.distanceToSqr(ClientAccess.argusclientMinecraft.player.position()) <= 36.0D) {
             this.durabilitySwapTimer.reset();

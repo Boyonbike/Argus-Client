@@ -62,7 +62,7 @@ public final class TrapMiningSupport {
          return Collections.emptyList();
       } else {
          Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-         Vec3 blockCenter = miningPos.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(miningPos);
          double distance = eyeSnapshot.distanceTo(blockCenter);
          Float configuredRange = this.trapModule.rangeSetting.getValue();
          if (distance > configuredRange.floatValue() || !this.hasEnemyBelowPosition(miningPos)) {

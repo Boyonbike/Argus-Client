@@ -96,7 +96,7 @@ public class Panel implements RegistryContainer, GuiElement, NamedEntry {
 
    protected int getHeightLimit() {
       float var1 = 1.0F;
-      if (ClientAccess.argusclientMinecraft.screen instanceof ClientScreen var2) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen var2) {
          var1 = var2.getGuiScale();
       }
 

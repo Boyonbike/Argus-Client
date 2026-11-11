@@ -59,6 +59,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
@@ -230,7 +231,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
          if (useKey.isDown()
             && gappleHealthGate
             && owner.canUseGappleBind(mainhandItem)
-            && ClientAccess.argusclientMinecraft.screen == null
+            && ClientAccess.argusclientMinecraft.gui.screen() == null
             && owner.itemSetting.getValue() != OffhandItemChoice.Gapple) {
             return OffhandItemChoice.Gapple;
          }
@@ -254,8 +255,8 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
       boolean allowCrapple = this.crappleSetting.getValue();
       int chosenContainerSlot = chosenItemChoice.findContainerSlot(allowCrapple);
-      boolean canReusePreviousSlot = !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)
-         || ClientAccess.argusclientMinecraft.screen instanceof InventoryScreen;
+      boolean canReusePreviousSlot = !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)
+         || ClientAccess.argusclientMinecraft.gui.screen() instanceof InventoryScreen;
       if (this.previousSwapSlot != -1 && chosenContainerSlot != -1 && canReusePreviousSlot && menuClass == this.previousMenuClass) {
          int previousSlot = this.previousSwapSlot;
          AbstractContainerMenu previousMenu = ClientAccess.argusclientMinecraft.player.containerMenu;
@@ -272,8 +273,8 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
 
       if (chosenContainerSlot != -1) {
          if (this.containersSetting.getValue()
-            || !(ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen)
-               && !(ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen)) {
+            || !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen)
+               && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen)) {
             NonNullList menuSlots = ClientAccess.argusclientMinecraft.player.containerMenu.slots;
             if (chosenContainerSlot < menuSlots.size()) {
                ItemStack carriedStackBeforeSwap = InventoryUtils.getCarriedStack();
@@ -336,9 +337,9 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
    private boolean canUseCurrentMenu() {
       return this.directSwapSetting.getValue()
          ? true
-         : !(ClientAccess.argusclientMinecraft.screen instanceof CreativeModeInventoryScreen)
+         : !(ClientAccess.argusclientMinecraft.gui.screen() instanceof CreativeModeInventoryScreen)
             && ClientAccess.argusclientMinecraft.player.inventoryMenu == ClientAccess.argusclientMinecraft.player.containerMenu
-            && !(ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen);
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen);
    }
 
    private void swapSlotToOffhand(int containerSlot) {
@@ -417,7 +418,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
 
       if (event.getPacket() instanceof ClientboundAddEntityPacket addEntityPacket
          && this.lethalDamageTracker.isLethalCheckEnabled()
-         && addEntityPacket.getType() == EntityType.END_CRYSTAL) {
+         && addEntityPacket.getType() == EntityTypes.END_CRYSTAL) {
          Vec3 crystalPosition = new Vec3(addEntityPacket.getX(), addEntityPacket.getY(), addEntityPacket.getZ());
          if (this.lethalDamageTracker.isCrystalLethal(crystalPosition) && !shouldUseStrictTick()) {
             this.swapToChosenItem();
@@ -479,7 +480,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
 
    void endInventorySwap() {
       ClientContext.inventoryStateManager.setClickBatching(false);
-      if (!(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)) {
+      if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)) {
          ClientContext.inventoryStateManager.close();
       }
    }

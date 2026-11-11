@@ -174,7 +174,7 @@ public class BedPlacementScanner implements ClientAccess {
          return null;
       }
 
-      Vec3 explosionCenterSnapshot = headPosition.getCenter();
+      Vec3 explosionCenterSnapshot = Vec3.atCenterOf(headPosition);
       AABB damageBounds = this.module.getDamageBounds(target);
       LivingEntity damageTarget = target;
       float targetDamage = DamageUtils.getBedDamage(explosionCenterSnapshot, damageTarget, damageBounds);
@@ -183,7 +183,7 @@ public class BedPlacementScanner implements ClientAccess {
          return null;
       }
 
-      explosionCenterSnapshot = headPosition.getCenter();
+      explosionCenterSnapshot = Vec3.atCenterOf(headPosition);
       LocalPlayer selfPlayer = ClientAccess.argusclientMinecraft.player;
       float selfDamage = DamageUtils.getBedDamage(explosionCenterSnapshot, selfPlayer);
       Float maximumDamage = this.module.maxSelfDamageSetting.getValue();
@@ -192,7 +192,7 @@ public class BedPlacementScanner implements ClientAccess {
       }
 
       if (this.hitPoint == null && !this.module.rotateSetting.getValue()) {
-         Vec3 fallbackCenterSnapshot = footPosition.getCenter();
+         Vec3 fallbackCenterSnapshot = Vec3.atCenterOf(footPosition);
          Direction fallbackDirection = supportDirection;
          Vec3 fallbackCenter = fallbackCenterSnapshot;
          this.hitPoint = fallbackCenter.relative(fallbackDirection, 0.5);

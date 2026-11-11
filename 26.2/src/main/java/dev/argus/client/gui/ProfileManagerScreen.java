@@ -185,7 +185,7 @@ abstract class ProfileManagerScreen extends UiScreen {
         Long token = workerToken.get();
         minecraft.execute(() -> { if (token != null && accepts(token) && busy) update.accept(this); });
     }
-    private boolean accepts(long token) { return attempts.accepts(token) && minecraft.screen == this && !closing(); }
+    private boolean accepts(long token) { return attempts.accepts(token) && minecraft.gui.screen() == this && !closing(); }
     protected void cancelTask() { attempts.cancel(); if (task != null) task.cancel(true); busy = false; info("Cancelled."); rebuildWidgets(); }
     @Override public void beginClose(Screen target) { attempts.cancel(); if (task != null) task.cancel(true); super.beginClose(target); }
     @Override public void removed() { attempts.cancel(); if (task != null) task.cancel(true); super.removed(); }

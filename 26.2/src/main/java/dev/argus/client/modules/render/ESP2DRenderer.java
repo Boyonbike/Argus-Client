@@ -50,7 +50,7 @@ final class ESP2DRenderer implements ClientAccess {
    }
 
    void render(HudRenderEvent event, Iterable<Entity> entities) {
-      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 camera = argusclientMinecraft.gameRenderer.mainCamera().position();
       this.targets.clear();
 
       for (Entity entity : entities) {

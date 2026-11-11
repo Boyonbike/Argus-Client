@@ -297,7 +297,7 @@ public class ChestStealerModule extends Module {
    }
 
    public void recordTransferAnimation(Slot sourceSlot, Slot destinationSlot, ItemStack stack) {
-      AbstractContainerScreenAccessor screenAccessor = (AbstractContainerScreenAccessor)ClientAccess.argusclientMinecraft.screen;
+      AbstractContainerScreenAccessor screenAccessor = (AbstractContainerScreenAccessor)ClientAccess.argusclientMinecraft.gui.screen();
       this.transferredThisTick = this.hasTransferred = true;
       if (this.animateSetting.getValue()) {
          this.transferAnimations
@@ -443,7 +443,7 @@ public class ChestStealerModule extends Module {
       if (event.getStage() != EventStage.Post) {
          this.transferredThisTick = false;
          if (ClientAccess.argusclientMinecraft.player.containerMenu != ClientAccess.argusclientMinecraft.player.inventoryMenu) {
-            boolean shulkerScreen = ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen;
+            boolean shulkerScreen = ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen;
             Boolean onlyButtonsEnabled = this.onlyButtonsSetting.getValue();
             ChestStealerModeChoice selectedModeValue;
             if (onlyButtonsEnabled) {
@@ -452,15 +452,15 @@ public class ChestStealerModule extends Module {
                selectedModeValue = this.modeSetting.getValue();
             }
 
-            if (ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen || ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen) {
+            if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen || ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen) {
                ElapsedTimer delayTimer = this.transferDelayTimer;
                long delayMillis = this.delaySetting.getValue().intValue();
                if (delayTimer.hasElapsed(delayMillis)) {
                   if (!this.onlyButtonsSetting.getValue() || this.requestedMode != null) {
                      InventoryStateManager inventoryCoordinator = ClientContext.inventoryStateManager;
                      if (!InventoryStateManager.isClickRateLimited(inventoryCoordinator)) {
-                        if (this.hasScreenOpenTimedOut() && !(ClientAccess.argusclientMinecraft.screen instanceof ShulkerPreviewScreen)) {
-                           if (!(ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen) && selectedModeValue == ChestStealerModeChoice.REKIT) {
+                        if (this.hasScreenOpenTimedOut() && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerPreviewScreen)) {
+                           if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen) && selectedModeValue == ChestStealerModeChoice.REKIT) {
                               Boolean requireButtons = this.onlyButtonsSetting.getValue();
                               if (!requireButtons) {
                                  return;
@@ -471,7 +471,7 @@ public class ChestStealerModule extends Module {
                            int startSlot = 0;
                            int slotCount = 27;
                            int containerId = menu.containerId;
-                           if (ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen chestScreen) {
+                           if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen chestScreen) {
                               ChestMenu chestMenu = chestScreen.getMenu();
                               slotCount = 9 * chestMenu.getRowCount();
                            }
@@ -575,7 +575,7 @@ public class ChestStealerModule extends Module {
 
                            if (this.idleCloseTimer.hasElapsed(100L) && this.hasTransferred && this.shouldCloseAutomatically()) {
                               int closeDelay = (int)(ClientContext.serverStateManager.getLatencyMillis() / 50.0F + 1.0F);
-                              ClientAccess.argusclientMinecraft.setScreen(null);
+                              ClientAccess.argusclientMinecraft.gui.setScreen(null);
                               TaskScheduler closeScheduler = ClientContext.taskScheduler;
                               Runnable closeContainer = () -> {
                                  if (ClientAccess.argusclientMinecraft.player != null && ClientAccess.argusclientMinecraft.player.containerMenu == menu) {

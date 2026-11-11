@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
 import net.minecraft.client.gui.screens.social.PlayerSocialManager;
+import net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;
 import net.minecraft.client.multiplayer.ProfileKeyPairManager;
 import net.minecraft.client.multiplayer.chat.report.ReportingContext;
 import net.minecraft.client.resources.SkinManager;
@@ -21,6 +22,7 @@ public interface AccountSessionAccessor {
     @Mutable @Accessor("services") void argus$setServices(Services value);
     @Mutable @Accessor("userApiService") void argus$setApi(UserApiService value);
     @Mutable @Accessor("playerSocialManager") void argus$setSocial(PlayerSocialManager value);
+    @Mutable @Accessor("remoteFriendListUpdateHandler") void argus$setRemoteFriends(RemoteFriendListUpdateHandler value);
     @Mutable @Accessor("profileKeyPairManager") void argus$setKeys(ProfileKeyPairManager value);
     @Accessor("reportingContext") void argus$setReporting(ReportingContext value);
     @Mutable @Accessor("skinManager") void argus$setSkins(SkinManager value);

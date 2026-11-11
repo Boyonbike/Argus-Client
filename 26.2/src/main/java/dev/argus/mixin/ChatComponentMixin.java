@@ -83,7 +83,7 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
          if (messageSignature != null && messageSignature.asByteBuffer().getInt() < 0) {
             try {
                ClientAccess.argusclientMinecraft
-                  .gui
+                  .gui.hud
                   .getChat()
                   .trimmedMessages
                   .removeIf(

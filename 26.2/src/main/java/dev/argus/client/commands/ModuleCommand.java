@@ -1,5 +1,6 @@
 package dev.argus.client.commands;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -66,10 +67,10 @@ public final class ModuleCommand extends Command {
             Integer stateColor;
             if (moduleForState.isToggled()) {
                ChatFormatting enabledColor = ChatFormatting.GREEN;
-               stateColor = enabledColor.getColor();
+               stateColor = LegacyFormatting.rgb(enabledColor);
             } else {
                ChatFormatting disabledColor = ChatFormatting.RED;
-               stateColor = disabledColor.getColor();
+               stateColor = LegacyFormatting.rgb(disabledColor);
             }
 
             return stateColor;

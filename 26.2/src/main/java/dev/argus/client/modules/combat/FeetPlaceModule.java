@@ -50,6 +50,7 @@ import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
@@ -531,7 +532,7 @@ public class FeetPlaceModule extends PlacementModule {
       }
 
       if (event.getPacket() instanceof ClientboundAddEntityPacket entityPacket
-         && entityPacket.getType() == EntityType.END_CRYSTAL
+         && entityPacket.getType() == EntityTypes.END_CRYSTAL
          && this.smartFaceSetting.getValue()) {
          double spawnX = entityPacket.getX();
          double spawnY = entityPacket.getY();
@@ -554,7 +555,7 @@ public class FeetPlaceModule extends PlacementModule {
    }
 
    private float getYawPlacementCost(float yaw, BlockPos position) {
-      Vec3 targetCenter = position.getCenter();
+      Vec3 targetCenter = Vec3.atCenterOf(position);
       float targetYaw = RotationManager.getRotationsToPosition(targetCenter)[0];
       float yawDifference = Mth.degreesDifferenceAbs(yaw, targetYaw);
       float height = position.getY();

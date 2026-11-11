@@ -64,7 +64,7 @@ public final class InventoryStateManager implements ClientAccess {
    public void setClickBatching(boolean batching) {
       if (this.clickBatching != batching) {
          this.clickBatching = batching;
-         if (!(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen) && RotationManager.isMovementSyncEnabled()) {
+         if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen) && RotationManager.isMovementSyncEnabled()) {
             XCarryModule xCarryModule = xCarry;
             if (!xCarryModule.isToggled() && !this.clickBatching && this.clickBatchCompleted) {
                this.close();
@@ -264,7 +264,7 @@ public final class InventoryStateManager implements ClientAccess {
          }
 
          this.localEntityEventPending = false;
-         if (!xCarry.isToggled() && !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)) {
+         if (!xCarry.isToggled() && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)) {
             ElapsedTimer capturedTimer = this.lastClickTimer;
             if (capturedTimer.hasElapsed(50L) && this.containerOpen) {
                long nowMillis = System.currentTimeMillis();

@@ -56,7 +56,7 @@ public class CoordsModule extends HudWidgetModule {
    /** Where the player is, or the camera while Freecam is on. */
    private static Vec3 position() {
       Minecraft mc = ClientAccess.argusclientMinecraft;
-      if (freecam != null && freecam.isToggled()) return mc.gameRenderer.getMainCamera().position().subtract(0.0, mc.player.getBbHeight(), 0.0);
+      if (freecam != null && freecam.isToggled()) return mc.gameRenderer.mainCamera().position().subtract(0.0, mc.player.getBbHeight(), 0.0);
       return mc.player.position();
    }
 

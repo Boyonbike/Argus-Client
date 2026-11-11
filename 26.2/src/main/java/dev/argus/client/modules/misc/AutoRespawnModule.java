@@ -32,7 +32,7 @@ public class AutoRespawnModule extends Module {
 
    @EventHandler
    private void onLocalPlayerTickEvent(LocalPlayerTickEvent event) {
-      if (ClientAccess.argusclientMinecraft.screen instanceof DeathScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof DeathScreen) {
          ElapsedTimer timer = this.respawnTimer;
          if (timer.hasElapsed(100L)) {
             LocalPlayer player = ClientAccess.argusclientMinecraft.player;

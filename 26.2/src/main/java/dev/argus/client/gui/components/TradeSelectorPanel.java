@@ -30,7 +30,7 @@ public abstract class TradeSelectorPanel<T> extends Panel implements ClientAcces
    @Override
    public void render(PoseStack poseStack, double mouseX, double mouseY) {
       super.render(poseStack, mouseX, mouseY);
-      ClientScreen screen = (ClientScreen)ClientAccess.argusclientMinecraft.screen;
+      ClientScreen screen = (ClientScreen)ClientAccess.argusclientMinecraft.gui.screen();
       if (!this.tradeItems.isSelectorOpen()) {
          ClientContext.taskScheduler.scheduleRotationTask(() -> screen.getPanels().remove(this), 0);
       }
@@ -41,7 +41,7 @@ public abstract class TradeSelectorPanel<T> extends Panel implements ClientAcces
       super.mouseClicked(mouseX, mouseY, button);
       T selection = this.getSelection();
       if (selection != null) {
-         ClientScreen screen = (ClientScreen)ClientAccess.argusclientMinecraft.screen;
+         ClientScreen screen = (ClientScreen)ClientAccess.argusclientMinecraft.gui.screen();
          ClientContext.taskScheduler.scheduleRotationTask(() -> {
             screen.getPanels().remove(this);
             this.applySelection(selection);

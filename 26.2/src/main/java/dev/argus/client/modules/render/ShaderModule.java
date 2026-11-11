@@ -140,7 +140,7 @@ public class ShaderModule extends Module {
    }
 
    private GpuBufferSlice getHandProjectionBuffer() {
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       Projection projection = ClientAccess.argusclientMinecraft.gameRenderer.hudProjection;
       int width = ClientAccess.argusclientMinecraft.getWindow().getWidth();
       int height = ClientAccess.argusclientMinecraft.getWindow().getHeight();
@@ -169,8 +169,8 @@ public class ShaderModule extends Module {
       }
 
       PoseStack poseStack = event.getPoseStack();
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       float partialTick = event.getPartialTick();
       double xPartialTick = partialTick;
       double previousX = entity.xOld;
@@ -243,7 +243,7 @@ public class ShaderModule extends Module {
 
       for (Entity entity : level.entitiesForRendering()) {
          if (this.isShaderTarget(entity)) {
-            Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+            Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
             Vec3 entityPosition = entity.position();
             double negativeDistanceSquared = -cameraPosition.distanceToSqr(entityPosition);
             ObjectArrayList<ShaderModule.RenderTargetEntry> targetsForAdd = this.renderTargets;
@@ -265,7 +265,7 @@ public class ShaderModule extends Module {
       if (nameTagsEnabled) {
          NameTagsModule nameTagsForBlit = nameTagsModule;
          if (nameTagsForBlit.isToggled()) {
-            GpuTextureView mainColorTexture = ClientAccess.argusclientMinecraft.getMainRenderTarget().getColorTextureView();
+            GpuTextureView mainColorTexture = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView();
             nameTagTarget.blitAndBlendToTexture(mainColorTexture);
          }
       }
@@ -412,12 +412,12 @@ public class ShaderModule extends Module {
       GpuBufferSlice projectionBuffer = this.getHandProjectionBuffer();
       ProjectionType projectionType = ProjectionType.PERSPECTIVE;
       RenderSystem.setProjectionMatrix(projectionBuffer, projectionType);
-      Quaternionf cameraRotation = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().rotation();
+      Quaternionf cameraRotation = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().rotation();
       Quaternionf inverseRotationDestination = new Quaternionf();
       Quaternionf inverseCameraRotation = cameraRotation.conjugate(inverseRotationDestination);
       Matrix4f viewMatrix = new Matrix4f();
       viewMatrix.rotation(inverseCameraRotation);
-      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState, event.getPartialTick(), viewMatrix);
+      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState, event.getPartialTick(), viewMatrix);
       RenderSystem.restoreProjectionMatrix();
    }
 
@@ -442,7 +442,7 @@ public class ShaderModule extends Module {
             return false;
          }
 
-         boolean detachedView = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().isDetached();
+         boolean detachedView = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().isDetached();
          if (!detachedView) {
             FreecamModule freecamForToggle = freecamModule;
             detachedView = freecamForToggle.isToggled();

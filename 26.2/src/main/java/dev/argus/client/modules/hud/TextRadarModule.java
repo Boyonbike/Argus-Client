@@ -197,7 +197,7 @@ public class TextRadarModule extends HudWidgetModule {
          case ANGLE:
             ToDoubleFunction<Entity> angleMetric = entity -> {
                GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-               Camera camera = gameRenderer.getMainCamera();
+               Camera camera = gameRenderer.mainCamera();
                float cameraYaw = camera.yRot();
                float targetYaw = RotationManager.getRotationsToEntity(entity)[0];
                return Mth.degreesDifferenceAbs(cameraYaw, targetYaw);

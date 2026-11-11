@@ -14,6 +14,6 @@ public class BookPreviewScreen extends BookViewScreen {
 
    @Override
    public void onClose() {
-      this.minecraft.setScreen(this.parentScreen);
+      this.minecraft.gui.setScreen(this.parentScreen);
    }
 }

@@ -103,6 +103,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Inventory;
@@ -399,7 +400,7 @@ public class AutoCrystalModule extends Module {
                   boolean hasCrystalBase = WorldUtils.isBedrockOrObsidian(scanPosition);
                   if (bestPlacement == null || bestPlacement.kind() == CrystalPlacementKind.OBSIDIAN || hasCrystalBase) {
                      Vec3 distanceEyeSnapshot = eyePosition;
-                     Vec3 center = scanPosition.getCenter();
+                     Vec3 center = Vec3.atCenterOf(scanPosition);
                      double distance = distanceEyeSnapshot.distanceTo(center);
                      Float distanceLimit = this.placeRangeSetting.getValue();
                      if (!(distance > distanceLimit.floatValue()) && !(distance > selectedCrystalRange) && placementValidator.canPlace(scanPosition)) {
@@ -514,7 +515,7 @@ public class AutoCrystalModule extends Module {
       }
 
       Vec3 eyeSnapshot = this.eyePosition;
-      Vec3 center = base.getCenter();
+      Vec3 center = Vec3.atCenterOf(base);
       double distance = eyeSnapshot.distanceTo(center);
       Float distanceRange = this.placeRangeSetting.getValue();
       if (distance < distanceRange.floatValue()) {
@@ -971,7 +972,7 @@ public class AutoCrystalModule extends Module {
          }
 
          Vec3 eyePositionSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-         Vec3 center = this.lastForcedBase.getCenter();
+         Vec3 center = Vec3.atCenterOf(this.lastForcedBase);
          double distance = eyePositionSnapshot.distanceTo(center);
          Float range = this.placeRangeSetting.getValue();
          if (distance > range.floatValue()) {
@@ -1021,7 +1022,7 @@ public class AutoCrystalModule extends Module {
       Stream<Direction> directionResultCandidates = directions.stream().filter(candidateDirection -> this.isPlacementFaceVisible(base, candidateDirection));
       Comparator<Direction> directionResultOrder = Comparator.comparing(candidateDirection -> {
          Vec3 eyeSnapshot = this.eyePosition;
-         Vec3 centerSnapshot = base.getCenter();
+         Vec3 centerSnapshot = Vec3.atCenterOf(base);
          double faceOffset = 0.5;
          Direction faceDirection = candidateDirection;
          Vec3 faceCenter = centerSnapshot.relative(faceDirection, faceOffset);
@@ -1048,7 +1049,7 @@ public class AutoCrystalModule extends Module {
                boolean strictDirection = BlockInteractionUtils.isStrictDirectionEnabled();
                boolean minimumWallRange = this.placeWallRangeSetting.isAtMinimum();
                Direction direction = BlockInteractionUtils.findSupportDirection(base, strictDirection, minimumWallRange);
-               Vec3 hitPoint = base.getCenter();
+               Vec3 hitPoint = Vec3.atCenterOf(base);
                if (direction != null) {
                   BlockSampleMode samplingMode = this.multipointSetting.getValue() ? BlockSampleMode.X8 : BlockSampleMode.FAST;
                   Stream<Vec3> sampleResultCandidates = samplingMode.sampleFace(base, direction)
@@ -1289,10 +1290,10 @@ public class AutoCrystalModule extends Module {
    }
 
    private void onCrystalSpawn(ClientboundAddEntityPacket packet) {
-      if (packet.getType() == EntityType.END_CRYSTAL && this.target != null) {
+      if (packet.getType() == EntityTypes.END_CRYSTAL && this.target != null) {
          Vec3 spawnPosition = new Vec3(packet.getX(), packet.getY(), packet.getZ());
          if (this.lastPlacedBase != null) {
-            Vec3 placedCenter = this.lastPlacedBase.getCenter();
+            Vec3 placedCenter = Vec3.atCenterOf(this.lastPlacedBase);
             double placementDistanceSquared = spawnPosition.distanceToSqr(placedCenter);
             if (placementDistanceSquared <= 9.0) {
                long spawnTime = System.currentTimeMillis();
@@ -1396,7 +1397,7 @@ public class AutoCrystalModule extends Module {
                return;
             }
 
-            Vec3 centerSnapshot = base.getCenter();
+            Vec3 centerSnapshot = Vec3.atCenterOf(base);
             double faceOffset = 0.5;
             Vec3 hitPoint = centerSnapshot.relative(direction, faceOffset);
             Stream<Vec3> cornerResultCandidates = MathUtils.faceCorners(base, direction)
@@ -1417,11 +1418,11 @@ public class AutoCrystalModule extends Module {
             Setting<Float> wallRangeSetting = this.placeWallRangeSetting;
             if (Objects.equals(rangeValue, wallRangeSetting.getValue())) {
                if (direction.getAxis() == Axis.Y) {
-                  Vec3 verticalCenterSnapshot = base.getCenter();
+                  Vec3 verticalCenterSnapshot = Vec3.atCenterOf(base);
                   double verticalOffset = 0.5;
                   hitPoint = verticalCenterSnapshot.relative(direction, verticalOffset);
                } else {
-                  Vec3 sideCenterSnapshot = base.getCenter();
+                  Vec3 sideCenterSnapshot = Vec3.atCenterOf(base);
                   double sideOffset = 0.5;
                   Vec3 sidePosition = sideCenterSnapshot.relative(direction, sideOffset);
                   hitPoint = sidePosition.add(0.0, 0.5, 0.0);

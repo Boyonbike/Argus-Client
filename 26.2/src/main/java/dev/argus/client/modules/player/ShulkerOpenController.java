@@ -57,7 +57,7 @@ public class ShulkerOpenController extends ChestStealerController {
 
    @EventHandler
    public void openPendingShulker() {
-      Screen screen = ClientAccess.argusclientMinecraft.screen;
+      Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
       if (!InventoryUtils.isEnderChestScreen(screen)) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
          ItemStack heldStack = player.getMainHandItem();
@@ -69,7 +69,7 @@ public class ShulkerOpenController extends ChestStealerController {
                Direction direction = BlockInteractionUtils.findSupportDirection(position, strictDirection);
                BlockPos supportPosition = position.relative(direction);
                Direction hitDirection = direction.getOpposite();
-               Vec3 supportCenter = supportPosition.getCenter();
+               Vec3 supportCenter = Vec3.atCenterOf(supportPosition);
                double hitOffset = 0.5;
                Vec3 hitPosition = supportCenter.relative(hitDirection, hitOffset);
                MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
@@ -97,13 +97,13 @@ public class ShulkerOpenController extends ChestStealerController {
       if (center == null) {
          searchOrigin = ClientAccess.argusclientMinecraft.player.getEyePosition();
       } else {
-         searchOrigin = center.getBottomCenter();
+         searchOrigin = Vec3.atBottomCenterOf(center);
       }
 
       Vec3 searchCenter = ClientAccess.argusclientMinecraft.player.getEyePosition();
       float searchRadius = 4.0F;
       Stream<BlockPos> usableCandidates = WorldUtils.streamSphereBlocks(searchCenter, searchRadius).filter(this::isUsableShulker);
-      Comparator<BlockPos> byDistance = Comparator.comparingDouble(candidate -> searchOrigin.distanceToSqr(candidate.getCenter()));
+      Comparator<BlockPos> byDistance = Comparator.comparingDouble(candidate -> searchOrigin.distanceToSqr(Vec3.atCenterOf(candidate)));
       return usableCandidates.min(byDistance).orElse(null);
    }
 

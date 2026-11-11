@@ -120,7 +120,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
    public static void renderMapOverlay(GuiGraphicsExtractor graphics, MapItemSavedData data, int id, float x, float y) {
       if (data != null) {
          Matrix3x2fStack poses = graphics.pose();
-         RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.renderBuffers();
+         RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
          BufferSource buffers = renderBuffers.bufferSource();
          poses.pushMatrix();
          poses.translate(x, y);

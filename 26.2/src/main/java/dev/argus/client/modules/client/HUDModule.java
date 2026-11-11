@@ -40,7 +40,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class HUDModule extends Module {
    private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
-   private final Predicate hudEditorVisible = ignored -> ClientAccess.argusclientMinecraft.screen instanceof ClientScreen screen
+   private final Predicate hudEditorVisible = ignored -> ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen screen
       ? screen.getParentScreen() == null
       : true;
    private final Setting<Boolean> hudEditorSetting;
@@ -115,7 +115,7 @@ public class HUDModule extends Module {
    private void onHudRender(HudRenderEvent event) {
       int effectRows = 0;
       Setting<HUDModule.EffectIconMode> iconModeSetting = this.iconsSetting;
-      if (iconModeSetting.getValue() == HUDModule.EffectIconMode.MOVE && !(ClientAccess.argusclientMinecraft.screen instanceof InventoryScreen)) {
+      if (iconModeSetting.getValue() == HUDModule.EffectIconMode.MOVE && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof InventoryScreen)) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
 
          for (MobEffectInstance effectInstance : player.getActiveEffects()) {
@@ -141,8 +141,8 @@ public class HUDModule extends Module {
          }
       }
 
-      if (ClientAccess.argusclientMinecraft.screen != null) {
-         Screen screen = ClientAccess.argusclientMinecraft.screen;
+      if (ClientAccess.argusclientMinecraft.gui.screen() != null) {
+         Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
          if (screen.showsActiveEffects()) {
             effectRows = 0;
          }
@@ -153,7 +153,7 @@ public class HUDModule extends Module {
       HUDModule hud = this;
       searchHeightBase -= hud.getSafeY();
       int searchHeight = searchHeightBase + 2;
-      if (ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen clickGui) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ClickGuiScreen clickGui) {
          EditBox searchBox = clickGui.getSearchBox();
          moveForSearch = !searchBox.isFocused();
       }
@@ -168,7 +168,7 @@ public class HUDModule extends Module {
       HudWidgetRenderer.renderingHud = true;
 
       try {
-         if (!(ClientAccess.argusclientMinecraft.screen instanceof HudEditorScreen)) {
+         if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof HudEditorScreen)) {
             HudEditorScreen editor = ClientContext.getHudEditor();
             editor.renderWidgets(event.getPoseStack(), -999.0, -999.0);
             GuiDrawUtils.flush();
@@ -292,7 +292,7 @@ public class HUDModule extends Module {
             if (!this.isWorldUnavailable()) {
                Minecraft editorCallbackCapturedMinecraft = ClientAccess.argusclientMinecraft;
                HudEditorScreen editor = ClientContext.getHudEditor();
-               editorCallbackCapturedMinecraft.setScreen(editor);
+               editorCallbackCapturedMinecraft.gui.setScreen(editor);
             }
          }
       };

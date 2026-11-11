@@ -8,6 +8,7 @@ import java.util.Set;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BarrelBlock;
@@ -74,7 +75,7 @@ final class RegistryEntryCatalog {
    }
 
    private static List<EntityType<?>> createEntityEntries() {
-      return List.of(EntityType.LLAMA, EntityType.MULE, EntityType.DONKEY, EntityType.ITEM_FRAME, EntityType.ITEM, EntityType.ENDER_PEARL);
+      return List.of(EntityTypes.LLAMA, EntityTypes.MULE, EntityTypes.DONKEY, EntityTypes.ITEM_FRAME, EntityTypes.ITEM, EntityTypes.ENDER_PEARL);
    }
 
    @SafeVarargs

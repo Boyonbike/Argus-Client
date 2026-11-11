@@ -100,9 +100,9 @@ public class HitmarkerModule extends Module {
             }
          }
 
-         if (!ClientAccess.argusclientMinecraft.options.hideGui) {
+         if (!ClientAccess.argusclientMinecraft.gui.hud.isHidden) {
             GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-            Camera camera = gameRenderer.getMainCamera();
+            Camera camera = gameRenderer.mainCamera();
             if (!camera.isDetached()) {
                long hitTimeCapture = this.lastHitTime;
                if (hitTimeCapture != -1L) {

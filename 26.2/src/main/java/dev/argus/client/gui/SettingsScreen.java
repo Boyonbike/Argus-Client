@@ -596,7 +596,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.rounded(g, rx, row + 1, rw, 16, 8, UiDraw.mix(t.surface(), t.overlay(), rh * .8f));
         UiDraw.icon(g, "reset", rx + 7, row + 5, 8, UiDraw.mix(t.muted(), t.accent(), rh));
         UiDraw.text(g, resetLabel, rx + 18, row + 9, UiDraw.SMALL, t.text());
-        hits.add(new Hit(rx, row + 1, rw, 16, () -> { p.windows.clear(); GuiState.save(); minecraft.setScreen(new ModulesScreen(rootParent())); }));
+        hits.add(new Hit(rx, row + 1, rw, 16, () -> { p.windows.clear(); GuiState.save(); minecraft.gui.setScreen(new ModulesScreen(rootParent())); }));
         y += windowsH + CARD_GAP;
 
         // The folded-in modules, each as a card holding its own settings.

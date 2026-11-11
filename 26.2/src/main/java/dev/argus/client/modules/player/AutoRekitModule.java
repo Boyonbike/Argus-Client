@@ -118,7 +118,7 @@ public final class AutoRekitModule extends Module {
     }
     public boolean ownsStorage() {
         Minecraft mc = Minecraft.getInstance();
-        return isToggled() && mc.player != null && mc.screen instanceof AbstractContainerScreen<?> screen
+        return isToggled() && mc.player != null && mc.gui.screen() instanceof AbstractContainerScreen<?> screen
                 && screen.getMenu() == mc.player.containerMenu && isStorage(screen.getMenu())
                 && presets.names().contains(activePreset.getValue());
     }
@@ -143,7 +143,7 @@ public final class AutoRekitModule extends Module {
         });
     }
     public void tick(Minecraft mc) {
-        if (mc.player == null || mc.level == null || !(mc.screen instanceof AbstractContainerScreen<?> screen)
+        if (mc.player == null || mc.level == null || !(mc.gui.screen() instanceof AbstractContainerScreen<?> screen)
                 || screen.getMenu() != mc.player.containerMenu || !isStorage(screen.getMenu())) {
             currentMenu = null; manualRequested = false; return;
         }

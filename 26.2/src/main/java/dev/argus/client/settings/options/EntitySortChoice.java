@@ -19,7 +19,7 @@ public enum EntitySortChoice implements NamedEntry {
    })),
    CROSSHAIR("Crosshair", Comparator.comparingDouble(entity -> {
       GameRenderer renderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = renderer.getMainCamera();
+      Camera camera = renderer.mainCamera();
       float cameraYaw = camera.yaw();
       float targetYaw = RotationManager.getRotationsToEntity(entity)[0];
       return Mth.degreesDifferenceAbs(cameraYaw, targetYaw);

@@ -149,7 +149,7 @@ public class MiddleClickModule extends Module {
          this.launchAgainNextTick = false;
       }
 
-      if (ClientAccess.argusclientMinecraft.screen == null) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() == null) {
          Minecraft pressClient = ClientAccess.argusclientMinecraft;
          Window pressWindow = pressClient.getWindow();
          long windowHandle = pressWindow.handle();

@@ -52,6 +52,7 @@ import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -211,7 +212,7 @@ public class AutoArmorModule extends Module {
 
    private static void updateJumpToggle(AutoArmorModule owner) {
       KeyMapping jumpKey = ClientAccess.argusclientMinecraft.options.keyJump;
-      boolean jumpDown = jumpKey.isDown() && ClientAccess.argusclientMinecraft.screen == null;
+      boolean jumpDown = jumpKey.isDown() && ClientAccess.argusclientMinecraft.gui.screen() == null;
       if (ClientContext.playerStateTracker.getGroundedTicks() > 1) {
          owner.jumpToggleActive = false;
       } else if (jumpDown && !owner.previousJumpDown) {
@@ -236,7 +237,7 @@ public class AutoArmorModule extends Module {
       } else {
          this.updateNearestAdultPiglinDistance();
          this.updateArmorSafetyState();
-         Screen currentScreen = ClientAccess.argusclientMinecraft.screen;
+         Screen currentScreen = ClientAccess.argusclientMinecraft.gui.screen();
          if (this.isArmorScreenAllowed(currentScreen)) {
             ElapsedTimer delayTimer = this.swapDelayTimer;
             long delayMillis = this.delaySetting.getValue().intValue();
@@ -376,7 +377,7 @@ public class AutoArmorModule extends Module {
       } else {
          DataComponentType<Equippable> equippableType = DataComponents.EQUIPPABLE;
          if (stack.get(equippableType) instanceof Equippable equippable) {
-            EntityType playerType = EntityType.PLAYER;
+            EntityType playerType = EntityTypes.PLAYER;
             if (equippable.canBeEquippedBy(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(playerType)) && !(stack.getItem() instanceof BlockItem)) {
                EquipmentSlot equipmentSlot = equippable.slot();
                int equipmentIndex = equipmentSlot.getIndex();

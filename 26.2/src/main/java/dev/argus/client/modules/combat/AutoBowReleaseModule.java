@@ -34,7 +34,7 @@ public class AutoBowReleaseModule extends Module {
       if (!this.isWorldUnavailable()) {
          ArrowsModule arrows = ClientContext.getModule(ArrowsModule.class);
          if (arrows == null || !arrows.isAutoShooting()) {
-            if (this.hasArrowAccess() && ClientAccess.argusclientMinecraft.screen == null) {
+            if (this.hasArrowAccess() && ClientAccess.argusclientMinecraft.gui.screen() == null) {
                if (!this.crossbowSetting.getValue() || !this.fireFirstChargedCrossbow()) {
                   this.releaseBowIfReady();
                }

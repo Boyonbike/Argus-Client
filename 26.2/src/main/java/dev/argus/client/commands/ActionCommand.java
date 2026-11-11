@@ -86,7 +86,7 @@ public class ActionCommand extends Command {
          }
 
          Runnable attackAction = () -> ((MinecraftAccessor)ClientAccess.argusclientMinecraft).attack();
-         if (ClientAccess.argusclientMinecraft.screen instanceof ChatScreen) {
+         if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen) {
             this.scheduleRotationTask(attackAction);
          } else {
             attackAction.run();
@@ -101,7 +101,7 @@ public class ActionCommand extends Command {
          }
 
          Runnable interactAction = () -> ((MinecraftAccessor)ClientAccess.argusclientMinecraft).interact();
-         if (ClientAccess.argusclientMinecraft.screen instanceof ChatScreen) {
+         if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen) {
             this.scheduleRotationTask(interactAction);
          } else {
             interactAction.run();

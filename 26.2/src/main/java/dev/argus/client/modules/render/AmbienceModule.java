@@ -164,7 +164,7 @@ public class AmbienceModule extends Module {
    public void onBeforeDepthClear(WorldRenderEvent.BeforeDepthClear event) {
       Setting<Boolean> depthOption = this.fieldDepthSetting;
       if (depthOption.getValue()) {
-         this.depthRenderTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+         this.depthRenderTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
          RenderUtils renderUtils = RenderUtils.INSTANCE;
          renderUtils.fillRect(event.getPoseStack(), 0.0F, 0.0F, 0.0F, 0.0F, -1);
          ShaderRegistry registry = ClientContext.shaderRegistry;

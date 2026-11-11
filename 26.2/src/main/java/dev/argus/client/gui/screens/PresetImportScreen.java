@@ -54,7 +54,7 @@ public final class PresetImportScreen extends ClientScreen {
 
    @Override
    public void closeWithTransition() {
-      ClientAccess.argusclientMinecraft.setScreen(this.returnScreen);
+      ClientAccess.argusclientMinecraft.gui.setScreen(this.returnScreen);
    }
 
    private String getPresetName(Path sourcePath) {
@@ -71,7 +71,7 @@ public final class PresetImportScreen extends ClientScreen {
       }
 
       ClientContext.configurationManager.getPresetRegistry(targetCategory).loadPresets();
-      ClientAccess.argusclientMinecraft.setScreen(this.returnScreen);
+      ClientAccess.argusclientMinecraft.gui.setScreen(this.returnScreen);
    }
 
    private PresetCategory readPresetCategory(Path sourcePath) {
@@ -101,7 +101,7 @@ public final class PresetImportScreen extends ClientScreen {
          return false;
       }
 
-      ClientAccess.argusclientMinecraft.setScreen(new PresetImportScreen(previousScreen, (Path)jsonPaths.getFirst()));
+      ClientAccess.argusclientMinecraft.gui.setScreen(new PresetImportScreen(previousScreen, (Path)jsonPaths.getFirst()));
       return true;
    }
 

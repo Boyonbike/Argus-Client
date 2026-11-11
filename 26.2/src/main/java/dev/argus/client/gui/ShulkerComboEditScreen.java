@@ -93,13 +93,13 @@ final class ShulkerComboEditScreen extends UiScreen {
             rebuildWidgets();
         }));
         addRenderableWidget(new UiButton(left + 12, top + 86, 77, 20, "Choose item", () ->
-            minecraft.setScreen(new ShulkerIconPickerScreen(this, solid, colour, false, item -> {
+            minecraft.gui.setScreen(new ShulkerIconPickerScreen(this, solid, colour, false, item -> {
                 icon = item;
                 pixels = null;
                 commit();
             }))));
         addRenderableWidget(new UiButton(left + 93, top + 86, 64, 20, "Edit pixels", () ->
-            minecraft.setScreen(new ShulkerPixelEditorScreen(this, icon, pixels, result -> {
+            minecraft.gui.setScreen(new ShulkerPixelEditorScreen(this, icon, pixels, result -> {
                 pixels = result;
                 commit();
                 if (ClientContext.configurationManager != null) ClientContext.configurationManager.saveAsync();
@@ -119,7 +119,7 @@ final class ShulkerComboEditScreen extends UiScreen {
         minimum.place(left + 141, top + 115, 41);
         addRenderableWidget(minimum);
         addRenderableWidget(new UiButton(left + 187, top + 113, 67, 20, "Add item", () ->
-            minecraft.setScreen(new ShulkerIconPickerScreen(this, false, 0xffffffff, true, item -> {
+            minecraft.gui.setScreen(new ShulkerIconPickerScreen(this, false, 0xffffffff, true, item -> {
                 if (!required.contains(item)) {
                     required.add(item);
                     itemPage = (required.size() - 1) / itemsPerPage();

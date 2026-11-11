@@ -19,10 +19,10 @@ public class SkyboxShaderPass extends BaseShaderPass implements ReloadableShader
       int screenWidth = clientInstance.getWindow().getScreenWidth();
       int screenHeight = clientInstance.getWindow().getScreenHeight();
       float aspectRatio = (float)screenWidth / screenHeight;
-      Camera pitchCamera = clientInstance.gameRenderer.getMainCamera();
+      Camera pitchCamera = clientInstance.gameRenderer.mainCamera();
       float cameraRotation = -pitchCamera.xRot();
       float normalizedPitch = cameraRotation / 90.0F;
-      cameraRotation = clientInstance.gameRenderer.getMainCamera().yRot();
+      cameraRotation = clientInstance.gameRenderer.mainCamera().yRot();
       float normalizedYaw = cameraRotation / 180.0F * aspectRatio;
       ShaderUniforms scaleUniformsCapture = this.uniforms;
       scaleUniformsCapture.set("u_Scale", 1.0F);

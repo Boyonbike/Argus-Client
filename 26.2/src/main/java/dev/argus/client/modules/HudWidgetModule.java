@@ -135,6 +135,6 @@ public abstract class HudWidgetModule extends Module {
    }
 
    protected boolean isInHudEditor() {
-      return ClientAccess.argusclientMinecraft.screen instanceof HudEditorScreen;
+      return ClientAccess.argusclientMinecraft.gui.screen() instanceof HudEditorScreen;
    }
 }

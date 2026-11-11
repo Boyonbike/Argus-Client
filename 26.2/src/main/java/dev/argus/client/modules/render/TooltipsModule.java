@@ -80,7 +80,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffectUtil;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.animal.Bucketable;
+import net.minecraft.world.entity.Bucketable;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BannerItem;
@@ -330,7 +330,7 @@ public class TooltipsModule extends Module {
                BookAccess book = BookAccess.fromItem(hoveredStack);
                if (book != null && book.getPageCount() > 0) {
                   if (openPressed) {
-                     ClientAccess.argusclientMinecraft.setScreen(new BookPreviewScreen(book, event.getScreen()));
+                     ClientAccess.argusclientMinecraft.gui.setScreen(new BookPreviewScreen(book, event.getScreen()));
                   }
 
                   if (previewsShown) {
@@ -422,7 +422,7 @@ public class TooltipsModule extends Module {
    public boolean replacesContainerText(ItemStack stack) {
       return this.isToggled()
          && this.shulkerContentSetting.getValue()
-         && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen
+         && ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen
          && (ItemUtils.isShulkerBox(stack.getItem()) ? this.previewKeyPressed() : this.previewsShown());
    }
 
@@ -588,7 +588,7 @@ public class TooltipsModule extends Module {
 
    @EventHandler
    private void onLocalPlayerTickEvent(LocalPlayerTickEvent event) {
-      Screen screen = ClientAccess.argusclientMinecraft.screen;
+      Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
       this.rememberEnderChest(screen);
       if (!(screen instanceof AbstractContainerScreen) || ((AbstractContainerScreenAccessor)screen).argusclient$getFocusedSlot() == null) {
          this.setTooltipColor(null);

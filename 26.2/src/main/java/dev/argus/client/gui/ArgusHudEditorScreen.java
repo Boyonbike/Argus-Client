@@ -122,7 +122,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     /** Shows the editor with {@code parent} as the screen Done returns to. */
     void openOver(Screen parent) {
         setParentScreen(parent);
-        Minecraft.getInstance().setScreen(this);
+        Minecraft.getInstance().gui.setScreen(this);
     }
 
     private static boolean shiftDown() { return dev.argus.client.utils.KeyUtils.isPhysicalKeyDown(340) || dev.argus.client.utils.KeyUtils.isPhysicalKeyDown(344); }
@@ -937,12 +937,12 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     private void openSettings(Module module) {
         searchFocused = false;
-        minecraft.setScreen(new ModuleSettingsScreen(this, module, null));
+        minecraft.gui.setScreen(new ModuleSettingsScreen(this, module, null));
     }
 
     private void openHudSettings() {
         searchFocused = false;
-        minecraft.setScreen(new SettingsScreen(this, SettingsScreen.hudSection(), null));
+        minecraft.gui.setScreen(new SettingsScreen(this, SettingsScreen.hudSection(), null));
     }
 
     /**

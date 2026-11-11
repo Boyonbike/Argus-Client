@@ -45,7 +45,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static BufferSource getEntityBuffers() {
-      return ClientAccess.argusclientMinecraft.renderBuffers().bufferSource();
+      return ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource();
    }
 
    public static void setLineSmoothing(boolean enabled) {
@@ -73,12 +73,12 @@ public final class RenderUtils implements ClientAccess {
 
    public void renderEntity(Entity entity, float partialTick, PoseStack poses, MultiBufferSource buffers) {
       EntityRenderDispatcher dispatcher = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher();
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       double entityX = Mth.lerp(partialTick, entity.xOld, entity.getX());
       double entityY = Mth.lerp(partialTick, entity.yOld, entity.getY());
       double entityZ = Mth.lerp(partialTick, entity.zOld, entity.getZ());
       EntityRenderState renderState = dispatcher.extractEntity(entity, partialTick);
-      CameraRenderState cameraRenderState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+      CameraRenderState cameraRenderState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
       dispatcher.submit(
          renderState,
          cameraRenderState,
@@ -101,7 +101,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void translateToCamera(PoseStack poses, Vec3 position) {
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       double relativeX = position.x - cameraPosition.x;
       double relativeY = position.y - cameraPosition.y;
       double relativeZ = position.z - cameraPosition.z;
@@ -140,7 +140,7 @@ public final class RenderUtils implements ClientAccess {
    public static void applyInverseViewBobbing(PoseStack poses, float partialTick) {
       inverseViewBobbing = true;
       if (ClientAccess.argusclientMinecraft.options.bobView().get()) {
-         ((GameRendererAccessor)ClientAccess.argusclientMinecraft.gameRenderer).argusclient$bobView(ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState, poses);
+         ((GameRendererAccessor)ClientAccess.argusclientMinecraft.gameRenderer).argusclient$bobView(ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState, poses);
       }
 
       inverseViewBobbing = false;
@@ -151,7 +151,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void blitToMain(RenderTarget target, RenderPipeline pipeline, FilterMode filter) {
-      GpuTextureView outputTexture = ClientAccess.argusclientMinecraft.getMainRenderTarget().getColorTextureView();
+      GpuTextureView outputTexture = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView();
 
       try (RenderPass renderPass = RenderSystem.getDevice()
             .createCommandEncoder()
@@ -273,8 +273,8 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public void flushEntities() {
-      ClientAccess.argusclientMinecraft.gameRenderer.getFeatureRenderDispatcher().renderAllFeatures();
-      ClientAccess.argusclientMinecraft.renderBuffers().bufferSource().endBatch();
+      ClientAccess.argusclientMinecraft.gameRenderer.featureRenderDispatcher().renderAllFeatures();
+      ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource().endBatch();
    }
 
    public static int[] getRenderColor() {
@@ -289,13 +289,13 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void applyCameraRotation(PoseStack poses) {
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       poses.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
       poses.mulPose(Axis.YP.rotationDegrees(camera.yRot() + 180.0F));
    }
 
    public static void applyCameraRotation(Matrix4f matrix) {
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       matrix.rotate(Axis.XP.rotationDegrees(camera.xRot()));
       matrix.rotate(Axis.YP.rotationDegrees(camera.yRot() + 180.0F));
    }

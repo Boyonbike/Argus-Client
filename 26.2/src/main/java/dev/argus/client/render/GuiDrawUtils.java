@@ -47,7 +47,7 @@ public final class GuiDrawUtils implements ClientAccess {
    ) {
       RenderType renderType = ClientRenderTypes.image(texture, false);
       Matrix4f matrix = poseStack.last().pose();
-      VertexConsumer vertices = ClientAccess.argusclientMinecraft.renderBuffers().bufferSource().getBuffer(renderType);
+      VertexConsumer vertices = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource().getBuffer(renderType);
       vertices.addVertex(matrix, left, top, 0.0F).setUv(minU, minV).setColor(color);
       vertices.addVertex(matrix, left, bottom, 0.0F).setUv(minU, maxV).setColor(color);
       vertices.addVertex(matrix, right, bottom, 0.0F).setUv(maxU, maxV).setColor(color);
@@ -103,10 +103,10 @@ public final class GuiDrawUtils implements ClientAccess {
             .updateForTopItem(renderState, stack, ItemDisplayContext.GUI, ClientAccess.argusclientMinecraft.level, null, 0);
          int depthScale = 1;
          if (renderState.usesBlockLight()) {
-            ClientAccess.argusclientMinecraft.gameRenderer.getLighting().setupFor(Entry.ITEMS_3D);
+            ClientAccess.argusclientMinecraft.gameRenderer.lighting().setupFor(Entry.ITEMS_3D);
             depthScale = 16;
          } else {
-            ClientAccess.argusclientMinecraft.gameRenderer.getLighting().setupFor(Entry.ITEMS_FLAT);
+            ClientAccess.argusclientMinecraft.gameRenderer.lighting().setupFor(Entry.ITEMS_FLAT);
          }
 
          poseStack.pushPose();

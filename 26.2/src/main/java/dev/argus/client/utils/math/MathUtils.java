@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class MathUtils implements ClientAccess {
    public static double distanceToBlockCenter(BlockPos blockPosition) {
-      Vec3 blockCenter = blockPosition.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(blockPosition);
       return distanceToCamera(blockCenter);
    }
 
@@ -38,7 +38,7 @@ public final class MathUtils implements ClientAccess {
 
    public static float cameraRotationDifference(Vec3 targetPosition) {
       GameRenderer renderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = renderer.getMainCamera();
+      Camera camera = renderer.mainCamera();
       float[] targetRotations = RotationManager.getRotationsToPosition(targetPosition);
       float cameraYaw = camera.yaw();
       float targetYaw = targetRotations[0];
@@ -132,7 +132,7 @@ public final class MathUtils implements ClientAccess {
 
    public static double getDistanceScale(Vec3 targetPosition, double scale) {
       GameRenderer renderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = renderer.getMainCamera();
+      Camera camera = renderer.mainCamera();
       Vec3 cameraPosition = camera.position();
       return getDistanceScale(cameraPosition, targetPosition, scale);
    }
@@ -162,7 +162,7 @@ public final class MathUtils implements ClientAccess {
 
    public static double distanceToCamera(Vec3 targetPosition) {
       GameRenderer renderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = renderer.getMainCamera();
+      Camera camera = renderer.mainCamera();
       Vec3 cameraPosition = camera.position();
       return cameraPosition.distanceTo(targetPosition);
    }

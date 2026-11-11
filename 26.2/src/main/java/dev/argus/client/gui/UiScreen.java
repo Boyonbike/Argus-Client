@@ -50,7 +50,7 @@ public abstract class UiScreen extends Screen {
     /** How strongly the backdrop (and so the world blur behind it) shows this frame, 0…1. */
     private float backdropShown;
 
-    protected UiScreen(String title, Screen parent, String activeTab) { super(Component.literal(title)); this.parent = parent; this.activeTab = activeTab; this.fromMenu = Minecraft.getInstance().screen instanceof UiScreen; this.backdropShown = fromMenu ? 1 : 0; }
+    protected UiScreen(String title, Screen parent, String activeTab) { super(Component.literal(title)); this.parent = parent; this.activeTab = activeTab; this.fromMenu = Minecraft.getInstance().gui.screen() instanceof UiScreen; this.backdropShown = fromMenu ? 1 : 0; }
 
     /**
      * Scale for Minecraft's menu blur while an Argus page is showing, so the blur fades in and
@@ -58,7 +58,7 @@ public abstract class UiScreen extends Screen {
      * A dialog keeps its parent's blur as it is.
      */
     public static float blurScale() {
-        return Minecraft.getInstance().screen instanceof UiScreen screen && !screen.modal() ? screen.backdropShown : 1;
+        return Minecraft.getInstance().gui.screen() instanceof UiScreen screen && !screen.modal() ? screen.backdropShown : 1;
     }
     protected Screen rootParent() { return parent instanceof UiScreen screen ? screen.rootParent() : parent; }
 
@@ -157,7 +157,7 @@ public abstract class UiScreen extends Screen {
 
     /** Opens a Settings section; the Settings page overrides this to switch in place. */
     protected void openSection(String section) {
-        minecraft.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, section, null));
+        minecraft.gui.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, section, null));
     }
 
     /** A modal keeps the parent visible and suppresses navigation shortcuts and chrome. */
@@ -230,7 +230,7 @@ public abstract class UiScreen extends Screen {
             // Going back to an earlier page replays its entrance, like opening a page from the bar does;
             // a dialog's parent stayed visible underneath, so it just carries on.
             if (!modal() && closeTarget instanceof UiScreen previous) previous.openedAt = System.nanoTime();
-            minecraft.setScreen(closeTarget);
+            minecraft.gui.setScreen(closeTarget);
         }
     }
 
@@ -366,12 +366,12 @@ public abstract class UiScreen extends Screen {
     final void hostRemove(UiInput input) { removeWidget(input); }
     final void hostFocus(UiInput input) { setFocused(input); }
     final void hostTooltip(Object owner, String... lines) { tooltip(owner, lines); }
-    final void hostOpen(Screen screen) { minecraft.setScreen(screen); }
+    final void hostOpen(Screen screen) { minecraft.gui.setScreen(screen); }
 
     /** Fades the page out, then shows {@code target}. Moving to another menu page keeps the backdrop. */
     public void beginClose(Screen target) {
         if (closingAt != 0) return;
-        if (!UiAnim.enabled()) { setFocused(null); minecraft.setScreen(target); return; }
+        if (!UiAnim.enabled()) { setFocused(null); minecraft.gui.setScreen(target); return; }
         closeTarget = target;
         closingAt = System.nanoTime();
         closeStaggered = 0;
@@ -455,10 +455,10 @@ public abstract class UiScreen extends Screen {
     protected void navigate(String label) {
         Screen root = rootParent();
         switch (label) {
-            case "Modules" -> minecraft.setScreen(new ModulesScreen(root));
+            case "Modules" -> minecraft.gui.setScreen(new ModulesScreen(root));
             case "HUD" -> { if (GuiState.preferences().hudTab == GuiPreferences.HudTab.SETTINGS) openSection(SettingsScreen.hudSection()); else openHudEditor(); }
-            case "Settings" -> minecraft.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, null, null));
-            case "Social" -> { if (GuiState.preferences().socialTab == GuiPreferences.SocialTab.SETTINGS) openSection(SettingsScreen.SOCIAL); else minecraft.setScreen(new ChatToolsScreen(root, null)); }
+            case "Settings" -> minecraft.gui.setScreen(new SettingsScreen(this instanceof SettingsScreen ? parent : this, null, null));
+            case "Social" -> { if (GuiState.preferences().socialTab == GuiPreferences.SocialTab.SETTINGS) openSection(SettingsScreen.SOCIAL); else minecraft.gui.setScreen(new ChatToolsScreen(root, null)); }
         }
     }
 
@@ -491,7 +491,7 @@ public abstract class UiScreen extends Screen {
             }
         }
         if ((event.modifiers() & 2) != 0 && event.key() == 70) {
-            if (this instanceof ModulesScreen screen) screen.focusSearch(); else minecraft.setScreen(new ModulesScreen(rootParent(), true));
+            if (this instanceof ModulesScreen screen) screen.focusSearch(); else minecraft.gui.setScreen(new ModulesScreen(rootParent(), true));
             return true;
         }
         return super.keyPressed(event);

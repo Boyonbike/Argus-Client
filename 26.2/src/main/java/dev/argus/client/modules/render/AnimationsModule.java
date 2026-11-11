@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.entity.EndCrystalRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.phys.Vec3;
 
@@ -74,7 +75,7 @@ public class AnimationsModule extends Module {
    }
 
    public void resetCrystalModelVisibility() {
-      EndCrystal crystal = new EndCrystal(EntityType.END_CRYSTAL, ClientAccess.argusclientMinecraft.level);
+      EndCrystal crystal = new EndCrystal(EntityTypes.END_CRYSTAL, ClientAccess.argusclientMinecraft.level);
       EntityRenderDispatcher dispatcherSnapshot = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher();
       EndCrystalRenderer renderer = (EndCrystalRenderer)dispatcherSnapshot.<EndCrystal>getRenderer(crystal);
       renderer.model.cube.skipDraw = false;
@@ -172,7 +173,7 @@ public class AnimationsModule extends Module {
                Vec3 currentPosition = this.cameraPosition;
                Vec3 interpolatedPosition = this.previousCameraPosition.lerp(currentPosition, partialTick);
                GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-               Camera camera = gameRenderer.getMainCamera();
+               Camera camera = gameRenderer.mainCamera();
                float currentEyeHeight = camera.eyeHeight;
                float previousEyeHeight = camera.eyeHeightOld;
                float eyeHeight = Mth.lerp(partialTick, previousEyeHeight, currentEyeHeight);

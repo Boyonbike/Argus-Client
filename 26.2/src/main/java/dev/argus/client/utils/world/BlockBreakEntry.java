@@ -76,7 +76,7 @@ public final class BlockBreakEntry {
       }
 
       Vec3 eyePositionSnapshot = entity.getEyePosition();
-      Vec3 blockCenter = this.position.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(this.position);
       double distanceSquared = eyePositionSnapshot.distanceToSqr(blockCenter);
       return distanceSquared >= 64.0;
    }

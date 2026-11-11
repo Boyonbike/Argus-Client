@@ -45,10 +45,10 @@ public final class PanicCommand extends Command {
       }
 
       Gui recentChatGui = ClientAccess.argusclientMinecraft.gui;
-      ChatComponent recentChat = recentChatGui.getChat();
+      ChatComponent recentChat = recentChatGui.hud.getChat();
       recentChat.getRecentChat().removeIf(message -> message.startsWith(previousPrefix));
       Gui visibleChatGui = ClientAccess.argusclientMinecraft.gui;
-      ((VisibleChatLinesAccess)visibleChatGui.getChat()).getVisible().removeIf(line -> {
+      ((VisibleChatLinesAccess)visibleChatGui.hud.getChat()).getVisible().removeIf(line -> {
          ChatLineAccess access = (ChatLineAccess)line;
          if (access.getSignature() != null) {
             MessageSignature signature = access.getSignature();
@@ -61,7 +61,7 @@ public final class PanicCommand extends Command {
          return false;
       });
       Gui remainingChatGui = ClientAccess.argusclientMinecraft.gui;
-      ChatComponent remainingChat = remainingChatGui.getChat();
+      ChatComponent remainingChat = remainingChatGui.hud.getChat();
       remainingChat.getRecentChat().removeIf(message -> message.startsWith(previousPrefix));
    }
 
@@ -76,9 +76,9 @@ public final class PanicCommand extends Command {
                }
 
                Minecraft currentMinecraft = ClientAccess.argusclientMinecraft;
-               currentMinecraft.setScreen(null);
+               currentMinecraft.gui.setScreen(null);
             }, Component.literal("Unload the client."), Component.literal("Continue?"));
-            minecraft.setScreen(confirmationScreen);
+            minecraft.gui.setScreen(confirmationScreen);
          });
          return 1;
       };

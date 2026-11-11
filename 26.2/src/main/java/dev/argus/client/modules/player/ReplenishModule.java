@@ -80,7 +80,7 @@ public class ReplenishModule extends Module {
             }
          }
 
-         if (xCarryModule.isToggled() && !(ClientAccess.argusclientMinecraft.screen instanceof InventoryScreen)) {
+         if (xCarryModule.isToggled() && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof InventoryScreen)) {
             CraftingContainer crafting = ClientAccess.argusclientMinecraft.player.inventoryMenu.getCraftSlots();
 
             for (int slot = 0; slot < 4; slot++) {
@@ -142,7 +142,7 @@ public class ReplenishModule extends Module {
             if (!MovementPhysics.isLocalPlayerMoving() || !this.motionSetting.getValue()) {
                if (!(player.getDeltaMovement().y() > 0.0) || !this.fallingSetting.getValue()) {
                   if (!multiTaskModule.isItemUseRestricted()) {
-                     boolean containerOpen = ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen;
+                     boolean containerOpen = ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen;
 
                      for (int slot = 0; slot < 9; slot++) {
                         ItemStack stack = player.getInventory().getItem(slot);
@@ -157,7 +157,7 @@ public class ReplenishModule extends Module {
                         this.rememberedHotbar.set(slot, ReplenishModule.RememberedStack.from(stack));
                      }
 
-                     if (!containerOpen || ClientAccess.argusclientMinecraft.screen instanceof InventoryScreen) {
+                     if (!containerOpen || ClientAccess.argusclientMinecraft.gui.screen() instanceof InventoryScreen) {
                         for (int slot = 0; slot < 9; slot++) {
                            if (this.replenishStack(slot)) {
                               this.replenishTimer.reset();

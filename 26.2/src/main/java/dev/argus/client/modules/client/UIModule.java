@@ -80,8 +80,8 @@ public final class UIModule extends Module {
 
    @Override
    public void onEnable() {
-      if (!this.isWorldUnavailable() && !(ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen)) {
-         if (ClientAccess.argusclientMinecraft.screen instanceof ChatScreen) {
+      if (!this.isWorldUnavailable() && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ClickGuiScreen)) {
+         if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen) {
             TaskScheduler var1 = ClientContext.taskScheduler;
             Runnable var2 = () -> {
                ClickGuiScreen var0 = ClientContext.getClickGui();
@@ -108,7 +108,7 @@ public final class UIModule extends Module {
 
    @Override
    public void onDisable() {
-      if (ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ClickGuiScreen) {
          ClientContext.getClickGui().closeWithTransition();
       }
    }
@@ -131,14 +131,14 @@ public final class UIModule extends Module {
 
    @EventHandler
    private void onLocalPlayerTick(LocalPlayerTickEvent var1) {
-      if (!(ClientAccess.argusclientMinecraft.screen instanceof ClientScreen)) {
+      if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen)) {
          this.toggle();
       }
    }
 
    @EventHandler
    private static void onCursorTick(MinecraftTickEvent var0) {
-      if (!(ClientAccess.argusclientMinecraft.screen instanceof ClientScreen)) {
+      if (!(ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen)) {
          CursorType var1 = CursorType.STANDARD;
          var1.apply();
       }

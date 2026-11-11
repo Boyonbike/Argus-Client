@@ -37,7 +37,7 @@ public abstract class ChatScreenPlayerClickMixin {
         Minecraft mc = Minecraft.getInstance();
         var finder = new PlayerNameStyleFinder(mc.font, (int) event.x(), (int) event.y(), argus$onlineNames(mc));
         finder.includeInsertions(true);
-        mc.gui.getChat().captureClickableText(finder, mc.getWindow().getGuiScaledHeight(), mc.gui.getGuiTicks(), net.minecraft.client.gui.components.ChatComponent.DisplayMode.FOREGROUND);
+        mc.gui.hud.getChat().captureClickableText(finder, mc.getWindow().getGuiScaledHeight(), mc.gui.hud.getGuiTicks(), net.minecraft.client.gui.components.ChatComponent.DisplayMode.FOREGROUND);
         String player = tools.playerFor(finder.result());
         if (player != null && tools.openWindow(player)) cir.setReturnValue(true);
     }

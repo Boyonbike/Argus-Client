@@ -111,7 +111,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
       }
 
       CellIndex<BlockTargetIndex.Entry> index = BlockTargetIndex.get().index();
-      Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 camera = argusclientMinecraft.gameRenderer.mainCamera().position();
       this.collect(index, camera, look, rangeSquared);
       this.rebuild(poses, partialTick, paint, look, budgetMillis);
       return this.draw(poses, target, camera);
@@ -215,7 +215,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
    private void bake(CellIndex.CellKey key, CellIndex.Cell<BlockTargetIndex.Entry> cell, float partialTick, Paint paint) {
       ClientLevel current = this.level;
       BlockEntityRenderDispatcher dispatcher = argusclientMinecraft.getBlockEntityRenderDispatcher();
-      CameraRenderState cameraState = argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+      CameraRenderState cameraState = argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
       ColorOutlineBufferSource buffers = ShaderRegistry.getBufferSource();
       BlockPos.MutableBlockPos position = new BlockPos.MutableBlockPos();
       for (Long2Entry item : entries(cell)) {

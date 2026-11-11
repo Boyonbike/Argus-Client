@@ -152,7 +152,7 @@ public final class PlayerMotionPredictor implements ClientAccess {
       ArrayList<VoxelShape> collisions = new ArrayList<>(
          ClientAccess.argusclientMinecraft.level.getEntityCollisions(this.player, bounds.expandTowards(x, y, z))
       );
-      collisions.addAll(Entity.collectColliders(this.player, ClientAccess.argusclientMinecraft.level, collisions, bounds.expandTowards(x, y, z)));
+      collisions.addAll(Entity.collectAllColliders(this.player, ClientAccess.argusclientMinecraft.level, bounds.expandTowards(x, y, z)));
       return resolveMovement(bounds, collisions, x, y, z);
    }
 

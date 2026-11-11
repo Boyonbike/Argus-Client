@@ -29,7 +29,7 @@ public record TracerEndpoints(Vec3 start, Vec3 end) {
    static TracerEndpoints sleeping(Player player) {
       Direction bedDirection = player.getBedOrientation();
       BlockPos blockPosition = player.blockPosition();
-      Vec3 headPosition = blockPosition.getCenter().relative(bedDirection, 0.2).add(0.0, 0.1, 0.0);
+      Vec3 headPosition = Vec3.atCenterOf(blockPosition).relative(bedDirection, 0.2).add(0.0, 0.1, 0.0);
       Direction oppositeDirection = bedDirection.getOpposite();
       Vec3 footPosition = headPosition.relative(oppositeDirection, 1.6);
       return new TracerEndpoints(footPosition, headPosition);

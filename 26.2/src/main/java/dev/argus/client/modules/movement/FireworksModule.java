@@ -43,6 +43,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.ContainerInput;
@@ -470,7 +471,7 @@ public final class FireworksModule extends Module {
    private void tryAutoPhase() {
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       if (PlayerStateUtils.isFallFlying() && EntityUtils.hasFirework(player)) {
-         if (!(RaycastUtils.raycastWithEntityTrace(player) instanceof EntityHitResult hit && hit.getEntity().getType() == EntityType.END_CRYSTAL)) {
+         if (!(RaycastUtils.raycastWithEntityTrace(player) instanceof EntityHitResult hit && hit.getEntity().getType() == EntityTypes.END_CRYSTAL)) {
             int selectedSlot = InventoryUtils.getSelectedSlot();
             InventoryUtils.SwapSlot pearlSlot = InventoryUtils.findSwapSlot(Items.ENDER_PEARL, true);
             Vec3 lookDirection = Vec3.directionFromRotation(player.getXRot(), player.getYRot());

@@ -52,7 +52,7 @@ public final class MaskShaderRenderer implements ClientAccess {
 
    public static void captureMask(Runnable drawMask, Color clearColor) {
       RenderSystem.assertOnRenderThread();
-      RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+      RenderTarget mainTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
       if (drawMask != null) {
          RenderUtils.clearColor(MASK_TARGET, clearColor);
          RenderUtils.clearDepth(MASK_TARGET);

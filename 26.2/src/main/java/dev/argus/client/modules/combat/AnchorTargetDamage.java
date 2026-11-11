@@ -17,7 +17,7 @@ public record AnchorTargetDamage(Player target, double damage) implements Client
       for (Player candidate : ClientAccess.argusclientMinecraft.level.players()) {
          double validationRange = module.targetRangeSetting.getValue().floatValue();
          if (!isInvalidTarget(candidate, validationRange)) {
-            Vec3 explosionPositionSnapshot = position.getCenter();
+            Vec3 explosionPositionSnapshot = Vec3.atCenterOf(position);
             AABB boundsSnapshot = candidate.getBoundingBox();
             BlockPos ignoredBaseSnapshot = !module.isAnchorBlock(position) && !ignoreMiningBlock ? null : position;
             double damage = DamageUtils.getExplosionDamage(explosionPositionSnapshot, candidate, boundsSnapshot, 5.0, true, ignoredBaseSnapshot, (BlockPos)null);

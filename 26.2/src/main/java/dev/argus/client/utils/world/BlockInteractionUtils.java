@@ -290,7 +290,7 @@ public final class BlockInteractionUtils implements ClientAccess {
 
          boolean requiresSneak = requiresSneakForInteraction(neighborSnapshot);
          if (hitPosition == null) {
-            hitPosition = position.getCenter().add(Vec3.atLowerCornerOf(direction.getUnitVec3i()).scale(0.5));
+            hitPosition = Vec3.atCenterOf(position).add(Vec3.atLowerCornerOf(direction.getUnitVec3i()).scale(0.5));
          }
 
          if (requiresSneak) {
@@ -612,7 +612,7 @@ public final class BlockInteractionUtils implements ClientAccess {
       }
 
       if (hitPosition == null) {
-         hitPosition = position.getCenter().add(Vec3.atLowerCornerOf(direction.getUnitVec3i()).scale(0.5));
+         hitPosition = Vec3.atCenterOf(position).add(Vec3.atLowerCornerOf(direction.getUnitVec3i()).scale(0.5));
       }
 
       BlockHitResult hitResultSnapshot = new BlockHitResult(hitPosition, placingInAir ? direction : direction.getOpposite(), neighborSnapshot, false);
@@ -645,8 +645,8 @@ public final class BlockInteractionUtils implements ClientAccess {
          directions.remove(Direction.UP);
       }
 
-      double deltaX = ClientAccess.argusclientMinecraft.player.getEyePosition().x - position.getCenter().x;
-      double deltaZ = ClientAccess.argusclientMinecraft.player.getEyePosition().z - position.getCenter().z;
+      double deltaX = ClientAccess.argusclientMinecraft.player.getEyePosition().x - Vec3.atCenterOf(position).x;
+      double deltaZ = ClientAccess.argusclientMinecraft.player.getEyePosition().z - Vec3.atCenterOf(position).z;
       if (deltaX > 0.5) {
          directions.remove(Direction.WEST);
       } else if (deltaX < -0.5) {

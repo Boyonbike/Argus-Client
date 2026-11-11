@@ -180,9 +180,9 @@ public class WaypointsModule extends Module {
 
    @EventHandler
    private void onWorldRender(WorldRenderEvent.Main event) {
-      if (!ClientAccess.argusclientMinecraft.options.hideGui) {
+      if (!ClientAccess.argusclientMinecraft.gui.hud.isHidden) {
          PoseStack poseStack = event.getPoseStack();
-         Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+         Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
          LineMeshRenderer.begin(event, this.lineWidthSetting.getValue());
 
          for (Waypoint waypoint : this.visibleWaypoints) {

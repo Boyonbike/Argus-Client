@@ -41,6 +41,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.HoverEvent.ShowText;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
@@ -231,7 +232,7 @@ public class VisualRangeModule extends Module {
                };
                notification.withStyle(colorStyle);
                BlockPos signPosition = sign.getBlockPos();
-               Vec3 position = signPosition.getCenter();
+               Vec3 position = Vec3.atCenterOf(signPosition);
                this.addPositionInteractions(notification, position);
                MessageSignature signature = ChatUtils.createSignature(signMessageId);
                ChatUtils.printChat(notification, signature);
@@ -247,7 +248,7 @@ public class VisualRangeModule extends Module {
 
    @EventHandler
    private void onPacketReceive(PacketEvent.Receive event) {
-      if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityType.ENDER_PEARL) {
+      if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityTypes.ENDER_PEARL) {
          Setting<Boolean> enderPearlsOption = this.enderPearlsSetting;
          if (enderPearlsOption.getValue()) {
             MutableComponent notification = Component.literal("Ender Pearl entered visual range.");

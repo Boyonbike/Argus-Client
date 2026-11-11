@@ -40,7 +40,7 @@ public final class EntityChamsRenderer implements ClientAccess {
       NoOpOutlineBufferSource.INSTANCE,
       DiscardingBufferSource.INSTANCE,
       ClientAccess.argusclientMinecraft.font,
-      ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
+      ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState()
    );
    static Color fillColor;
    static Color outlineColor;
@@ -112,8 +112,8 @@ public final class EntityChamsRenderer implements ClientAccess {
 
    public static void renderEntity(PoseStack poses, Entity entity) {
       renderingEntity = true;
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       float partialTick = RenderUtils.getPartialTick();
       if (entity instanceof SidePlayer) {
          partialTick = 1.0F;

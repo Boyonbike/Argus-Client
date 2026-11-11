@@ -331,24 +331,24 @@ public class AutoCraftModule extends Module {
    @EventHandler
    private void craftSelectedItems(LocalPlayerPreTickEvent event) {
       if (this.recipeBookWasOpen != null
-         && !(ClientAccess.argusclientMinecraft.screen instanceof CraftingScreen)
+         && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof CraftingScreen)
          && !(ClientAccess.argusclientMinecraft.player.containerMenu instanceof CraftingMenu)) {
          this.restoreRecipeBook();
       }
 
       RecipeDisplayEntry recipe = this.findCraftableRecipe();
-      if (this.autoOpenSetting.getValue() && this.openTimer.hasElapsed(500L) && !(ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen)) {
+      if (this.autoOpenSetting.getValue() && this.openTimer.hasElapsed(500L) && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen)) {
          ObjectPair craftingTable = this.findCraftingTable();
          if (craftingTable != null && (recipe != null || this.hasPotentialRecipe())) {
             if (this.rotateSetting.getValue()) {
-               Vec3 tableCenter = ((BlockPos)craftingTable.first()).getCenter();
+               Vec3 tableCenter = Vec3.atCenterOf((BlockPos)craftingTable.first());
                float[] capturedAngles = RotationManager.getRotationsToPosition(tableCenter);
                boolean onGround = ClientAccess.argusclientMinecraft.player.onGround();
                PacketSender.sendRotation(capturedAngles, onGround);
             }
 
             InteractionHand capturedHand = InteractionHand.MAIN_HAND;
-            Vec3 hitCenter = ((BlockPos)craftingTable.first()).getCenter();
+            Vec3 hitCenter = Vec3.atCenterOf((BlockPos)craftingTable.first());
             Direction hitDirection = (Direction)craftingTable.second();
             BlockHitResult hitResult = new BlockHitResult(hitCenter, hitDirection, (BlockPos)craftingTable.first(), false);
             PacketSender.sendUseItemOn(capturedHand, hitResult);
@@ -362,7 +362,7 @@ public class AutoCraftModule extends Module {
          if (ClientAccess.argusclientMinecraft.player.containerMenu instanceof CraftingMenu
             || this.inInventorySetting.getValue()
                && ClientAccess.argusclientMinecraft.player.containerMenu == ClientAccess.argusclientMinecraft.player.inventoryMenu
-               && ClientAccess.argusclientMinecraft.screen instanceof InventoryScreen) {
+               && ClientAccess.argusclientMinecraft.gui.screen() instanceof InventoryScreen) {
             if (!this.itemsSetting.getValue().isEmpty()) {
                ElapsedTimer capturedCraftTimer = this.craftTimer;
                long delayMillis = this.delaySetting.getValue().intValue();

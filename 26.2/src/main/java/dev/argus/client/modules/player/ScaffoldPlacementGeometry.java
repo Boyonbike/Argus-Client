@@ -15,7 +15,7 @@ public record ScaffoldPlacementGeometry(Direction supportDirection, Vec3 aimPosi
    public static ScaffoldPlacementGeometry fromTarget(ScaffoldPlacementTarget target, boolean closestToPlayer) {
       if (target.airPlace()) {
          AABB airTargetBounds = new AABB(target.position());
-         Vec3 airCenter = target.position().getCenter();
+         Vec3 airCenter = Vec3.atCenterOf(target.position());
          return new ScaffoldPlacementGeometry(null, airCenter, Shapes.create(airTargetBounds));
       }
 
@@ -25,7 +25,7 @@ public record ScaffoldPlacementGeometry(Direction supportDirection, Vec3 aimPosi
          BlockPos supportPosition = target.position().relative(supportDirection);
          aimPositionResult = closestPointAtBlockBase(supportPosition);
       } else {
-         aimPositionResult = target.position().relative(supportDirection).getCenter();
+         aimPositionResult = Vec3.atCenterOf(target.position().relative(supportDirection));
       }
 
       ClientLevel level = ClientAccess.argusclientMinecraft.level;

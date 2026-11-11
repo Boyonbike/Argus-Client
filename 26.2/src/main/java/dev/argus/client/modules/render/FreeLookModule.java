@@ -86,7 +86,7 @@ public class FreeLookModule extends Module {
       LocalPlayer previousPitchPlayer = ClientAccess.argusclientMinecraft.player;
       Vector2f previousPitchRotation = this.cameraRotation;
       previousPitchBobPlayer.xBobO = pitchBobPlayer.xBob = previousPitchPlayer.xRotO = previousPitchRotation.y();
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
       LocalPlayer cameraPlayer = ClientAccess.argusclientMinecraft.player;
       camera.extractRenderState(new net.minecraft.client.renderer.state.level.CameraRenderState(), 1.0F);

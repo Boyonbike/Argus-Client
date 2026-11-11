@@ -56,8 +56,8 @@ public class CrosshairModule extends Module {
          Identifier debugCrosshair = DebugScreenEntries.THREE_DIMENSIONAL_CROSSHAIR;
          DebugScreenEntryList debugEntries = ClientAccess.argusclientMinecraft.debugEntries;
          boolean debugCrosshairEnabled = debugEntries.isCurrentlyEnabled(debugCrosshair);
-         if (!this.isWorldUnavailable() && !ClientAccess.argusclientMinecraft.options.hideGui && !debugCrosshairEnabled) {
-            Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+         if (!this.isWorldUnavailable() && !ClientAccess.argusclientMinecraft.gui.hud.isHidden && !debugCrosshairEnabled) {
+            Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
             if (camera.isDetached()) {
                Setting<Boolean> thirdPerson = this.thirdPersonSetting;
                if (!thirdPerson.getValue()) {

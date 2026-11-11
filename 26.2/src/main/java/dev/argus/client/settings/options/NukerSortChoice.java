@@ -11,13 +11,13 @@ public enum NukerSortChoice implements NamedEntry {
    CLOSEST("Closest", blockPos -> {
       LocalPlayer playerForEye = ClientAccess.argusclientMinecraft.player;
       Vec3 eyeSnapshot = playerForEye.getEyePosition();
-      Vec3 blockCenter = blockPos.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(blockPos);
       return eyeSnapshot.distanceToSqr(blockCenter);
    }),
    FURTHEST("Furthest", blockPos -> {
       LocalPlayer playerForEye = ClientAccess.argusclientMinecraft.player;
       Vec3 eyeSnapshot = playerForEye.getEyePosition();
-      Vec3 blockCenter = blockPos.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(blockPos);
       return -eyeSnapshot.distanceToSqr(blockCenter);
    }),
    TOP("Top", blockPos -> -blockPos.getY()),

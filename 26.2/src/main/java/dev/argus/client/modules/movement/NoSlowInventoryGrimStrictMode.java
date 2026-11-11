@@ -118,7 +118,7 @@ public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
 
       this.inputActive = this.hasPlayerInput();
       boolean keepPendingFlush = false;
-      if (this.inputActive && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen) {
+      if (this.inputActive && ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen) {
          ItemStack cursorStack = InventoryUtils.getCarriedStack();
          keepPendingFlush = !cursorStack.isEmpty();
       }
@@ -147,7 +147,7 @@ public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
    }
 
    private boolean canQueueInCurrentScreen() {
-      return ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen screen && !this.noSlow.containersSetting.getValue()
+      return ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen screen && !this.noSlow.containersSetting.getValue()
          ? screen.getMenu() == ClientAccess.argusclientMinecraft.player.inventoryMenu
          : true;
    }

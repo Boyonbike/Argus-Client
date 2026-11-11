@@ -23,7 +23,7 @@ public class CreateTradePanel extends Panel implements ClientAccess {
       if (!this.nameSetting.getValue().isBlank()) {
          TradeEditorScreen editorScreen = new TradeEditorScreen(this.nameSetting.getValue());
          editorScreen.setParentScreen(this.managerScreen);
-         ClientAccess.argusclientMinecraft.setScreen(editorScreen);
+         ClientAccess.argusclientMinecraft.gui.setScreen(editorScreen);
       }
    }
 }

@@ -25,6 +25,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -549,7 +550,7 @@ public final class SpecificTargets implements ClientAccess {
          }
 
          for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (type != EntityType.PLAYER) {
+            if (type != EntityTypes.PLAYER) {
                list.add(candidate(SpecificRules.Type.ENTITY, BuiltInRegistries.ENTITY_TYPE.getKey(type).toString()));
             }
          }

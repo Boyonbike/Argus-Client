@@ -88,7 +88,7 @@ public class TradeItemsComponent extends AbstractComponent {
             }
 
             this.selectorOpen = true;
-            ((ClientScreen)ClientAccess.argusclientMinecraft.screen).getPanels().add(selector);
+            ((ClientScreen)ClientAccess.argusclientMinecraft.gui.screen()).getPanels().add(selector);
          }
       }
    }

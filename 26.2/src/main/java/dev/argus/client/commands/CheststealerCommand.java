@@ -90,7 +90,7 @@ public final class CheststealerCommand extends Command {
          Direction fallbackDirection = Direction.UP;
          List<Direction> interactionDirections = BlockInteractionUtils.getStrictDirectionsOrFallback(existingChest, fallbackDirection);
          Direction interactionDirection = interactionDirections.getFirst();
-         Vec3 chestCenter = existingChest.getCenter();
+         Vec3 chestCenter = Vec3.atCenterOf(existingChest);
          Vec3 interactionPoint = chestCenter.relative(interactionDirection, 0.5);
          InteractionHand handBeforeHitResult = InteractionHand.MAIN_HAND;
          BlockHitResult hitResult = new BlockHitResult(interactionPoint, interactionDirection, existingChest, false);
@@ -112,7 +112,7 @@ public final class CheststealerCommand extends Command {
             BlockPos positionForSupport = placementPosition;
             Direction supportDirection = BlockInteractionUtils.findSupportDirection(positionForSupport, strictDirection);
             BlockPos supportPosition = placementPosition.relative(supportDirection);
-            Vec3 supportCenter = supportPosition.getCenter();
+            Vec3 supportCenter = Vec3.atCenterOf(supportPosition);
             Direction faceForHitPoint = supportDirection.getOpposite();
             Vec3 placementHitPoint = supportCenter.relative(faceForHitPoint, 0.5);
             InventoryUtils.swapTo(enderChestSlot);
@@ -142,7 +142,7 @@ public final class CheststealerCommand extends Command {
    private boolean hasReachAndClearance(BlockPos position) {
       LocalPlayer playerForEyePosition = ClientAccess.argusclientMinecraft.player;
       Vec3 eyePosition = playerForEyePosition.getEyePosition();
-      Vec3 blockCenter = position.getCenter();
+      Vec3 blockCenter = Vec3.atCenterOf(position);
       double distance = eyePosition.distanceTo(blockCenter);
       if (distance > 4.0) {
          return false;

@@ -112,7 +112,7 @@ public class ViewModelModule extends Module {
          if (openAdjust) {
             Minecraft minecraft = ClientAccess.argusclientMinecraft;
             ViewModelEditorScreen screen = new ViewModelEditorScreen(this);
-            minecraft.setScreen(screen);
+            minecraft.gui.setScreen(screen);
             this.adjustSetting.setValue(false);
          }
       };

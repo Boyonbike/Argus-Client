@@ -1,5 +1,7 @@
 package dev.argus.client.modules.combat;
 
+import net.minecraft.world.item.alchemy.PotionIds;
+import net.minecraft.resources.ResourceKey;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.EventHandler;
@@ -48,7 +50,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
@@ -105,7 +106,7 @@ public class AutoPotModule extends Module {
             return block.distToCenterSqr(distanceX, distanceY, distanceZ);
          }));
       BlockPos nearestBlock = nearestBlockOptional.orElse(playerBlockPosition);
-      Vec3 nearestCenter = nearestBlock.getCenter();
+      Vec3 nearestCenter = Vec3.atCenterOf(nearestBlock);
       return RotationManager.getRotationsToPosition(nearestCenter);
    }
 
@@ -225,13 +226,17 @@ public class AutoPotModule extends Module {
       }
    }
 
+   private static Holder<Potion> potionHolder(ResourceKey<Potion> key) {
+      return BuiltInRegistries.POTION.wrapAsHolder(BuiltInRegistries.POTION.getValue(key));
+   }
+
    private boolean isHealingPotion(Potion potion) {
-      Holder<Potion> healingPotion = Potions.HEALING;
+      Holder<Potion> healingPotion = potionHolder(PotionIds.HEALING);
       if (potion == healingPotion.value()) {
          return true;
       }
 
-      Holder<Potion> strongHealingPotion = Potions.STRONG_HEALING;
+      Holder<Potion> strongHealingPotion = potionHolder(PotionIds.STRONG_HEALING);
       return potion == strongHealingPotion.value();
    }
 
@@ -292,9 +297,9 @@ public class AutoPotModule extends Module {
       settingSnapshot = this.totemsSetting;
       SettingLabelCondition totemsLabelBoundary = SettingLabelCondition.MAX;
       settingSnapshot.setBoundaryLabel("None", totemsLabelBoundary);
-      Holder<Potion> healingPotionHolder = Potions.HEALING;
+      Holder<Potion> healingPotionHolder = potionHolder(PotionIds.HEALING);
       Potion healingPotionSnapshot = healingPotionHolder.value();
-      Holder<Potion> strongHealingPotionHolder = Potions.STRONG_HEALING;
+      Holder<Potion> strongHealingPotionHolder = potionHolder(PotionIds.STRONG_HEALING);
       Potion strongHealingPotion = strongHealingPotionHolder.value();
       List<Potion> defaultPotions = List.of(healingPotionSnapshot, strongHealingPotion);
       settingSnapshot = this.potionsSetting;

@@ -22,7 +22,7 @@ public final class ChatInputOverlay implements ClientAccess {
    private final HUDModule hudModule;
 
    private static boolean isCommandInput() {
-      if (ClientAccess.argusclientMinecraft.screen instanceof ChatScreen chatScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen chatScreen) {
          EditBox input = chatScreen.input;
          String inputText = input.getValue();
          String prefix = CommandRegistry.getPrefix();

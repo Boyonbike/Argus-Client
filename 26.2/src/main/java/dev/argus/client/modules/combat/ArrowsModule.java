@@ -151,7 +151,7 @@ public class ArrowsModule extends Module {
                if (!effectTimes.containsKey(recentEffect)) {
                   MobEffect effectValueSnapshot = effectType.value();
                   int amplifier;
-                  if (!effectValueSnapshot.isInstantenous()) {
+                  if (!effectValueSnapshot.isInstantaneous()) {
                      amplifier = effect.getAmplifier();
                   } else {
                      amplifier = 0;

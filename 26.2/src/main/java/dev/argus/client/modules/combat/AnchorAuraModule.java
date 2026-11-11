@@ -215,7 +215,7 @@ public class AnchorAuraModule extends Module {
    }
 
    private void chargeAnchor(BlockPos position, Direction direction, int originalSlot) {
-      Vec3 centerSnapshot = position.getCenter();
+      Vec3 centerSnapshot = Vec3.atCenterOf(position);
       double faceOffset = 0.5;
       Vec3 hitPoint = centerSnapshot.relative(direction, faceOffset);
       Item glowstoneSnapshot = Items.GLOWSTONE;
@@ -328,7 +328,7 @@ public class AnchorAuraModule extends Module {
             return true;
          }
       }).min(Comparator.comparing(sample -> ClientAccess.argusclientMinecraft.player.getEyePosition().distanceTo(sample)));
-      Vec3 fallbackCenter = position.getCenter();
+      Vec3 fallbackCenter = Vec3.atCenterOf(position);
       return selectedSample.orElse(fallbackCenter);
    }
 
@@ -349,7 +349,7 @@ public class AnchorAuraModule extends Module {
       }
 
       Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-      Vec3 center = position.getCenter();
+      Vec3 center = Vec3.atCenterOf(position);
       if (eyeSnapshot.distanceTo(center) > placementRange) {
          return true;
       }
@@ -381,7 +381,7 @@ public class AnchorAuraModule extends Module {
          if (anchorSlot != -1 || hand != InteractionHand.MAIN_HAND) {
             if (this.rotateSetting.getValue()) {
                RotationManager rotationSnapshot = ClientContext.rotationManager;
-               Vec3 center = position.getCenter();
+               Vec3 center = Vec3.atCenterOf(position);
                rotationSnapshot.requestRotation(RotationManager.getRotationsToFace(center, direction), 100);
             }
 
@@ -456,7 +456,7 @@ public class AnchorAuraModule extends Module {
                      List samples = samplingMode.sampleBlock(samplePosition);
                      boolean visible = WorldUtils.canSeeAny(samples);
                      Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
-                     Vec3 center = this.scanPosition.getCenter();
+                     Vec3 center = Vec3.atCenterOf(this.scanPosition);
                      double distance = eyeSnapshot.distanceTo(center);
                      if (!visible) {
                         Float visibilityWallRange = this.wallRangeSetting.getValue();
@@ -611,7 +611,7 @@ public class AnchorAuraModule extends Module {
 
                   if (this.rotateSetting.getValue()) {
                      RotationManager rotationSnapshot = ClientContext.rotationManager;
-                     Vec3 center = position.getCenter();
+                     Vec3 center = Vec3.atCenterOf(position);
                      rotationSnapshot.requestRotation(RotationManager.getRotationsToPosition(center), 100);
                   }
 

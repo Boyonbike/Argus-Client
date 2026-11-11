@@ -59,7 +59,7 @@ public abstract class ChatScreenMixin extends Screen {
    @Inject(method = "init()V", at = @At("HEAD"))
    private void resetChatLineAnimations(CallbackInfo callback) {
       if (betterChatModule.alwaysSetting.getValue() && betterChatModule.isAnimationEnabled()) {
-         for (Line line : Minecraft.getInstance().gui.getChat().trimmedMessages) {
+         for (Line line : Minecraft.getInstance().gui.hud.getChat().trimmedMessages) {
             ((ChatLineAccess)(Object)line).getProgress().setValue(false);
             ((ChatLineAccess)(Object)line).argusclient$setAddTime(System.currentTimeMillis());
          }
@@ -138,7 +138,7 @@ public abstract class ChatScreenMixin extends Screen {
          FontActiveTextCollector.ClickableStyleFinder styleFinder = new FontActiveTextCollector.ClickableStyleFinder(
             mouseEvent.x(), mouseEvent.y(), this.insertionClickMode()
          );
-         this.minecraft.gui.getChat().captureClickableText(styleFinder, screenHeight, this.minecraft.gui.getGuiTicks(), net.minecraft.client.gui.components.ChatComponent.DisplayMode.FOREGROUND);
+         this.minecraft.gui.hud.getChat().captureClickableText(styleFinder, screenHeight, this.minecraft.gui.hud.getGuiTicks(), net.minecraft.client.gui.components.ChatComponent.DisplayMode.FOREGROUND);
          return styleFinder.result();
       } else {
          return originalStyle;

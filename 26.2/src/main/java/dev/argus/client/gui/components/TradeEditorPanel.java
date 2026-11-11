@@ -64,7 +64,7 @@ public class TradeEditorPanel extends Panel implements ClientAccess {
       );
       ClientContext.tradeRegistry.reregisterByName(this.tradeName);
       ClientContext.tradeRegistry.registerTrade(trade);
-      ((ClientScreen)ClientAccess.argusclientMinecraft.screen).closeWithTransition();
+      ((ClientScreen)ClientAccess.argusclientMinecraft.gui.screen()).closeWithTransition();
    }
 
    private boolean hasAnyEnchantedStack() {

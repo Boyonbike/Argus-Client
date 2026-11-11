@@ -41,7 +41,7 @@ public final class TaskScheduler implements ClientAccess {
    }
 
    public void scheduleScreenChange(Screen screen) {
-      this.scheduleRunTickTask(() -> ClientAccess.argusclientMinecraft.setScreen(screen));
+      this.scheduleRunTickTask(() -> ClientAccess.argusclientMinecraft.gui.setScreen(screen));
    }
 
    private static final class ClientThreadTaskQueue {

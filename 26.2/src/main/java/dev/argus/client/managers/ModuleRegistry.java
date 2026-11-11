@@ -1097,7 +1097,7 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          boolean holdBinding = keybind.mode() == Keybind.Mode.HOLD;
          if (!keybind.isUnbound()
             && keybind.mode() != Keybind.Mode.TOGGLE
-            && (ClientAccess.argusclientMinecraft.screen == null || module.isToggled() == holdBinding)) {
+            && (ClientAccess.argusclientMinecraft.gui.screen() == null || module.isToggled() == holdBinding)) {
             boolean shouldToggle = holdBinding == KeyUtils.isPhysicallyDown(keybind);
             module.setToggled(shouldToggle);
          }

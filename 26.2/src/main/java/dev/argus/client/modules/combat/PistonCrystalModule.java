@@ -1,5 +1,7 @@
 package dev.argus.client.modules.combat;
 
+import net.minecraft.world.phys.Vec3;
+
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.EventHandler;

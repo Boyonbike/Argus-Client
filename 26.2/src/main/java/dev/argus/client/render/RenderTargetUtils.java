@@ -35,7 +35,7 @@ public final class RenderTargetUtils implements ClientAccess {
 
    public static void overrideRenderTargets(RenderTarget target) {
       RenderTargetRegistry.activate(target);
-      savedMainRenderTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+      savedMainRenderTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
       pushFramebuffer(target);
       setMainRenderTarget(target);
    }

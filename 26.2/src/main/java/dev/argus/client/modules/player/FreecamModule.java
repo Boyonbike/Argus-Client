@@ -107,7 +107,7 @@ public class FreecamModule extends Module {
       this.speedValue = this.speedSetting.getValue();
       this.cameraYaw = player.getYRot();
       this.cameraPitch = player.getXRot();
-      Camera camera = mc.gameRenderer.getMainCamera();
+      Camera camera = mc.gameRenderer.mainCamera();
       this.cameraPosition = this.previousCameraPosition = camera.position();
       if (this.perspective == CameraType.THIRD_PERSON_FRONT) {
          this.cameraYaw += 180.0F;
@@ -121,7 +121,7 @@ public class FreecamModule extends Module {
       new KeyboardInputTickEvent(player.input).reset();
       this.updatePressedKeys(mc);
       if (this.reloadChunksSetting.getValue() && mc.level != null) {
-         mc.levelRenderer.allChanged();
+         mc.levelExtractor.allChanged();
       }
    }
 
@@ -133,7 +133,7 @@ public class FreecamModule extends Module {
 
       Minecraft mc = ClientAccess.argusclientMinecraft;
       if (this.reloadChunksSetting.getValue() && mc.level != null) {
-         mc.execute(() -> mc.levelRenderer.allChanged());
+         mc.execute(() -> mc.levelExtractor.allChanged());
       }
 
       this.settingCameraType = true;
@@ -273,7 +273,7 @@ public class FreecamModule extends Module {
    @EventHandler
    private void onMouseHandlerOnScrollEvent(MouseHandlerOnScrollEvent event) {
       double sensitivity = this.scrollSensitivitySetting.getValue();
-      if (sensitivity <= 0.0 || ClientAccess.argusclientMinecraft.screen != null) {
+      if (sensitivity <= 0.0 || ClientAccess.argusclientMinecraft.gui.screen() != null) {
          return;
       }
 
@@ -291,7 +291,7 @@ public class FreecamModule extends Module {
       }
 
       Minecraft mc = ClientAccess.argusclientMinecraft;
-      if (mc.screen != null || mc.player == null || mc.level == null) {
+      if (mc.gui.screen() != null || mc.player == null || mc.level == null) {
          return;
       }
 
@@ -382,7 +382,7 @@ public class FreecamModule extends Module {
 
    private boolean isMovementKeyDown(KeyMapping mapping) {
       Minecraft mc = ClientAccess.argusclientMinecraft;
-      if (mc.screen == null) {
+      if (mc.gui.screen() == null) {
          return mapping.isDown();
       }
 
@@ -416,7 +416,7 @@ public class FreecamModule extends Module {
    }
 
    private BlockPos findPathTarget(Minecraft mc) {
-      Camera camera = mc.gameRenderer.getMainCamera();
+      Camera camera = mc.gameRenderer.mainCamera();
       Vec3 start = camera.position();
       Vec3 end = start.add(Vec3.directionFromRotation(camera.xRot(), camera.yRot()).scale(256.0));
       AABB searchBounds = new AABB(start, end).inflate(1.0);

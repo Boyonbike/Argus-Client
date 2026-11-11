@@ -140,7 +140,7 @@ public abstract class LivingEntityRendererMixin implements ClientAccess {
       if (renderState instanceof WardenRenderState
          && noRenderModule.isToggled()
          && noRenderModule.wardensSetting.getValue()
-         && new Vec3(renderState.x, renderState.y, renderState.z).distanceToSqr(client.gameRenderer.getMainCamera().position())
+         && new Vec3(renderState.x, renderState.y, renderState.z).distanceToSqr(client.gameRenderer.mainCamera().position())
             > maximumDistance * maximumDistance) {
          callback.cancel();
       }

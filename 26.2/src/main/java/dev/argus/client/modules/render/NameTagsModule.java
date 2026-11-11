@@ -1,5 +1,6 @@
 package dev.argus.client.modules.render;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Lighting;
@@ -592,7 +593,7 @@ public class NameTagsModule extends Module {
             String plainItemName = ChatFormatting.stripFormatting(formattedItemName);
             Rarity itemRarity = namedItem.getRarity();
             ChatFormatting rarityFormatting = itemRarity.color();
-            Integer nullableRarityRgb = rarityFormatting.getColor();
+            Integer nullableRarityRgb = LegacyFormatting.rgb(rarityFormatting);
             int rarityRgb;
             if (nullableRarityRgb == null) {
                rarityRgb = -1;
@@ -621,7 +622,7 @@ public class NameTagsModule extends Module {
    private void onWorldRender(WorldRenderEvent.Overlay event) {
       RenderTarget renderTarget = (RenderTarget)NAME_TAG_RENDER_TARGET.get();
       RenderUtils.getEntityBuffers().endBatch();
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
 
       for (Entity entity : this.visibleEntities) {
          float partialTick = RenderUtils.getPartialTick();
@@ -664,7 +665,7 @@ public class NameTagsModule extends Module {
          overlayRenderTypeSnapshot.draw(overlayMeshData);
       }
 
-      Lighting lightingSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.getLighting();
+      Lighting lightingSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
       com.mojang.blaze3d.platform.Lighting.Entry flatLightingEntry = com.mojang.blaze3d.platform.Lighting.Entry.ITEMS_FLAT;
       lightingSnapshot.setupFor(flatLightingEntry);
       ShaderModule shaderSnapshot = shader;
@@ -678,7 +679,7 @@ public class NameTagsModule extends Module {
          NameTagItemRenderer.flush();
       }
 
-      lightingSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.getLighting();
+      lightingSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
       com.mojang.blaze3d.platform.Lighting.Entry levelLightingEntry = com.mojang.blaze3d.platform.Lighting.Entry.LEVEL;
       lightingSnapshot.setupFor(levelLightingEntry);
       originalGlint = (Double)glintOptionSnapshot.get();
@@ -698,7 +699,7 @@ public class NameTagsModule extends Module {
             for (Entity entity : level.entitiesForRendering()) {
                if (this.shouldRenderEntity(entity)) {
                   GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-                  Vec3 cameraPositionSnapshot = gameRenderer.getMainCamera().position();
+                  Vec3 cameraPositionSnapshot = gameRenderer.mainCamera().position();
                   Vec3 entityPositionSnapshot = entity.position();
                   float distance = Vec3Utils.horizontalDistance(cameraPositionSnapshot, entityPositionSnapshot);
                   Integer maximumRange = this.rangeSetting.getValue();
@@ -711,7 +712,7 @@ public class NameTagsModule extends Module {
                }
             }
 
-            Vec3 sortCamera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+            Vec3 sortCamera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
             this.visibleEntities.sort(Comparator.comparingDouble(sortedEntity -> -sortCamera.distanceToSqr(sortedEntity.position())));
             // Offsets (e.g. crouching) are refreshed with the entity list rather than by building a
             // whole render state for every tagged entity on every frame.
@@ -786,7 +787,7 @@ public class NameTagsModule extends Module {
       float scaledEntityHeight = entityHeight * modelHeightScale;
       float anchorHeight = scaledEntityHeight + 0.5F;
       float configuredTagScale = this.scaleSetting.getValue();
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       float renderPartialTick = RenderUtils.getPartialTick();
       Vec3 interpolatedPosition = entity.getPosition(renderPartialTick);
       double scaleAsDouble = configuredTagScale;

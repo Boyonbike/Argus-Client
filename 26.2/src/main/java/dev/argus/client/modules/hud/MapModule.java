@@ -150,7 +150,7 @@ public class MapModule extends HudWidgetModule {
 
    private void renderChunk(PoseStack poses, ChunkPos chunk, Color color) {
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-      Camera camera = gameRenderer.getMainCamera();
+      Camera camera = gameRenderer.mainCamera();
       Vec3 cameraPosition = camera.position();
       double cameraCoordinate = cameraPosition.x;
       float cameraOffsetX = (float)(cameraCoordinate - chunk.getMinBlockX());
@@ -191,7 +191,7 @@ public class MapModule extends HudWidgetModule {
             Axis rotationAxis = Axis.ZP;
             float rotationOffset = 45.0F;
             GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-            Camera camera = gameRenderer.getMainCamera();
+            Camera camera = gameRenderer.mainCamera();
             float rotationDegrees = rotationOffset + camera.yRot();
             Quaternionf arrowRotation = rotationAxis.rotationDegrees(rotationDegrees);
             poses.mulPose(arrowRotation);
@@ -201,7 +201,7 @@ public class MapModule extends HudWidgetModule {
             int pointerArgb = ColorUtils.toArgb(arrowColorOption.getValue(), renderAlpha);
             Identifier texture = NAVIGATION_TEXTURE;
             GuiDrawUtils.drawTexture(poses, texture, -128, -128, 0.0F, 0.0F, 256, 256, 256, 256, pointerArgb);
-            RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.renderBuffers();
+            RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
             BufferSource bufferSource = renderBuffers.bufferSource();
             bufferSource.endBatch();
          }

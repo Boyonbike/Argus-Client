@@ -65,7 +65,7 @@ public abstract class AbstractItemListComponent<T> extends AbstractComponent {
       super.mouseScrolled(mouseX, mouseY, scrollAmount);
       if (this.isMouseOver(mouseX, mouseY)) {
          this.scrollOffset -= (int)scrollAmount;
-         Objects.requireNonNull((ClientScreen)ClientAccess.argusclientMinecraft.screen);
+         Objects.requireNonNull((ClientScreen)ClientAccess.argusclientMinecraft.gui.screen());
       }
    }
 

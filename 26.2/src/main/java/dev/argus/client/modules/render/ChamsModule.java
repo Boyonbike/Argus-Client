@@ -66,6 +66,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.WalkAnimationState;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.monster.Enemy;
@@ -149,7 +150,7 @@ public class ChamsModule extends Module {
 
       float maskOpacity = resolvedMaskOpacity;
       RenderUtils.clearColor(MaskShaderRenderer.MASK_TARGET, maskColor);
-      RenderTarget mainTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+      RenderTarget mainTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
       RenderTargetUtils.setMainRenderTarget(MaskShaderRenderer.MASK_TARGET);
       EntityChamsRenderer.flush();
       Boolean blendEnabled = this.blendSetting.getValue();
@@ -208,7 +209,7 @@ public class ChamsModule extends Module {
                            RenderUtils renderer = RenderUtils.INSTANCE;
                            float partialTick = event.getPartialTick();
                            PoseStack poseStackSnapshot = event.getPoseStack();
-                           RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.renderBuffers();
+                           RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
                            renderer.renderEntity(entity, partialTick, poseStackSnapshot, renderBuffers.bufferSource());
                            this.renderingBaseModel = false;
                         }
@@ -318,7 +319,7 @@ public class ChamsModule extends Module {
       try {
          AABB entityBounds = entity.getBoundingBox();
          outsideFrustum = !RotationManager.isVisible(entityBounds);
-         Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+         Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
          if (checkRange) {
             Vec3 entityPosition = entity.position();
             double cameraDistance = cameraPosition.distanceTo(entityPosition);
@@ -404,7 +405,7 @@ public class ChamsModule extends Module {
    public float getDistanceFade(Entity entity) {
       float fadePercent = this.fadeRadiusSetting.getValue().intValue();
       float fadeStart = fadePercent / 100.0F;
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       Vec3 entityPosition = entity.position();
       double cameraDistance = cameraPosition.distanceTo(entityPosition);
       EntityType entityType = entity.getType();
@@ -425,7 +426,7 @@ public class ChamsModule extends Module {
       int windowHeight = ClientAccess.argusclientMinecraft.getWindow().getHeight();
       long gameTime = ClientAccess.argusclientMinecraft.level == null ? 0L : ClientAccess.argusclientMinecraft.level.getGameTime();
       DeltaTracker deltaTracker = ClientAccess.argusclientMinecraft.getDeltaTracker();
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       OptionInstance filteringOption = ClientAccess.argusclientMinecraft.options.textureFiltering();
       boolean rgssFiltering = filteringOption.get() == TextureFilteringMethod.RGSS;
       Options currentOptions = ClientAccess.argusclientMinecraft.options;
@@ -456,10 +457,10 @@ public class ChamsModule extends Module {
    }
 
    private static float getRenderRange(ChamsModule owner, EntityType entityType) {
-      if (entityType == EntityType.PLAYER) {
+      if (entityType == EntityTypes.PLAYER) {
          return owner.playersSetting.getValue().intValue();
       } else {
-         return entityType == EntityType.END_CRYSTAL ? owner.crystalsSetting.getValue().intValue() : owner.othersSetting.getValue().intValue();
+         return entityType == EntityTypes.END_CRYSTAL ? owner.crystalsSetting.getValue().intValue() : owner.othersSetting.getValue().intValue();
       }
    }
 
@@ -467,7 +468,7 @@ public class ChamsModule extends Module {
    private void onEntityRender(EntityRenderEvent.Pre event) {
       if (!ClientContext.shaderRegistry.renderingIntoTarget) {
          Entity entity = event.getEntity();
-         Vec3 positionSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+         Vec3 positionSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
          Boolean cullingValue = this.cullingSetting.getValue();
          boolean outsideCullingRange = false;
          if (cullingValue) {

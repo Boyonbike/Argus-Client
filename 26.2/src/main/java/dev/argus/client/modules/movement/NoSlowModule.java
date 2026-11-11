@@ -230,11 +230,11 @@ public class NoSlowModule extends Module {
    }
 
    public boolean isGuiMoveAllowed() {
-      if (ClientAccess.argusclientMinecraft.screen != null && isTypingInTextField(ClientAccess.argusclientMinecraft.screen)) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() != null && isTypingInTextField(ClientAccess.argusclientMinecraft.gui.screen())) {
          return false;
       }
 
-      if (ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ClickGuiScreen) {
          for (Panel panel : ClientContext.getClickGui().getPanels()) {
             if (panel instanceof GamePanel && panel.isFullyExpanded()) {
                return false;
@@ -250,15 +250,15 @@ public class NoSlowModule extends Module {
          }
       }
 
-      if (ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen containerScreen && !this.containersSetting.getValue()) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen containerScreen && !this.containersSetting.getValue()) {
          return containerScreen.getMenu() == ClientAccess.argusclientMinecraft.player.inventoryMenu;
       } else {
-         if (ClientAccess.argusclientMinecraft.screen != null
-            && !(ClientAccess.argusclientMinecraft.screen instanceof ChatScreen)
-            && !(ClientAccess.argusclientMinecraft.screen instanceof SignEditScreen)
-            && !(ClientAccess.argusclientMinecraft.screen instanceof AnvilScreen)
-            && !(ClientAccess.argusclientMinecraft.screen instanceof AbstractCommandBlockEditScreen)
-            && !(ClientAccess.argusclientMinecraft.screen instanceof StructureBlockEditScreen)) {
+         if (ClientAccess.argusclientMinecraft.gui.screen() != null
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen)
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof SignEditScreen)
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AnvilScreen)
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractCommandBlockEditScreen)
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof StructureBlockEditScreen)) {
             if (ChestSearchController.searchBox == null) {
                return true;
             }
@@ -370,8 +370,8 @@ public class NoSlowModule extends Module {
       if (this.guiMoveSetting.getValue() && this.rotateSetting.getValue()) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
          if (this.isGuiMoveAllowed()
-            && !(ClientAccess.argusclientMinecraft.screen instanceof ClickGuiScreen)
-            && !(ClientAccess.argusclientMinecraft.screen instanceof HudEditorScreen)) {
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof ClickGuiScreen)
+            && !(ClientAccess.argusclientMinecraft.gui.screen() instanceof HudEditorScreen)) {
             if (this.isKeyPressed(264)) {
                float pitch = Mth.lerp(event.getPartialTick(), player.xRotO, player.getXRot());
                this.pitchInterpolation.setTarget(Math.min(pitch + 8.0F, 90.0F));

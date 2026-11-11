@@ -27,7 +27,7 @@ public class ShulkerCleanupController extends ChestStealerController {
          BlockEntity blockEntity = (BlockEntity)loadedEntity;
          if (blockEntity instanceof ShulkerBoxBlockEntity shulker && shulker.getAnimationStatus() != AnimationStatus.CLOSED) {
             Vec3 eyePosition = ClientAccess.argusclientMinecraft.player.getEyePosition();
-            Vec3 shulkerCenter = blockEntity.getBlockPos().getCenter();
+            Vec3 shulkerCenter = Vec3.atCenterOf(blockEntity.getBlockPos());
             double distance = eyePosition.distanceTo(shulkerCenter);
             if (distance < nearestDistance && distance <= 5.0) {
                nearestDistance = distance;
@@ -40,7 +40,7 @@ public class ShulkerCleanupController extends ChestStealerController {
    }
 
    public void tick() {
-      boolean shulkerScreenOpen = ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen;
+      boolean shulkerScreenOpen = ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen;
       if (this.wasShulkerScreenOpen && !shulkerScreenOpen) {
          BlockPos position = this.findOpenShulkerToBreak();
          if (position != null) {

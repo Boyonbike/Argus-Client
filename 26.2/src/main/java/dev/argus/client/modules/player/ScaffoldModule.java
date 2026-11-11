@@ -232,7 +232,7 @@ public class ScaffoldModule extends Module {
       }
 
       if (placementTargetSnapshot.airPlace()) {
-         aimPosition = placementTargetSnapshot.position().getCenter();
+         aimPosition = Vec3.atCenterOf(placementTargetSnapshot.position());
          geometry = new ScaffoldPlacementGeometry(geometry.supportDirection(), aimPosition, Shapes.empty());
       }
 

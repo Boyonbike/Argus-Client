@@ -169,7 +169,7 @@ public class AutoFarmModule extends Module {
    private Direction findHarvestFace(BlockPos position) {
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       Vec3 eyePosition = player.getEyePosition();
-      ClipBlockStateContext clipContext = new ClipBlockStateContext(eyePosition, position.getCenter(), state -> true);
+      ClipBlockStateContext clipContext = new ClipBlockStateContext(eyePosition, Vec3.atCenterOf(position), state -> true);
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
       Direction hitFace = level.isBlockInLine(clipContext).getDirection();
       List<Direction> validFaces = BlockInteractionUtils.getStrictDirections(position);
@@ -336,7 +336,7 @@ public class AutoFarmModule extends Module {
 
    private void plantAt(BlockPos position, InventoryUtils.SwapSlot plantingItem) {
       InventoryUtils.swapTo(plantingItem);
-      BlockHitResult hitResult = new BlockHitResult(position.getCenter(), Direction.UP, position, false);
+      BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(position), Direction.UP, position, false);
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       InteractionHand hand = plantingItem.hand();
@@ -347,7 +347,7 @@ public class AutoFarmModule extends Module {
       this.actionsThisTick++;
       if (this.rotateSetting.getValue()) {
          RotationManager rotationManager = ClientContext.rotationManager;
-         Vec3 targetCenter = position.getCenter();
+         Vec3 targetCenter = Vec3.atCenterOf(position);
          float[] targetRotation = RotationManager.getRotationsToPosition(targetCenter);
          byte rotationPriority = 0;
          rotationManager.requestRotation(targetRotation, rotationPriority);
@@ -421,7 +421,7 @@ public class AutoFarmModule extends Module {
                         timer.reset();
                         if (this.rotateSetting.getValue()) {
                            RotationManager rotationManager = ClientContext.rotationManager;
-                           Vec3 targetCenter = position.getCenter();
+                           Vec3 targetCenter = Vec3.atCenterOf(position);
                            float[] targetRotation = RotationManager.getRotationsToPosition(targetCenter);
                            byte rotationPriority = 0;
                            rotationManager.requestRotation(targetRotation, rotationPriority);

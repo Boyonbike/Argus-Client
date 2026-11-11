@@ -114,7 +114,7 @@ public final class BaritoneCommand extends Command {
          } else {
             BaritoneBridge pathingController = ClientContext.baritoneBridge;
             GameRenderer renderer = ClientAccess.argusclientMinecraft.gameRenderer;
-            Camera camera = renderer.getMainCamera();
+            Camera camera = renderer.mainCamera();
             BlockPos cameraPosition = camera.blockPosition();
             pathingController.pathTo(cameraPosition);
             return 1;

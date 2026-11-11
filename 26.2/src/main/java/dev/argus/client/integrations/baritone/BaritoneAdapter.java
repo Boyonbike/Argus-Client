@@ -68,7 +68,7 @@ public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
          BetterBlockPos minimum = selection.min();
          BetterBlockPos maximum = selection.max();
          AABB bounds = AABB.encapsulatingFullBlocks(minimum, maximum);
-         Vec3 center = position.getCenter();
+         Vec3 center = Vec3.atCenterOf(position);
          if (bounds.contains(center)) {
             return true;
          }
@@ -130,7 +130,7 @@ public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
          siblings = copiedMessage.getSiblings();
          siblings.addFirst(ChatUtils.createPrefix());
          Gui gui = ClientAccess.argusclientMinecraft.gui;
-         ChatComponent chat = gui.getChat();
+         ChatComponent chat = gui.hud.getChat();
          GuiMessageTag tag = ChatUtils.MESSAGE_TAG;
          chat.addPlayerMessage(copiedMessage, null, tag);
       };

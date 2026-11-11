@@ -412,8 +412,8 @@ public final class ModulesScreen extends UiScreen {
 
     /** Client-category modules and Social open in the Settings tab; everything else gets its own page. */
     private void openSettings(Module module, String setting) {
-        if (module.getCategory() == ModuleCategory.CLIENT || module instanceof ChatToolsModule) minecraft.setScreen(new SettingsScreen(this, module.getName(), setting));
-        else minecraft.setScreen(new ModuleSettingsScreen(this, module, setting));
+        if (module.getCategory() == ModuleCategory.CLIENT || module instanceof ChatToolsModule) minecraft.gui.setScreen(new SettingsScreen(this, module.getName(), setting));
+        else minecraft.gui.setScreen(new ModuleSettingsScreen(this, module, setting));
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {

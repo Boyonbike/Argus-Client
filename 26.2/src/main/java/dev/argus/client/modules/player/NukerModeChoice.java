@@ -41,7 +41,7 @@ enum NukerModeChoice implements NamedEntry {
                   SocialRegistry friendManager = ClientContext.socialRegistry;
                   if (!friendManager.isFriendPlayer(player)) {
                      Vec3 eyePositionSnapshot = player.getEyePosition();
-                     Vec3 blockCenter = blockPos.getCenter();
+                     Vec3 blockCenter = Vec3.atCenterOf(blockPos);
                      if (!(eyePositionSnapshot.distanceTo(blockCenter) > 6.5)) {
                         return true;
                      }

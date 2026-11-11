@@ -48,7 +48,7 @@ public class InventoryCleanerModule extends Module {
       if (capturedTimer.hasElapsed(delayMillis)) {
          Boolean cleanContainers = this.containersSetting.getValue();
          if (cleanContainers || ClientAccess.argusclientMinecraft.player.inventoryMenu == ClientAccess.argusclientMinecraft.player.containerMenu) {
-            Screen screen = ClientAccess.argusclientMinecraft.screen;
+            Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
             boolean supportedScreen = screen instanceof InventoryScreen
                || screen instanceof ContainerScreen
                || screen instanceof ShulkerBoxScreen && !(screen instanceof ShulkerPreviewScreen);

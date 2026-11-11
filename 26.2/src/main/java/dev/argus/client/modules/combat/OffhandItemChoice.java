@@ -58,7 +58,7 @@ public enum OffhandItemChoice implements ClientAccess, NamedEntry {
          return -1;
       }
 
-      if (ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen || ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen || ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen) {
          for (Slot slot : ClientAccess.argusclientMinecraft.player.containerMenu.slots) {
             ItemStack slotStack = slot.getItem();
             if (slotStack.is(itemToFind)) {

@@ -44,7 +44,7 @@ public class LiquidBlockMixin {
          }
 
          AABB bounds = new AABB(blockPos);
-         Vec3 cameraPosition = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+         Vec3 cameraPosition = Minecraft.getInstance().gameRenderer.mainCamera().position();
          Vec3 clampedPosition = BoundingBoxUtils.clampToBounds(cameraPosition.scale(-1.0), bounds);
          double distanceSquared = clampedPosition.distanceToSqr(cameraPosition);
          if (bounds.contains(cameraPosition)) {

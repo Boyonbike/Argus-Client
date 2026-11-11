@@ -40,7 +40,6 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnder
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
-import net.minecraft.world.level.block.entity.BedBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.DecoratedPotBlockEntity;
@@ -100,7 +99,7 @@ public class ESPRenderHelper implements ClientAccess {
    }
 
    protected void drawLabel(WorldRenderEvent event, String text, Vec3 position, float scale, Color textColor, Color backgroundColor) {
-      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+      Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       double distanceScale = MathUtils.getDistanceScale(cameraPosition, position, scale);
       if (backgroundColor != null) {
          RenderUtils.INSTANCE
@@ -142,7 +141,7 @@ public class ESPRenderHelper implements ClientAccess {
    Resolved resolve(Entity entity) {
       Resolved result = this.resolved.get(entity);
       if (result == null) {
-         Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+         Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
          SpecificTargets specific = this.module.targets.specific;
          SpecificRules.Rule rule = specific.forEntity(entity);
          RuleSettings settings = rule == null ? null : specific.settings(rule);

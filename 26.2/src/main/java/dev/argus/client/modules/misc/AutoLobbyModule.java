@@ -130,7 +130,7 @@ public final class AutoLobbyModule extends Module {
             && !finishLogin()) return;
         if (loginHold.hold(connection)) return;
 
-        if (!enterPortal.getValue() || mc.screen != null || !mc.player.isAlive() || mc.player.isPassenger()
+        if (!enterPortal.getValue() || mc.gui.screen() != null || !mc.player.isAlive() || mc.player.isPassenger()
             || mc.player.isFallFlying()) {
             stopWalking();
             return;
@@ -193,7 +193,7 @@ public final class AutoLobbyModule extends Module {
             }
             return false;
         }
-        if (mc.screen != null || ++loginTicks < Math.max(20, joinDelay.getValue())) return false;
+        if (mc.gui.screen() != null || ++loginTicks < Math.max(20, joinDelay.getValue())) return false;
         loginSent = true;
         loginTicks = 0;
         connection.sendCommand(command);
@@ -296,6 +296,6 @@ public final class AutoLobbyModule extends Module {
     }
 
     private void notice(String message) {
-        if (mc.player != null) mc.gui.getChat().addClientSystemMessage(Component.literal("[AutoLobby] " + message));
+        if (mc.player != null) mc.gui.hud.getChat().addClientSystemMessage(Component.literal("[AutoLobby] " + message));
     }
 }

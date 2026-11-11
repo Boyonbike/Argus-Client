@@ -39,7 +39,7 @@ import org.lwjgl.glfw.GLFW;
 public class FontsModule extends Module {
    public static FontsModule INSTANCE;
    private static final Runnable RELOAD_RENDERER = () -> {
-      if (ClientAccess.argusclientMinecraft.player != null || ClientAccess.argusclientMinecraft.screen instanceof ClientScreen) {
+      if (ClientAccess.argusclientMinecraft.player != null || ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen) {
          FontRenderer.INSTANCE.setRenderer(FontRenderer.INSTANCE.createRenderer());
       }
    };

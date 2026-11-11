@@ -1,5 +1,6 @@
 package dev.argus.client.utils.world;
 
+import dev.argus.client.utils.chat.LegacyFormatting;
 import com.google.gson.annotations.SerializedName;
 import dev.argus.client.managers.CommandRegistry;
 import dev.argus.client.settings.NamedEntry;
@@ -51,7 +52,7 @@ public class Waypoint implements NamedEntry {
       if (this.isToggled()) {
          color = -1;
       } else {
-         Integer disabledColor = ChatFormatting.GRAY.getColor();
+         Integer disabledColor = LegacyFormatting.rgb(ChatFormatting.GRAY);
          color = disabledColor;
       }
 

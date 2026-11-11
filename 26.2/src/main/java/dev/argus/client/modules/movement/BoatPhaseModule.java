@@ -231,7 +231,7 @@ public final class BoatPhaseModule extends Module {
 
     /** True while the boat should ignore block collisions. */
     public boolean phases(AbstractBoat candidate) {
-        return owns(candidate) && phase.getValue() && plannedThroughBlocks && !correcting && motion.holdTicks() == 0 && mc.screen == null;
+        return owns(candidate) && phase.getValue() && plannedThroughBlocks && !correcting && motion.holdTicks() == 0 && mc.gui.screen() == null;
     }
 
     // ---- Movement ----------------------------------------------------------------------------
@@ -240,7 +240,7 @@ public final class BoatPhaseModule extends Module {
         if (!owns(candidate)) return vanilla;
         plannedMode = travelMode();
         if (lockYaw.getValue()) candidate.setYRot(mc.player.getYRot());
-        if (correcting || motion.holdTicks() > 0 || mc.screen != null) {
+        if (correcting || motion.holdTicks() > 0 || mc.gui.screen() != null) {
             candidate.setDeltaMovement(Vec3.ZERO);
             return Vec3.ZERO;
         }
@@ -333,7 +333,7 @@ public final class BoatPhaseModule extends Module {
     }
 
     private boolean travelReady(AbstractBoat candidate) {
-        return isToggled() && owns(candidate) && !correcting && motion.holdTicks() == 0 && mc.screen == null;
+        return isToggled() && owns(candidate) && !correcting && motion.holdTicks() == 0 && mc.gui.screen() == null;
     }
 
     private double travelVerticalSpeed() { return verticalRejected ? Math.min(9, verticalSpeed.getValue()) : verticalSpeed.getValue(); }
@@ -668,7 +668,7 @@ public final class BoatPhaseModule extends Module {
 
     @EventHandler
     private void onInputPress(InputPressEvent event) {
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
         if (matches(diveKey, event)) toggleDive();
         else if (matches(cruiseKey, event)) toggleCruise();
         else if (matches(surfaceKey, event)) surface();

@@ -16,7 +16,7 @@ final class SpeedMineRange {
    static boolean isInRange(BlockPos blockPos, float range) {
       if (!RotationManager.isMovementSyncEnabled()) {
          Vec3 eyePosition = ClientAccess.argusclientMinecraft.player.getEyePosition();
-         Vec3 blockCenter = blockPos.getCenter();
+         Vec3 blockCenter = Vec3.atCenterOf(blockPos);
          return eyePosition.distanceTo(blockCenter) <= range;
       }
 
@@ -24,7 +24,7 @@ final class SpeedMineRange {
       Holder scaleAttribute = Attributes.SCALE;
       float playerScale = (float)scalePlayer.getAttributeValue(scaleAttribute);
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-      Vec3 feetPosition = BoundingBoxUtils.getInterpolationBounds(player).getBottomCenter();
+      Vec3 feetPosition = BoundingBoxUtils.getInterpolationBounds(player).getCenter();
       AABB blockBounds = new AABB(blockPos);
       double nearestDistance = Double.MAX_VALUE;
 

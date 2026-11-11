@@ -135,17 +135,17 @@ public final class ChatToolsScreen extends UiScreen {
         if (tools == null || attached == tools) return;
         attached = tools;
         tools.attachWindow(new ChatToolsModule.Window() {
-            @Override public boolean showing() { return Minecraft.getInstance().screen instanceof ChatToolsScreen; }
+            @Override public boolean showing() { return Minecraft.getInstance().gui.screen() instanceof ChatToolsScreen; }
             @Override public boolean reading(String player) {
-                return Minecraft.getInstance().screen instanceof ChatToolsScreen screen && screen.reading(player);
+                return Minecraft.getInstance().gui.screen() instanceof ChatToolsScreen screen && screen.reading(player);
             }
             @Override public void open(String player) {
                 Minecraft mc = Minecraft.getInstance();
-                if (mc.screen instanceof ChatToolsScreen screen) { if (player != null) screen.openConversation(player); }
-                else mc.setScreen(new ChatToolsScreen(mc.screen, player));
+                if (mc.gui.screen() instanceof ChatToolsScreen screen) { if (player != null) screen.openConversation(player); }
+                else mc.gui.setScreen(new ChatToolsScreen(mc.gui.screen(), player));
             }
             @Override public void close() {
-                if (Minecraft.getInstance().screen instanceof ChatToolsScreen screen) screen.onClose();
+                if (Minecraft.getInstance().gui.screen() instanceof ChatToolsScreen screen) screen.onClose();
             }
         });
     }
@@ -1288,7 +1288,7 @@ public final class ChatToolsScreen extends UiScreen {
             List<byte[]> contents = files;
             client.execute(() -> {
                 importBusy = false;
-                if (client.screen != this) return;
+                if (client.gui.screen() != this) return;
                 if (error != null) { notice(error, true); return; }
                 if (contents.isEmpty()) return;
                 if (whitelist) {

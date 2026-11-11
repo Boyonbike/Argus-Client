@@ -24,7 +24,7 @@ public class PlainHoleFillPolicy implements ClientAccess {
          Setting<SpeedMineRebreakChoice> rebreakSettingRef = speedMineModule.rebreakSetting;
          if (rebreakSettingRef.getValue() == SpeedMineRebreakChoice.INSTANT && speedMineModule.getMiningPos() != null) {
             BlockPos miningPos = speedMineModule.getMiningPos();
-            Vec3 miningCenter = miningPos.getCenter();
+            Vec3 miningCenter = Vec3.atCenterOf(miningPos);
             AABB miningBoundsSnapshot = hole.bounds();
             if (miningBoundsSnapshot.contains(miningCenter)) {
                return false;
@@ -38,13 +38,13 @@ public class PlainHoleFillPolicy implements ClientAccess {
       } else {
          Vec3 eyeSnapshot = ClientAccess.argusclientMinecraft.player.getEyePosition();
          BlockPos rangePosition = hole.pos();
-         Vec3 holeCenter = rangePosition.getCenter();
+         Vec3 holeCenter = Vec3.atCenterOf(rangePosition);
          double distance = eyeSnapshot.distanceTo(holeCenter);
          Float configuredRange = this.holeFillModule.rangeSetting.getValue();
          if (distance <= configuredRange.floatValue()) {
             double eyeY = ClientAccess.argusclientMinecraft.player.getEyePosition().y;
             BlockPos verticalPosition = hole.pos();
-            double verticalDifference = eyeY - verticalPosition.getCenter().y;
+            double verticalDifference = eyeY - Vec3.atCenterOf(verticalPosition).y;
             double absoluteVerticalDifference = Math.abs(verticalDifference);
             Float configuredVerticalRange = this.holeFillModule.verticalRangeSetting.getValue();
             return absoluteVerticalDifference <= configuredVerticalRange.floatValue();

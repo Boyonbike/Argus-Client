@@ -1,5 +1,6 @@
 package dev.argus.client.utils.world;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.google.common.collect.AbstractIterator;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
@@ -75,12 +76,16 @@ public final class WorldUtils implements ClientAccess {
       Blocks.SCULK
    );
    public static final List TRIAL_CHAMBER_FLOOR_BLOCKS = List.of(
-      Blocks.WAXED_OXIDIZED_COPPER,
-      Blocks.WAXED_OXIDIZED_CUT_COPPER,
-      Blocks.WAXED_COPPER_BLOCK,
-      Blocks.WAXED_OXIDIZED_COPPER_GRATE,
+      block("waxed_oxidized_copper"),
+      block("waxed_oxidized_cut_copper"),
+      block("waxed_copper_block"),
+      block("waxed_oxidized_copper_grate"),
       Blocks.CHISELED_TUFF_BRICKS
    );
+
+   private static Block block(String id) {
+      return BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace(id));
+   }
 
    public static float getTopY() {
       int minimumY = ClientAccess.argusclientMinecraft.level.getMinY();
@@ -176,7 +181,7 @@ public final class WorldUtils implements ClientAccess {
 
    public static void reloadRenderer() {
       if (ClientAccess.argusclientMinecraft.level != null) {
-         ClientAccess.argusclientMinecraft.levelRenderer.allChanged();
+         ClientAccess.argusclientMinecraft.levelExtractor.allChanged();
       }
    }
 
@@ -475,7 +480,7 @@ public final class WorldUtils implements ClientAccess {
       }
 
       LocalPlayer capturedBoundsPlayer = ClientAccess.argusclientMinecraft.player;
-      Vec3 basePosition = BoundingBoxUtils.getInterpolationBounds(capturedBoundsPlayer).getBottomCenter();
+      Vec3 basePosition = BoundingBoxUtils.getInterpolationBounds(capturedBoundsPlayer).getCenter();
       AABB entityBounds = entity.getBoundingBox();
       double minimumDistance = Double.MAX_VALUE;
       Vec3 closestOrigin = null;

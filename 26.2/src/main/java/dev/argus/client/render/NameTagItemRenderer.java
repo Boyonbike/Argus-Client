@@ -20,7 +20,7 @@ public final class NameTagItemRenderer {
       NoOpOutlineBufferSource.INSTANCE,
       DiscardingBufferSource.INSTANCE,
       ClientAccess.argusclientMinecraft.font,
-      ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
+      ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState()
    );
 
    private NameTagItemRenderer() {

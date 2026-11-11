@@ -114,7 +114,7 @@ public class ShulkerRefillController extends ChestStealerController {
       if (this.pendingClose) {
          ClientAccess.argusclientMinecraft.player.closeContainer();
          this.pendingClose = false;
-      } else if (!InventoryUtils.isEnderChestScreen(ClientAccess.argusclientMinecraft.screen)) {
+      } else if (!InventoryUtils.isEnderChestScreen(ClientAccess.argusclientMinecraft.gui.screen())) {
          this.restoreSelectedSlot();
       } else if (this.module.hasScreenOpenTimedOut()
          && ClientAccess.argusclientMinecraft.player.containerMenu instanceof ChestMenu menu

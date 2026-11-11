@@ -47,7 +47,7 @@ public class ModuleImportConfirmationScreen extends ClientScreen {
       if (this.returnScreen instanceof ClientScreen clientScreen) {
          clientScreen.open();
       } else {
-         ClientAccess.argusclientMinecraft.setScreen(this.returnScreen);
+         ClientAccess.argusclientMinecraft.gui.setScreen(this.returnScreen);
       }
    }
 }

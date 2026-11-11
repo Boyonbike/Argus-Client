@@ -42,7 +42,7 @@ public class InventoryTweaksModule extends Module {
    private void onDropKey(InputPressEvent event) {
       if (this.lockSlotSetting.getValue() && !this.isWorldUnavailable() && !event.isMouse()) {
          Key dropKey = ((KeyMappingAccessor)ClientAccess.argusclientMinecraft.options.keyDrop).getKey();
-         if (dropKey.getValue() == event.getCode() && ClientAccess.argusclientMinecraft.screen == null) {
+         if (dropKey.getValue() == event.getCode() && ClientAccess.argusclientMinecraft.gui.screen() == null) {
             if (ClientAccess.argusclientMinecraft.player.getMainHandItem().getMaxStackSize() == 1 && this.dropTimer.hasElapsed(300L)) {
                this.dropTimer.reset();
                event.cancel();
@@ -54,7 +54,7 @@ public class InventoryTweaksModule extends Module {
    private int getClickSlotId(Slot slot) {
       CreativeModeTab selectedTab = CreativeModeInventoryScreen.selectedTab;
       boolean inventoryTab = Type.INVENTORY == selectedTab.getType();
-      return ClientAccess.argusclientMinecraft.screen instanceof CreativeModeInventoryScreen && inventoryTab ? slot.getContainerSlot() : slot.index;
+      return ClientAccess.argusclientMinecraft.gui.screen() instanceof CreativeModeInventoryScreen && inventoryTab ? slot.getContainerSlot() : slot.index;
    }
 
    public boolean shouldSwapBundleClickButton(Slot slot, int mouseButton) {
@@ -88,13 +88,13 @@ public class InventoryTweaksModule extends Module {
    @EventHandler
    private void onMinecraftRunTickEvent(MinecraftRunTickEvent unusedEvent) {
       Boolean fastMoveEnabled = this.fastMoveSetting.getValue();
-      if (fastMoveEnabled && ClientAccess.argusclientMinecraft.screen instanceof AbstractContainerScreen) {
+      if (fastMoveEnabled && ClientAccess.argusclientMinecraft.gui.screen() instanceof AbstractContainerScreen) {
          if (!this.onlyContainerSetting.getValue()
-            || ClientAccess.argusclientMinecraft.screen instanceof ContainerScreen
-            || ClientAccess.argusclientMinecraft.screen instanceof ShulkerBoxScreen) {
+            || ClientAccess.argusclientMinecraft.gui.screen() instanceof ContainerScreen
+            || ClientAccess.argusclientMinecraft.gui.screen() instanceof ShulkerBoxScreen) {
             ItemStack carriedStack = ClientAccess.argusclientMinecraft.player.containerMenu.getCarried();
             if (carriedStack.isEmpty()) {
-               Slot focusedSlot = ((AbstractContainerScreenAccessor)ClientAccess.argusclientMinecraft.screen).argusclient$getFocusedSlot();
+               Slot focusedSlot = ((AbstractContainerScreenAccessor)ClientAccess.argusclientMinecraft.gui.screen()).argusclient$getFocusedSlot();
                if (focusedSlot != null) {
                   if (!focusedSlot.getItem().isEmpty()) {
                      Boolean spamEnabled = this.spamSetting.getValue();

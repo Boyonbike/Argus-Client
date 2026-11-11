@@ -28,6 +28,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -127,7 +128,7 @@ public class AutoNameTagModule extends Module {
       super("AutoNameTag", "Will use name tags on nearby entities.", ModuleCategory.PLAYER);
       DefaultedRegistry entityRegistry = BuiltInRegistries.ENTITY_TYPE;
       EntityType[] defaultEntities = new EntityType[1];
-      EntityType witherType = EntityType.WITHER;
+      EntityType witherType = EntityTypes.WITHER;
       defaultEntities[0] = witherType;
       this.entitiesSetting = this.add(new RegistrySetSetting<>("Entities", entityRegistry, defaultEntities));
       ListFilterMode defaultMode = ListFilterMode.WHITELIST;

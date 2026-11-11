@@ -39,6 +39,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.inventory.ContainerInput;
@@ -72,7 +73,7 @@ public class AutoTradeModule extends Module {
    private int villagerId;
 
    private Entity findVillagerToOpen() {
-      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
+      Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       Entity selectedVillager = null;
       float smallestYawDifference = 360.0F;
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
@@ -114,7 +115,7 @@ public class AutoTradeModule extends Module {
    }
 
    private boolean isTradeExperienceOrb(Entity entity) {
-      if (entity.getType() == EntityType.EXPERIENCE_ORB && this.villagerId != -1) {
+      if (entity.getType() == EntityTypes.EXPERIENCE_ORB && this.villagerId != -1) {
          AABB orbBounds = entity.getBoundingBox();
          Vec3 position = entity.position();
          return orbBounds.contains(position);
@@ -208,7 +209,7 @@ public class AutoTradeModule extends Module {
 
                   long closeDelayMillis = tradeAttempt;
                   if (this.closeQuietTimer.hasElapsed(closeDelayMillis) && this.closeSetting.getValue()) {
-                     Screen screen = ClientAccess.argusclientMinecraft.screen;
+                     Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
                      screen.onClose();
                   }
 
@@ -269,7 +270,7 @@ public class AutoTradeModule extends Module {
    }
 
    private void selectTrade(int offerIndex) {
-      if (ClientAccess.argusclientMinecraft.screen instanceof MerchantScreen screen) {
+      if (ClientAccess.argusclientMinecraft.gui.screen() instanceof MerchantScreen screen) {
          ((MerchantScreenAccessor)screen).argusclient$setSelected(offerIndex);
          ((MerchantScreenAccessor)screen).argusclient$syncRecipe();
       } else {
@@ -282,7 +283,7 @@ public class AutoTradeModule extends Module {
    private void onRotationRequest(RotationRequestEvent event) {
       Boolean autoOpen = this.autoOpenSetting.getValue();
       if (autoOpen) {
-         if (ClientAccess.argusclientMinecraft.screen == null) {
+         if (ClientAccess.argusclientMinecraft.gui.screen() == null) {
             if (this.resetOpenTimer) {
                ElapsedTimer timer = this.openTimer;
                timer.reset();

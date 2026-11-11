@@ -323,7 +323,7 @@ public class LogoutSpotsModule extends Module {
                if (dimension == WorldUtils.getDimension()) {
                   AABB distanceBox = entry.getValue().boundingBox;
                   Vec3 capturedBoxCenter = distanceBox.getCenter();
-                  Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+                  Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
                   double distance = capturedBoxCenter.distanceTo(cameraPosition);
                   Float maximumDistance = this.distanceSetting.getValue();
                   if (distance > maximumDistance.floatValue()) {
@@ -359,7 +359,7 @@ public class LogoutSpotsModule extends Module {
                         Float alpha = this.alphaSetting.getValue();
                         RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, alpha);
                         RenderUtils modelRenderer = RenderUtils.INSTANCE;
-                        RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.renderBuffers();
+                        RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
                         modelRenderer.renderEntity(playerModel, 1.0F, poses, renderBuffers.bufferSource());
                         RenderUtils.INSTANCE.flushEntities();
                         RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -417,7 +417,7 @@ public class LogoutSpotsModule extends Module {
                      }
 
                      GameRenderer tagGameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
-                     Camera tagCamera = tagGameRenderer.getMainCamera();
+                     Camera tagCamera = tagGameRenderer.mainCamera();
                      Vec3 capturedTagCameraPosition = tagCamera.position();
                      Setting<Float> textScaleOption = this.textScaleSetting;
                      Float configuredTextScale = textScaleOption.getValue();

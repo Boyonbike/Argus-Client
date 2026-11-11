@@ -44,7 +44,7 @@ public final class CrystalDamageRenderer {
             float alpha = 1.0F - elapsed / (duration * 1000.0F);
             if (!(alpha <= 0.02F)) {
                PoseStack poseStack = event.getPoseStack();
-               Vec3 center = this.pos.getCenter();
+               Vec3 center = Vec3.atCenterOf(this.pos);
                float negativeWidth = -FontRenderer.INSTANCE.getWidth(text);
                float textX = negativeWidth / 2.0F;
                float negativeHeight = -FontRenderer.INSTANCE.getHeight();

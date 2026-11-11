@@ -50,11 +50,11 @@ public final class DefaultsCommand extends Command {
             }
 
             Minecraft client = ClientAccess.argusclientMinecraft;
-            client.setScreen(null);
+            client.gui.setScreen(null);
          }, resetConfirmationTitle(), Component.nullToEmpty("Continue?"));
          Runnable showConfirmation = () -> {
             Minecraft client = ClientAccess.argusclientMinecraft;
-            client.setScreen(confirmationScreen);
+            client.gui.setScreen(confirmationScreen);
          };
          this.scheduleRotationTask(showConfirmation);
          return 1;

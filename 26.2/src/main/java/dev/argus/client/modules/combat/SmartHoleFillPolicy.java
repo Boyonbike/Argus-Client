@@ -65,13 +65,13 @@ public class SmartHoleFillPolicy extends PlainHoleFillPolicy {
       boolean playerConditionResult = true;
       if (MovementPhysics.isMoving(player)) {
          BlockPos conditionHolePos = hole.pos();
-         Vec3 conditionHoleCenter = conditionHolePos.getCenter();
+         Vec3 conditionHoleCenter = Vec3.atCenterOf(conditionHolePos);
          playerConditionResult = MovementPhysics.isMovingToward(player, conditionHoleCenter);
       }
 
       Vec3 boundsCenter = BoundingBoxUtils.getBottomCenter(bounds);
       BlockPos rangeHolePos = hole.pos();
-      Vec3 holeCenterSnapshot = rangeHolePos.getCenter();
+      Vec3 holeCenterSnapshot = Vec3.atCenterOf(rangeHolePos);
       Vec3 boundsCenterSnapshot = BoundingBoxUtils.getBottomCenter(bounds);
       float smartDistance = Vec3Utils.horizontalDistance(holeCenterSnapshot, boundsCenterSnapshot);
       Setting<Float> smartRangeSettingRef = this.holeFillModule.smartRangeSetting;
@@ -98,7 +98,7 @@ public class SmartHoleFillPolicy extends PlainHoleFillPolicy {
       if (!holeManagerSnapshot.intersectsHole(playerBlockPosSnapshot)) {
          Vec3 playerPositionSnapshot = ClientAccess.argusclientMinecraft.player.position();
          BlockPos holePos = hole.pos();
-         Vec3 holeCenter = holePos.getCenter();
+         Vec3 holeCenter = Vec3.atCenterOf(holePos);
          double distance = playerPositionSnapshot.distanceTo(holeCenter);
          if (!(distance >= 2.0)) {
             return false;

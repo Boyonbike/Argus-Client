@@ -32,7 +32,7 @@ public class SoundSelectionScreen extends ClientScreen {
       if (this.parentScreen instanceof ClientScreen clientScreen) {
          clientScreen.open();
       } else {
-         ClientAccess.argusclientMinecraft.setScreen(this.parentScreen);
+         ClientAccess.argusclientMinecraft.gui.setScreen(this.parentScreen);
       }
    }
 

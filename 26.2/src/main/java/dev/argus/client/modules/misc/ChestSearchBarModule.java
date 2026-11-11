@@ -63,13 +63,13 @@ public class ChestSearchBarModule extends Module {
       searchControllerSnapshot.onDrawGui(graphicsSnapshot, screenSnapshot, poseSnapshot, mouseXSnapshot, mouseYSnapshot, renderValueSnapshot);
       if (ChestSearchController.searchBox != null) {
          if (KeyUtils.isPhysicalKeyDown(70) && KeyUtils.isControlDown()) {
-            Screen focusScreen = ClientAccess.argusclientMinecraft.screen;
+            Screen focusScreen = ClientAccess.argusclientMinecraft.gui.screen();
             EditBox focusTarget = ChestSearchController.searchBox;
             focusScreen.setFocused(focusTarget);
          }
 
          if (KeyUtils.isPhysicalKeyDown(257)) {
-            Screen focusScreen = ClientAccess.argusclientMinecraft.screen;
+            Screen focusScreen = ClientAccess.argusclientMinecraft.gui.screen();
             focusScreen.setFocused(null);
          }
       }

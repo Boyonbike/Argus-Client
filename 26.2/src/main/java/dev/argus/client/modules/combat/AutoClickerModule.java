@@ -61,7 +61,7 @@ public class AutoClickerModule extends Module {
    }
 
    private void performClick() {
-      if (!multiTaskModule.isToggled() || !ClientAccess.argusclientMinecraft.player.isUsingItem() && ClientAccess.argusclientMinecraft.screen == null) {
+      if (!multiTaskModule.isToggled() || !ClientAccess.argusclientMinecraft.player.isUsingItem() && ClientAccess.argusclientMinecraft.gui.screen() == null) {
          Key key = this.modeSetting.getValue().getKeyMapping().key;
          KeyMapping.click(key);
       } else {

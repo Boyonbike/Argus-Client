@@ -5,7 +5,7 @@ import dev.argus.client.ClientAccess;
 
 public class BlurMaskPipeline extends ShaderPipeline {
    public BlurMaskPipeline() {
-      super(ClientAccess.argusclientMinecraft.getMainRenderTarget());
+      super(ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
       CompiledShaderProgram program = CompiledShaderProgram.fromResources("base.vert", "multi/blur_mask.frag");
       ShaderStage verticalStage = new BlurMaskPipeline.DirectionalStage(program, false, MaskShaderRenderer.VERTICAL_TARGET);
       this.addStage(verticalStage);

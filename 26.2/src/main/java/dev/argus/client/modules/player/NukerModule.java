@@ -272,7 +272,7 @@ public class NukerModule extends Module {
 
          if (this.rotateSetting.getValue()) {
             RotationManager rotationManagerSnapshot = ClientContext.rotationManager;
-            Vec3 centerSnapshot = blockPos.getCenter();
+            Vec3 centerSnapshot = Vec3.atCenterOf(blockPos);
             float[] rotations = RotationManager.getRotationsToFace(centerSnapshot, miningDirection);
             rotationManagerSnapshot.requestRotation(rotations, 5);
          }

@@ -54,7 +54,7 @@ public class ShulkerReturnController extends ChestStealerController {
    }
 
    public void onContainerSlotUpdate(int containerId, ItemStack stack) {
-      Screen screen = ClientAccess.argusclientMinecraft.screen;
+      Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
       if (!InventoryUtils.isEnderChestScreen(screen) && containerId == ClientAccess.argusclientMinecraft.player.inventoryMenu.containerId) {
          for (ShulkerReturnController.TrackedShulker trackedShulker : this.trackedShulkers) {
             if (trackedShulker.matchesItemAndName(stack)) {
@@ -65,7 +65,7 @@ public class ShulkerReturnController extends ChestStealerController {
    }
 
    public void onInventoryMouseClick(MultiPlayerGameModeHandleInventoryMouseClickEvent event) {
-      Screen screen = ClientAccess.argusclientMinecraft.screen;
+      Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
       if (InventoryUtils.isEnderChestScreen(screen) && !this.handlingReturnClick) {
          AbstractContainerMenu menu = ClientAccess.argusclientMinecraft.player.containerMenu;
          int clickedSlotId = event.getSlotId();
@@ -122,7 +122,7 @@ public class ShulkerReturnController extends ChestStealerController {
             Direction fallbackDirection = Direction.UP;
             Direction direction = BlockInteractionUtils.getStrictDirectionsOrFallback(position, fallbackDirection).getFirst();
             double hitOffset = 0.5;
-            BlockHitResult hitResult = new BlockHitResult(position.getCenter().relative(direction, hitOffset), direction, position, false);
+            BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(position).relative(direction, hitOffset), direction, position, false);
             ClientAccess.argusclientMinecraft.player.closeContainer();
             InteractionHand interactionHand = InteractionHand.MAIN_HAND;
             PacketSender.sendUseItemOn(interactionHand, hitResult);
@@ -156,7 +156,7 @@ public class ShulkerReturnController extends ChestStealerController {
             BlockPos candidate = blockEntity.getBlockPos();
             LocalPlayer player = ClientAccess.argusclientMinecraft.player;
             Vec3 eyePosition = player.getEyePosition();
-            Vec3 center = candidate.getCenter();
+            Vec3 center = Vec3.atCenterOf(candidate);
             double distance = eyePosition.distanceTo(center);
             if (distance <= 5.0 && distance < nearestDistance) {
                nearestDistance = distance;
@@ -171,13 +171,13 @@ public class ShulkerReturnController extends ChestStealerController {
    private boolean isWithinReopenRange(BlockPos position) {
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       Vec3 eyePosition = player.getEyePosition();
-      Vec3 center = position.getCenter();
+      Vec3 center = Vec3.atCenterOf(position);
       return eyePosition.distanceTo(center) <= 5.0;
    }
 
    public void tick() {
       this.returnedThisTick = false;
-      Screen screen = ClientAccess.argusclientMinecraft.screen;
+      Screen screen = ClientAccess.argusclientMinecraft.gui.screen();
       if (!InventoryUtils.isEnderChestScreen(screen)) {
          this.leftEnderChest = true;
 

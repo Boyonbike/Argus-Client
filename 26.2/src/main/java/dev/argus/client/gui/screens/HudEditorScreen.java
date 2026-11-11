@@ -234,7 +234,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
       } else {
          GuiDrawUtils.flush();
          MaskShaderRenderer.setParameters(hud.bloomRadiusSetting.getValue().intValue(), hud.bloomStrengthSetting.getValue(), 1.0F, 1.0F);
-         RenderTarget mainTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
+         RenderTarget mainTarget = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
 
          try {
             MaskShaderRenderer.captureMask(() -> {

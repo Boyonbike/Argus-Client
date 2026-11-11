@@ -126,7 +126,7 @@ public final class AutoMineTerrainProvider extends AutoMineProviderBase {
 
    private record TerrainMiningCandidate(BlockPos position, double damage, boolean currentlyMining) {
       static AutoMineTerrainProvider.TerrainMiningCandidate create(BlockPos position, BlockPos referencePosition, Player target) {
-         Vec3 elevatedCenter = position.getCenter().add(0.0, 0.5, 0.0);
+         Vec3 elevatedCenter = Vec3.atCenterOf(position).add(0.0, 0.5, 0.0);
          AABB targetBounds = target.getBoundingBox();
          BlockPos ignoredSupport = position.below();
          float damage = DamageUtils.getExplosionDamage(elevatedCenter, target, targetBounds, 6.0, true, referencePosition, ignoredSupport);

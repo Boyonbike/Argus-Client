@@ -23,6 +23,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.phys.AABB;
 
 public final class SwingInteractionManager implements ClientAccess {
@@ -123,7 +124,7 @@ public final class SwingInteractionManager implements ClientAccess {
    @EventHandler
    private void onPacketReceive(PacketEvent.Receive event) {
       PacketEvent.Receive packetEvent = event;
-      if (packetEvent.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityType.END_CRYSTAL) {
+      if (packetEvent.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getType() == EntityTypes.END_CRYSTAL) {
          EntityType spawnTypeSnapshot = packet.getType();
          double spawnXSnapshot = packet.getX();
          double spawnYSnapshot = packet.getY();

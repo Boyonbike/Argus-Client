@@ -126,7 +126,7 @@ public final class ObstaclePasserModule extends Module {
       if (ClientContext.baritoneBridge.isPathingOrCalculating()) {
          BlockPos activeTarget = ClientContext.baritoneBridge.getGoalPosition();
          if (activeTarget != null) {
-            Vec3 targetCenter = activeTarget.getBottomCenter();
+            Vec3 targetCenter = Vec3.atBottomCenterOf(activeTarget);
             Vec3 yawOrigin = ClientAccess.argusclientMinecraft.player.position();
             float targetYaw = RotationManager.calculateRotations(yawOrigin, targetCenter)[0];
             float currentTravelYaw = this.getTravelYaw();
@@ -191,7 +191,7 @@ public final class ObstaclePasserModule extends Module {
             return;
          }
 
-         Vec3 anchorCenter = this.anchorPosition.getBottomCenter();
+         Vec3 anchorCenter = Vec3.atBottomCenterOf(this.anchorPosition);
          float projectionYaw = this.getTravelYaw();
          Vec3 horizontalDirection = this.createHorizontalDirection(projectionYaw);
          Vec3 playerPosition = ClientAccess.argusclientMinecraft.player.position();
