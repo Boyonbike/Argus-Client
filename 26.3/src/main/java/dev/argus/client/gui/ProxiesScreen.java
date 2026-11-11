@@ -161,9 +161,9 @@ public final class ProxiesScreen extends ProfileManagerScreen {
 
     private void importFile() {
         background("Choose a proxy list…", () -> {
-            String file = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog("Import proxies", "", (org.lwjgl.PointerBuffer) null, "Text files", false);
-            if (file == null) return "";
-            Path path = Path.of(file); if (Files.size(path) > 2_000_000) throw new IllegalArgumentException("Proxy list is too large (maximum 2 MB).");
+            Path path = FileDialogs.openFile("Import proxies", "Text files", "txt");
+            if (path == null) return "";
+            if (Files.size(path) > 2_000_000) throw new IllegalArgumentException("Proxy list is too large (maximum 2 MB).");
             return Files.readString(path);
         }, this::importText);
     }
