@@ -35,7 +35,6 @@
         "LightningBoltMixin",
         "LivingEntityMixin",
         "MobMixin",
-        "RenderTypeColorMixin",
         "IdDispatchCodecMixin",
         "PalettedContainerMixin",
         "PalettedContainerDataMixin",
@@ -230,7 +229,10 @@
         "TextureTransformModuleBindings",
         "RenderTypeColorModuleBindings",
         "MobModuleBindings",
-        "PlayerModuleBindings"
+        "PlayerModuleBindings",
+        "LevelExtractorMixin",
+        "GuiAccessor",
+        "GuiExtractMixin"
     ],
     "injectors": {
         "defaultRequire": 0,

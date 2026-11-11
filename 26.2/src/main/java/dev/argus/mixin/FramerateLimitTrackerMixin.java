@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class FramerateLimitTrackerMixin {
    @ModifyExpressionValue(
       method = "getThrottleReason",
-      at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;screen:Lnet/minecraft/client/gui/screens/Screen;")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;")
    )
    private Screen argusclient$ignoreClientScreenForThrottle(Screen screen) {
       return screen instanceof ClientScreen ? null : screen;

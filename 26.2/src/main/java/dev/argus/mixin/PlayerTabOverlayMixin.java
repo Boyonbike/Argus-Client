@@ -104,7 +104,7 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isLocalServer()Z"))
+   @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientPacketListener;onlineMode()Z"))
    private void updateTabLayout(
       GuiGraphicsExtractor graphics,
       int screenWidth,
@@ -176,7 +176,7 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;isEncrypted()Z"))
+   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientPacketListener;onlineMode()Z"))
    private boolean suppressTabIcons(boolean originalVisible) {
       return originalVisible && !noRenderModule.shouldHideTabIcons();
    }

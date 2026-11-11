@@ -27,7 +27,7 @@ public class WeatherEffectRendererMixin implements ClientAccess {
 
    @ModifyExpressionValue(
       method = "extractRenderState",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getHeight(Lnet/minecraft/world/level/levelgen/Heightmap$Types;II)I")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientLevel;getHeight(Lnet/minecraft/world/level/levelgen/Heightmap$Types;II)I")
    )
    private int argusclient$forceWeatherBelowSurface(int originalHeight) {
       return ambienceModule.isToggled()
@@ -39,10 +39,10 @@ public class WeatherEffectRendererMixin implements ClientAccess {
    }
 
    @ModifyExpressionValue(
-      method = "getPrecipitationAt",
+      method = "extractRenderState",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/world/level/biome/Biome;getPrecipitationAt(Lnet/minecraft/core/BlockPos;I)Lnet/minecraft/world/level/biome/Biome$Precipitation;"
+         target = "Lnet/minecraft/client/multiplayer/ClientLevel;getPrecipitationAt(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/biome/Biome$Precipitation;"
       )
    )
    private Precipitation argusclient$overridePrecipitation(Precipitation originalPrecipitation) {

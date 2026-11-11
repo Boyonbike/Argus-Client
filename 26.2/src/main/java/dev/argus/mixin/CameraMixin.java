@@ -15,6 +15,7 @@ import dev.argus.client.modules.render.ViewClipModule;
 import dev.argus.client.render.RenderUtils;
 import dev.argus.client.utils.movement.EntityMotionAccess;
 import net.minecraft.client.Camera;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.attribute.EnvironmentAttributeProbe;
 import net.minecraft.world.entity.Entity;
@@ -29,6 +30,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -100,6 +102,16 @@ public abstract class CameraMixin {
             distanceRef.set(Mth.clamp(distanceRef.get() + freelook.getCameraDistanceOffset(), 1.0F, 20.0F));
          }
       }
+   }
+
+   @Redirect(
+      method = "extractRenderState",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z")
+   )
+   private boolean safeIsSpectator(LocalPlayer player) {
+      return freecam.isToggled()
+         || viewClip.isToggled() && ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().isDetached()
+         || player.isSpectator();
    }
 
    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)

@@ -1,11 +1,13 @@
 package dev.argus.mixin;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventStage;
 import dev.argus.client.events.RenderTypeDrawEvent;
 import dev.argus.client.render.ClientRenderPipelines;
+import java.util.List;
+import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,8 +28,8 @@ public class RenderTypeMixin {
       this.glintPipeline = ClientRenderPipelines.isGlint(setup.pipeline);
    }
 
-   @Inject(method = "draw", at = @At("TAIL"))
-   private void captureGlintTextureOverride(CallbackInfo callback) {
+   @Inject(method = "prepare", at = @At("HEAD"))
+   private void beforePrepare(CallbackInfo callback) {
       if (this.glintPipeline) {
          RenderTypeDrawEvent event = new RenderTypeDrawEvent(EventStage.Pre);
          ClientAccess.eventBus.post(event);
@@ -35,19 +37,23 @@ public class RenderTypeMixin {
       }
    }
 
-   @ModifyExpressionValue(
-      method = "draw",
-      at = @At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/rendertype/RenderSetup$TextureAndSampler;textureView()Lcom/mojang/blaze3d/textures/GpuTextureView;"
-      )
-   )
-   private GpuTextureView overrideGlintTexture(GpuTextureView originalTexture) {
-      return this.glintPipeline && this.glintTextureOverride != null ? this.glintTextureOverride : originalTexture;
+   @ModifyReturnValue(method = "prepare", at = @At("RETURN"))
+   private PreparedRenderType overrideGlintTexture(PreparedRenderType prepared) {
+      if (!this.glintPipeline || this.glintTextureOverride == null || prepared == null) {
+         return prepared;
+      }
+      List<PreparedRenderType.Texture> textures = prepared.textures().stream()
+         .map(texture -> "Sampler0".equals(texture.name())
+            ? new PreparedRenderType.Texture(texture.name(), this.glintTextureOverride, texture.sampler())
+            : texture)
+         .toList();
+      return new PreparedRenderType(
+         prepared.pipeline(), prepared.outputTarget(), prepared.dynamicTransforms(), prepared.scissorState(), textures
+      );
    }
 
-   @Inject(method = "draw", at = @At("TAIL"))
-   private void postGlintDrawPostEvent(CallbackInfo callback) {
+   @Inject(method = "prepare", at = @At("RETURN"))
+   private void afterPrepare(CallbackInfo callback) {
       if (this.glintPipeline) {
          ClientAccess.eventBus.post(new RenderTypeDrawEvent(EventStage.Post));
       }

@@ -59,7 +59,7 @@ public abstract class ItemInHandRendererMixin {
    private float offHandHeight;
 
    @Inject(
-      method = "renderArmWithItem",
+      method = "submitArmWithItem",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V"
@@ -154,10 +154,10 @@ public abstract class ItemInHandRendererMixin {
    }
 
    @ModifyArgs(
-      method = "renderHandsWithItems",
+      method = "submitHandsWithItems",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V"
+         target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;submitArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V"
       ),
       require = 0
    )
@@ -167,7 +167,7 @@ public abstract class ItemInHandRendererMixin {
       arguments.set(4, viewModel.applySwingProgressOverride(hand, originalProgress));
    }
 
-   @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "submitArmWithItem", at = @At("HEAD"), cancellable = true)
    private void hideOffhandShieldForNoHitDelay(
       AbstractClientPlayer player,
       float partialTick,
@@ -187,7 +187,7 @@ public abstract class ItemInHandRendererMixin {
    }
 
    @WrapWithCondition(
-      method = "renderHandsWithItems",
+      method = "submitHandsWithItems",
       at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;mulPose(Lorg/joml/Quaternionfc;)V")
    )
    private boolean shouldApplyHandSway(PoseStack pose, Quaternionfc rotation) {
@@ -226,7 +226,7 @@ public abstract class ItemInHandRendererMixin {
    }
 
    @ModifyExpressionValue(
-      method = "renderArmWithItem",
+      method = "submitArmWithItem",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;isAutoSpinAttack()Z")
    )
    private boolean overrideTridentAnimation(boolean originalSpinAttack) {

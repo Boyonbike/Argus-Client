@@ -1,7 +1,7 @@
 package dev.argus.client.gui.screens;
 
 import dev.argus.client.ClientAccess;
-import dev.argus.mixin.MinecraftAccessor;
+import dev.argus.mixin.GuiAccessor;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
@@ -19,7 +19,7 @@ public class ConfirmGameCloseScreen extends ConfirmScreen {
 
    private static final class CloseConfirmationHandler implements BooleanConsumer, ClientAccess {
       public void accept(boolean confirmed) {
-         if (!((MinecraftAccessor)ClientAccess.argusclientMinecraft).argusclient$isDisconnecting()) {
+         if (!((GuiAccessor)ClientAccess.argusclientMinecraft.gui).argusclient$isDisconnecting()) {
             Minecraft client = ClientAccess.argusclientMinecraft;
             client.gui.setScreen(null);
          }

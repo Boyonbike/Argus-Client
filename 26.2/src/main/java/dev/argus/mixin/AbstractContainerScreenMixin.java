@@ -181,7 +181,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
-         ordinal = 6 // last call: releasing a click while carrying an item (PICKUP / QUICK_MOVE); was 9 on 1.21.11
+         ordinal = 3 // last call: releasing a click while carrying an item (PICKUP / QUICK_MOVE)
       )
    )
    private void argusclient$swapBundleReleaseButton(Args arguments) {

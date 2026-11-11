@@ -4,7 +4,7 @@ import dev.argus.client.managers.RenderTargetRegistry;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import dev.argus.client.ClientAccess;
-import dev.argus.mixin.MinecraftAccessor;
+import dev.argus.mixin.GameRendererAccessor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +42,7 @@ public final class RenderTargetUtils implements ClientAccess {
 
    public static void setMainRenderTarget(RenderTarget target) {
       RenderTargetRegistry.activate(target);
-      ((MinecraftAccessor)ClientAccess.argusclientMinecraft).argusclient$setFramebuffer(target);
+      ((GameRendererAccessor)ClientAccess.argusclientMinecraft.gameRenderer).argusclient$setFramebuffer(target);
    }
 
    public static String readShaderSource(String resourcePath) {

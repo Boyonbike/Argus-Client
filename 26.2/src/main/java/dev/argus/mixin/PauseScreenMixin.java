@@ -22,7 +22,7 @@ public abstract class PauseScreenMixin extends Screen {
    @Unique
    private static boolean disconnectConfirmed;
 
-   @Inject(method = "lambda$createPauseMenu$6(Lnet/minecraft/client/gui/components/Button;)V", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "lambda$createPauseMenu$11(Lnet/minecraft/client/gui/components/Button;)V", at = @At("HEAD"), cancellable = true)
    private void confirmOrInterceptDisconnect(net.minecraft.client.gui.components.Button button, CallbackInfo callback) {
       Minecraft client = Minecraft.getInstance();
       if (antiQuitModule.isToggled() && antiQuitModule.disconnectSetting.getValue() && !disconnectConfirmed) {

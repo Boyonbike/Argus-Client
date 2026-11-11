@@ -11,7 +11,7 @@ import dev.argus.client.render.RenderUtils;
 import net.minecraft.client.AttackIndicatorStatus;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.world.scores.DisplaySlot;
@@ -27,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-@Mixin(Gui.class)
+@Mixin(Hud.class)
 public class GuiMixin {
    private static final ExtraTabModule extraTabModule = ClientContext.getModule(ExtraTabModule.class);
    private static final HUDModule hudModule = ClientContext.getModule(HUDModule.class);
@@ -142,7 +142,7 @@ public class GuiMixin {
       method = "extractCameraOverlays",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/Gui;extractTextureOverlay(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/resources/Identifier;F)V",
+         target = "Lnet/minecraft/client/gui/Hud;extractTextureOverlay(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/resources/Identifier;F)V",
          ordinal = 0
       )
    )

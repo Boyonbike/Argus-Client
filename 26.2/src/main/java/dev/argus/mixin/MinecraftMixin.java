@@ -48,13 +48,8 @@ public class MinecraftMixin {
    private static AutoCrystalModule autoCrystalModule = ClientContext.getModule(AutoCrystalModule.class);
    private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
    private static DiscordModule discordModule = ClientContext.getModule(DiscordModule.class);
-   @Unique
-   private Screen previousScreen;
    @Shadow
    public int missTime;
-   @Shadow
-   @Nullable
-   public Screen screen;
    private static boolean shutdownSaveStarted = false;
 
    @Inject(method = "startAttack", at = @At("HEAD"))
@@ -84,7 +79,7 @@ public class MinecraftMixin {
       }
    }
 
-   @Inject(method = "destroy", at = @At("HEAD"))
+   @Inject(method = "close", at = @At("HEAD"))
    public void saveConfigurationOnDestroy(CallbackInfo callback) {
       if (!shutdownSaveStarted && ClientContext.configurationManager != null) {
          shutdownSaveStarted = true;
@@ -114,29 +109,6 @@ public class MinecraftMixin {
    )
    public boolean bypassDestroyingForStartUseItem(boolean originalDestroying) {
       return multiTaskModule.isToggled() ? false : originalDestroying;
-   }
-
-   @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
-   private void postBeforeScreenChange(Screen newScreen, CallbackInfo callback) {
-      this.previousScreen = this.screen;
-      ScreenChangeEvent.Before event = new ScreenChangeEvent.Before(this.previousScreen, newScreen);
-      ClientAccess.eventBus.post(event);
-      if (event.isCancelled()) {
-         callback.cancel();
-      }
-   }
-
-   @Inject(
-      method = "setScreen",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;init(II)V", shift = Shift.AFTER),
-      cancellable = true
-   )
-   private void postAfterScreenInit(Screen newScreen, CallbackInfo callback) {
-      ScreenChangeEvent.AfterInit event = new ScreenChangeEvent.AfterInit(this.previousScreen, newScreen);
-      ClientAccess.eventBus.post(event);
-      if (event.isCancelled()) {
-         callback.cancel();
-      }
    }
 
    @Inject(method = "tick", at = @At("HEAD"))

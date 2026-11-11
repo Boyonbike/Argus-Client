@@ -152,8 +152,8 @@ public abstract class PlayerMixin extends LivingEntity implements PlayerState {
       return !sprintModule.isToggled() || !sprintModule.keepSetting.getValue();
    }
 
-   @WrapWithCondition(method = "causeExtraKnockback", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;knockback(DDD)V"))
-   private boolean allowSimulatedPlayerKnockback(LivingEntity entity, double strength, double directionX, double directionZ) {
+   @WrapWithCondition(method = "causeExtraKnockback", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V"))
+   private boolean allowSimulatedPlayerKnockback(LivingEntity entity, double strength, double directionX, double directionZ, net.minecraft.world.damagesource.DamageSource source, float extraKnockback, boolean ignoredFlag) {
       return !((Object)this instanceof FakeplayerCommand.SimulatedPlayer) || entity != ClientAccess.argusclientMinecraft.player;
    }
 
