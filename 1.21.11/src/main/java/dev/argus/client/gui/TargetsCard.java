@@ -45,7 +45,6 @@ final class TargetsCard extends InlineCard {
     private String lastQuery;
     private int lastFilter = -1;
     private List<SpecificTargets.Candidate> matches = List.of();
-    private List<SpecificTargets.TagMatch> tags = List.of();
     /** Open settings dropdowns by group id, with the settings object each list was made for. */
     private final Map<String, SettingsList> open = new HashMap<>();
     private final Map<String, RuleSettings> openFor = new HashMap<>();
@@ -85,29 +84,22 @@ final class TargetsCard extends InlineCard {
         String query = field.getValue();
         if (!query.equals(lastQuery) || filter != lastFilter) {
             lastQuery = query; lastFilter = filter;
-            matches = query.isBlank() ? List.of() : SpecificTargets.search(query, category(), 8);
-            tags = query.isBlank() ? List.of() : SpecificTargets.searchTags(query, category());
+            matches = query.isBlank() ? List.of() : search(query);
         }
         return matches;
     }
 
-    /** Generic terms matching the search ("storage", "weapons"...), shown as tick-all rows above the matches. */
-    private List<SpecificTargets.TagMatch> tags() { matches(); return tags; }
-
-    /** A set's members that aren't in the list yet. */
-    private List<SpecificTargets.Candidate> available(SpecificTargets.TagMatch tag) {
-        List<SpecificTargets.Candidate> list = new ArrayList<>();
-        for (SpecificTargets.Candidate candidate : tag.members()) if (targets.rules().owner(candidate.type(), candidate.id()) == null) list.add(candidate);
-        return list;
-    }
-
-    /** Ticks every available thing in a set, or unticks them all when they already are. */
-    private void tickAll(SpecificTargets.TagMatch tag) {
-        List<SpecificTargets.Candidate> list = available(tag);
-        boolean all = !list.isEmpty() && list.stream().allMatch(candidate -> selected.containsKey(candidate.key()));
-        for (SpecificTargets.Candidate candidate : list) {
-            if (all) selected.remove(candidate.key()); else selected.put(candidate.key(), candidate);
+    /**
+     * What a search shows. A generic term ("storage", "ores", "weapons"...) lists every thing it covers as its own
+     * row, e.g. each chest, barrel and shulker box; ordinary name matches follow.
+     */
+    private List<SpecificTargets.Candidate> search(String query) {
+        Map<String, SpecificTargets.Candidate> found = new LinkedHashMap<>();
+        for (SpecificTargets.TagMatch tag : SpecificTargets.searchTags(query, category())) {
+            for (SpecificTargets.Candidate candidate : tag.members()) found.putIfAbsent(candidate.key(), candidate);
         }
+        for (SpecificTargets.Candidate candidate : SpecificTargets.search(query, category(), 8)) found.putIfAbsent(candidate.key(), candidate);
+        return new ArrayList<>(found.values());
     }
 
     /** The matches while searching; with the search cleared, what's ticked so far (the first ten). */
@@ -119,7 +111,7 @@ final class TargetsCard extends InlineCard {
     private boolean panelShown() { return !field.getValue().isBlank() || !selected.isEmpty(); }
     private float panelHeight() {
         if (!panelShown()) return 0;
-        return 16 + Math.max(1, tags().size() + visibleMatches().size()) * MATCH + 8;
+        return 16 + Math.max(1, visibleMatches().size()) * MATCH + 8;
     }
 
     private SettingsList listFor(SpecificRules.Rule rule) {
@@ -201,8 +193,6 @@ final class TargetsCard extends InlineCard {
     /** Adds every ticked thing as one group (or the top match when nothing is ticked). */
     private void addSelected() {
         List<SpecificTargets.Candidate> picks = new ArrayList<>(selected.values());
-        // Nothing ticked: a generic term adds its whole set, otherwise the top match.
-        if (picks.isEmpty() && !tags().isEmpty()) picks.addAll(available(tags().get(0)));
         if (picks.isEmpty()) {
             for (SpecificTargets.Candidate candidate : matches()) {
                 if (targets.rules().owner(candidate.type(), candidate.id()) == null) { picks.add(candidate); break; }
@@ -295,11 +285,7 @@ final class TargetsCard extends InlineCard {
             button(g, mx, my, t, "clear", x + w - cw - 4, y + 2, cw, 14, "Clear", false, "Untick everything", selected::clear);
         }
         float top = y + 16;
-        List<SpecificTargets.TagMatch> sets = tags();
-        for (int i = 0; i < sets.size(); i++) {
-            top = drawTag(g, mx, my, t, x, top, w, sets.get(i), i);
-        }
-        if (list.isEmpty() && sets.isEmpty()) {
+        if (list.isEmpty()) {
             UiDraw.text(g, UiDraw.fit("No matches. Online players show by name; type player:Name for anyone else.", w - 16, UiDraw.SMALL),
                     x + 8, top + MATCH / 2, UiDraw.SMALL, t.muted());
         }
@@ -330,34 +316,6 @@ final class TargetsCard extends InlineCard {
             if (!added) hit(x + 2, ry, w - 4, MATCH, () -> tick(candidate));
         }
         return y + h;
-    }
-
-    /** A tick-all row for a generic term, e.g. "All storage blocks · 26". */
-    private float drawTag(GuiGraphics g, int mx, int my, UiTheme t, float x, float ry, float w, SpecificTargets.TagMatch tag, int index) {
-        List<SpecificTargets.Candidate> list = available(tag);
-        long ticked = list.stream().filter(candidate -> selected.containsKey(candidate.key())).count();
-        boolean all = !list.isEmpty() && ticked == list.size();
-        boolean none = list.isEmpty();
-        float cy = ry + MATCH / 2;
-        boolean hover = !none && hovering(mx, my, x + 2, ry, w - 4, MATCH);
-        float hv = UiAnim.smooth("tc." + module.getName() + ".tag" + index, hover ? 1 : 0, 18);
-        UiDraw.rounded(g, x + 2, ry, w - 4, MATCH, 5, UiDraw.alpha(t.accent(), .06f + (all ? .1f : 0) + hv * .1f));
-        // Tick box: full when every available one is ticked, a dash when some are.
-        float bx = x + 7, by = cy - 5;
-        UiDraw.rounded(g, bx, by, 10, 10, 3, all ? t.accent() : UiDraw.alpha(t.surface(), none ? .4f : 1));
-        UiDraw.outline(g, bx, by, 10, 10, 3, .6f, UiDraw.alpha(t.accent(), .8f));
-        if (all) UiDraw.icon(g, "check", bx + 1, by + 1, 8, t.crust());
-        else if (ticked > 0) UiDraw.rect(g, bx + 2.5f, cy - .6f, 5, 1.2f, t.accent());
-        float tx = x + 22;
-        ItemStack icon = tag.members().get(0).icon();
-        if (icon != null) ShulkerIconRenderer.drawAt(g, icon, null, tx, ry + (MATCH - 16) / 2, 1);
-        tx += 20;
-        String detail = none ? "all already added" : all ? list.size() + " ticked · click to untick" : list.size() + " · click to tick all";
-        float dw = UiDraw.width(detail, UiDraw.SMALL);
-        UiDraw.text(g, UiDraw.fit("All " + tag.name().toLowerCase(java.util.Locale.ROOT), x + w - tx - dw - 16), tx, cy, none ? t.muted() : t.accent());
-        UiDraw.right(g, detail, x + w - 8, cy, UiDraw.SMALL, t.muted());
-        if (!none) hit(x + 2, ry, w - 4, MATCH, () -> tickAll(tag));
-        return ry + MATCH;
     }
 
     private boolean isArmed(String key) { return key.equals(armed) && System.currentTimeMillis() - armedAt < 4000; }

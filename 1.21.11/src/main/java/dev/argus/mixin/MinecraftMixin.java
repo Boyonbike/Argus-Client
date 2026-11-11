@@ -13,6 +13,7 @@ import dev.argus.client.events.ScreenChangeEvent;
 import dev.argus.client.gui.screens.ConfirmGameCloseScreen;
 import dev.argus.client.managers.ModuleRegistry;
 import dev.argus.client.modules.client.DiscordModule;
+import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.client.UIModule;
 import dev.argus.client.modules.combat.ArrowsModule;
 import dev.argus.client.modules.combat.AutoClickerModule;
@@ -55,6 +56,26 @@ public class MinecraftMixin {
    @Nullable
    public Screen screen;
    private static boolean shutdownSaveStarted = false;
+
+   @Inject(method = "startAttack", at = @At("HEAD"))
+   private void markPlayerAttackStart(CallbackInfoReturnable<Boolean> callback) {
+      SpeedMineModule.beginPlayerAttack();
+   }
+
+   @Inject(method = "startAttack", at = @At("RETURN"))
+   private void markPlayerAttackStartEnd(CallbackInfoReturnable<Boolean> callback) {
+      SpeedMineModule.endPlayerAttack();
+   }
+
+   @Inject(method = "continueAttack", at = @At("HEAD"))
+   private void markPlayerAttackContinue(boolean leftClick, CallbackInfo callback) {
+      SpeedMineModule.beginPlayerAttack();
+   }
+
+   @Inject(method = "continueAttack", at = @At("RETURN"))
+   private void markPlayerAttackContinueEnd(boolean leftClick, CallbackInfo callback) {
+      SpeedMineModule.endPlayerAttack();
+   }
 
    @Inject(method = "startAttack", at = @At("HEAD"))
    public void resetAttackMissTime(CallbackInfoReturnable<Boolean> callback) {

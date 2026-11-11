@@ -28,6 +28,7 @@ import dev.argus.client.modules.combat.AutoMineMiningTracker;
 import dev.argus.client.modules.combat.AutoMineModule;
 import dev.argus.client.modules.exploit.MultiTaskModule;
 import dev.argus.client.modules.render.LogoutSpotsModule;
+import dev.argus.client.render.WorldBoxRenderer;
 import dev.argus.client.settings.BooleanSetting;
 import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.EnumSetting;
@@ -102,6 +103,18 @@ public class SpeedMineModule extends Module {
    private static MultiTaskModule multiTaskModule = ClientContext.getModule(MultiTaskModule.class);
    private static AnchorAuraModule anchorAuraModule = ClientContext.getModule(AnchorAuraModule.class);
    public static boolean automatedMiningStart;
+   /** Above zero while Minecraft handles the attack key ({@code startAttack}/{@code continueAttack}); set by MinecraftMixin. */
+   private static int playerAttackDepth;
+   /** True while the queue itself starts its next block. */
+   private static boolean queueDrainStart;
+
+   public static void beginPlayerAttack() {
+      playerAttackDepth++;
+   }
+
+   public static void endPlayerAttack() {
+      playerAttackDepth = Math.max(0, playerAttackDepth - 1);
+   }
    protected final Setting<Set<Block>> blocksSetting = this.add(
       new RegistrySetSetting<>("Blocks", BuiltInRegistries.BLOCK, Blocks.OBSIDIAN, Blocks.ENDER_CHEST)
    );
@@ -111,6 +124,7 @@ public class SpeedMineModule extends Module {
    public final Setting<Boolean> grimSetting = this.add(new BooleanSetting("Grim", false));
    private final Setting<Boolean> tpsSyncSetting = this.add(new BooleanSetting("TPSSync", true));
    public final Setting<Boolean> noBreakDelaySetting = this.add(new BooleanSetting("NoBreakDelay", true));
+   public final Setting<Boolean> queueSetting = this.add(new BooleanSetting("Queue", true));
    public final Setting<Boolean> extraBreakSetting = this.add(new BooleanSetting("ExtraBreak", false).markVisibilityDependency());
    public final Setting<Boolean> sneakExtendSetting = this.add(new BooleanSetting("SneakExtend", false).dependsOn(this.extraBreakSetting));
    public final Setting<Boolean> rebreakEnabledSetting = this.add(new BooleanSetting("Rebreak", true).markAsGroup().markVisibilityDependency());
@@ -154,6 +168,7 @@ public class SpeedMineModule extends Module {
    private final Setting<Boolean> abortSetting = this.add(new BooleanSetting("Abort", false, ignored -> false));
    private final SpeedMineRebreakTracker rebreakTracker = new SpeedMineRebreakTracker(this);
    private final SpeedMineConfirmation confirmation = new SpeedMineConfirmation();
+   private final SpeedMineQueue mineQueue = new SpeedMineQueue();
    private final SpeedMineRenderQueue renderQueue = new SpeedMineRenderQueue();
    private final ExtraBreakTracker extraBreakTracker = new ExtraBreakTracker();
    private final ArrayDeque<Boolean> pendingBreakPositions = new ArrayDeque<>();
@@ -506,6 +521,55 @@ public class SpeedMineModule extends Module {
       swapPending.set(false);
       this.renderQueue.clear();
       this.resetStartCredit();
+      this.mineQueue.clear();
+   }
+
+   /**
+    * True while the current block still needs mining: it is there and the server has not yet confirmed a break
+    * we sent for it. Once confirmed, any rebreaking of it gives way to queued blocks.
+    */
+   private boolean isMiningUnfinished() {
+      return this.miningPos != null && WorldUtils.canMineBlock(this.miningPos) && !this.confirmation.isRebreak(this.miningPos.asLong());
+   }
+
+   /** Starts the next queued block once the current one is finished, dropping queued blocks that became invalid. */
+   private void drainQueue() {
+      if (!this.queueSetting.getValue()) {
+         this.mineQueue.clear();
+         return;
+      }
+
+      this.mineQueue.prune(pos -> {
+         BlockPos queued = BlockPos.of(pos);
+         return !WorldUtils.canMineBlock(queued) || !this.isBlockAllowed(queued) || !this.isInMiningRange(queued);
+      });
+      if (this.mineQueue.isEmpty() || this.isMiningUnfinished() || !this.canStartNewBlock() || this.isBreakDelayActive()
+         || ClientAccess.argusclientMinecraft.gameMode == null) {
+         return;
+      }
+
+      BlockPos next = BlockPos.of(this.mineQueue.head());
+      queueDrainStart = true;
+      try {
+         ClientAccess.argusclientMinecraft.gameMode.startDestroyBlock(next, selectDestroyFace(next));
+      } finally {
+         queueDrainStart = false;
+      }
+
+      if (next.equals(this.miningPos)) {
+         this.mineQueue.headStarted();
+      } else {
+         this.mineQueue.headFailed();
+      }
+   }
+
+   /** Records a break sent at {@code blockPos}: Instant goes through confirmation gating, other modes are only tracked. */
+   private void recordBreakSent(BlockPos blockPos) {
+      if (this.rebreakSetting.getValue().isInstant()) {
+         this.recordInstantBreak(blockPos);
+      } else {
+         this.confirmation.onBreakSent(blockPos.asLong(), System.currentTimeMillis());
+      }
    }
 
    private void resetStartCredit() {
@@ -543,6 +607,7 @@ public class SpeedMineModule extends Module {
       this.renderQueue.snapshotProgress();
       this.updateExtraBreakProgress(progressScale);
       this.updateMiningProgress(progressScale);
+      this.drainQueue();
    }
 
    private void updateExtraBreakProgress(float progressScale) {
@@ -710,6 +775,7 @@ public class SpeedMineModule extends Module {
       this.lastMiningPos = null;
       this.extraBreakTarget = null;
       this.resetStartCredit();
+      this.mineQueue.clear();
    }
 
    @EventHandler
@@ -718,6 +784,7 @@ public class SpeedMineModule extends Module {
          reset(this);
          this.lastMiningPos = null;
          this.extraBreakTarget = null;
+         ClientAccess.argusclientMinecraft.execute(this.mineQueue::clear);
       }
 
       this.rebreakTracker.handleBlockUpdates(event);
@@ -796,6 +863,13 @@ public class SpeedMineModule extends Module {
    private void onRenderWorld(WorldRenderEvent.Main event) {
       if (this.renderSetting.getValue() && ClientAccess.argusclientMinecraft.player.gameMode() == GameType.SURVIVAL) {
          this.renderQueue.render(event);
+         if (!this.mineQueue.isEmpty()) {
+            Color queuedOutline = this.outlineSetting.getValue();
+            float lineWidth = this.lineWidthSetting.getValue();
+            for (long pos : this.mineQueue.snapshot()) {
+               WorldBoxRenderer.outlineBox(event.getPoseStack(), BlockPos.of(pos), queuedOutline, lineWidth);
+            }
+         }
       }
    }
 
@@ -816,7 +890,7 @@ public class SpeedMineModule extends Module {
                if (!creativeCheckPlayer.isCreative()) {
                   event.cancel();
                   ElapsedTimer timer = this.startDestroyRetryTimer;
-                  if (!timer.hasElapsed(100L) && !automatedMiningStart) {
+                  if (!timer.hasElapsed(100L) && !automatedMiningStart && !queueDrainStart) {
                      if (requestedPosition.equals(this.miningPos)) {
                         timer = this.startDestroyRetryTimer;
                         timer.reset();
@@ -869,6 +943,15 @@ public class SpeedMineModule extends Module {
                   }
 
                   if (!this.isInMiningRange(requestedPosition)) {
+                     return;
+                  }
+
+                  // Your clicks on other blocks wait their turn while the current block is unfinished or others are queued.
+                  if (playerAttackDepth > 0
+                     && this.queueSetting.getValue()
+                     && !requestedPosition.equals(this.miningPos)
+                     && (this.isMiningUnfinished() || !this.mineQueue.isEmpty())) {
+                     this.mineQueue.add(requestedPosition.asLong());
                      return;
                   }
 
@@ -998,9 +1081,7 @@ public class SpeedMineModule extends Module {
                      worldState.destroyBlockPredicted(predictedPosition);
                      BlockPos attemptPosition = this.miningPos;
                      this.recordBreakAttempt(attemptPosition);
-                     if (this.rebreakSetting.getValue().isInstant()) {
-                        this.recordInstantBreak(attemptPosition);
-                     }
+                     this.recordBreakSent(attemptPosition);
 
                      this.startDestroyRetryTimer.clear();
                      this.extraBreakTarget = null;
@@ -1287,9 +1368,7 @@ public class SpeedMineModule extends Module {
                      BlockPos stopPosition = this.miningPos;
                      Action stopAction = Action.STOP_DESTROY_BLOCK;
                      PacketSender.sendPlayerAction(stopAction, stopPosition, destroyFace);
-                     if (this.rebreakSetting.getValue().isInstant()) {
-                        this.recordInstantBreak(stopPosition);
-                     }
+                     this.recordBreakSent(stopPosition);
 
                      WorldStateManager unconfirmedWorldState = ClientContext.worldStateManager;
                      BlockPos unconfirmedPosition = this.miningPos;

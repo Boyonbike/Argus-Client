@@ -911,6 +911,7 @@ SpeedMine	Range	Maximum distance to blocks SpeedMine can mine.
 SpeedMine	Grim	Sends Grim-specific block break start packets.
 SpeedMine	TPSSync	Adjusts mining progress for the server tick rate.
 SpeedMine	NoBreakDelay	Removes the delay before starting the next break.
+SpeedMine	Queue	Blocks you click while one is still being mined wait their turn and are mined in click order.
 SpeedMine	ExtraBreak	Also targets an extra block along your aim.
 SpeedMine	SneakExtend	Extends the extra break target while sneaking.
 SpeedMine	Rebreak	Selects how broken blocks are mined again.
