@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.modules.Module;
 import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.KeyBindSetting;
@@ -515,7 +517,7 @@ final class SettingsList {
     /** @return true if the click landed in the list (handled or not). */
     boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         double mx = event.x(), my = event.y();
-        if (capturing != null) { capturing.bindMouse(event.button()); capturing = null; return true; }
+        if (capturing != null) { capturing.bindMouse(InputButtons.glfw(event)); capturing = null; return true; }
         if (editor != null && editor.visible && editor.isMouseOver(mx, my)) { host.hostFocus(editor); return editor.mouseClicked(event, doubled); }
         if (!UiDraw.over(mx, my, x, y, w, h) || my < clipTop() || my >= clipBottom()) { if (editing != null) stopEditing(); return false; }
         int i = (int) Math.floor((my - y + shownScroll) / ROW);
@@ -526,8 +528,8 @@ final class SettingsList {
         float rowY = y + i * ROW - shownScroll;
         if (UiDraw.over(mx, my, resetX() - 3, rowY + 3, 16, ROW - 6)) { if (!isDefault(setting)) reset(setting); return true; }
         if (!setting.isVisible()) { fail("Turn on the option this depends on to change it."); return true; }
-        if (event.button() == 1) { reset(setting); return true; }
-        if (event.button() != 0) return true;
+        if (InputButtons.glfw(event) == 1) { reset(setting); return true; }
+        if (InputButtons.glfw(event) != 0) return true;
         if (setting instanceof SetSetting<?> collection) host.hostOpen(new CollectionSettingScreen(host, collection));
         else if (setting instanceof KeyBindSetting bind) { stopEditing(); capturing = bind; }
         else if (current instanceof Boolean enabled) change(setting, !enabled);
@@ -559,14 +561,14 @@ final class SettingsList {
     /** Enter applies and Esc cancels an inline edit. */
     boolean keyPressed(KeyEvent event) {
         if (capturing != null) {
-            if (event.key() == 259 || event.key() == 261) capturing.followDefault();
-            else if (event.key() != 256) capturing.bindKey(event.key());
+            if (InputKeys.glfw(event) == 259 || InputKeys.glfw(event) == 261) capturing.followDefault();
+            else if (InputKeys.glfw(event) != 256) capturing.bindKey(InputKeys.glfw(event));
             capturing = null;
             return true;
         }
         if (editor == null || editing == null) return false;
-        if (event.key() == 257 || event.key() == 335) { apply(); return true; }
-        if (event.key() == 256) { stopEditing(); return true; }
+        if (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335) { apply(); return true; }
+        if (InputKeys.glfw(event) == 256) { stopEditing(); return true; }
         return false;
     }
 

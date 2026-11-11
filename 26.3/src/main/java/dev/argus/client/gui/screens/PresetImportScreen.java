@@ -1,5 +1,6 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputKeys;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -45,7 +46,7 @@ public final class PresetImportScreen extends ClientScreen {
 
    @Override
    public boolean keyPressed(KeyEvent event) {
-      if (event.key() == 257 && this.detectedCategory != null) {
+      if (InputKeys.glfw(event) == 257 && this.detectedCategory != null) {
          this.importPreset(this.sourceFile, this.detectedCategory);
       }
 

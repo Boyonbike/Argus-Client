@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.network.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -299,7 +301,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         if (super.mouseClickedUi(event, doubled)) return true;
         double mx = event.x(), my = event.y();
-        if (event.button() != 0) return false;
+        if (InputButtons.glfw(event) != 0) return false;
         if (UiDraw.over(mx, my, left + 10, top + 10, 18, 18)) { if (formOpen() && !busy) { closeForm(); rebuildWidgets(); } else onClose(); return true; }
         for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
@@ -315,8 +317,8 @@ abstract class ProfileManagerScreen extends UiScreen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
-        if (formOpen() && !busy && event.key() == 256) { closeForm(); rebuildWidgets(); return true; }
-        if (formOpen() && !busy && (event.key() == 257 || event.key() == 335)) { submitForm(); return true; }
+        if (formOpen() && !busy && InputKeys.glfw(event) == 256) { closeForm(); rebuildWidgets(); return true; }
+        if (formOpen() && !busy && (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335)) { submitForm(); return true; }
         return super.keyPressed(event);
     }
 }

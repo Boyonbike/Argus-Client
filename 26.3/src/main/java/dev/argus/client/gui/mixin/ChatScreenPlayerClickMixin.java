@@ -1,5 +1,6 @@
 package dev.argus.client.gui.mixin;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.modules.misc.ChatToolsModule;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public abstract class ChatScreenPlayerClickMixin {
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void argus$openChatTools(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         ChatToolsModule tools = ChatToolsModule.get();
-        if (tools == null || !tools.isToggled() || event.button() != 0 || commandSuggestions.isVisible()) return;
+        if (tools == null || !tools.isToggled() || InputButtons.glfw(event) != 0 || commandSuggestions.isVisible()) return;
         Minecraft mc = Minecraft.getInstance();
         var finder = new PlayerNameStyleFinder(mc.font, (int) event.x(), (int) event.y(), argus$onlineNames(mc));
         finder.includeInsertions(true);

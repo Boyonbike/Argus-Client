@@ -1,5 +1,6 @@
 package dev.argus.client.gui.registry;
 
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.gui.CloseState;
 import dev.argus.client.gui.components.ActionButtonComponent;
@@ -48,7 +49,7 @@ public class RegistrySetScreen<E> extends ClientScreen {
 
    @Override
    public boolean keyPressed(KeyEvent event) {
-      if (KeyUtils.isControlDown() && event.key() == 70) {
+      if (KeyUtils.isControlDown() && InputKeys.glfw(event) == 70) {
          this.searchComponent.beginEditing();
       }
 

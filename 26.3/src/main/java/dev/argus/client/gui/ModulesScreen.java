@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.modules.misc.ChatToolsModule;
 
 import dev.argus.client.modules.Module;
@@ -423,7 +425,7 @@ public final class ModulesScreen extends UiScreen {
             boolean active = searchInput.active; searchInput.active = false;
             try { if (super.mouseClickedUi(event, doubled)) return true; } finally { searchInput.active = active; }
             // Empty canvas: start a selection box (Shift adds to the current selection).
-            if (event.button() == 0 && event.y() >= TOP && event.y() < height - 19) {
+            if (InputButtons.glfw(event) == 0 && event.y() >= TOP && event.y() < height - 19) {
                 setFocused(null);
                 if ((event.modifiers() & 1) == 0) picked.clear();
                 pickedBefore = Set.copyOf(picked);
@@ -439,8 +441,8 @@ public final class ModulesScreen extends UiScreen {
         }
         if (window != searchWindow) setFocused(null);
         if (event.y() < top + HEADER) {
-            if (event.button() == 1 || event.x() >= window.shownX + window.width - 18) { window.collapsed = !window.collapsed; if (window == searchWindow && window.collapsed) setFocused(null); }
-            else if (event.button() == 0) {
+            if (InputButtons.glfw(event) == 1 || event.x() >= window.shownX + window.width - 18) { window.collapsed = !window.collapsed; if (window == searchWindow && window.collapsed) setFocused(null); }
+            else if (InputButtons.glfw(event) == 0) {
                 // Dragging a selected window moves the whole selection; any other window moves alone.
                 if (!picked.contains(window)) picked.clear();
                 List<Window> group = picked.isEmpty() ? List.of(window) : List.copyOf(picked);
@@ -456,16 +458,16 @@ public final class ModulesScreen extends UiScreen {
             float start = top + HEADER + SEARCH_INPUT;
             if (event.y() < start) return true;
             int row = (int) Math.floor((event.y() - start + window.shownScroll) / SEARCH_ROW);
-            if (row >= 0 && row < results.size()) activate(results.get(row), event.button());
+            if (row >= 0 && row < results.size()) activate(results.get(row), InputButtons.glfw(event));
             return true;
         }
         int row = (int) Math.floor((event.y() - top - HEADER - 2 + window.shownScroll) / ROW);
         List<Module> list = modules(window);
         if (row >= 0 && row < list.size()) {
             Module module = list.get(row);
-            if (event.button() == 0) module.toggle();
-            else if (event.button() == 1) openSettings(module, null);
-            else if (event.button() == 2) { var favourites = GuiState.preferences().favourites; if (!favourites.add(module.getName())) favourites.remove(module.getName()); windowModules.clear(); GuiState.save(); }
+            if (InputButtons.glfw(event) == 0) module.toggle();
+            else if (InputButtons.glfw(event) == 1) openSettings(module, null);
+            else if (InputButtons.glfw(event) == 2) { var favourites = GuiState.preferences().favourites; if (!favourites.add(module.getName())) favourites.remove(module.getName()); windowModules.clear(); GuiState.save(); }
         }
         return true;
     }
@@ -559,9 +561,9 @@ public final class ModulesScreen extends UiScreen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256 && !picked.isEmpty() && getFocused() != searchInput) { picked.clear(); return true; }
+        if (InputKeys.glfw(event) == 256 && !picked.isEmpty() && getFocused() != searchInput) { picked.clear(); return true; }
         if (getFocused() == searchInput && !results.isEmpty()) {
-            int key = event.key();
+            int key = InputKeys.glfw(event);
             if (key == 264 || key == 265) { // down / up
                 selected = Math.floorMod((selected < 0 ? -1 : selected) + (key == 264 ? 1 : -1), results.size());
                 float rowTop = selected * SEARCH_ROW, view = viewHeight(searchWindow);

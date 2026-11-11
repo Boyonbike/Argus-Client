@@ -20,7 +20,6 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
-import org.lwjgl.glfw.GLFW;
 
 public class PostProcessShaderPass extends BaseShaderPass {
    private static final Identifier OVERLAY_TEXTURE;
@@ -40,7 +39,7 @@ public class PostProcessShaderPass extends BaseShaderPass {
       float height = ClientAccess.argusclientMinecraft.getWindow().getHeight();
       sizeUniforms.set("u_Size", capturedWidth, height);
       this.uniforms.set("u_Texture", 15);
-      this.uniforms.set("u_Time", (float)GLFW.glfwGetTime());
+      this.uniforms.set("u_Time", (float)(System.nanoTime() / 1.0e9));
    }
 
    public PostProcessShaderPass(String vertexResource, String fragmentResource) {

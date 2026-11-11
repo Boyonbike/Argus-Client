@@ -1,5 +1,6 @@
 package dev.argus.client.gui.components;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.gui.panels.Panel;
@@ -8,7 +9,6 @@ import dev.argus.client.utils.collections.IntPair;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import org.lwjgl.glfw.GLFW;
 
 public class SnakeGameComponent extends GridGameComponent {
    private SnakeDirection direction = SnakeDirection.UP;
@@ -118,7 +118,7 @@ public class SnakeGameComponent extends GridGameComponent {
 
    @Override
    protected int getTickDelayMillis() {
-      return GLFW.glfwGetKey(ClientAccess.argusclientMinecraft.getWindow().handle(), 32) == 1 ? 200 : 500;
+      return KeyUtils.isPhysicalKeyDown(32) ? 200 : 500;
    }
 
    @Override

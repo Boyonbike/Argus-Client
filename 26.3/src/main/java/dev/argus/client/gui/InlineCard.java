@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -73,7 +75,7 @@ abstract class InlineCard {
     final boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         if (widgetClicked(event, doubled)) return true;
         if (event.y() < clipTop || event.y() >= clipBottom) return false;
-        if (event.button() != 0) return otherClicked(event);
+        if (InputButtons.glfw(event) != 0) return otherClicked(event);
         for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
             if (UiDraw.over(event.x(), event.y(), hit.x(), hit.y(), hit.w(), hit.h())) { hit.run().run(); return true; }
@@ -242,7 +244,7 @@ abstract class InlineCard {
             return false;
         }
         @Override boolean keyPressed(KeyEvent event) {
-            if (field != null && field.isFocused() && field.visible && (event.key() == 257 || event.key() == 335)) { add(); return true; }
+            if (field != null && field.isFocused() && field.visible && (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335)) { add(); return true; }
             return false;
         }
 

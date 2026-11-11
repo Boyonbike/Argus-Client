@@ -1,5 +1,6 @@
 package dev.argus.client.modules.client;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
@@ -34,7 +35,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.joml.Matrix3x2fc;
 import org.joml.Vector2f;
-import org.lwjgl.glfw.GLFW;
 
 public class FontsModule extends Module {
    public static FontsModule INSTANCE;
@@ -131,7 +131,7 @@ public class FontsModule extends Module {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
       Window window = minecraft.getWindow();
       long windowHandle = window.handle();
-      if (GLFW.glfwGetMouseButton(windowHandle, 0) != 1) {
+      if (!KeyUtils.isPhysicalMouseButtonDown(0)) {
          AtomicBoolean requestedReloadFlag = reloadRequested;
          if (requestedReloadFlag.get()) {
             FontRenderer.INSTANCE.setRenderer(FontRenderer.INSTANCE.createRenderer());

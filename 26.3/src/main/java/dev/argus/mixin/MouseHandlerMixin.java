@@ -23,7 +23,7 @@ public class MouseHandlerMixin {
    )
    private void postMouseButtonPressEvent(long windowHandle, MouseButtonInfo buttonInfo, int action, CallbackInfo callback) {
       if (action == 1) {
-         InputPressEvent event = new InputPressEvent(buttonInfo.button(), true);
+         InputPressEvent event = new InputPressEvent(dev.argus.client.utils.LegacyMouseButtons.toGlfw(buttonInfo.button()), true);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
             callback.cancel();

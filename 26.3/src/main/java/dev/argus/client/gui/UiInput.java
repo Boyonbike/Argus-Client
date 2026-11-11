@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.gui.mixin.EditBoxAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -130,7 +131,7 @@ final class UiInput extends EditBox {
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
-        if (!visible || !active || event.button() != 0 || !isMouseOver(event.x(), event.y())) return false;
+        if (!visible || !active || InputButtons.glfw(event) != 0 || !isMouseOver(event.x(), event.y())) return false;
         setFocused(true); lastEdit = System.nanoTime();
         moveCursorTo(cursorAt(event.x()), (event.modifiers() & 1) != 0);
         if (doubled) { int first = getWordPosition(-1), last = getWordPosition(1); moveCursorTo(first, false); moveCursorTo(last, true); }
@@ -138,7 +139,7 @@ final class UiInput extends EditBox {
     }
 
     @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
-        if (!isFocused() || event.button() != 0) return false;
+        if (!isFocused() || InputButtons.glfw(event) != 0) return false;
         moveCursorTo(cursorAt(event.x()), true); return true;
     }
 }

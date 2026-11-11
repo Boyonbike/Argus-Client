@@ -1,5 +1,6 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientAccess;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -31,7 +32,7 @@ public class ShulkerPreviewScreen extends ShulkerBoxScreen implements ClientAcce
 
    @Override
    public boolean keyPressed(KeyEvent event) {
-      int keyCode = event.key();
+      int keyCode = InputKeys.glfw(event);
       if (keyCode == 256) {
          Screen capturedParent = this.parentScreen;
          ClientAccess.argusclientMinecraft.gui.setScreen(capturedParent);

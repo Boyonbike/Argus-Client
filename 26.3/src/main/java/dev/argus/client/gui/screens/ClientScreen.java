@@ -1,5 +1,7 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
@@ -167,10 +169,10 @@ public class ClientScreen extends Screen implements ClientAccess {
       for (int panelIndex = this.panels.size() - 1; panelIndex >= 0; panelIndex--) {
          Panel panel = this.panels.get(panelIndex);
          panel.setDragging(false);
-         panel.mouseReleased(event.x(), event.y(), event.button());
+         panel.mouseReleased(event.x(), event.y(), InputButtons.glfw(event));
       }
 
-      this.onMouseRelease(event.x(), event.y(), event.button());
+      this.onMouseRelease(event.x(), event.y(), InputButtons.glfw(event));
       return super.mouseReleased(event);
    }
 
@@ -199,14 +201,14 @@ public class ClientScreen extends Screen implements ClientAccess {
 
       for (int panelIndex = this.panels.size() - 1; panelIndex >= 0; panelIndex--) {
          Panel panel = this.panels.get(panelIndex);
-         if (panel.isMouseOverHeader(event.x(), event.y()) && event.button() == 0 && draggedPanel == null) {
+         if (panel.isMouseOverHeader(event.x(), event.y()) && InputButtons.glfw(event) == 0 && draggedPanel == null) {
             draggedPanel = panel;
             panel.setDragging(true);
             panel.dragOffsetX = (int)(event.x() - panel.getX());
             panel.dragOffsetY = (int)(event.y() - panel.getY());
          }
 
-         panel.mouseClicked(event.x(), event.y(), event.button());
+         panel.mouseClicked(event.x(), event.y(), InputButtons.glfw(event));
       }
 
       if (draggedPanel != null) {
@@ -215,7 +217,7 @@ public class ClientScreen extends Screen implements ClientAccess {
       }
 
       this.reset();
-      this.onMouseClick(event.x(), event.y(), event.button());
+      this.onMouseClick(event.x(), event.y(), InputButtons.glfw(event));
       return handledByScreen;
    }
 
@@ -284,10 +286,10 @@ public class ClientScreen extends Screen implements ClientAccess {
       this.escapeCloseAllowed = true;
 
       for (int panelIndex = this.panels.size() - 1; panelIndex >= 0; panelIndex--) {
-         this.panels.get(panelIndex).keyPressed(event.key());
+         this.panels.get(panelIndex).keyPressed(InputKeys.glfw(event));
       }
 
-      if (event.key() == 256 && this.escapeCloseAllowed) {
+      if (InputKeys.glfw(event) == 256 && this.escapeCloseAllowed) {
          this.closeWithTransition();
       }
 

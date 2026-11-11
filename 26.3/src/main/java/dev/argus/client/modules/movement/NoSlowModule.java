@@ -1,5 +1,6 @@
 package dev.argus.client.modules.movement;
 
+import dev.argus.client.utils.KeyUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -57,7 +58,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.lwjgl.glfw.GLFW;
 
 public class NoSlowModule extends Module {
    private static MultiTaskModule multiTask;
@@ -357,8 +357,7 @@ public class NoSlowModule extends Module {
    }
 
    private boolean isKeyPressed(int key) {
-      long handleCapture = ClientAccess.argusclientMinecraft.getWindow().handle();
-      return GLFW.glfwGetKey(handleCapture, key) == 1;
+      return KeyUtils.isPhysicalKeyDown(key);
    }
 
    public boolean isGrimStrictInventoryEnabled() {

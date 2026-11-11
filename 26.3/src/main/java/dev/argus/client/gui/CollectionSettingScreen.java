@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.settings.SetSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -99,12 +101,12 @@ final class CollectionSettingScreen extends UiScreen {
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         if (super.mouseClickedUi(event, doubled)) return true;
         double mx = event.x(), my = event.y();
-        if (event.button() == 0 && UiDraw.over(mx, my, left + 10, top + 10, 18, 18)) { onClose(); return true; }
-        if (event.button() == 0 && UiDraw.over(mx, my, resetX() - 3, top + 12, 16, 14)) { setting.reset(); message = ""; refresh(); return true; }
+        if (InputButtons.glfw(event) == 0 && UiDraw.over(mx, my, left + 10, top + 10, 18, 18)) { onClose(); return true; }
+        if (InputButtons.glfw(event) == 0 && UiDraw.over(mx, my, resetX() - 3, top + 12, 16, 14)) { setting.reset(); message = ""; refresh(); return true; }
         String filter = onlySelected ? "Showing selected" : "Showing all";
         float fw = UiDraw.width(filter, UiDraw.SMALL) + 14;
-        if (event.button() == 0 && UiDraw.over(mx, my, left + panelWidth - 12 - fw, top + 12, fw, 14)) { onlySelected = !onlySelected; scroll = 0; refresh(); return true; }
-        if (event.button() != 0 || !UiDraw.over(mx, my, left + 8, start(), panelWidth - 16, viewHeight)) return false;
+        if (InputButtons.glfw(event) == 0 && UiDraw.over(mx, my, left + panelWidth - 12 - fw, top + 12, fw, 14)) { onlySelected = !onlySelected; scroll = 0; refresh(); return true; }
+        if (InputButtons.glfw(event) != 0 || !UiDraw.over(mx, my, left + 8, start(), panelWidth - 16, viewHeight)) return false;
         int row = (int) Math.floor((my - start() + shownScroll) / ROW); if (row >= 0 && row < entries.size()) toggle(entries.get(row)); return true;
     }
 
@@ -113,5 +115,5 @@ final class CollectionSettingScreen extends UiScreen {
         return false;
     }
 
-    @Override public boolean keyPressed(KeyEvent event) { if (event.key() == 257 || event.key() == 335) { toggleTyped(); return true; } return super.keyPressed(event); }
+    @Override public boolean keyPressed(KeyEvent event) { if (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335) { toggleTyped(); return true; } return super.keyPressed(event); }
 }

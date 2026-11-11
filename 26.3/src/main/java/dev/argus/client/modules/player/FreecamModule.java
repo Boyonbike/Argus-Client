@@ -44,7 +44,6 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import org.lwjgl.glfw.GLFW;
 
 public class FreecamModule extends Module {
    private static final double DIAGONAL_FACTOR = 1.0 / Math.sqrt(2.0);
@@ -286,7 +285,7 @@ public class FreecamModule extends Module {
    private void onInputPressEvent(InputPressEvent event) {
       if (!this.clickToPathSetting.getValue()
          || !event.isMouse()
-         || event.getCode() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+         || event.getCode() != 0) {
          return;
       }
 

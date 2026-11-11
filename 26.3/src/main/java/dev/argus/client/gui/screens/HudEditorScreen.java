@@ -1,5 +1,7 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
@@ -67,7 +69,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
 
    @Override
    public boolean mouseReleased(MouseButtonEvent event) {
-      this.marginController.mouseReleased(event.button());
+      this.marginController.mouseReleased(InputButtons.glfw(event));
       boolean released = super.mouseReleased(event);
       if (this.draggingWidget) {
          this.draggingWidget = false;
@@ -114,7 +116,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
                && dragCandidate == null
                && widget.isMouseOver(event.x(), event.y())
                && !(widget instanceof ResizableHudWidgetRenderer resizableWidget && resizableWidget.isResizeHandleHovered(event.x(), event.y()))) {
-               if (event.button() == 0) {
+               if (InputButtons.glfw(event) == 0) {
                   dragAnchor = group.getAnchor();
                   dragCandidate = widget;
                   this.dragOffsetX = (int)(event.x() - widget.getX());
@@ -122,7 +124,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
                   this.draggingWidget = true;
                   widget.setSelected(true);
                   widget.resetSnapping();
-               } else if (event.button() == 1) {
+               } else if (InputButtons.glfw(event) == 1) {
                   ModuleComponent moduleRow = ((List<?>)this.modulePanel.getChildren())
                      .stream()
                      .map(ModuleComponent.class::cast)
@@ -140,7 +142,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
          this.getAnchorGroup(HudAnchor.NONE).getWidgets().addLast(dragCandidate);
          dragCandidate.setAnchor(HudAnchor.NONE);
       } else {
-         this.marginController.mouseClicked(event.x(), event.y(), event.button());
+         this.marginController.mouseClicked(event.x(), event.y(), InputButtons.glfw(event));
       }
 
       return super.mouseClicked(event, doubleClick);
@@ -294,13 +296,13 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
 
       if (!overPanel) {
          HudWidgetRenderer widget = this.findHoveredWidget();
-         IntPair offset = this.getArrowKeyOffset(event.key());
+         IntPair offset = this.getArrowKeyOffset(InputKeys.glfw(event));
          if (offset != null && widget != null && widget.isEnabled()) {
             widget.setX(widget.getX() + offset.first(), true);
             widget.setY(widget.getY() + offset.second(), true);
             widget.updateDirections();
          } else {
-            switch (event.key()) {
+            switch (InputKeys.glfw(event)) {
                case 73:
                   if (!(ClientContext.getClickGui().getEditingSetting() instanceof StringSettingComponent)) {
                      this.swapAnchorContents(HudAnchor.BOTTOM_LEFT, HudAnchor.BOTTOM_RIGHT);

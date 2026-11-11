@@ -1,5 +1,6 @@
 package dev.argus.client.gui.components;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
@@ -13,7 +14,6 @@ import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.ElapsedTimer;
 import java.util.regex.Matcher;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
 
 public class StringSettingComponent extends SettingComponent<String> {
    private final ElapsedTimer cursorBlinkTimer = new ElapsedTimer();
@@ -36,7 +36,7 @@ public class StringSettingComponent extends SettingComponent<String> {
          ClientContext.getClickGui().suppressEscapeClose();
          switch (key) {
             case 86:
-               if (GLFW.glfwGetKey(ClientAccess.argusclientMinecraft.getWindow().handle(), 341) == 1) {
+               if (KeyUtils.isPhysicalKeyDown(341)) {
                   this.editingText = new StringBuilder(this.editingText)
                      .insert(this.cursorIndex, ClientAccess.argusclientMinecraft.keyboardHandler.getClipboard())
                      .toString();

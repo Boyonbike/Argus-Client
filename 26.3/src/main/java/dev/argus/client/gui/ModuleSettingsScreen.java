@@ -1,6 +1,7 @@
 package dev.argus.client.gui;
 
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.modules.Module;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,7 +44,7 @@ final class ModuleSettingsScreen extends UiScreen {
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
-        if (event.button() == 0 && UiDraw.over(event.x(), event.y(), left + 8, top + 6, 64, 16)) { page.stopEditing(); onClose(); return true; }
+        if (InputButtons.glfw(event) == 0 && UiDraw.over(event.x(), event.y(), left + 8, top + 6, 64, 16)) { page.stopEditing(); onClose(); return true; }
         return page.mouseClicked(event, doubled) || super.mouseClickedUi(event, doubled);
     }
 

@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 public class ConfirmGameCloseScreen extends ConfirmScreen {
    public ConfirmGameCloseScreen() {
@@ -29,8 +28,7 @@ public class ConfirmGameCloseScreen extends ConfirmScreen {
             client.close();
          } else {
             Minecraft client = ClientAccess.argusclientMinecraft;
-            long windowHandle = client.getWindow().handle();
-            GLFW.glfwSetWindowShouldClose(windowHandle, false);
+            ((dev.argus.mixin.WindowMixin)(Object)client.getWindow()).argusclient$setShouldClose(false);
          }
       }
    }

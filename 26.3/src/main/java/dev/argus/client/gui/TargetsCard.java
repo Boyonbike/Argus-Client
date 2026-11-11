@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.render.targets.RuleSettings;
 import dev.argus.client.modules.render.targets.SpecificRules;
@@ -163,7 +165,7 @@ final class TargetsCard extends InlineCard {
     }
 
     @Override boolean otherClicked(MouseButtonEvent event) {
-        if (event.button() != 1) return false;
+        if (InputButtons.glfw(event) != 1) return false;
         // Right-click: the filter steps back; a row opens or closes its settings.
         if (UiDraw.over(event.x(), event.y(), filterX, cardY + 4, filterW, 18)) { filter = Math.floorMod(filter - 1, FILTERS.length); return true; }
         for (Row row : rows) {
@@ -177,7 +179,7 @@ final class TargetsCard extends InlineCard {
     @Override void popup(GuiGraphicsExtractor g, UiTheme t, int width, int height) { for (SettingsList list : lists()) list.popup(g, t, width, height); }
 
     @Override boolean keyPressed(KeyEvent event) {
-        if (field.isFocused() && field.visible && (event.key() == 257 || event.key() == 335)) { addSelected(); return true; }
+        if (field.isFocused() && field.visible && (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335)) { addSelected(); return true; }
         for (SettingsList list : lists()) if (list.keyPressed(event)) return true;
         return false;
     }

@@ -30,7 +30,7 @@ public class KeyboardHandlerMixin {
    )
    private void postKeyPressEvent(long windowHandle, int action, KeyEvent keyEvent, CallbackInfo callback) {
       if (keyEvent.key() >= 0 && this.minecraft.gui.screen() == null && action == 1) {
-         InputPressEvent event = new InputPressEvent(keyEvent.key(), false);
+         InputPressEvent event = new InputPressEvent(dev.argus.client.utils.LegacyKeyCodes.fromScancode(keyEvent.key()), false);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
             callback.cancel();

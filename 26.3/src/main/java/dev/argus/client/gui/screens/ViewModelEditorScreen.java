@@ -1,5 +1,6 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputKeys;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.modules.render.ViewModelModule;
@@ -163,14 +164,14 @@ public final class ViewModelEditorScreen extends ClientScreen {
 
    @Override
    public boolean keyPressed(KeyEvent event) {
-      if (KeyUtils.isControlDown() && event.key() == 90 && !this.undoHistory.isEmpty()) {
+      if (KeyUtils.isControlDown() && InputKeys.glfw(event) == 90 && !this.undoHistory.isEmpty()) {
          this.undoHistory.getLast().apply(this.viewmodel);
          if (this.undoHistory.size() != 1) {
             this.undoHistory.removeLast();
          }
       }
 
-      if (event.key() == 261) {
+      if (InputKeys.glfw(event) == 261) {
          this.dragStartSnapshot = ViewModelSnapshot.createDefaults();
          this.dragStartSnapshot.apply(this.viewmodel);
          this.undoHistory.add(this.dragStartSnapshot);

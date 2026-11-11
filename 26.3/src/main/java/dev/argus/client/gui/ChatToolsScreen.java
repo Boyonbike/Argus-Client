@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.chat.AutoTpyQueue;
 import dev.argus.client.chat.AutoTpyWhitelistImport;
 import dev.argus.client.chat.ChatClan;
@@ -1636,13 +1638,13 @@ public final class ChatToolsScreen extends UiScreen {
         double mx = event.x(), my = event.y();
         if (dialog != null) {
             if (dialog.field() != null && dialogField.isMouseOver(mx, my)) { hostFocus(dialogField); return dialogField.mouseClicked(event, doubled); }
-            if (event.button() == 0) for (int i = dialogHits.size() - 1; i >= 0; i--) {
+            if (InputButtons.glfw(event) == 0) for (int i = dialogHits.size() - 1; i >= 0; i--) {
                 Hit hit = dialogHits.get(i);
                 if (UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) { hit.action().run(); return true; }
             }
             return true;
         }
-        if (event.button() == 0) {
+        if (InputButtons.glfw(event) == 0) {
             List<Page> shown = pages();
             for (int i = 0; i < shown.size(); i++)
                 if (UiDraw.over(mx, my, left + 8, itemY(i), SIDE, ITEM)) { if (shown.get(i) != page || recipient != null) select(shown.get(i)); return true; }
@@ -1650,20 +1652,20 @@ public final class ChatToolsScreen extends UiScreen {
         if (page == Page.SETTINGS && settingsPage != null && settingsPage.mouseClicked(event, doubled)) return true;
         for (UiInput input : List.of(composer, search, listField))
             if (children().contains(input) && input.isMouseOver(mx, my)) { hostFocus(input); return input.mouseClicked(event, doubled); }
-        if (event.button() == 0) for (int i = hits.size() - 1; i >= 0; i--) {
+        if (InputButtons.glfw(event) == 0) for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
             if (UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) { hit.action().run(); return true; }
         }
         if (overTranscript(mx, my)) {
             long id = lineAt(my);
-            if (event.button() == 1 && id >= 0) { copyLine(id); return true; }
-            if (event.button() == 0) {
+            if (InputButtons.glfw(event) == 1 && id >= 0) { copyLine(id); return true; }
+            if (InputButtons.glfw(event) == 0) {
                 // A click opens Chat (from Overview) or picks a line; movement turns it into a drag that selects.
                 transcriptPressed = true; transcriptDragged = false; pressX = mx; pressY = my;
                 if ((event.modifiers() & 1) != 0 && selectAnchor >= 0 && id >= 0) { selectEnd = id; transcriptDragged = true; }
                 return true;
             }
-        } else if (event.button() == 0 && selectAnchor >= 0) clearSelection();
+        } else if (InputButtons.glfw(event) == 0 && selectAnchor >= 0) clearSelection();
         return super.mouseClickedUi(event, doubled);
     }
 
@@ -1718,7 +1720,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
-        int key = event.key();
+        int key = InputKeys.glfw(event);
         boolean enter = key == 257 || key == 335, escape = key == 256;
         if (dialog != null) {
             if (escape) { closeDialog(); return true; }

@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.settings.options.PresetCategory;
 import java.util.ArrayList;
 import java.util.List;
@@ -307,7 +309,7 @@ final class PresetsPanel {
         double mx = event.x(), my = event.y();
         if (nameInput.isMouseOver(mx, my)) { host.hostFocus(nameInput); return nameInput.mouseClicked(event, doubled); }
         if (selected != null && addressInput.visible && addressInput.isMouseOver(mx, my)) { host.hostFocus(addressInput); return addressInput.mouseClicked(event, doubled); }
-        if (event.button() != 0) return false;
+        if (InputButtons.glfw(event) != 0) return false;
         for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
             boolean inList = hit.y >= listTop() - 1;
@@ -323,7 +325,7 @@ final class PresetsPanel {
     }
 
     boolean keyPressed(KeyEvent event) {
-        if (event.key() != 257 && event.key() != 335) return false;
+        if (InputKeys.glfw(event) != 257 && InputKeys.glfw(event) != 335) return false;
         if (nameInput.isFocused()) { saveCurrent(); return true; }
         if (selected != null && addressInput.isFocused()) { bindTyped(selected); return true; }
         return false;

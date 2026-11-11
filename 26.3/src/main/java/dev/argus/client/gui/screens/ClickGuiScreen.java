@@ -1,5 +1,7 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.KeyUtils;
+import dev.argus.client.utils.InputKeys;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
@@ -41,7 +43,6 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
-import org.lwjgl.glfw.GLFW;
 
 public class ClickGuiScreen extends ClientScreen implements ClientAccess {
    private static final int[] GAME_PANEL_UNLOCK_SEQUENCE = new int[]{265, 265, 264, 264, 263, 262, 263, 262, 66, 65};
@@ -85,7 +86,7 @@ public class ClickGuiScreen extends ClientScreen implements ClientAccess {
 
    private static boolean isControlDown() {
       long window = ClientAccess.argusclientMinecraft.getWindow().handle();
-      return GLFW.glfwGetKey(window, 341) == 1 || GLFW.glfwGetKey(window, 345) == 1;
+      return KeyUtils.isPhysicalKeyDown(341) || KeyUtils.isPhysicalKeyDown(345);
    }
 
    private void handleSearchKey(int keyCode) {
@@ -306,13 +307,13 @@ public class ClickGuiScreen extends ClientScreen implements ClientAccess {
    public boolean keyPressed(KeyEvent event) {
       super.keyPressed(event);
       Keybind toggleKeybind = UIModule.INSTANCE.getKeybind();
-      if (toggleKeybind.code() == event.key() && !toggleKeybind.mouse() && this.escapeCloseAllowed && !this.searchBox.isFocused()) {
+      if (toggleKeybind.code() == InputKeys.glfw(event) && !toggleKeybind.mouse() && this.escapeCloseAllowed && !this.searchBox.isFocused()) {
          this.closeWithTransition();
          return true;
       } else {
-         this.handleSecretSequence(event.key());
-         this.handleSearchKey(event.key());
-         this.handlePresetPaste(event.key());
+         this.handleSecretSequence(InputKeys.glfw(event));
+         this.handleSearchKey(InputKeys.glfw(event));
+         this.handlePresetPaste(InputKeys.glfw(event));
          return true;
       }
    }

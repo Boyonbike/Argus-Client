@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.config.ModuleClipboard;
 import dev.argus.client.modules.Keybind;
 import dev.argus.client.modules.Module;
@@ -348,17 +350,17 @@ final class ModulePage {
     // ---- input -------------------------------------------------------------------------------
 
     boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
-        if (binding) { module.setKeybind(new Keybind(event.button(), module.getKeybind().mode(), true)); binding = false; return true; }
+        if (binding) { module.setKeybind(new Keybind(InputButtons.glfw(event), module.getKeybind().mode(), true)); binding = false; return true; }
         double mx = event.x(), my = event.y();
         // Later hits are drawn on top, so they win.
         for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
-            if (hit.button() == event.button() && UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) {
+            if (hit.button() == InputButtons.glfw(event) && UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) {
                 hit.action().run();
                 return true;
             }
         }
-        if (resetArmed() && event.button() == 0) resetArmedAt = 0;
+        if (resetArmed() && InputButtons.glfw(event) == 0) resetArmedAt = 0;
         return cards.mouseClicked(event, doubled, bodyTop(), bodyBottom());
     }
 
@@ -373,20 +375,20 @@ final class ModulePage {
 
     boolean keyPressed(KeyEvent event) {
         if (binding) {
-            if (event.key() != 256) module.setKeybind(event.key() == 259 || event.key() == 261 ? Keybind.UNBOUND : new Keybind(event.key(), module.getKeybind().mode(), false));
+            if (InputKeys.glfw(event) != 256) module.setKeybind(InputKeys.glfw(event) == 259 || InputKeys.glfw(event) == 261 ? Keybind.UNBOUND : new Keybind(InputKeys.glfw(event), module.getKeybind().mode(), false));
             binding = false;
             return true;
         }
         if (cards.keyPressed(event)) return true;
-        if (event.key() == 256 && resetArmed()) { resetArmedAt = 0; return true; }
+        if (InputKeys.glfw(event) == 256 && resetArmed()) { resetArmedAt = 0; return true; }
         // Ctrl+C / Ctrl+V copy and paste the module's config, unless a text box has the keyboard.
         if ((event.modifiers() & 2) != 0 && !(host.getFocused() instanceof net.minecraft.client.gui.components.EditBox)) {
-            if (event.key() == 67) { copyConfig(); UiAnim.set(key + "copy.done", 1); return true; }
-            if (event.key() == 86) { pasteConfig(); UiAnim.set(key + "paste.done", 1); return true; }
+            if (InputKeys.glfw(event) == 67) { copyConfig(); UiAnim.set(key + "copy.done", 1); return true; }
+            if (InputKeys.glfw(event) == 86) { pasteConfig(); UiAnim.set(key + "paste.done", 1); return true; }
         }
         // Page Up / Page Down / Home / End move through the cards.
         float page = bodyBottom() - bodyTop() - 30;
-        switch (event.key()) {
+        switch (InputKeys.glfw(event)) {
             case 266 -> { scroll = Math.max(0, scroll - page); return true; }
             case 267 -> { scroll += page; return true; }
             case 268 -> { scroll = 0; return true; }

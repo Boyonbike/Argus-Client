@@ -1,5 +1,6 @@
 package dev.argus.client.gui.screens;
 
+import dev.argus.client.utils.InputKeys;
 import com.google.gson.JsonObject;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.gui.GuiElement;
@@ -35,7 +36,7 @@ public class ModuleImportConfirmationScreen extends ClientScreen {
 
    @Override
    public boolean keyPressed(KeyEvent event) {
-      if (event.key() == 257) {
+      if (InputKeys.glfw(event) == 257) {
          this.importModule();
       }
 

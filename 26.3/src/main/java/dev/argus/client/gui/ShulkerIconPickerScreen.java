@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconShape;
 import java.util.ArrayList;
@@ -109,7 +110,7 @@ final class ShulkerIconPickerScreen extends UiScreen {
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
-        if (event.button() == 0) {
+        if (InputButtons.glfw(event) == 0) {
             int listTop = top + 70;
             for (int row = 0; row < visibleRows() && scroll + row < shown.size(); row++) {
                 if (UiDraw.over(event.x(), event.y(), left + 10, listTop + row * ROW, panelWidth - 20, ROW - 2)) {

@@ -1,18 +1,15 @@
 package dev.argus.client.utils;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.platform.InputConstants.Type;
-import dev.argus.client.ClientAccess;
 import dev.argus.client.modules.Keybind;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.input.KeyEvent;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLMouse;
 
-public final class KeyUtils implements ClientAccess {
+public final class KeyUtils {
    private static final Map<String, Integer> KEY_ALIASES = Map.ofEntries(
       Map.entry("rshift", 344),
       Map.entry("rctrl", 345),
@@ -47,11 +44,9 @@ public final class KeyUtils implements ClientAccess {
    public static boolean isPhysicallyDown(KeyMapping mapping) {
       Key key = mapping.key;
       if (key.getType() == Type.MOUSE) {
-         int button = key.getValue();
-         return isPhysicalMouseButtonDown(button);
+         return isMouseButtonDownSdl(key.getValue());
       } else {
-         int keyCode = key.getValue();
-         return isPhysicalKeyDown(keyCode);
+         return InputConstants.isKeyDown(key.getValue());
       }
    }
 
@@ -78,7 +73,7 @@ public final class KeyUtils implements ClientAccess {
             String normalizedKeyName = lowerText.replace("_", ".");
             String translationKey = "key.keyboard." + normalizedKeyName;
             Key key = InputConstants.getKey(translationKey);
-            int resolvedCode = key.getValue();
+            int resolvedCode = LegacyKeyCodes.fromScancode(key.getValue());
             return Keybind.toggle(resolvedCode, false);
          }
       }
@@ -103,17 +98,22 @@ public final class KeyUtils implements ClientAccess {
          return "MOUSE" + keyCode;
       }
 
-      KeyEvent keyEvent = new KeyEvent(keyCode, 0, 0);
-      Key key = InputConstants.getKey(keyEvent);
+      Key key = Type.KEYBOARD.getOrCreate(LegacyKeyCodes.toScancode(keyCode));
       String translationKey = key.getName();
       String displayName = translationKey.replaceAll("key.keyboard.", "").replace(".", "_");
       return displayName.toUpperCase();
    }
 
    public static boolean isPhysicalMouseButtonDown(int button) {
-      Window window = ClientAccess.argusclientMinecraft.getWindow();
-      long handle = window.handle();
-      return GLFW.glfwGetMouseButton(handle, button) == 1;
+      return isMouseButtonDownSdl(LegacyMouseButtons.toSdl(button));
+   }
+
+   private static boolean isMouseButtonDownSdl(int sdlButton) {
+      if (sdlButton <= 0) {
+         return false;
+      }
+      int state = SDLMouse.nSDL_GetMouseState(0L, 0L);
+      return (state & (1 << (sdlButton - 1))) != 0;
    }
 
    public static boolean isPhysicalKeyDown(int keyCode) {
@@ -121,9 +121,8 @@ public final class KeyUtils implements ClientAccess {
          return false;
       }
 
-      Window window = ClientAccess.argusclientMinecraft.getWindow();
-      long handle = window.handle();
-      return GLFW.glfwGetKey(handle, keyCode) == 1;
+      int scancode = LegacyKeyCodes.toScancode(keyCode);
+      return scancode != LegacyKeyCodes.UNMAPPED && InputConstants.isKeyDown(scancode);
    }
 
    public static boolean isShiftDown() {

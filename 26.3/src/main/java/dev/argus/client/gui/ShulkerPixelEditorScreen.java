@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.PixelIcon;
 import java.awt.image.BufferedImage;
@@ -103,7 +104,7 @@ final class ShulkerPixelEditorScreen extends UiScreen {
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         lastX = lastY = -1;
-        if (event.button() == 0) {
+        if (InputButtons.glfw(event) == 0) {
             for (int i = 0; i < PALETTE.length; i++) {
                 if (UiDraw.over(event.x(), event.y(), controls + i * 18, gridY - 14, 14, 12)) {
                     hex.setValue(String.format("%08X", PALETTE[i]));
@@ -113,19 +114,19 @@ final class ShulkerPixelEditorScreen extends UiScreen {
         }
         if (!inside(event)) return super.mouseClickedUi(event, doubled);
         int x = column(event), y = row(event);
-        if (event.button() == 2) {
+        if (InputButtons.glfw(event) == 2) {
             hex.setValue(String.format("%08X", pixels[y * SIZE + x]));
-        } else if (event.button() == 0 || event.button() == 1) {
+        } else if (InputButtons.glfw(event) == 0 || InputButtons.glfw(event) == 1) {
             remember();
             lastX = x;
             lastY = y;
-            pixels[y * SIZE + x] = event.button() == 1 ? 0 : paint;
+            pixels[y * SIZE + x] = InputButtons.glfw(event) == 1 ? 0 : paint;
         }
         return true;
     }
 
     @Override protected boolean mouseDraggedUi(MouseButtonEvent event, double dx, double dy) {
-        if (lastX < 0 || (event.button() != 0 && event.button() != 1)) {
+        if (lastX < 0 || (InputButtons.glfw(event) != 0 && InputButtons.glfw(event) != 1)) {
             return super.mouseDraggedUi(event, dx, dy);
         }
         int x = Math.clamp(column(event), 0, SIZE - 1), y = Math.clamp(row(event), 0, SIZE - 1);
@@ -133,7 +134,7 @@ final class ShulkerPixelEditorScreen extends UiScreen {
         for (int i = 1; i <= steps; i++) {
             int px = lastX + Math.round((x - lastX) * i / (float) steps);
             int py = lastY + Math.round((y - lastY) * i / (float) steps);
-            pixels[py * SIZE + px] = event.button() == 1 ? 0 : paint;
+            pixels[py * SIZE + px] = InputButtons.glfw(event) == 1 ? 0 : paint;
         }
         lastX = x;
         lastY = y;

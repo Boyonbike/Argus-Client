@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientContext;
 import dev.argus.client.gui.mixin.HudEditorScreenAccessor;
 import dev.argus.client.gui.screens.HudEditorScreen;
@@ -971,7 +973,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         if (isClosing() || busy()) return false;
         double x = logical(event.x()), y = logical(event.y());
-        int button = event.button();
+        int button = InputButtons.glfw(event);
         if (UIModule.INSTANCE != null) {
             var bind = UIModule.INSTANCE.getKeybind();
             if (bind.mouse() && !bind.isUnbound() && bind.code() >= 2 && button == bind.code()) { closeWithTransition(); return true; }
@@ -1105,7 +1107,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
-        int key = event.key();
+        int key = InputKeys.glfw(event);
         boolean control = (event.modifiers() & 2) != 0;
         if (busy()) return true;
         if (control && key == 70) { if (panelHidden) setPanelHidden(false); searchFocused = true; return true; }

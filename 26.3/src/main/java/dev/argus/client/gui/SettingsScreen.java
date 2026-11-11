@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.modules.client.DiscordModule;
 import dev.argus.client.modules.client.DiscordSyncModule;
 import dev.argus.client.modules.misc.ChatToolsModule;
@@ -653,18 +655,18 @@ final class SettingsScreen extends UiScreen {
             bindingMenuKey = false;
             // Middle and side buttons can open the menu; left/right click just cancel so the menu stays usable.
             UIModule ui = UIModule.INSTANCE;
-            if (ui != null && event.button() >= 2) {
-                ui.setKeybind(new Keybind(event.button(), ui.getKeybind().isUnbound() ? Keybind.Mode.TOGGLE : ui.getKeybind().mode(), true));
+            if (ui != null && InputButtons.glfw(event) >= 2) {
+                ui.setKeybind(new Keybind(InputButtons.glfw(event), ui.getKeybind().isUnbound() ? Keybind.Mode.TOGGLE : ui.getKeybind().mode(), true));
                 return true;
             }
             if (!section.equals(APPEARANCE)) return true;
         }
-        if (event.button() == 0) for (int i = 0; i < sections(); i++)
+        if (InputButtons.glfw(event) == 0) for (int i = 0; i < sections(); i++)
             if (UiDraw.over(mx, my, left + 8, itemY(i), SIDE, ITEM)) { if (!sectionName(i).equals(section)) select(sectionName(i), null, true); return true; }
         if (section.equals(PRESETS)) { if (presets.mouseClicked(event, doubled)) return true; }
         else if (cardPage()) {
             if (my >= pageTop() && my < pageBottom()) {
-                if (event.button() == 0) for (int i = hits.size() - 1; i >= 0; i--) {
+                if (InputButtons.glfw(event) == 0) for (int i = hits.size() - 1; i >= 0; i--) {
                     Hit hit = hits.get(i);
                     if (UiDraw.over(mx, my, hit.x(), hit.y(), hit.w(), hit.h())) { pointerX = mx; hit.action().run(); return true; }
                 }
@@ -710,9 +712,9 @@ final class SettingsScreen extends UiScreen {
         if (bindingMenuKey) {
             bindingMenuKey = false;
             UIModule ui = UIModule.INSTANCE;
-            if (ui != null && event.key() != 256) {
+            if (ui != null && InputKeys.glfw(event) != 256) {
                 // Never leave the menu without a key: Backspace/Delete go back to Right Shift.
-                int code = event.key() == 259 || event.key() == 261 ? 344 : event.key();
+                int code = InputKeys.glfw(event) == 259 || InputKeys.glfw(event) == 261 ? 344 : InputKeys.glfw(event);
                 ui.setKeybind(new Keybind(code, ui.getKeybind().isUnbound() ? Keybind.Mode.TOGGLE : ui.getKeybind().mode(), false));
             }
             return true;

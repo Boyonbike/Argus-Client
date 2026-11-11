@@ -1,5 +1,6 @@
 package dev.argus.client.modules.client;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.blaze3d.platform.Window;
 import dev.argus.client.ArgusClient;
 import dev.argus.client.ClientAccess;
@@ -37,7 +38,6 @@ import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
-import org.lwjgl.glfw.GLFW;
 
 public final class UIModule extends Module {
    public static UIModule INSTANCE;
@@ -118,7 +118,7 @@ public final class UIModule extends Module {
       Minecraft var2 = ClientAccess.argusclientMinecraft;
       Window var3 = var2.getWindow();
       long var4 = var3.handle();
-      if (GLFW.glfwGetMouseButton(var4, 0) != 1) {
+      if (!KeyUtils.isPhysicalMouseButtonDown(0)) {
          AtomicBoolean var6 = this.panelResetPending;
          if (var6.get()) {
             ClickGuiScreen var7 = ClientContext.getClickGui();

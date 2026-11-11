@@ -1,5 +1,6 @@
 package dev.argus.client.modules.misc;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.platform.Window;
 import dev.argus.client.ClientAccess;
@@ -27,7 +28,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import org.lwjgl.glfw.GLFW;
 
 public class MiddleClickModule extends Module {
    private static FireworksModule fireworksModule = ClientContext.getModule(FireworksModule.class);
@@ -153,14 +153,14 @@ public class MiddleClickModule extends Module {
          Minecraft pressClient = ClientAccess.argusclientMinecraft;
          Window pressWindow = pressClient.getWindow();
          long windowHandle = pressWindow.handle();
-         if (GLFW.glfwGetMouseButton(windowHandle, 2) == 1 && !this.middleButtonHeld) {
+         if (KeyUtils.isPhysicalMouseButtonDown(2) && !this.middleButtonHeld) {
             this.middleButtonHeld = true;
             this.handleMiddleClick();
          } else {
             Minecraft releaseClient = ClientAccess.argusclientMinecraft;
             Window releaseWindow = releaseClient.getWindow();
             windowHandle = releaseWindow.handle();
-            if (GLFW.glfwGetMouseButton(windowHandle, 2) == 0) {
+            if (!KeyUtils.isPhysicalMouseButtonDown(2)) {
                this.middleButtonHeld = false;
             }
          }

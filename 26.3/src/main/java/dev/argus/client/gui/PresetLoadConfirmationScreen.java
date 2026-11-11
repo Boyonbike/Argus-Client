@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputKeys;
 import com.google.gson.JsonObject;
 import dev.argus.client.ClientContext;
 import dev.argus.client.config.importing.ImportedPresetStore;
@@ -109,8 +110,8 @@ final class PresetLoadConfirmationScreen extends UiScreen {
     }
     @Override protected boolean mouseScrolledUi(double x,double y,double h,double v){scroll-=(int)(v*20);return true;}
     @Override public boolean keyPressed(KeyEvent event){
-        if(event.key()==256){onClose();return true;}
-        if(event.key()==258){
+        if(InputKeys.glfw(event)==256){onClose();return true;}
+        if(InputKeys.glfw(event)==258){
             List<net.minecraft.client.gui.components.events.GuiEventListener> focus=new ArrayList<>();if(saveName.visible && controller.state()==PresetLoadController.State.NAMING)focus.add(saveName);if(primary.active)focus.add(primary);if(without.visible && without.active)focus.add(without);focus.add(cancel);focus.add(close);
             int i=focus.indexOf(getFocused());setFocused(focus.get(Math.floorMod(i+(event.hasShiftDown()?-1:1),focus.size())));return true;
         }

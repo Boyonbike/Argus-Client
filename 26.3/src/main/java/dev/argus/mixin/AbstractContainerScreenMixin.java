@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import dev.argus.client.utils.InputButtons;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -135,15 +136,15 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    private void argusclient$consumeShulkerPreviewClick(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> callback) {
       Slot hovered = this.getHoveredSlot(event.x(), event.y());
       if (hovered != null && ((AbstractContainerScreen<?>)(Object)this).getMenu().getCarried().isEmpty()
-         && argusclient$tooltips.isShulkerPreviewClick(hovered.getItem(), event.button())) {
-         this.argusclient$previewButton = event.button();
+         && argusclient$tooltips.isShulkerPreviewClick(hovered.getItem(), InputButtons.glfw(event))) {
+         this.argusclient$previewButton = InputButtons.glfw(event);
          callback.setReturnValue(true);
       }
    }
 
    @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
    private void argusclient$consumeShulkerPreviewRelease(MouseButtonEvent event, CallbackInfoReturnable<Boolean> callback) {
-      if (event.button() == this.argusclient$previewButton) {
+      if (InputButtons.glfw(event) == this.argusclient$previewButton) {
          this.argusclient$previewButton = -1;
          callback.setReturnValue(true);
       }

@@ -1,5 +1,6 @@
 package dev.argus.client.render;
 
+import dev.argus.client.utils.KeyUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.argus.client.ClientAccess;
@@ -11,7 +12,6 @@ import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.FloatAnimation;
 import dev.argus.client.utils.math.MathUtils;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 public class ResizableHudWidgetRenderer extends HudWidgetRenderer {
    private static final HUDModule hudSettings = ClientContext.getModule(HUDModule.class);
@@ -27,7 +27,7 @@ public class ResizableHudWidgetRenderer extends HudWidgetRenderer {
    }
 
    private boolean isMouseButtonPressed(int button) {
-      return GLFW.glfwGetMouseButton(ClientAccess.argusclientMinecraft.getWindow().handle(), button) == 1;
+      return KeyUtils.isPhysicalMouseButtonDown(button);
    }
 
    public ResizableHudWidgetRenderer(HudWidgetModule widget) {

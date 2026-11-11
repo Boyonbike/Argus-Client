@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.misc.BetterChatModule;
 import dev.argus.client.modules.misc.ChatToolsModule;
@@ -227,7 +228,7 @@ final class SettingsCards {
         for (InlineCard card : inline) if (card.open && card.shown() > 1 && card.mouseClicked(event, doubled)) { for (Section s : sections) s.list.stopEditing(); return true; }
         for (Object item : order()) {
             Float top = tops.get(item);
-            if (top != null && event.button() == 0 && UiDraw.over(event.x(), my, x, top, w, UiDraw.CARD_HEAD)) {
+            if (top != null && InputButtons.glfw(event) == 0 && UiDraw.over(event.x(), my, x, top, w, UiDraw.CARD_HEAD)) {
                 stopEditing();
                 if (item instanceof Section s) s.toggle(); else { InlineCard card = (InlineCard) item; card.open = !card.open; }
                 return true;

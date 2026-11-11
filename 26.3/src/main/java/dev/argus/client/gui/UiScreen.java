@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.client.UIModule;
 import net.minecraft.client.Minecraft;
@@ -389,16 +391,16 @@ public abstract class UiScreen extends Screen {
         // A menu key bound to a mouse button closes the menu, like a keyboard one does.
         if (!modal() && !capturingMenuKey() && UIModule.INSTANCE != null) {
             var bind = UIModule.INSTANCE.getKeybind();
-            if (bind.mouse() && !bind.isUnbound() && bind.code() >= 2 && event.button() == bind.code()) { beginClose(rootParent()); return true; }
+            if (bind.mouse() && !bind.isUnbound() && bind.code() >= 2 && InputButtons.glfw(event) == bind.code()) { beginClose(rootParent()); return true; }
         }
         if (modal()) return mouseClickedUi(event, doubled);
         // An open colour picker takes the click first (a click outside it closes it).
         if (ColorPicker.click(event, doubled)) return true;
-        if (event.button() == 0 && overFace(event.x(), event.y())) { setBarOpen(!barOpen()); return true; }
-        if (event.button() == 0 && barOpen() && overGear(event.x(), event.y())) { if (!(this instanceof SettingsScreen)) navigate("Settings"); else if (!settingsActive()) openSection(SettingsScreen.APPEARANCE); return true; }
-        if ((event.button() == 0 || event.button() == 1) && barOpen() && barProgress() > .6f) for (int i = 0; i < tabLabels.length; i++)
+        if (InputButtons.glfw(event) == 0 && overFace(event.x(), event.y())) { setBarOpen(!barOpen()); return true; }
+        if (InputButtons.glfw(event) == 0 && barOpen() && overGear(event.x(), event.y())) { if (!(this instanceof SettingsScreen)) navigate("Settings"); else if (!settingsActive()) openSection(SettingsScreen.APPEARANCE); return true; }
+        if ((InputButtons.glfw(event) == 0 || InputButtons.glfw(event) == 1) && barOpen() && barProgress() > .6f) for (int i = 0; i < tabLabels.length; i++)
             if (UiDraw.over(event.x(), event.y(), tabX(i), BAR_Y + (BAR - TAB_HEIGHT) / 2, tabWidth[i], TAB_HEIGHT)) {
-                if (event.button() == 1) { removeTab(i); return true; }
+                if (InputButtons.glfw(event) == 1) { removeTab(i); return true; }
                 // Opening waits for release, so a press that turns into a drag reorders instead.
                 pressedTab = i; pressX = (float) event.x(); grabOffset = (float) event.x() - tabX(i); draggingTab = false;
                 return true;
@@ -486,11 +488,11 @@ public abstract class UiScreen extends Screen {
         if (ColorPicker.key(event)) return true;
         if (UIModule.INSTANCE != null) {
             var bind = UIModule.INSTANCE.getKeybind();
-            if (!bind.mouse() && !bind.isUnbound() && event.key() == bind.code() && (!(getFocused() instanceof EditBox) || bind.code() >= 340)) {
+            if (!bind.mouse() && !bind.isUnbound() && InputKeys.glfw(event) == bind.code() && (!(getFocused() instanceof EditBox) || bind.code() >= 340)) {
                 beginClose(rootParent()); return true;
             }
         }
-        if ((event.modifiers() & 2) != 0 && event.key() == 70) {
+        if ((event.modifiers() & 2) != 0 && InputKeys.glfw(event) == 70) {
             if (this instanceof ModulesScreen screen) screen.focusSearch(); else minecraft.gui.setScreen(new ModulesScreen(rootParent(), true));
             return true;
         }

@@ -13,7 +13,6 @@ import dev.argus.client.ClientAccess;
 import dev.argus.client.managers.RenderStateManager;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4fStack;
-import org.lwjgl.glfw.GLFW;
 
 public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
    protected final CompiledShaderProgram program;
@@ -34,7 +33,7 @@ public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
       ShaderUniforms sizeUniforms = this.uniforms;
       sizeUniforms.set("u_Size", this.outputTarget.width, this.outputTarget.height);
       this.uniforms.set("u_Texture", 15);
-      this.uniforms.set("u_Time", (float)GLFW.glfwGetTime());
+      this.uniforms.set("u_Time", (float)(System.nanoTime() / 1.0e9));
    }
 
    @Override

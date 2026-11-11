@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.render.ShulkerIconRenderer;
@@ -176,7 +177,7 @@ final class ShulkerComboEditScreen extends UiScreen {
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
-        if (event.button() == 0) {
+        if (InputButtons.glfw(event) == 0) {
             int start = itemPage * itemsPerPage();
             for (int i = start; i < Math.min(required.size(), start + itemsPerPage()); i++) {
                 int x = left + 12 + (i - start) * CELL, y = requiredTop;

@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.settings.ColorSetting;
 import java.awt.Color;
 import java.util.Locale;
@@ -235,11 +237,11 @@ final class ColorPicker {
             if (!UiDraw.over(mx, my, cx, cy, SWATCH, SWATCH)) continue;
             if (i == saved.size()) {
                 if (saved.size() < GuiPreferences.MAX_SAVED_COLOURS && !saved.contains(argb())) { saved.add(argb()); GuiState.save(); }
-            } else if (event.button() == 1) { saved.remove(i); GuiState.save(); }
+            } else if (InputButtons.glfw(event) == 1) { saved.remove(i); GuiState.save(); }
             else { load(saved.get(i)); apply(true); }
             return true;
         }
-        if (event.button() != 0) return true;
+        if (InputButtons.glfw(event) != 0) return true;
         if (UiDraw.over(mx, my, sx, svY(), sw, SV_H)) { dragging = "sv"; drag(mx, my); return true; }
         if (UiDraw.over(mx, my, sx - 3, hueY() - 3, sw + 6, BAR + 6)) { dragging = "hue"; drag(mx, my); return true; }
         if (!opaque() && UiDraw.over(mx, my, sx - 3, alphaY() - 3, sw + 6, BAR + 6)) { dragging = "alpha"; drag(mx, my); return true; }
@@ -270,9 +272,9 @@ final class ColorPicker {
     boolean mouseReleased() { boolean was = dragging != null; dragging = null; return was; }
 
     boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256) { close(); return true; }
+        if (InputKeys.glfw(event) == 256) { close(); return true; }
         if (!hex.isFocused()) return false;
-        if (event.key() == 257 || event.key() == 335) { applyHex(); return true; }
+        if (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335) { applyHex(); return true; }
         hex.keyPressed(event);
         return true;
     }

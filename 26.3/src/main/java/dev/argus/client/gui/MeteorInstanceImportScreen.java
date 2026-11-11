@@ -1,5 +1,7 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.utils.InputButtons;
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.config.importing.*;
 import dev.argus.client.config.importing.ChatToolsDataImport;
 import dev.argus.client.config.importing.MeteorDataReader.DataKind;
@@ -439,7 +441,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {
         if (super.mouseClickedUi(event, doubled)) return true;
-        if (event.button() != 0) return false;
+        if (InputButtons.glfw(event) != 0) return false;
         double mx = event.x(), my = event.y();
         if (UiDraw.over(mx, my, left + 10, top + 10, 18, 18)) { onClose(); return true; }
         if (UiDraw.over(mx, my, listX, listY, listW, listH)) {
@@ -466,8 +468,8 @@ final class MeteorInstanceImportScreen extends UiScreen {
         return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
-        if ((event.key() == 257 || event.key() == 335) && pathInput.isFocused()) { scanPath(); return true; }
-        if (!pathInput.isFocused() && !nameInput.isFocused() && (event.key() == 265 || event.key() == 264)) { scroll = Math.clamp(scroll + (event.key() == 265 ? -ROW : ROW), 0, maxScroll()); return true; }
+        if ((InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335) && pathInput.isFocused()) { scanPath(); return true; }
+        if (!pathInput.isFocused() && !nameInput.isFocused() && (InputKeys.glfw(event) == 265 || InputKeys.glfw(event) == 264)) { scroll = Math.clamp(scroll + (InputKeys.glfw(event) == 265 ? -ROW : ROW), 0, maxScroll()); return true; }
         return super.keyPressed(event);
     }
     @Override public void onFilesDrop(List<Path> files) { if (files.size() == 1) { pathInput.setValue(files.getFirst().toString()); scanPath(); } }
