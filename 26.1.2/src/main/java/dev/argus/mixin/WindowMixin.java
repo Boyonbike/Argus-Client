@@ -13,17 +13,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Window.class)
 public class WindowMixin {
+   // 26.1.2 creates the GLFW window in the static createGlfwWindow helper (called from the constructor).
    @Inject(
-      method = "<init>",
-      at = @At(value = "INVOKE_ASSIGN", target = "Lorg/lwjgl/glfw/GLFW;glfwCreateWindow(IILjava/lang/CharSequence;JJ)J", shift = Shift.BEFORE, remap = false)
+      method = "createGlfwWindow",
+      at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwCreateWindow(IILjava/lang/CharSequence;JJ)J", remap = false)
    )
-   private void configureWindowHints(
-      WindowEventHandler eventHandler,
-      ScreenManager screenManager,
-      DisplayData displayData,
-      String preferredFullscreenMode,
-      String title,
-      CallbackInfo callback
+   private static void configureWindowHints(
+      int width, int height, String title, long monitor, com.mojang.blaze3d.systems.GpuBackend backend,
+      org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Long> callback
    ) {
       GLFW.glfwWindowHint(139270, 0);
    }

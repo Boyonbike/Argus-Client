@@ -25,7 +25,7 @@ public class ChatComponent1Mixin {
 
    @ModifyExpressionValue(
       method = "accept",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/GuiMessage$Line;tag()Lnet/minecraft/client/GuiMessageTag;")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/chat/GuiMessage$Line;tag()Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;")
    )
    private GuiMessageTag hideMessageIndicator(GuiMessageTag originalTag) {
       return noRenderModule.isToggled() && noRenderModule.messageIndicatorSetting.getValue() ? null : originalTag;

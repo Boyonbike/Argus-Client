@@ -94,15 +94,18 @@ public abstract class EntityMixin implements EntityMotionAccess {
       }
    }
 
-   @ModifyExpressionValue(
+   @com.llamalad7.mixinextras.injector.v2.WrapWithCondition(
       method = "updateFluidInteraction",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/world/level/material/FluidState;getFlow(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/Vec3;"
+         target = "Lnet/minecraft/world/entity/EntityFluidInteraction;applyCurrentTo(Lnet/minecraft/tags/TagKey;Lnet/minecraft/world/entity/Entity;D)V"
       )
    )
-   private Vec3 modifyFluidPush(Vec3 originalPush) {
-      return velocityModule.isToggled() && velocityModule.liquidsSetting.getValue() ? Vec3.ZERO : originalPush;
+   private boolean modifyFluidPush(
+      net.minecraft.world.entity.EntityFluidInteraction interaction, net.minecraft.tags.TagKey<?> fluid, Entity entity, double scale
+   ) {
+      // 26.1.2 applies the flow inside EntityFluidInteraction; skipping it is equivalent to the old zero-flow override.
+      return !(velocityModule.isToggled() && velocityModule.liquidsSetting.getValue());
    }
 
    @ModifyExpressionValue(

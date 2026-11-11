@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ShulkerIconsMixin {
    @ModifyArg(
       method = "item(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;III)V",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/state/gui/GuiRenderState;addItem(Lnet/minecraft/client/gui/render/state/GuiItemRenderState;)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/state/gui/GuiRenderState;addItem(Lnet/minecraft/client/renderer/state/gui/GuiItemRenderState;)V")
    )
    private GuiItemRenderState argus$iconStyle(GuiItemRenderState state) {
       ((ShulkerIconRenderState)(Object)state).argus$iconColour(ShulkerIconRenderer.extractingColour());

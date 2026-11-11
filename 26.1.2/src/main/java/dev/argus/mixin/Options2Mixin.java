@@ -12,7 +12,7 @@ public class Options2Mixin {
    private static final AmbienceModule ambienceModule = ClientContext.getModule(AmbienceModule.class);
 
    @WrapWithCondition(
-      method = "method_42571(Ljava/lang/String;Lnet/minecraft/client/OptionInstance;Lcom/mojang/serialization/DataResult$Error;)V",
+      method = "lambda$process$0(Ljava/lang/String;Lnet/minecraft/client/OptionInstance;Lcom/mojang/serialization/DataResult$Error;)V",
       at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;error(Ljava/lang/String;[Ljava/lang/Object;)V", remap = false)
    )
    private static boolean shouldLogOptionParseError(Logger logger, String message, Object[] arguments) {

@@ -39,11 +39,11 @@ public abstract class CameraMixin {
    @ModifyReturnValue(method = "calculateHudFov", at = @At("RETURN"))
    private float applyViewModelHudFov(float original) {
       var viewmodel = ClientContext.getModule(dev.argus.client.modules.render.ViewModelModule.class);
+      float zoomScale = 1.0F - ClientContext.getModule(dev.argus.client.modules.render.ZoomModule.class).getZoomBlend();
       if (viewmodel.isToggled() && viewmodel.viewModelFovSetting.getValue()) {
-         float zoomScale = 1.0F - ClientContext.getModule(dev.argus.client.modules.render.ZoomModule.class).getZoomBlend();
          return viewmodel.fovAmountSetting.getValue().floatValue() * zoomScale;
       }
-      return original;
+      return original * zoomScale;
    }
 
    private static ViewClipModule viewClip = ClientContext.getModule(ViewClipModule.class);
@@ -135,9 +135,9 @@ public abstract class CameraMixin {
       }
    }
 
-   @ModifyArgs(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
-   private void modifySetupPosition(Args args, @Local(argsOnly = true) Entity entity, @Local(argsOnly = true) float partialTick) {
-      CameraSetupEvent event = new CameraSetupEvent(entity, partialTick, (Double)args.get(0), (Double)args.get(1), (Double)args.get(2));
+   @ModifyArgs(method = "alignWithEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
+   private void modifySetupPosition(Args args, @Local(argsOnly = true) float partialTick) {
+      CameraSetupEvent event = new CameraSetupEvent(this.entity, partialTick, (Double)args.get(0), (Double)args.get(1), (Double)args.get(2));
       ClientAccess.eventBus.post(event);
       if (event.isCancelled()) {
          args.set(0, event.getPosition().x);
@@ -146,7 +146,7 @@ public abstract class CameraMixin {
       }
    }
 
-   @ModifyArgs(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V"))
+   @ModifyArgs(method = "alignWithEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V"))
    private void applyCameraSetupRotations(Args arguments) {
       if (elytrafly.isToggled()
          && elytrafly.modeSetting.getValue() == ElytraFlyModule.ModeChoice.BOUNCE
@@ -162,8 +162,9 @@ public abstract class CameraMixin {
       }
    }
 
-   @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 1, shift = Shift.AFTER))
-   public void applyFreeLookRotation(Level level, Entity cameraEntity, boolean detached, boolean mirrored, float partialTick, CallbackInfo callback) {
+   @Inject(method = "alignWithEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 1, shift = Shift.AFTER))
+   public void applyFreeLookRotation(float partialTick, CallbackInfo callback) {
+      Entity cameraEntity = this.entity;
       if (!freecam.isToggled() && freelook.isToggled() && cameraEntity instanceof EntityMotionAccess motionAccess) {
          this.setRotation(motionAccess.getCameraYaw(), motionAccess.getCameraPitch());
       }

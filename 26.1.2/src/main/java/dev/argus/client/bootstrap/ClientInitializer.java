@@ -131,7 +131,9 @@ public final class ClientInitializer {
          ClientAccess.eventBus.post(new ClientInitializationEvent());
          ClientContext.soundManager.reload();
          ClientContext.configurationManager = new ConfigurationManager();
-         ConfigurationManager configuration = ClientContext.configurationManager;
+         // Load at startup so the title screen sees the user's keybinds and settings (and saves stay safe).
+         // Only registry-backed sets whose registry fills on world join (AutoEat food) wait, see RegistrySetSetting.
+         ClientContext.configurationManager.load();
          ClientTickEvents.END_CLIENT_TICK.register(this::finishClientInitialization);
       }
    }
@@ -139,8 +141,9 @@ public final class ClientInitializer {
    private void finishClientInitialization(net.minecraft.client.Minecraft client) {
       if (!this.deferredInitialized && client.level != null && client.player != null) {
          this.deferredInitialized = true;
+         // 26.1.2 binds item components on world load, so component-filtered registries install here.
          CustomItemRegistries.initialize();
-         ClientContext.configurationManager.load();
+         dev.argus.client.settings.RegistrySetSetting.resolvePending();
          this.clientInitialized = true;
          ArgusClient.LOGGER.info("Argus Client client initialization completed.");
       }

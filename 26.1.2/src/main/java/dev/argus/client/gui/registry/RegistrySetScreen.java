@@ -83,7 +83,7 @@ public class RegistrySetScreen<E> extends ClientScreen {
       this.getPanels().add(this.addedPanel);
       this.getPanels().add(this.extraPanel);
       this.extraPanel.registerChild(this.searchComponent);
-      this.extraPanel.registerChild(new ActionButtonComponent(this.extraPanel, "Clear", () -> this.registrySetting.getValue().clear()));
+      this.extraPanel.registerChild(new ActionButtonComponent(this.extraPanel, "Clear", () -> this.registrySetting.modifyEntries(java.util.Set::clear)));
    }
 
    private StringSetting createSearchSetting() {

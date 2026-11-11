@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 public abstract class ShulkerIconOversizedMixin {
    @ModifyArg(
       method = "blitTexture",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/state/GuiRenderState;submitBlitToCurrentLayer(Lnet/minecraft/client/gui/render/state/BlitRenderState;)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/state/gui/GuiRenderState;addBlitToCurrentLayer(Lnet/minecraft/client/renderer/state/gui/BlitRenderState;)V")
    )
    private BlitRenderState argus$solidOversizedIcon(BlitRenderState blit, @Local(argsOnly = true) PictureInPictureRenderState state) {
       return state instanceof OversizedItemRenderState item ? ShulkerIconRenderer.colourBlit(blit, item.guiItemRenderState()) : blit;

@@ -1,6 +1,8 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.combat.AutoCrystalModule;
@@ -9,7 +11,9 @@ import dev.argus.client.modules.render.ChamsModule;
 import dev.argus.client.render.ClientRenderTypes;
 import dev.argus.client.render.EntityRenderStateAccess;
 import dev.argus.client.utils.combat.EndCrystalState;
+import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.entity.EndCrystalRenderer;
 import net.minecraft.client.renderer.entity.state.EndCrystalRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -54,20 +58,28 @@ public class EndCrystalRendererMixin {
       }
    }
 
-   @ModifyExpressionValue(
+   @WrapOperation(
       method = "submit(Lnet/minecraft/client/renderer/entity/state/EndCrystalRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
       at = @At(
-         value = "FIELD",
-         target = "Lnet/minecraft/client/renderer/entity/EndCrystalRenderer;RENDER_TYPE:Lnet/minecraft/client/renderer/rendertype/RenderType;"
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/resources/Identifier;IIILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
       )
    )
-   private RenderType selectCrystalRenderType(RenderType originalType) {
-      return chamsModule.isToggled()
+   private void selectCrystalRenderType(
+      SubmitNodeCollector collector, Model<?> model, Object state, PoseStack poses, Identifier texture, int light, int overlay, int outlineColor,
+      ModelFeatureRenderer.CrumblingOverlay crumbling, Operation<Void> original
+   ) {
+      // 26.1.2 derives the render type from the texture inside submitModel; Chams swaps in the RenderType overload instead.
+      if (chamsModule.isToggled()
             && chamsModule.shouldRenderEntityInRange(renderedCrystal)
             && chamsModule.xQZSetting.getValue()
-            && !ClientContext.shaderRegistry.renderingIntoTarget
-         ? ClientRenderTypes.armorCutoutNoCull(END_CRYSTAL_LOCATION)
-         : originalType;
+            && !ClientContext.shaderRegistry.renderingIntoTarget) {
+         @SuppressWarnings("unchecked")
+         Model<Object> typedModel = (Model<Object>)model;
+         collector.submitModel(typedModel, state, poses, ClientRenderTypes.armorCutoutNoCull(texture), light, overlay, outlineColor, crumbling);
+      } else {
+         original.call(collector, model, state, poses, texture, light, overlay, outlineColor, crumbling);
+      }
    }
 
    @Inject(

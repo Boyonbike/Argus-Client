@@ -36,24 +36,17 @@ public abstract class FogRendererMixin {
          fogData.environmentalStart, fogData.environmentalEnd, fogData.renderDistanceStart, fogData.renderDistanceEnd, fogData.skyEnd, fogData.cloudEnd);
    }
 
-   @Inject(
-      method = "setupFog",
-      at = @At(
-         value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/systems/RenderSystem;getDevice()Lcom/mojang/blaze3d/systems/GpuDevice;",
-         shift = Shift.BEFORE,
-         remap = false
-      )
-   )
+   // 26.1.2: setupFog only builds the FogData (extract phase); the GPU buffer is written later by updateBuffer(FogData).
+   @Inject(method = "setupFog", at = @At("RETURN"))
    private void applyNoRenderFogSettings(
       Camera camera,
       int renderDistance,
       DeltaTracker deltaTracker,
       float ignoredSetupFloat,
       ClientLevel level,
-      CallbackInfoReturnable<FogData> callback,
-      @Local FogData fogData
+      CallbackInfoReturnable<FogData> callback
    ) {
+      FogData fogData = callback.getReturnValue();
       if (noRenderModule.isToggled() && noRenderModule.fogSetting.getValue()) {
          noRenderModule.applyFogSettings(fogData, renderDistance);
       }
@@ -68,10 +61,8 @@ public abstract class FogRendererMixin {
       }
    }
 
-   @Inject(method = "setupFog", at = @At("TAIL"))
-   private void updateSplitSkyFogBuffer(
-      Camera camera, int renderDistance, DeltaTracker deltaTracker, float ignoredSetupFloat, ClientLevel level, CallbackInfoReturnable<FogData> callback
-   ) {
+   @Inject(method = "updateBuffer(Lnet/minecraft/client/renderer/fog/FogData;)V", at = @At("TAIL"))
+   private void updateSplitSkyFogBuffer(FogData fogData, CallbackInfo callback) {
       if (skyboxModule.isToggled() && skyboxModule.splitFogSetting.getValue() && this.capturedFogDistances != null) {
          Color backgroundColor = skyboxModule.backgroundSetting.getValue();
          Vector4f skyColor = new Vector4f(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), backgroundColor.getAlpha())

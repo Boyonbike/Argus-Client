@@ -42,6 +42,15 @@ public final class ConfigurationManager implements ClientAccess {
    private final BundledResourceInstaller bundledResources = new BundledResourceInstaller();
    private final PresetUndoState presetUndoState = new PresetUndoState();
    private final ConfigurableRegistry configurables = new ConfigurableRegistry();
+   /**
+    * Until {@link #load()} has run the in-memory stores hold defaults, so every save path is refused to avoid
+    * overwriting the user's files (e.g. a shutdown save if initialization failed part-way).
+    */
+   private volatile boolean loaded;
+
+   public boolean isLoaded() {
+      return this.loaded;
+   }
 
    public ModulePresetCodec getModulePresetCodec() {
       return this.modulePresetCodec;
@@ -92,6 +101,8 @@ public final class ConfigurationManager implements ClientAccess {
          }
       }
 
+      this.loaded = true;
+
       for (PresetCategory presetCategory : PresetCategory.values()) {
          PresetRegistry presetRegistry = new PresetRegistry(presetCategory);
          this.presetRegistries.put(presetCategory, presetRegistry);
@@ -126,7 +137,7 @@ public final class ConfigurationManager implements ClientAccess {
    }
 
    public void save() {
-      if (!PanicCommand.unloaded) {
+      if (!PanicCommand.unloaded && this.loaded) {
          for (JsonConfigurable configurable : this.configurables) {
             try {
                Path configPath = ROOT_DIRECTORY.resolve(configurable.getConfigName());
@@ -153,7 +164,7 @@ public final class ConfigurationManager implements ClientAccess {
     * background thread so a slow drive can't stutter the game. Use for saves triggered by in-game actions.
     */
    public void saveAsync() {
-      if (PanicCommand.unloaded) {
+      if (PanicCommand.unloaded || !this.loaded) {
          return;
       }
 
@@ -180,6 +191,7 @@ public final class ConfigurationManager implements ClientAccess {
    /** Saves the requested stores and propagates failures to the caller performing the change. */
    public void saveChecked(JsonConfigurable... stores) throws IOException {
       if (PanicCommand.unloaded) throw new IOException("Configuration saving is disabled.");
+      if (!this.loaded) throw new IOException("Configuration has not loaded yet.");
       Map<Path, String> serialized = new LinkedHashMap<>();
       for (JsonConfigurable store : stores) {
          Path path = ROOT_DIRECTORY.resolve(store.getConfigName());

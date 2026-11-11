@@ -20,7 +20,7 @@ public class ToastManagerToastInstanceMixin {
    @Shadow
    private Toast toast;
 
-   @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
    public void suppressSelectedToast(GuiGraphicsExtractor graphics, int screenWidth, CallbackInfo callback) {
       if (noRenderModule.isToggled()
          && (

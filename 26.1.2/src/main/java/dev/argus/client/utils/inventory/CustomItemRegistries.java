@@ -56,6 +56,8 @@ public final class CustomItemRegistries {
 
       public void installContents() {
          this.installer.accept(this.registry);
+         // 26.1.2 MappedRegistry binds holder values only on freeze(); without it every lookup throws "unbound value".
+         this.registry.freeze();
       }
 
       public WritableRegistry getRegistry() {

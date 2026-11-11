@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 public abstract class ShulkerIconAtlasMixin {
    @ModifyArg(
       method = "submitBlitFromItemAtlas",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/state/GuiRenderState;submitBlitToCurrentLayer(Lnet/minecraft/client/gui/render/state/BlitRenderState;)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/state/gui/GuiRenderState;addBlitToCurrentLayer(Lnet/minecraft/client/renderer/state/gui/BlitRenderState;)V")
    )
    private BlitRenderState argus$solidIcon(BlitRenderState blit, @Local(argsOnly = true) GuiItemRenderState item) {
       return ShulkerIconRenderer.colourBlit(blit, item);

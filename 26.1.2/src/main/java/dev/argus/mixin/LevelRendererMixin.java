@@ -78,7 +78,15 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z")
    )
    private boolean safeIsSpectator(net.minecraft.client.player.LocalPlayer player) {
-      return player != null && player.isSpectator();
+      // 26.1.2 moved terrain culling's spectator check from renderLevel to update; it also runs during the login
+      // transient before the player exists. Freecam / detached ViewClip cull like a spectator (as on 1.21.11).
+      if (player == null) {
+         return false;
+      }
+
+      return freecam.isToggled()
+         || viewClip.isToggled() && ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().isDetached()
+         || player.isSpectator();
    }
 
    private static final ViewClipModule viewClip = ClientContext.getModule(ViewClipModule.class);
@@ -215,7 +223,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "lambda$addMainPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;ZLorg/joml/Matrix4fc;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/LevelRenderer;renderBlockOutline(Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lcom/mojang/blaze3d/vertex/PoseStack;ZLnet/minecraft/client/renderer/state/LevelRenderState;)V"
+         target = "Lnet/minecraft/client/renderer/LevelRenderer;renderBlockOutline(Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lcom/mojang/blaze3d/vertex/PoseStack;ZLnet/minecraft/client/renderer/state/level/LevelRenderState;)V"
       )
    )
    private boolean shouldRenderBlockOutline(
@@ -232,10 +240,6 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
 
-   @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z"))
-   private boolean applyCameraSpectatorOverride(boolean originalSpectator) {
-      return freecam.isToggled() || viewClip.isToggled() && ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().isDetached() || originalSpectator;
-   }
 
    @Inject(method = "renderLevel", at = @At("HEAD"))
    private void captureWorldRenderState(
@@ -314,7 +318,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @ModifyExpressionValue(
-      method = "renderLevel",
+      method = "extractLevel",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/attribute/EnvironmentAttributeProbe;getValue(Lnet/minecraft/world/attribute/EnvironmentAttribute;F)Ljava/lang/Object;",
@@ -326,7 +330,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @ModifyExpressionValue(
-      method = "renderLevel",
+      method = "extractLevel",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/attribute/EnvironmentAttributeProbe;getValue(Lnet/minecraft/world/attribute/EnvironmentAttribute;F)Ljava/lang/Object;",
@@ -376,27 +380,10 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       }
    }
 
-   @Inject(
-      method = "renderLevel",
-      at = @At(
-         value = "INVOKE_ASSIGN",
-         target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareCullFrustum(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/client/renderer/culling/Frustum;"
-      )
-   )
-   private void captureCullFrustum(
-      GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
-      boolean renderFlag1,
-      CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
-      GpuBufferSlice inputBuffer,
-      Vector4f inputColor,
-      boolean renderFlag2,
-      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
-      CallbackInfo callback,
-      @Local Frustum frustum
-   ) {
-      RotationManager.setFrustum(frustum);
+   /** The cull frustum now lives on the Camera and is read in the extract phase. */
+   @Inject(method = "extractLevel", at = @At("HEAD"))
+   private void captureCullFrustum(DeltaTracker deltaTracker, net.minecraft.client.Camera camera, float partialTick, CallbackInfo callback) {
+      RotationManager.setFrustum(camera.getCullFrustum());
    }
 
    @Inject(method = "<init>", at = @At("TAIL"))

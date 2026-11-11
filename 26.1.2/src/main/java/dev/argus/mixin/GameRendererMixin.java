@@ -130,10 +130,7 @@ public abstract class GameRendererMixin {
    private void captureWorldProjectionMatrix(
       DeltaTracker deltaTracker,
       CallbackInfo callback,
-      @Local(ordinal = 0) Matrix4f projectionMatrix,
-      @Local(ordinal = 1) Matrix4f unusedSecondMatrix,
-      @Local(ordinal = 1) float unusedRenderFloat,
-      @Local PoseStack poses
+      @Local(ordinal = 0) Matrix4f projectionMatrix // 26.1.2: the only Matrix4f local (view matrix is now Matrix4fc)
    ) {
       RenderUtils.WORLD_PROJECTION_MATRIX.set(projectionMatrix);
    }
@@ -212,49 +209,37 @@ public abstract class GameRendererMixin {
       return !ClientContext.shaderRegistry.renderingIntoTarget;
    }
 
+   // 26.1.2 splits each frame into extractGui (builds GuiRenderState) and render (clears the target, then draws).
+   // Argus HUD handlers draw immediately through GuiDrawUtils, so their events are posted from the render phase;
+   // the extract phase only captures the GuiGraphicsExtractor and adds the ClientScreen's menu parent.
    @Inject(
-      method = "render",
+      method = "extractGui",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.BEFORE
       )
    )
-   private void beforeScreenRendering(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback, @Local GuiGraphicsExtractor graphics) {
+   private void beforeScreenRendering(DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo callback, @Local GuiGraphicsExtractor graphics) {
       NameProtectModule.replacementBypassed = true;
-      boolean manageProjection;
       if (this.minecraft.screen instanceof ClientScreen clientScreen) {
          if (clientScreen.hasMenuParent()) {
             clientScreen.getParentScreen().extractRenderStateWithTooltipAndSubtitles(graphics, -99, -99, RenderUtils.getPartialTick());
          }
 
-         manageProjection = false;
-      } else {
-         if (this.minecraft.screen == null) {
-            return;
-         }
-
-         manageProjection = true;
-      }
-
-      this.guiRenderer.render(this.fogRenderer.getBuffer(FogMode.NONE));
-      RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
-      if (!manageProjection) {
          GuiProjectionUtils.beginGuiProjection();
       }
-
-      this.renderClientHud(graphics, manageProjection);
    }
 
    @Inject(
-      method = "render",
+      method = "extractGui",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.AFTER
       )
    )
-   private void afterScreenRendering(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
+   private void afterScreenRendering(DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo callback) {
       NameProtectModule.replacementBypassed = false;
       if (this.minecraft.screen instanceof ClientScreen) {
          GuiProjectionUtils.restoreProjection();
@@ -262,15 +247,29 @@ public abstract class GameRendererMixin {
    }
 
    @ModifyExpressionValue(
-      method = "render",
+      method = "extractGui",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;getOverlay()Lnet/minecraft/client/gui/screens/Overlay;", ordinal = 0)
    )
    private Overlay captureHudGraphics(Overlay overlay, @Local GuiGraphicsExtractor graphics) {
       this.hudGraphics = graphics;
-      PoseStack poses = GuiProjectionUtils.toPoseStack(graphics);
+      return overlay;
+   }
+
+   /** Below the vanilla GUI pass: the Before event, plus the Argus HUD while a screen is open (the screen draws over it). */
+   @Inject(
+      method = "render",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;render(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;)V")
+   )
+   private void renderHudBeforeGui(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
+      GuiGraphicsExtractor graphics = this.hudGraphics;
+      if (graphics == null) {
+         return;
+      }
+
       if (ClientAccess.argusclientMinecraft.level != null
          && !ClientAccess.argusclientMinecraft.options.hideGui
          && !ClientAccess.argusclientMinecraft.debugEntries.isOverlayVisible()) {
+         PoseStack poses = GuiProjectionUtils.toPoseStack(graphics);
          GuiProjectionUtils.beginGuiProjection();
          HudRenderEvent.Before event = HudRenderEvent.Before.create(poses, graphics, RenderUtils.getPartialTick());
          ClientAccess.eventBus.post(event);
@@ -278,12 +277,16 @@ public abstract class GameRendererMixin {
          GuiProjectionUtils.restoreProjection();
       }
 
-      return overlay;
+      if (this.minecraft.screen != null) {
+         this.renderClientHud(graphics, true);
+         RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
+      }
    }
 
-   @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;incrementFrameNumber()V", shift = Shift.AFTER))
-   private void renderHudWithoutScreen(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
-      if (this.minecraft.screen == null) {
+   /** On top of the vanilla GUI when no screen is open (the old post-incrementFrameNumber hook). */
+   @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;endFrame()V", shift = Shift.AFTER))
+   private void renderHudWithoutScreen(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
+      if (this.minecraft.screen == null && this.hudGraphics != null) {
          RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
          this.renderClientHud(this.hudGraphics, true);
       }
