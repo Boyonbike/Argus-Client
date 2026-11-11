@@ -7,6 +7,7 @@ import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.PacketEvent;
 import dev.argus.client.modules.movement.ElytraFlyModule;
 import dev.argus.client.settings.BooleanSetting;
+import dev.argus.client.settings.EnumSetting;
 import dev.argus.client.settings.KeyBindSetting;
 import dev.argus.client.settings.SettingLabelCondition;
 import dev.argus.client.settings.NumberSetting;
@@ -165,6 +166,17 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private final Setting<Double> argusMotionAcceleration;
    private final Setting<Double> argusMotionBraking;
    private final Setting<Double> argusMotionTurnRate;
+   private final Setting<Boolean> liquidTakeoff;
+   private final Setting<LiquidTakeoff.Liquid> liquidMode;
+   private final Setting<Boolean> liquidHoldJump;
+   private final Setting<Double> liquidWaterRise;
+   private final Setting<Double> liquidWaterLaunch;
+   private final Setting<Double> liquidLavaRise;
+   private final Setting<Double> liquidLavaLaunch;
+   private final Setting<Double> liquidPush;
+   private final Setting<Integer> liquidGlideDelay;
+   private final Setting<Boolean> liquidFirework;
+   private final LiquidTakeoff liquidTakeoffAssist = new LiquidTakeoff();
    private final Setting<Boolean> replace;
    private final Setting<Integer> replaceDurability;
    private final Setting<Boolean> autoReplenish;
@@ -303,6 +315,23 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.argusMotionAcceleration = this.addDouble("Argus Motion Acceleration", "argusMotionAcceleration", 0.15, 0.01, 2.0, this.visibleWith(this.argusMotion));
       this.argusMotionBraking = this.addDouble("Argus Motion Braking", "argusMotionBraking", 0.3, 0.01, 2.0, this.visibleWith(this.argusMotion));
       this.argusMotionTurnRate = this.addDouble("Argus Motion Turn Rate", "argusMotionTurnRate", 15.0, 0.0, 45.0, this.visibleWith(this.argusMotion, this.adaptiveTurning));
+      // Liquid takeoff: hold jump in water or lava to rise, launch clear of the surface and start gliding.
+      this.liquidTakeoff = this.addBool("Argus Liquid Takeoff", "argusLiquidTakeoff", false, this.modeOnly());
+      this.liquidMode = this.module.add(new EnumSetting<>("Argus Liquid Mode", LiquidTakeoff.Liquid.BOTH, this.visibleWith(this.liquidTakeoff)));
+      this.liquidMode.setConfigName("argusLiquidMode");
+      this.liquidHoldJump = this.addBool("Argus Liquid Hold Jump", "argusLiquidHoldJump", true, this.visibleWith(this.liquidTakeoff));
+      this.liquidWaterRise = this.addDouble("Argus Water Rise", "argusLiquidWaterRise", 0.35, 0.05, 1.0,
+         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.LAVA);
+      this.liquidWaterLaunch = this.addDouble("Argus Water Launch", "argusLiquidWaterLaunch", 0.7, 0.2, 2.0,
+         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.LAVA);
+      this.liquidLavaRise = this.addDouble("Argus Lava Rise", "argusLiquidLavaRise", 0.3, 0.05, 1.0,
+         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.WATER);
+      this.liquidLavaLaunch = this.addDouble("Argus Lava Launch", "argusLiquidLavaLaunch", 0.9, 0.2, 2.0,
+         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.WATER);
+      this.liquidPush = this.addDouble("Argus Liquid Push", "argusLiquidPush", 0.2, 0.0, 1.0, this.visibleWith(this.liquidTakeoff));
+      this.liquidGlideDelay = this.addInt("Argus Liquid Glide Delay", "argusLiquidGlideDelay", 2, 0, 10, this.visibleWith(this.liquidTakeoff));
+      ((NumberSetting<Integer>) this.liquidGlideDelay).withUnit(" ticks");
+      this.liquidFirework = this.addBool("Argus Liquid Firework", "argusLiquidFirework", false, this.visibleWith(this.liquidTakeoff));
 
       module.modeSetting.setChangeCallback(this::onModeChanged);
    }
@@ -388,6 +417,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    @Override
    public void onEnable() {
       LocalPlayer player = this.minecraft().player;
+      this.liquidTakeoffAssist.reset();
       this.atMaxSpeed = false;
       this.lastJumpPressed = false;
       this.jumpPressed = false;
@@ -423,6 +453,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
 
    @Override
    public void onDisable() {
+      this.liquidTakeoffAssist.reset();
       this.releaseAvoidance();
       this.releaseVerticalStep();
       this.releaseAllForcedKeys();
@@ -686,6 +717,31 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.clientTicks++;
       this.smartLandingSwap(player);
       this.observeBoostDelay(player);
+      this.liquidTakeoff(player);
+   }
+
+   private void liquidTakeoff(LocalPlayer player) {
+      if (!this.liquidTakeoff.getValue() || ClientContext.baritoneBridge.isPathingOrCalculating()) {
+         this.liquidTakeoffAssist.reset();
+         return;
+      }
+      // Without wings on, only help when Smart Elytra can put them on for the glide.
+      if (!isGlider(player.getItemBySlot(EquipmentSlot.CHEST)) && !this.smartElytra.getValue()) {
+         this.liquidTakeoffAssist.reset();
+         return;
+      }
+      this.liquidTakeoffAssist.tick(player, new LiquidTakeoff.Options(this.liquidMode.getValue(), this.liquidHoldJump.getValue(),
+         this.liquidWaterRise.getValue(), this.liquidWaterLaunch.getValue(), this.liquidLavaRise.getValue(), this.liquidLavaLaunch.getValue(),
+         this.liquidPush.getValue(), this.liquidGlideDelay.getValue(), this.liquidFirework.getValue()), () -> this.equipGliderForTakeoff(player));
+   }
+
+   /** Wings on for a liquid takeoff: already worn, or swapped on by Smart Elytra. */
+   private boolean equipGliderForTakeoff(LocalPlayer player) {
+      if (isGlider(player.getItemBySlot(EquipmentSlot.CHEST))) return true;
+      if (!this.smartElytra.getValue() || !this.canSmartSwap(player)) return false;
+      this.swapChest(player, true);
+      this.smartTakeoffTick = this.clientTicks;
+      return isGlider(player.getItemBySlot(EquipmentSlot.CHEST));
    }
 
    @Override

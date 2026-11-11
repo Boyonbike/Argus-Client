@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.config.ModuleClipboard;
 import dev.argus.client.modules.Keybind;
 import dev.argus.client.modules.Module;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import net.minecraft.client.input.MouseButtonEvent;
  *  ┌─────────────────────────────────────────────────────────────┐
  *  │ (icon) Module name                ☆        Enabled  [●──]   │  hero: identity and the main switch
  *  │        Description, up to two lines                         │
- *  │ [⌨ R] [Toggle|Hold|Release] [HUD list]          [↺ Reset]   │  controls: keybind, mode, extras
+ *  │ [⌨ R] [Toggle|Hold|Release] [HUD list]   [⧉][📋] [↺ Reset]   │  controls: keybind, mode, extras, copy/paste config
  *  ├─────────────────────────────────────────────────────────────┤
  *  │ ┌ Module tools (presets, combos…) ─────────────────────┐    │  tool cards sit by the settings they use
  *  │ └──────────────────────────────────────────────────────┘    │
@@ -54,6 +55,7 @@ final class ModulePage {
     /** Reset all asks for a second click within a few seconds. */
     private long resetArmedAt;
     private String notice = "";
+    private boolean noticeError;
     private long noticeAt;
 
     /**
@@ -104,7 +106,8 @@ final class ModulePage {
     private float maxScroll() { return Math.max(0, cards.height() - (bodyBottom() - bodyTop())); }
     private String bindLabel() { return binding ? "Press a key…" : module.getKeybind().isUnbound() ? "Not bound" : module.getKeybind().getDisplayName(); }
 
-    private void notice(String text) { notice = text; noticeAt = System.nanoTime(); }
+    private void notice(String text) { notice = text; noticeError = false; noticeAt = System.nanoTime(); }
+    private void error(String text) { notice = text; noticeError = true; noticeAt = System.nanoTime(); }
     private boolean resetArmed() { return resetArmedAt != 0 && System.nanoTime() - resetArmedAt < 3_000_000_000L; }
 
     // ---- drawing -----------------------------------------------------------------------------
@@ -229,7 +232,7 @@ final class ModulePage {
         float drawn = UiAnim.smooth(key + "drawn", module.isDrawn() ? 1 : 0, 16);
         String dl = "HUD list";
         float dw = UiDraw.width(dl, UiDraw.SMALL) + 34;
-        if (cx + dw < right - 90) {
+        if (cx + dw < right - 130) {
             boolean hover = UiDraw.over(mx, my, cx, cy, dw, CHIP);
             float hv = UiAnim.smooth(key + "drawn.h", hover ? 1 : 0, 18);
             UiDraw.rounded(g, cx, cy, dw, CHIP, 8, UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
@@ -265,6 +268,36 @@ final class ModulePage {
         }));
         if (rHover) host.tooltip(key + "reset", "Reset all", changed == 0 ? "Nothing changed from the defaults"
                 : changed + (changed == 1 ? " setting differs" : " settings differ") + " from default · click twice to restore");
+
+        // Copy and paste this module's settings, to share them with another client.
+        rx -= 6 + CHIP;
+        iconChip(g, mx, my, t, "paste", rx, cy, "Paste config", "Apply settings copied from this module in another client (Ctrl+V)", this::pasteConfig);
+        rx -= 4 + CHIP;
+        iconChip(g, mx, my, t, "copy", rx, cy, "Copy config", "Copy this module's settings to the clipboard to paste into another client (Ctrl+C)", this::copyConfig);
+    }
+
+    private void iconChip(GuiGraphics g, int mx, int my, UiTheme t, String icon, float cx, float cy, String title, String hint, Runnable action) {
+        boolean hover = UiDraw.over(mx, my, cx, cy, CHIP, CHIP);
+        float hv = UiAnim.smooth(key + icon + ".h", hover ? 1 : 0, 18);
+        float flash = UiAnim.smooth(key + icon + ".done", 0, 6);
+        UiDraw.rounded(g, cx, cy, CHIP, CHIP, 8, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .7f), UiDraw.alpha(t.accent(), .25f), flash));
+        UiDraw.icon(g, icon, cx + 4, cy + 4, 8, UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), t.accent(), flash));
+        hits.add(new Hit(cx, cy, CHIP, CHIP, 0, () -> { action.run(); UiAnim.set(key + icon + ".done", 1); }));
+        if (hover) host.tooltip(key + icon, title, hint);
+    }
+
+    private void copyConfig() {
+        cards.stopEditing();
+        net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(ModuleClipboard.copy(module));
+        notice("Copied " + GuiState.title(module.getName()) + " config · paste it with Ctrl+V on this module in another client");
+    }
+
+    private void pasteConfig() {
+        cards.stopEditing();
+        ModuleClipboard.Result result = ModuleClipboard.paste(module, net.minecraft.client.Minecraft.getInstance().keyboardHandler.getClipboard());
+        if (!result.ok()) { error(result.problem()); return; }
+        cards.reattach();
+        notice("Pasted " + result.applied() + (result.applied() == 1 ? " setting" : " settings") + " into " + GuiState.title(module.getName()));
     }
 
     private void body(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
@@ -303,7 +336,7 @@ final class ModulePage {
         else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; colour = t.accent(); }
         else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); colour = t.green(); }
         else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; colour = t.red(); }
-        else if (fresh) { text = notice; colour = t.green(); }
+        else if (fresh) { text = notice; colour = noticeError ? t.red() : t.green(); }
         else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; colour = UiDraw.alpha(t.muted(), .8f); }
         UiDraw.text(g, UiDraw.fit(text, w), x, y + h - 9, UiDraw.SMALL, colour);
     }
@@ -342,6 +375,11 @@ final class ModulePage {
         }
         if (cards.keyPressed(event)) return true;
         if (event.key() == 256 && resetArmed()) { resetArmedAt = 0; return true; }
+        // Ctrl+C / Ctrl+V copy and paste the module's config, unless a text box has the keyboard.
+        if ((event.modifiers() & 2) != 0 && !(host.getFocused() instanceof net.minecraft.client.gui.components.EditBox)) {
+            if (event.key() == 67) { copyConfig(); UiAnim.set(key + "copy.done", 1); return true; }
+            if (event.key() == 86) { pasteConfig(); UiAnim.set(key + "paste.done", 1); return true; }
+        }
         // Page Up / Page Down / Home / End move through the cards.
         float page = bodyBottom() - bodyTop() - 30;
         switch (event.key()) {

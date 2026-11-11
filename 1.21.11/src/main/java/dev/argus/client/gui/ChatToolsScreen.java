@@ -32,7 +32,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.util.FormattedCharSequence;
 
 /**
  * The Chat Tools window, in the same frame as Settings: a sidebar of pages on the left and the page on the right, with
@@ -63,7 +62,8 @@ public final class ChatToolsScreen extends UiScreen {
                           Function<String, String> preview, String confirm, boolean danger, Consumer<String> done) {}
 
     private static final float SIDE = 112, ITEM = 20, PAD = 8, ROW = 26, CONTROL = 18, GAP = 5;
-    private static final float CHAT_SCALE = .8f;
+    /** Chat is drawn with the menu font at this size, rasterised for the screen so it stays sharp. */
+    private static final float CHAT_SIZE = UiDraw.TEXT;
     private static final long NOTICE_NANOS = 4_000_000_000L;
     private static Page remembered = Page.OVERVIEW;
     private static float indicatorY = Float.NaN;
@@ -878,17 +878,17 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Chat -----------------------------------------------------------------------------------------------------
 
-    private record ChatRow(String time, List<FormattedCharSequence> lines, boolean dm) {}
+    private record ChatRow(String time, List<StyledText.Line> lines, boolean dm) {}
     private final Map<Long, ChatRow> chatRows = new HashMap<>();
-    private float chatRowsWidth;
+    private float chatRowsWidth, chatRowsDensity;
     private String chatRowsFormat = "";
 
     private ChatRow chatRow(ChatToolsModule.ChatLine line, float width, DateTimeFormatter format) {
         return chatRows.computeIfAbsent(line.id(), id -> new ChatRow(
             format.format(Instant.ofEpochMilli(line.time()).atZone(ZoneId.systemDefault())),
-            minecraft.font.split(line.message(), Math.max(20, (int) (width / CHAT_SCALE))), line.dm()));
+            StyledText.wrap(StyledText.runs(line.message()), Math.max(20, width), CHAT_SIZE), line.dm()));
     }
-    private static float chatLineHeight() { return 9 * CHAT_SCALE + 1.5f; }
+    private static float chatLineHeight() { return CHAT_SIZE + 3; }
     private float rowHeight(ChatRow row) { return Math.max(1, row.lines().size()) * chatLineHeight() + 3; }
 
     private void chatPage(GuiGraphics g, UiTheme t) {
@@ -938,7 +938,9 @@ public final class ChatToolsScreen extends UiScreen {
         String pattern = tools.chatTimeFormat();
         float timeWidth = UiDraw.width("00:00:00", UiDraw.SMALL) * (pattern.length() / 8f) + 8;
         float textWidth = w - timeWidth;
-        if (textWidth != chatRowsWidth || !pattern.equals(chatRowsFormat)) { chatRows.clear(); chatRowsWidth = textWidth; chatRowsFormat = pattern; }
+        if (textWidth != chatRowsWidth || UiDraw.density != chatRowsDensity || !pattern.equals(chatRowsFormat)) {
+            chatRows.clear(); chatRowsWidth = textWidth; chatRowsDensity = UiDraw.density; chatRowsFormat = pattern;
+        }
         DateTimeFormatter format = DateTimeFormatter.ofPattern(pattern);
         float total = 0;
         Set<Long> ids = new java.util.HashSet<>();
@@ -964,11 +966,7 @@ public final class ChatToolsScreen extends UiScreen {
                 UiDraw.text(g, row.time(), x, y + 1 + chatLineHeight() / 2, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
                 float ly = y + 1.5f;
                 for (var text : row.lines()) {
-                    g.pose().pushMatrix();
-                    g.pose().translate(x + timeWidth, ly);
-                    g.pose().scale(CHAT_SCALE, CHAT_SCALE);
-                    g.drawString(minecraft.font, text, 0, 0, UiRender.fade(t.text()), false);
-                    g.pose().popMatrix();
+                    if (ly + chatLineHeight() > top && ly < bottom) StyledText.draw(g, text, x + timeWidth, ly + chatLineHeight() / 2, CHAT_SIZE, t.text());
                     ly += chatLineHeight();
                 }
             }

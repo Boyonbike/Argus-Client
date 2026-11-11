@@ -904,6 +904,16 @@ ElytraFly	argusBoostVerticalSpeed	Climb and dive speed while the boost key is he
 ElytraFly	argusBoostKey	Key or mouse button that boosts. Follows your Sprint key unless you pick another; Delete or reset returns it to Sprint.
 ElytraFly	argusBoostJump	Instantly skips this many Volytra acceleration ticks when boost starts; 0 disables.
 ElytraFly	argusLandingSwapHeight	How close to the floor counts as landed for Smart Elytra's chestplate swap, measured under your hitbox. While still gliding it waits until you touch down.
+ElytraFly	argusLiquidTakeoff	Hold jump in water or lava to swim up, get thrown clear of the surface and start gliding. Needs wings on, or Smart Elytra to put them on.
+ElytraFly	argusLiquidMode	Which liquids Liquid Takeoff works in: Water, Lava or Both.
+ElytraFly	argusLiquidHoldJump	Only takes off while you hold jump. Turn off to launch whenever you are in the liquid.
+ElytraFly	argusLiquidWaterRise	How fast you swim up through water towards the surface.
+ElytraFly	argusLiquidWaterLaunch	Upward speed you are thrown out of water with.
+ElytraFly	argusLiquidLavaRise	How fast you swim up through lava towards the surface.
+ElytraFly	argusLiquidLavaLaunch	Upward speed you are thrown out of lava with.
+ElytraFly	argusLiquidPush	Forward speed added at launch, so you clear the edge of the pool.
+ElytraFly	argusLiquidGlideDelay	Ticks in the air before the glide starts.
+ElytraFly	argusLiquidFirework	Uses a firework from your inventory as soon as the glide starts.
 SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
 SpeedMine	Mode	Any speeds up all blocks; WhiteList only listed blocks; BlackList skips listed blocks.
 SpeedMine	Damage	Mining progress needed before the block breaks.
@@ -2169,11 +2179,10 @@ DiscordSync	Apply to clan	Keeps the Chat Tools clan list in step with the linked
 DiscordSync	Apply to Auto TPY	Keeps the Auto TPY whitelist in step with the linked players. The Auto TPY blocklist still wins.
 DiscordSync	Auto sync	Syncs once when the game starts, then this many hours apart while you play. 0 syncs only at game start and when you press Sync now.
 Chat Waiting		One line each for /home, /tpa and /hotspot: the warmup, then the cooldown until you can use it again, starting as soon as the teleport happens. Also incoming request timeouts, unread private messages and a Discord sync problem. Needs Chat Tools on. Each line only shows while it applies.
-Coords		Your X, Y and Z on lines of their own, with the matching Nether or Overworld spot. Each line can be moved on its own in the HUD editor.
+Coords		Your X, Y and Z in the dimension you are in, stacked as lines you can move one by one or side by side on one line.
+Coords	Layout	Vertical puts X, Y and Z on lines of their own; Horizontal puts them on one line.
 Coords	Labels	Shows X, Y and Z before each number.
 Coords	Decimals	Decimal places shown for each coordinate.
-Coords	Other dimension	Adds the matching spot in the Nether or Overworld.
-Coords	Dimension	Adds a line naming the dimension you are in.
 BlockCoat		Coats exposed terrain with blocks, with priority jump placement, scaffold strips and tunnel backfill.
 BlockCoat	Blocks	Blocks to coat, scaffold and jump-place with. Uses whichever listed block is in your hotbar or offhand.
 BlockCoat	Radius	Cube half-size: radius 5 scans an 11 x 11 x 11 block cube.
