@@ -2,7 +2,7 @@ package dev.argus.client.gui.mixin;
 
 import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.exceptions.InvalidCredentialsException;
-import com.mojang.authlib.minecraft.MinecraftSessionService;
+import com.mojang.authlib.minecraft.SessionService;
 import dev.argus.client.network.SessionRecovery;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
@@ -22,8 +22,8 @@ public abstract class HandshakeSessionRecoveryMixin {
     @Shadow @Final private Minecraft minecraft;
 
     @Redirect(method = "authenticateServer", at = @At(value = "INVOKE",
-            target = "Lcom/mojang/authlib/minecraft/MinecraftSessionService;joinServer(Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;)V"))
-    private void argus$joinWithSessionRecovery(MinecraftSessionService sessions, UUID profile, String token, String serverId) throws AuthenticationException {
+            target = "Lcom/mojang/authlib/minecraft/SessionService;joinServer(Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;)V"))
+    private void argus$joinWithSessionRecovery(SessionService sessions, UUID profile, String token, String serverId) throws AuthenticationException {
         try {
             sessions.joinServer(profile, token, serverId);
         } catch (InvalidCredentialsException rejected) {

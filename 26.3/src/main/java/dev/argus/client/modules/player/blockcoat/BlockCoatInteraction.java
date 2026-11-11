@@ -39,7 +39,7 @@ public final class BlockCoatInteraction {
             BlockInteractionUtils.isPlacingBlock = true;
             try {
                 InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hit);
-                if (result instanceof Success success && success.swingSource() == SwingSource.CLIENT) mc.player.swing(hand);
+                if (result instanceof Success success && success.swingSource() == SwingSource.PREDICTED) mc.player.swing(hand, mc.player.getItemInHand(hand).getAttackAnimation(), false);
             } finally {
                 BlockInteractionUtils.isPlacingBlock = false;
                 mc.player.setShiftKeyDown(wasSneaking);
@@ -54,7 +54,7 @@ public final class BlockCoatInteraction {
         try {
             // Send the sequenced interaction without client-side container prediction or local crouching.
             PacketSender.sendUseItemOn(hand, hit);
-            mc.player.swing(hand);
+            mc.player.swing(hand, mc.player.getItemInHand(hand).getAttackAnimation(), false);
         } finally {
             PacketSender.send(new ServerboundPlayerInputPacket(original));
         }

@@ -1,6 +1,6 @@
 package dev.argus.client.modules.render;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.EventStage;
 import dev.argus.client.events.GlintTextureTransformEvent;

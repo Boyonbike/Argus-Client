@@ -30,9 +30,9 @@ public final class PlayerTickExecutor implements ClientAccess {
          ClientAccess.argusclientMinecraft.player.xo, ClientAccess.argusclientMinecraft.player.yo, ClientAccess.argusclientMinecraft.player.zo
       );
       int attackStrengthTicks = ClientAccess.argusclientMinecraft.player.attackStrengthTicker;
-      int swingTime = ClientAccess.argusclientMinecraft.player.swingTime;
-      float previousAttackAnimation = ClientAccess.argusclientMinecraft.player.oAttackAnim;
-      float attackAnimation = ClientAccess.argusclientMinecraft.player.attackAnim;
+      int swingTime = ClientAccess.argusclientMinecraft.player.swingState.ticks;
+      float previousAttackAnimation = ClientAccess.argusclientMinecraft.player.swingState.oldAnimation;
+      float attackAnimation = ClientAccess.argusclientMinecraft.player.swingState.animation;
       LocalPlayerTickAccess baseTickPlayer = (LocalPlayerTickAccess)ClientAccess.argusclientMinecraft.player;
       baseTickPlayer.superTick();
       LocalPlayerTickAccess eventResetPlayer = (LocalPlayerTickAccess)ClientAccess.argusclientMinecraft.player;
@@ -47,9 +47,9 @@ public final class PlayerTickExecutor implements ClientAccess {
       ClientAccess.argusclientMinecraft.player.yBobO = previousVerticalBob;
       ClientAccess.argusclientMinecraft.player.xBob = horizontalBob;
       ClientAccess.argusclientMinecraft.player.xBobO = previousHorizontalBob;
-      ClientAccess.argusclientMinecraft.player.swingTime = swingTime;
-      ClientAccess.argusclientMinecraft.player.oAttackAnim = previousAttackAnimation;
-      ClientAccess.argusclientMinecraft.player.attackAnim = attackAnimation;
+      ClientAccess.argusclientMinecraft.player.swingState.ticks = swingTime;
+      ClientAccess.argusclientMinecraft.player.swingState.oldAnimation = previousAttackAnimation;
+      ClientAccess.argusclientMinecraft.player.swingState.animation = attackAnimation;
       LocalPlayerTickAccess movementPacketPlayer = (LocalPlayerTickAccess)ClientAccess.argusclientMinecraft.player;
       movementPacketPlayer.sendMovementPacketsWrapper();
       LocalPlayerTickAccess rotationResetPlayer = (LocalPlayerTickAccess)ClientAccess.argusclientMinecraft.player;

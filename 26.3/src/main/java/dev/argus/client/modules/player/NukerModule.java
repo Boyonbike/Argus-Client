@@ -343,7 +343,7 @@ public class NukerModule extends Module {
 
                LocalPlayer playerForSwing = ClientAccess.argusclientMinecraft.player;
                InteractionHand mainHand = InteractionHand.MAIN_HAND;
-               playerForSwing.swing(mainHand);
+               playerForSwing.swing(mainHand, playerForSwing.getItemInHand(mainHand).getAttackAnimation(), false);
             }
          }
       }

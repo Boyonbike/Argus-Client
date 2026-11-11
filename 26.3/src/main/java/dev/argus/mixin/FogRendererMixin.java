@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.GpuBufferSlice.MappedView;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice.MappedView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;

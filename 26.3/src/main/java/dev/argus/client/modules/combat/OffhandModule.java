@@ -63,7 +63,6 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -167,9 +166,9 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
          return true;
       } else {
          ItemStack defaultItemStack = item.getDefaultInstance();
-         if (ItemUtils.isSword(defaultItemStack) && !(item instanceof AxeItem)) {
+         if (ItemUtils.isSword(defaultItemStack) && !defaultItemStack.is(ItemTags.AXES)) {
             return true;
-         } else if (item instanceof AxeItem && owner.axeSetting.getValue()) {
+         } else if (defaultItemStack.is(ItemTags.AXES) && owner.axeSetting.getValue()) {
             return true;
          } else {
             ItemStack defaultToolStack = item.getDefaultInstance();

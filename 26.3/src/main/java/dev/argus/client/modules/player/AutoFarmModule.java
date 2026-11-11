@@ -343,7 +343,7 @@ public class AutoFarmModule extends Module {
       gameMode.useItemOn(player, hand, hitResult);
       LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
       InteractionHand swingHand = plantingItem.hand();
-      swingPlayer.swing(swingHand);
+      swingPlayer.swing(swingHand, swingPlayer.getItemInHand(swingHand).getAttackAnimation(), false);
       this.actionsThisTick++;
       if (this.rotateSetting.getValue()) {
          RotationManager rotationManager = ClientContext.rotationManager;
@@ -367,7 +367,7 @@ public class AutoFarmModule extends Module {
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       BlockHitResult hitResult = new BlockHitResult(Vec3.atBottomCenterOf(position), Direction.UP, position, false);
       gameMode.useItemOn(player, hand, hitResult);
-      ClientAccess.argusclientMinecraft.player.swing(hand);
+      ClientAccess.argusclientMinecraft.player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
       this.actionsThisTick++;
    }
 
@@ -415,7 +415,7 @@ public class AutoFarmModule extends Module {
                         gameMode.continueDestroyBlock(position, face);
                         LocalPlayer player = ClientAccess.argusclientMinecraft.player;
                         InteractionHand hand = InteractionHand.MAIN_HAND;
-                        player.swing(hand);
+                        player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
                         this.actionsThisTick++;
                         timer = this.harvestTimer;
                         timer.reset();

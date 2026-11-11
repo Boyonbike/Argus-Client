@@ -84,7 +84,7 @@ public class ClientPacketListenerChatTimeMixin {
 
    @Inject(method = "handleMoveVehicle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;absSnapTo(DDDFF)V"), cancellable = true)
    private void postMoveVehicleEvent(ClientboundMoveVehiclePacket packet, CallbackInfo callback) {
-      Vec3 vehiclePosition = packet.position();
+      Vec3 vehiclePosition = packet.movingTo().position();
       ClientPacketListenerHandleMoveVehicleEvent event = new ClientPacketListenerHandleMoveVehicleEvent(vehiclePosition);
       ClientAccess.eventBus.post(event);
       if (event.isCancelled()) {

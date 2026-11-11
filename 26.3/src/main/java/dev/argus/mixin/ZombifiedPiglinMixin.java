@@ -28,7 +28,7 @@ public abstract class ZombifiedPiglinMixin extends Mob implements ZombifiedPigli
 
    @Override
    public boolean argusclient$isAttacking() {
-      if (this.isAggressive() || this.swingTime > 0) {
+      if (this.isAggressive() || this.isSwinging()) {
          this.stopwatch.reset();
       }
 

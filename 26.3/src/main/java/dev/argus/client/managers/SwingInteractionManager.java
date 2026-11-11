@@ -13,7 +13,6 @@ import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.combat.BoundingBoxUtils;
 import dev.argus.client.utils.entity.SwingAction;
 import dev.argus.client.utils.network.PacketSender;
-import dev.argus.mixin.LivingEntityAccessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +69,7 @@ public final class SwingInteractionManager implements ClientAccess {
          PacketSender.sendSwing(hand);
       } else {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-         player.swing(hand);
+         player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
       }
    }
 
@@ -85,30 +84,26 @@ public final class SwingInteractionManager implements ClientAccess {
    }
 
    public void swingClientSide(InteractionHand hand) {
-      if (ClientAccess.argusclientMinecraft.player.swinging) {
-         int swingTime = ClientAccess.argusclientMinecraft.player.swingTime;
-         int swingDuration = ((LivingEntityAccessor)ClientAccess.argusclientMinecraft.player).getSwingDuration();
-         if (swingTime < swingDuration / 2 && ClientAccess.argusclientMinecraft.player.swingTime >= 0) {
+      LocalPlayer player = ClientAccess.argusclientMinecraft.player;
+      if (player.isSwinging()) {
+         int swingTime = player.swingState.ticks;
+         int swingDuration = player.getCurrentSwing().durationTicks();
+         if (swingTime < swingDuration / 2 && swingTime >= 0) {
             return;
          }
       }
 
-      ClientAccess.argusclientMinecraft.player.swingTime = -1;
-      ClientAccess.argusclientMinecraft.player.swinging = true;
+      InteractionHand swingHand = hand;
       SwingModule moduleSnapshot = swingModule;
       if (moduleSnapshot.isToggled()) {
          Setting<SwingModule.HandChoice> handSetting = swingModule.handSetting;
          SwingModule.HandChoice handChoice = handSetting.getValue();
          if (handChoice.getHand() != null) {
-            LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-            Setting<SwingModule.HandChoice> overrideSetting = swingModule.handSetting;
-            SwingModule.HandChoice overrideChoice = overrideSetting.getValue();
-            player.swingingArm = overrideChoice.getHand();
-            return;
+            swingHand = handChoice.getHand();
          }
       }
 
-      ClientAccess.argusclientMinecraft.player.swingingArm = hand;
+      player.swing(swingHand, player.getItemInHand(swingHand).getAttackAnimation(), false);
    }
 
    public boolean isCrystalPlacementLimited() {

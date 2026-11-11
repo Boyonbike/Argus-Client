@@ -36,7 +36,7 @@ import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.ping.ServerboundPingRequestPacket;
 import net.minecraft.world.phys.AABB;
@@ -186,7 +186,7 @@ public class FakeLagModule extends Module {
          || packet instanceof ServerboundUseItemOnPacket && this.interactSetting.getValue()
          || (packet instanceof ServerboundInteractPacket || packet instanceof ServerboundAttackPacket) && this.interactEntitySetting.getValue()
          || packet instanceof ServerboundPlayerActionPacket && this.diggingSetting.getValue()
-         || packet instanceof ServerboundSwingPacket && this.swingSetting.getValue()
+         || packet instanceof ServerboundPunchPacket && this.swingSetting.getValue()
          || packet instanceof ServerboundSetCarriedItemPacket && this.swapSetting.getValue()
          || (
                packet instanceof ServerboundPongPacket

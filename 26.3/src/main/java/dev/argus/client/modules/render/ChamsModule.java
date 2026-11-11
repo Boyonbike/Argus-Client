@@ -1,7 +1,7 @@
 package dev.argus.client.modules.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
@@ -517,7 +517,7 @@ public class ChamsModule extends Module {
                if (boostValue) {
                   boolean boostAnimation = true;
                   ghost.setAnimationBoosted(boostAnimation);
-                  ghost.attackAnim = 0.0F;
+                  ghost.swingState.animation = 0.0F;
                   walkAnimation = ghost.walkAnimation;
                   double randomSample = Math.random();
                   double scaledRandom = randomSample * 0.8F;

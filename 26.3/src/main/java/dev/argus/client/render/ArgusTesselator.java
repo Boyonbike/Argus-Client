@@ -1,9 +1,9 @@
 package dev.argus.client.render;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 /** Minimal replacement for the removed Tesselator, sharing one staging buffer per begin/end pair. */
 public final class ArgusTesselator {

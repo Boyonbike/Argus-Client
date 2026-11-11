@@ -96,7 +96,7 @@ public class SkyRendererMixin {
       method = "renderStars",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/DynamicUniforms;writeTransform(Lorg/joml/Matrix4f;Lorg/joml/Vector4f;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"
+         target = "Lnet/minecraft/client/renderer/DynamicGpuData;writeTransform(Lorg/joml/Matrix4f;Lorg/joml/Vector4f;)Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;"
       )
    )
    public void overrideStarTint(Args arguments) {

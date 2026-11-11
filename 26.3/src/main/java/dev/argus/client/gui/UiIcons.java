@@ -2,7 +2,7 @@ package dev.argus.client.gui;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;

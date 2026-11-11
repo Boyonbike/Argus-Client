@@ -476,7 +476,7 @@ public final class FakeplayerCommand extends Command {
          Inventory capturedInventory = this.getInventory();
          Inventory sourceInventory = source.getInventory();
          capturedInventory.replaceWith(sourceInventory);
-         this.setInvulnerable(false);
+         this.setPermanentlyInvulnerable(false);
          if (source.isFallFlying()) {
             this.startFallFlying();
          }

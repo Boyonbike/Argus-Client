@@ -26,9 +26,6 @@ public interface LivingEntityAccessor {
    @Accessor("fallFlyTicks")
    void argusclient$setGlidingTicks(int var1);
 
-   @Invoker("getCurrentSwingDuration")
-   int getSwingDuration();
-
    @Accessor("DATA_EFFECT_PARTICLES")
    static EntityDataAccessor argusclient$potion_swirls() {
       return null;

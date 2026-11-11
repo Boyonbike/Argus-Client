@@ -3,8 +3,8 @@ package dev.argus.mixin;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventStage;
 import dev.argus.client.events.RenderTypeDrawEvent;
@@ -17,7 +17,7 @@ import dev.argus.client.render.RenderUtils;
 import java.util.List;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.DynamicUniforms;
+import net.minecraft.client.renderer.DynamicGpuData;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.joml.Matrix4f;
@@ -50,10 +50,10 @@ public class RenderTypeMixin {
       method = "writeDynamicTransforms",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/DynamicUniforms;writeTransform(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"
+         target = "Lnet/minecraft/client/renderer/DynamicGpuData;writeTransform(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;"
       )
    )
-   private GpuBufferSlice tintGlint(DynamicUniforms uniforms, Matrix4f modelView, Matrix4f textureMatrix, Operation<GpuBufferSlice> original) {
+   private GpuBufferSlice tintGlint(DynamicGpuData uniforms, Matrix4f modelView, Matrix4f textureMatrix, Operation<GpuBufferSlice> original) {
       if (!ClientRenderPipelines.isGlint(this.state.pipeline)) {
          return original.call(uniforms, modelView, textureMatrix);
       }

@@ -18,7 +18,7 @@ import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action;
@@ -65,7 +65,7 @@ public final class PacketRateLimiter {
 
          try {
             long now = System.currentTimeMillis();
-            if (packet instanceof ServerboundSwingPacket && this.interacts.countRecentPackets(now) >= this.interacts.limit()) {
+            if (packet instanceof ServerboundPunchPacket && this.interacts.countRecentPackets(now) >= this.interacts.limit()) {
                return true;
             }
 

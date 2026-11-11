@@ -229,7 +229,7 @@ public class TooltipsModule extends Module {
             DataComponentType<ItemContainerContents> containerComponentType = DataComponents.CONTAINER;
             ItemContainerContents containedItems = hoveredStack.get(containerComponentType);
             if (containedItems != null) {
-               List<ItemStack> contentList = containedItems.allItemsCopyStream().toList();
+               List<ItemStack> contentList = containedItems.itemCopies().toList();
                int slotCount = Math.min(contentList.size(), containerItems.size());
 
                for (int contentIndex = 0; contentIndex < slotCount; contentIndex++) {

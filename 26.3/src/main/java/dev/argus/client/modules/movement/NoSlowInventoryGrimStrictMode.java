@@ -19,7 +19,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.PosRot;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action;
@@ -55,7 +55,7 @@ public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
 
    private boolean isDelayablePacket(Packet packet) {
       return packet instanceof ServerboundUseItemPacket
-         || packet instanceof ServerboundSwingPacket
+         || packet instanceof ServerboundPunchPacket
          || packet instanceof PosRot && RotationManager.isSilentRotationMode();
    }
 

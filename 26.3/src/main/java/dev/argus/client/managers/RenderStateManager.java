@@ -1,6 +1,6 @@
 package dev.argus.client.managers;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import dev.argus.client.render.RenderState;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Arrays;

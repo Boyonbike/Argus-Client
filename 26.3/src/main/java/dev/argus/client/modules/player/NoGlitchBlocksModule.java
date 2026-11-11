@@ -37,7 +37,7 @@ public class NoGlitchBlocksModule extends Module {
             PacketSender.sendUseItemOn(packetHand, packetHit);
             LocalPlayer playerForSwing = ClientAccess.argusclientMinecraft.player;
             InteractionHand swingHand = event.getHand();
-            playerForSwing.swing(swingHand);
+            playerForSwing.swing(swingHand, playerForSwing.getItemInHand(swingHand).getAttackAnimation(), false);
             event.cancel();
          }
       }

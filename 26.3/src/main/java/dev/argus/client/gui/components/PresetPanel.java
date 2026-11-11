@@ -1,5 +1,6 @@
 package dev.argus.client.gui.components;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientContext;
 import dev.argus.client.config.PresetData;
@@ -139,7 +140,7 @@ public class PresetPanel extends Panel {
    private void openPresetLocation() {
       try {
          if (!SystemUtils.IS_OS_WINDOWS_10 && !SystemUtils.OS_NAME.startsWith("Windows 11")) {
-            Util.getPlatform().openPath(this.screen.getSelectedCategory().getDirectory());
+            Blaze3D.openPath(this.screen.getSelectedCategory().getDirectory());
          } else {
             Path path = this.screen.getSelectedCategory().getDirectory().toAbsolutePath();
             PresetData preset = this.selectedPreset;

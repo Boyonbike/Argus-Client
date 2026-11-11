@@ -29,7 +29,7 @@ public final class RenderTargetRegistry implements ClientAccess {
    }
 
    public static RenderTarget createRenderTarget(String name, int scale) {
-      TextureTarget target = new TextureTarget(name, 1, 1, true, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+      TextureTarget target = new TextureTarget(name, 1, 1, true, com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM);
       renderTargets.put(target, new ScaledTarget(target, scale));
       return target;
    }

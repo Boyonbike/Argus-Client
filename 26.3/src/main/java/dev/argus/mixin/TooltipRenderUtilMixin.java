@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.render.ClientRenderPipelines;
@@ -20,7 +20,7 @@ public class TooltipRenderUtilMixin {
       method = "extractTooltipBackground",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V",
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V",
          ordinal = 1
       )
    )

@@ -120,8 +120,8 @@ public class LongJumpModule extends Module {
          InventoryUtils.swapTo(weapon);
       }
 
-      ClientAccess.argusclientMinecraft.gameMode.piercingAttack(piercingWeapon);
-      ClientAccess.argusclientMinecraft.player.swing(InteractionHand.MAIN_HAND);
+      ClientAccess.argusclientMinecraft.gameMode.piercingAttack(ClientAccess.argusclientMinecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), piercingWeapon);
+      ClientAccess.argusclientMinecraft.player.swing(InteractionHand.MAIN_HAND, ClientAccess.argusclientMinecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), false);
       ClientAccess.argusclientMinecraft.player.resetOnlyAttackStrengthTicker();
       if (weapon.hand() == InteractionHand.OFF_HAND) {
          int convertedRestoreSlot = InventoryUtils.toMenuSlot(selectedSlot);

@@ -1,6 +1,6 @@
 package dev.argus.client.events;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 public final class RenderTypeDrawEvent extends CancellableEvent {
    private final EventStage stage;

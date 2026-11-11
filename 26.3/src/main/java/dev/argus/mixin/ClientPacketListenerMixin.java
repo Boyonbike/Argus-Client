@@ -20,6 +20,7 @@ import net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -120,13 +121,13 @@ public class ClientPacketListenerMixin {
       method = "handleOpenSignEditor",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/player/LocalPlayer;openTextEdit(Lnet/minecraft/world/level/block/entity/SignBlockEntity;Z)V",
+         target = "Lnet/minecraft/client/player/LocalPlayer;openTextEdit(Lnet/minecraft/world/level/block/entity/SignBlockEntity;Lnet/minecraft/world/level/block/entity/SignTextSlot;)V",
          shift = Shift.BEFORE
       ),
       cancellable = true
    )
    private void onOpenSignEditor(ClientboundOpenSignEditorPacket packet, CallbackInfo callback, @Local SignBlockEntity sign) {
-      ClientPacketListenerHandleOpenSignEditorEvent event = new ClientPacketListenerHandleOpenSignEditorEvent(packet.getPos(), sign, packet.isFrontText());
+      ClientPacketListenerHandleOpenSignEditorEvent event = new ClientPacketListenerHandleOpenSignEditorEvent(packet.pos(), sign, packet.slot() == SignTextSlot.FRONT);
       ClientAccess.eventBus.post(event);
       if (event.isCancelled()) {
          callback.cancel();

@@ -14,7 +14,7 @@ import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
@@ -44,7 +44,10 @@ public final class PacketSender implements ClientAccess {
    }
 
    public static void sendSwing(InteractionHand hand) {
-      send(new ServerboundSwingPacket(hand));
+      Packet<?> packet = SwingPackets.create(hand);
+      if (packet != null) {
+         send(packet);
+      }
    }
 
    public static void sendRotation(float yaw, float pitch, boolean onGround) {

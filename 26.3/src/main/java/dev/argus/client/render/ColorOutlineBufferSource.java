@@ -48,7 +48,7 @@ public class ColorOutlineBufferSource {
    public VertexConsumer getBuffer(RenderType renderType) {
       if (this.capture != null) {
          boolean outlined = renderType.isOutline() || renderType.outline().isPresent();
-         return outlined && renderType.primitiveTopology() == com.mojang.blaze3d.PrimitiveTopology.QUADS
+         return outlined && renderType.primitiveTopology() == com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS
             ? new ColorOutlineBufferSource.CaptureVertexConsumer(this, this.capture)
             : NoOpVertexConsumer.INSTANCE;
       }

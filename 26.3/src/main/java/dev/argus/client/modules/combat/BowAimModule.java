@@ -25,7 +25,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -94,7 +94,7 @@ public class BowAimModule extends Module {
    private void onUseItemPacket(GameModeUseItemPacketEvent event) {
       ServerboundUseItemPacket packet = event.getPacket();
       LocalPlayer playerSnapshot = ClientAccess.argusclientMinecraft.player;
-      InteractionHand packetHand = packet.getHand();
+      InteractionHand packetHand = packet.hand();
       ItemStack heldStack = playerSnapshot.getItemInHand(packetHand);
       Item crossbow = Items.CROSSBOW;
       if (heldStack.is(crossbow) && this.cachedRotations != null) {
@@ -130,7 +130,7 @@ public class BowAimModule extends Module {
          Comparator<Entity> angularOrder = Comparator.comparing(BowAimModule::getAngularDistance);
          selectionBuilder = sortBuilder.sortBy(angularOrder);
          Entity target = selectionBuilder.visibleRange(128.0F).select();
-         if (target != null && !(target instanceof EnderMan)) {
+         if (target != null && !(target instanceof Enderman)) {
             AABB targetBounds = target.getBoundingBox();
             Vec3 targetCenter = targetBounds.getCenter();
             if (RotationManager.isVisible(targetBounds)) {

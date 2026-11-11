@@ -2,8 +2,8 @@ package dev.argus.client.render;
 
 import dev.argus.client.utils.inventory.PixelIcon;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.argus.client.ArgusClient;
 import java.io.IOException;

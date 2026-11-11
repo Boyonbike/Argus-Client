@@ -20,7 +20,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.ClipContext.Block;
 import net.minecraft.world.level.ClipContext.Fluid;
@@ -47,7 +47,7 @@ public class AimAssistModule extends Module {
    @EventHandler
    private void onWorldRender(WorldRenderEvent.Main event) {
       if (ClientAccess.argusclientMinecraft.gui.screen() == null) {
-         if (ClientAccess.argusclientMinecraft.player.getMainHandItem().getItem() instanceof AxeItem
+         if (ClientAccess.argusclientMinecraft.player.getMainHandItem().is(ItemTags.AXES)
             || ItemUtils.isSword(ClientAccess.argusclientMinecraft.player.getMainHandItem())
             || !this.onlyWeaponSetting.getValue()) {
             boolean keepTarget = false;

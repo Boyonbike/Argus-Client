@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.render.ArgusTesselator;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.ConnectScreenConnectEvent;
 import dev.argus.client.events.EventHandler;

@@ -1,7 +1,7 @@
 package dev.argus.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import java.util.function.BiConsumer;
 
 public enum EntityRenderRelation {

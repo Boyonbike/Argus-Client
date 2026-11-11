@@ -29,7 +29,7 @@ import net.minecraft.world.entity.animal.squid.Squid;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.animal.wolf.WolfVariant.AssetInfo;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.PiglinArmPose;
@@ -57,7 +57,7 @@ public final class EntityUtils implements ClientAccess {
    }
 
    public static boolean isHostile(Entity entity) {
-      if (entity instanceof EnderMan enderman) {
+      if (entity instanceof Enderman enderman) {
          return enderman.isCreepy();
       } else if (entity instanceof ZombifiedPiglinAttackState attackingEntity) {
          return attackingEntity.argusclient$isAttacking();

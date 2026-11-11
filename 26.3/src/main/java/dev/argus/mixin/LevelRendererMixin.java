@@ -3,7 +3,7 @@ package dev.argus.mixin;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -95,7 +95,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    private Stack<ResourceHandle<RenderTarget>> entityOutlineHandleStack;
 
    @WrapWithCondition(
-      method = "lambda$addWeatherPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;I)V",
+      method = "lambda$addWeatherPass$0(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;I)V",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/WeatherEffectRenderer;render(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/level/WeatherRenderState;)V"
@@ -155,7 +155,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
+         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
          shift = Shift.BEFORE
       )
    )
@@ -219,7 +219,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "lambda$render$0(Lorg/joml/Vector4f;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/systems/CommandEncoder;clearColorAndDepthTextures(Lcom/mojang/blaze3d/textures/GpuTexture;Lorg/joml/Vector4fc;Lcom/mojang/blaze3d/textures/GpuTexture;D)V"
+         target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;clearColorAndDepthTextures(Lcom/mojang/renderpearl/api/textures/GpuTexture;Lorg/joml/Vector4fc;Lcom/mojang/renderpearl/api/textures/GpuTexture;D)V"
       )
    )
    private static void applySkyboxBackgroundColor(Args arguments) {
@@ -230,8 +230,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @ModifyArgs(
-      method = "lambda$addSkyPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/SkyRenderState;)V",
-      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFog(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;)V")
+      method = "lambda$addSkyPass$0(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/SkyRenderState;)V",
+      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFog(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;)V")
    )
    private static void applySkyFogSlice(Args arguments) {
       if (skyboxModule.isToggled() && skyboxModule.splitFogSetting.getValue() && skyboxModule.isCurrentDimensionEnabled()) {

@@ -3,7 +3,7 @@ package dev.argus.mixin;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import dev.argus.client.render.LoadingOverlayRenderer;
 import dev.argus.client.render.loading.GuiLoadingCanvas;
 import dev.argus.client.render.loading.LoadingAnimation;
@@ -48,7 +48,7 @@ abstract class LoadingOverlayMixin {
    }
 
    @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE", target =
-         "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"),
+         "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"),
          require = 2, allow = 2)
    private void drawArgusLoadingScreen(GuiGraphicsExtractor graphics, RenderPipeline pipeline, Identifier texture, int x, int y,
          float u, float v, int width, int height, int regionWidth, int regionHeight, int textureWidth,

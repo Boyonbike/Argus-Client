@@ -24,7 +24,7 @@ public record ShulkerBoxItemPreview(ItemStack containerStack, ItemStack previewS
 
       Map<Item, Integer> occupiedSlotCounts = new HashMap<>();
 
-      for (ItemStack containedStack : contents.allItemsCopyStream().toList()) {
+      for (ItemStack containedStack : contents.itemCopies().toList()) {
          if (!containedStack.isEmpty()) {
             Item containedItem = containedStack.getItem();
             byte zeroCount = 0;

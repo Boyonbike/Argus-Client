@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.AmbienceModule;
 import dev.argus.client.render.ClientRenderPipelines;
@@ -22,7 +22,7 @@ public class LightTextureMixin {
 
    @ModifyExpressionValue(
       method = "render",
-      at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/RenderPipelines;LIGHTMAP:Lcom/mojang/blaze3d/pipeline/RenderPipeline;")
+      at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/RenderPipelines;LIGHTMAP:Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;")
    )
    private RenderPipeline overrideLightmapPipeline(RenderPipeline originalPipeline) {
       if (ambienceModule.isToggled() && ambienceModule.brightnessSetting.getValue() == AmbienceModule.BrightnessChoice.SCREEN) {
@@ -38,7 +38,7 @@ public class LightTextureMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/buffers/Std140Builder;putVec3(Lorg/joml/Vector3fc;)Lcom/mojang/blaze3d/buffers/Std140Builder;",
+         target = "Lcom/mojang/renderpearl/api/buffers/Std140Builder;putVec3(Lorg/joml/Vector3fc;)Lcom/mojang/renderpearl/api/buffers/Std140Builder;",
          ordinal = 1
       )
    )

@@ -36,6 +36,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.PositionAndRotation;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -729,8 +730,8 @@ public final class BoatPhaseModule extends Module {
             return;
         }
         if (plannedHashTick == motion.tick() && hashReady()) {
-            Vec3 p = packet.position();
-            if (BoatPhaseHash.hash(p.x, p.y, p.z, Mth.wrapDegrees(packet.yRot()), Mth.wrapDegrees(packet.xRot())) != correctionHash) {
+            Vec3 p = packet.movingTo().position();
+            if (BoatPhaseHash.hash(p.x, p.y, p.z, Mth.wrapDegrees(packet.movingTo().yRot()), Mth.wrapDegrees(packet.movingTo().xRot())) != correctionHash) {
                 event.cancel();
                 if (lastWire != null) rewindBoat(lastWire);
                 boat.setDeltaMovement(Vec3.ZERO);
@@ -740,7 +741,7 @@ public final class BoatPhaseModule extends Module {
             return;
         }
         if (lastWire != null) {
-            Vec3 delta = packet.position().subtract(lastWire);
+            Vec3 delta = packet.movingTo().position().subtract(lastWire);
             boolean horizontalBatch = (plannedMode == BoatPhaseTravel.Mode.SUBSTEPS || plannedMode == BoatPhaseTravel.Mode.EXTENDED)
                 && !plannedThroughBlocks;
             int horizontalCount = horizontalBatch ? BoatPhaseAirSteps.count(delta.horizontalDistance(), plannedMode == BoatPhaseTravel.Mode.EXTENDED
@@ -761,7 +762,7 @@ public final class BoatPhaseModule extends Module {
                 try {
                     for (int i = 1; i <= count; i++) {
                         Vec3 end = substepOrigin.add(delta.scale((double) i / count));
-                        substepPacket = new ServerboundMoveVehiclePacket(end, packet.yRot(), packet.xRot(), packet.onGround());
+                        substepPacket = new ServerboundMoveVehiclePacket(PositionAndRotation.of(end, packet.movingTo().yRot(), packet.movingTo().xRot()), packet.onGround());
                         network.send(substepPacket);
                         if (lastWire.distanceTo(end) > 1e-5) break;
                     }
@@ -777,7 +778,7 @@ public final class BoatPhaseModule extends Module {
                         ? BoatPhaseTravel.Mode.EXTENDED : BoatPhaseTravel.Mode.SUBSTEPS,
                         motion.tick(), lastStep.horizontalDistance(), horizontalLimit.getValue());
                 }
-                if (lastWire.distanceTo(packet.position()) > 1e-5) {
+                if (lastWire.distanceTo(packet.movingTo().position()) > 1e-5) {
                     rewindBoat(lastWire);
                     boat.setDeltaMovement(Vec3.ZERO);
                     record("SUBSTEP-INTERRUPTED position=%s", lastWire);
@@ -806,21 +807,21 @@ public final class BoatPhaseModule extends Module {
 
         if (!eventGate.vehicle(packet)) return;
         if (packet == substepPacket && splitting) {
-            meter.sent(motion.tick(), System.nanoTime(), lastWire.x, lastWire.z, packet.position().x, packet.position().y, packet.position().z);
-            record("SUBSTEP-WIRE from=%s to=%s delta=%s", lastWire, packet.position(), packet.position().subtract(lastWire));
-            lastWire = packet.position();
+            meter.sent(motion.tick(), System.nanoTime(), lastWire.x, lastWire.z, packet.movingTo().position().x, packet.movingTo().position().y, packet.movingTo().position().z);
+            record("SUBSTEP-WIRE from=%s to=%s delta=%s", lastWire, packet.movingTo().position(), packet.movingTo().position().subtract(lastWire));
+            lastWire = packet.movingTo().position();
             sentCount++;
             return;
         }
         if (motion.alreadySent()) return;
         if (correcting) {
             motion.acknowledged();
-            record("CORRECTION-ACK position=%s", packet.position());
+            record("CORRECTION-ACK position=%s", packet.movingTo().position());
             return;
         }
-        Vec3 from = lastWire == null ? packet.position() : lastWire;
-        boolean finished = motion.sent(point(from), point(packet.position()));
-        lastWire = packet.position();
+        Vec3 from = lastWire == null ? packet.movingTo().position() : lastWire;
+        boolean finished = motion.sent(point(from), point(packet.movingTo().position()));
+        lastWire = packet.movingTo().position();
         lastStep = lastWire.subtract(from);
         meter.sent(motion.tick(), System.nanoTime(), from.x, from.z, lastWire.x, lastWire.y, lastWire.z);
         BoatPhaseTravel.Mode sentMode = plannedHashTick == motion.tick() ? BoatPhaseTravel.Mode.HASH
@@ -845,15 +846,15 @@ public final class BoatPhaseModule extends Module {
         rejectFastAir();
         correcting = true;
         corrections++;
-        record("VEHICLE-CORRECTION server=%s local=%s lastWire=%s error=%.3f", packet.position(), boat.position(), lastWire,
-            packet.position().distanceTo(boat.position()));
+        record("VEHICLE-CORRECTION server=%s local=%s lastWire=%s error=%.3f", packet.movingTo().position(), boat.position(), lastWire,
+            packet.movingTo().position().distanceTo(boat.position()));
         recover();
     }
 
     /** Called by the network mixin once the vehicle correction has been applied. */
     public void afterVehicleCorrection(ClientPacketListener handler, ClientboundMoveVehiclePacket packet) {
         if (handler != network || !correcting) return;
-        lastWire = packet.position();
+        lastWire = packet.movingTo().position();
         if (boat != null) boat.setDeltaMovement(Vec3.ZERO);
         correcting = false;
         status = "server correction";
@@ -908,13 +909,13 @@ public final class BoatPhaseModule extends Module {
             if (packet instanceof ClientboundSetPassengersPacket p && p.getVehicle() == boat.getId()) {
                 record("SERVER-PASSENGERS ids=%s", java.util.Arrays.toString(p.getPassengers()));
             } else if (packet instanceof ClientboundEntityPositionSyncPacket p && p.id() == boat.getId()) {
-                record("SERVER-BOAT-SYNC values=%s", p.values());
-                Vec3 pos = p.values().position();
+                record("SERVER-BOAT-SYNC path=%s", p.position());
+                Vec3 pos = p.position().endPosition();
                 meter.echo(motion.tick(), System.nanoTime(), pos.x, pos.y, pos.z);
             } else if (packet instanceof ClientboundTeleportEntityPacket p && p.id() == boat.getId()) {
                 record("SERVER-BOAT-POSITION values=%s relatives=%s", p.change(), p.relatives());
             } else if (packet instanceof ClientboundMoveEntityPacket p && p.getEntity(world) == boat && p.hasPosition()) {
-                record("SERVER-BOAT-DELTA x=%d y=%d z=%d local=%s", p.getXa(), p.getYa(), p.getZa(), boat.position());
+                record("SERVER-BOAT-DELTA delta=%s local=%s", p.getPositionDelta(), boat.position());
             }
         }
     }

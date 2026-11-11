@@ -56,7 +56,6 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TridentItem;
@@ -470,7 +469,7 @@ public final class AuraModule extends Module {
 
    private boolean isAllowedWeapon(Item item) {
       ItemStack stack = item.getDefaultInstance();
-      if (ItemUtils.isSword(stack) || item instanceof TridentItem || item instanceof AxeItem || ItemUtils.isMace(stack) || ItemUtils.isSpear(stack)) {
+      if (ItemUtils.isSword(stack) || item instanceof TridentItem || stack.is(ItemTags.AXES) || ItemUtils.isMace(stack) || ItemUtils.isSpear(stack)) {
          return true;
       }
 
@@ -478,7 +477,7 @@ public final class AuraModule extends Module {
          return false;
       }
 
-      Predicate<ItemStack> alternativeWeaponPredicate = candidateStack -> ItemUtils.isSword(candidateStack) || candidateStack.getItem() instanceof AxeItem;
+      Predicate<ItemStack> alternativeWeaponPredicate = candidateStack -> ItemUtils.isSword(candidateStack) || candidateStack.is(ItemTags.AXES);
       return InventoryUtils.findHotbarSlot(alternativeWeaponPredicate) == -1;
    }
 

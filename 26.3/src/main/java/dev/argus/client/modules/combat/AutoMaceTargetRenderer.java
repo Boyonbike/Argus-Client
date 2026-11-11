@@ -3,7 +3,7 @@ package dev.argus.client.modules.combat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.WorldRenderEvent;

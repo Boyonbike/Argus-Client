@@ -80,7 +80,7 @@ public final class AutoWaspGlideTracker {
             sentYaw = move.getYRot(0);
             sentRotation = Float.isFinite(sentPitch) && Float.isFinite(sentYaw);
         } else if (packet instanceof ServerboundUseItemPacket use && p != null && p.isFallFlying()) {
-            ItemStack stack = p.getItemInHand(use.getHand());
+            ItemStack stack = p.getItemInHand(use.hand());
             if (stack.is(Items.FIREWORK_ROCKET)) {
                 // The server boosts for at least this long; the rocket entity, once it arrives, covers the rest.
                 Fireworks fireworks = stack.get(DataComponents.FIREWORKS);

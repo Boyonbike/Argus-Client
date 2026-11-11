@@ -1,16 +1,15 @@
 package dev.argus.client.render;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
-import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.TextureTransform;
@@ -43,8 +42,7 @@ public final class ClientRenderTypes {
    private static RenderSetup nametagSetup(RenderPipeline pipeline, RenderSetup state) {
       RenderSetup.RenderSetupBuilder builder = RenderSetup.builder(pipeline)
          .setLayeringTransform(state.layeringTransform)
-         .setOutputTarget(OutputTarget.MAIN_TARGET)
-         .setTextureTransform(state.textureTransform)
+          .setTextureTransform(state.textureTransform)
          .setOutline(OutlineProperty.NONE);
       if (state.sortOnUpload) {
          builder.sortOnUpload();

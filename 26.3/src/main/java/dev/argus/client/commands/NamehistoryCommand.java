@@ -1,5 +1,6 @@
 package dev.argus.client.commands;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -77,7 +78,7 @@ public final class NamehistoryCommand extends Command {
       ArgumentBuilder openArgument = Command.argument("name", new PlayerNameArgumentType()).executes(openContext -> {
          try {
             URI profileUri = new URI("https://namemc.com/profile/" + (String)openContext.getArgument("name", String.class));
-            Util.getPlatform().openUri(profileUri);
+            Blaze3D.openUri(profileUri);
          } catch (Throwable var2x) {
          }
 

@@ -18,7 +18,7 @@ public final class GameModeUseItemPacketEvent extends CancellableEvent {
    }
 
    public void setRotations(float[] rotations) {
-      this.setPacket(new ServerboundUseItemPacket(this.packet.getHand(), this.packet.getSequence(), rotations[0], rotations[1]));
+      this.setPacket(new ServerboundUseItemPacket(this.packet.hand(), this.packet.sequence(), rotations[0], rotations[1]));
       this.cancel();
    }
 }

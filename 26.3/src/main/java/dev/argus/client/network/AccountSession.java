@@ -1,9 +1,10 @@
 package dev.argus.client.network;
 
-import com.mojang.authlib.Environment;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.UserApiService;
-import com.mojang.authlib.yggdrasil.*;
+import com.mojang.authlib.services.FriendsService;
+import com.mojang.authlib.services.MinecraftServicesDiscoveryService;
+import com.mojang.authlib.services.ProfileResult;
 import dev.argus.client.gui.mixin.AccountSessionAccessor;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -25,9 +26,7 @@ public final class AccountSession {
     public static Prepared prepare(AccountAuthenticator.Login login, java.net.Proxy proxy, java.io.File gameDir) {
         var account = login.account();
         boolean offline = account.type() == AccountEntry.Type.OFFLINE;
-        var auth = account.type() == AccountEntry.Type.ALTENING
-                ? new YggdrasilAuthenticationService(proxy, new Environment("http://sessionserver.thealtening.com", "https://api.minecraftservices.com", "https://api.mojang.com", "Altening"))
-                : new YggdrasilAuthenticationService(proxy);
+        var auth = MinecraftServicesDiscoveryService.create(proxy);
         var user = new User(account.username(), AccountAuthenticator.uuid(account.uuid()), login.accessToken(), Optional.empty(), Optional.empty());
         return new Prepared(login, user, Services.create(auth, gameDir), offline ? UserApiService.OFFLINE : auth.createUserApiService(login.accessToken()), auth.createFriendsService(login.accessToken()));
     }

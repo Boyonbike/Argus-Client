@@ -303,8 +303,8 @@ public final class BlockInteractionUtils implements ClientAccess {
          BlockHitResult hitResultSnapshot = new BlockHitResult(hitPosition, placingInAir ? direction : direction.getOpposite(), neighborSnapshot, false);
          InteractionResult result = gameModeSnapshot.useItemOn(playerSnapshot, hand, hitResultSnapshot);
          isPlacingBlock = false;
-         if (result instanceof Success success && success.swingSource() == SwingSource.CLIENT) {
-            ClientAccess.argusclientMinecraft.player.swing(hand);
+         if (result instanceof Success success && success.swingSource() == SwingSource.PREDICTED) {
+            ClientAccess.argusclientMinecraft.player.swing(hand, ClientAccess.argusclientMinecraft.player.getItemInHand(hand).getAttackAnimation(), false);
          }
 
          if (requiresSneak) {
@@ -420,7 +420,7 @@ public final class BlockInteractionUtils implements ClientAccess {
       EntityHitResult hitResultSnapshot = new EntityHitResult(entity);
       gameModeSnapshot.interact(playerSnapshot, entity, hitResultSnapshot, hand);
       ClientAccess.argusclientMinecraft.gameMode.interact(ClientAccess.argusclientMinecraft.player, entity, hitResultSnapshot, hand);
-      ClientAccess.argusclientMinecraft.player.swing(hand);
+      ClientAccess.argusclientMinecraft.player.swing(hand, ClientAccess.argusclientMinecraft.player.getItemInHand(hand).getAttackAnimation(), false);
    }
 
    public static BlockPos findSupportPosition(

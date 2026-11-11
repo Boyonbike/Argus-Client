@@ -26,7 +26,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 
@@ -67,7 +67,7 @@ public class TriggerModule extends Module {
    private void onLocalPlayerSendPositionEvent(LocalPlayerSendPositionEvent event) {
       if (event.getStage() != EventStage.Post) {
          if (!this.isWorldUnavailable()) {
-            if (!(ClientAccess.argusclientMinecraft.player.getMainHandItem().getItem() instanceof AxeItem)) {
+            if (!(ClientAccess.argusclientMinecraft.player.getMainHandItem().is(ItemTags.AXES))) {
                ItemStack componentStack = ClientAccess.argusclientMinecraft.player.getMainHandItem();
                DataComponentType<?> weaponComponent = DataComponents.WEAPON;
                if (!componentStack.has(weaponComponent) && this.onlyWeaponSetting.getValue()) {
@@ -131,7 +131,7 @@ public class TriggerModule extends Module {
       if (miss) {
          LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
          InteractionHand hand = InteractionHand.MAIN_HAND;
-         swingPlayer.swing(hand);
+         swingPlayer.swing(hand, swingPlayer.getItemInHand(hand).getAttackAnimation(), false);
          ClientAccess.argusclientMinecraft.player.resetOnlyAttackStrengthTicker();
       } else {
          ((MinecraftAccessor)ClientAccess.argusclientMinecraft).attack();

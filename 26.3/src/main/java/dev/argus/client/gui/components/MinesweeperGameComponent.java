@@ -2,7 +2,7 @@ package dev.argus.client.gui.components;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import dev.argus.client.gui.panels.GamePanel;
 import dev.argus.client.gui.panels.Panel;
 import dev.argus.client.managers.RenderStateManager;

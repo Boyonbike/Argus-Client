@@ -31,6 +31,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.entity.SignText;
 
 public class AutoSignModule extends Module {
@@ -74,11 +75,13 @@ public class AutoSignModule extends Module {
    private void sendSignUpdate(BlockPos position, boolean frontText) {
       ServerboundSignUpdatePacket packet = new ServerboundSignUpdatePacket(
          position,
-         frontText,
-         this.formatLine(this.line1Setting),
-         this.formatLine(this.line2Setting),
-         this.formatLine(this.line3Setting),
-         this.formatLine(this.line4Setting)
+         java.util.List.of(
+            this.formatLine(this.line1Setting),
+            this.formatLine(this.line2Setting),
+            this.formatLine(this.line3Setting),
+            this.formatLine(this.line4Setting)
+         ),
+         frontText ? SignTextSlot.FRONT : SignTextSlot.BACK
       );
       PacketSender.send(packet);
    }
@@ -102,7 +105,7 @@ public class AutoSignModule extends Module {
    }
 
    private boolean isSignEmpty(SignBlockEntity sign, boolean frontText) {
-      SignText textSnapshot = sign.getText(frontText);
+      SignText textSnapshot = sign.getText(frontText ? SignTextSlot.FRONT : SignTextSlot.BACK);
 
       for (Component message : textSnapshot.getMessages(false)) {
          String line = message.getString();

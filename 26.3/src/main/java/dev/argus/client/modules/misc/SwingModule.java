@@ -11,7 +11,7 @@ import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.world.InteractionHand;
 
 public class SwingModule extends Module {
@@ -33,7 +33,7 @@ public class SwingModule extends Module {
 
    @EventHandler
    private void onConnectionSendPacketEvent(PacketEvent.Send event) {
-      if (event.getPacket() instanceof ServerboundSwingPacket) {
+      if (event.getPacket() instanceof ServerboundPunchPacket) {
          if (System.currentTimeMillis() > this.nextShakeTimeMillis) {
             long nextShakeTime = System.currentTimeMillis();
             ThreadLocalRandom random = ThreadLocalRandom.current();

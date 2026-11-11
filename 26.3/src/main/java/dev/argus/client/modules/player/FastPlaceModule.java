@@ -46,7 +46,7 @@ import net.minecraft.world.item.FireworkRocketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.SignItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -103,7 +103,7 @@ public class FastPlaceModule extends Module {
    private void onSendPacket(PacketEvent.Send event) {
       if (event.getPacket() instanceof ServerboundUseItemOnPacket useItemPacket) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-         InteractionHand hand = useItemPacket.getHand();
+         InteractionHand hand = useItemPacket.hand();
          if (player.getItemInHand(hand).getItem() instanceof BlockItem) {
             Minecraft eventLoop = ClientAccess.argusclientMinecraft;
             Runnable task = this::selectRandomBlock;
@@ -213,7 +213,7 @@ public class FastPlaceModule extends Module {
    }
 
    private boolean shouldUseFastDelay(ItemStack stack, Item item) {
-      if (item instanceof SignItem) {
+      if (stack.is(ItemTags.SIGNS)) {
          return false;
       }
 

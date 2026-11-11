@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.PositionAndRotation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InterpolationHandler;
@@ -164,7 +165,8 @@ public final class BoundingBoxUtils implements ClientAccess {
 
       AABB bounds = entity.getBoundingBox();
       InterpolationHandler interpolation = entity.getInterpolation();
-      Vec3 position = interpolation.interpolationData.position;
+      PositionAndRotation target = interpolation.target();
+      Vec3 position = target == null ? Vec3.ZERO : target.position();
       if (position.lengthSqr() == 0.0) {
          return entity.getBoundingBox();
       }

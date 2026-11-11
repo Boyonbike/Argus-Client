@@ -226,10 +226,10 @@ public final class WorldStateManager implements ClientAccess {
       if (event.getPacket() instanceof ServerboundUseItemOnPacket packet) {
          RotationManager rotationManager = ClientContext.rotationManager;
          if (!rotationManager.isExecutingAction()) {
-            InteractionHand hand = packet.getHand();
+            InteractionHand hand = packet.hand();
             ItemStack stack = this.resolveHandStack(hand);
             if (stack.getItem() instanceof BlockItem item) {
-               BlockHitResult hit = packet.getHitResult();
+               BlockHitResult hit = packet.hitResult();
                BlockPos placementPosition = hit.getBlockPos();
                Direction face = hit.getDirection();
                BlockPos adjacentPosition = placementPosition.relative(face);

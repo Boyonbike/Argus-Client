@@ -194,7 +194,7 @@ public final class RotationManager implements ClientAccess {
          }
       }
 
-      if (ClientAccess.argusclientMinecraft.player.attackAnim > 0.0F) {
+      if (ClientAccess.argusclientMinecraft.player.swingState.animation > 0.0F) {
          bodyYaw = yaw;
       }
 

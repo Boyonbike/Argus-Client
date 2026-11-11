@@ -1024,7 +1024,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
 
       if (player.getOffhandItem().is(Items.FIREWORK_ROCKET)) {
          minecraft.gameMode.useItem(player, InteractionHand.OFF_HAND);
-         player.swing(InteractionHand.OFF_HAND);
+         player.swing(InteractionHand.OFF_HAND, player.getItemInHand(InteractionHand.OFF_HAND).getAttackAnimation(), false);
          return true;
       }
 
@@ -1034,7 +1034,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       int previousSlot = InventoryUtils.getSelectedSlot();
       InventoryUtils.selectHotbarSlot(slot);
       minecraft.gameMode.useItem(player, InteractionHand.MAIN_HAND);
-      player.swing(InteractionHand.MAIN_HAND);
+      player.swing(InteractionHand.MAIN_HAND, player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), false);
       InventoryUtils.selectHotbarSlot(previousSlot);
       return true;
    }

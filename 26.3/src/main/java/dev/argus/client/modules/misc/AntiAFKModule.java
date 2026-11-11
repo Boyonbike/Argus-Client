@@ -80,7 +80,7 @@ public class AntiAFKModule extends Module {
             if (onlySwing) {
                LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
                InteractionHand swingHand = InteractionHand.MAIN_HAND;
-               swingPlayer.swing(swingHand);
+               swingPlayer.swing(swingHand, swingPlayer.getItemInHand(swingHand).getAttackAnimation(), false);
             } else {
                ((MinecraftAccessor)ClientAccess.argusclientMinecraft).attack();
             }

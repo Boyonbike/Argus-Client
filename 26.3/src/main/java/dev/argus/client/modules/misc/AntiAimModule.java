@@ -24,7 +24,7 @@ import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -51,11 +51,11 @@ public class AntiAimModule extends Module {
    private float spinYaw;
    private int pauseTicks;
 
-   private EnderMan findVisibleEnderman() {
+   private Enderman findVisibleEnderman() {
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
 
       for (Entity entity : level.entitiesForRendering()) {
-         if (entity instanceof EnderMan enderman && !enderman.isCreepy() && enderman.isAlive()) {
+         if (entity instanceof Enderman enderman && !enderman.isCreepy() && enderman.isAlive()) {
             Setting<AntiAimModule.LookChoice> lookSetting = this.endermanLookSetting;
             if (lookSetting.getValue() != AntiAimModule.LookChoice.AVOID || this.isLookingAtEnderman(enderman)) {
                if (this.endermanLookSetting.getValue() == AntiAimModule.LookChoice.STARE) {
@@ -116,7 +116,7 @@ public class AntiAimModule extends Module {
             Setting<Boolean> endermanEnabledSnapshot = this.endermanSetting;
             Boolean endermanEnabled = endermanEnabledSnapshot.getValue();
             if (endermanEnabled) {
-               EnderMan enderman = this.findVisibleEnderman();
+               Enderman enderman = this.findVisibleEnderman();
                if (enderman != null) {
                   Setting<AntiAimModule.LookChoice> avoidModeSnapshot = this.endermanLookSetting;
                   if (avoidModeSnapshot.getValue() == AntiAimModule.LookChoice.AVOID) {
@@ -144,7 +144,7 @@ public class AntiAimModule extends Module {
       }
    }
 
-   private boolean isLookingAtEnderman(EnderMan enderman) {
+   private boolean isLookingAtEnderman(Enderman enderman) {
       LocalPlayer viewPlayer = ClientAccess.argusclientMinecraft.player;
       Vec3 viewVector = viewPlayer.getViewVector(1.0F);
       Vec3 lookDirection = viewVector.normalize();
@@ -176,12 +176,12 @@ public class AntiAimModule extends Module {
    @EventHandler
    private void onConnectionSendPacketEvent(PacketEvent.Send event) {
       if (event.getPacket() instanceof ServerboundUseItemPacket useItemPacket) {
-         InteractionHand useItemHand = useItemPacket.getHand();
+         InteractionHand useItemHand = useItemPacket.hand();
          this.pauseForItemUse(useItemHand);
       }
 
       if (event.getPacket() instanceof ServerboundUseItemOnPacket useOnPacket) {
-         InteractionHand useOnHand = useOnPacket.getHand();
+         InteractionHand useOnHand = useOnPacket.hand();
          this.pauseForItemUse(useOnHand);
       }
    }

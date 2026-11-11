@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import com.mojang.blaze3d.Blaze3D;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.exploit.FakeVanillaModule;
 import dev.argus.client.network.*;
@@ -39,7 +40,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         if (signingIn()) {
             int bw = 90;
             button(x + w - 10 - bw, y + 44, bw, "Copy link", null, () -> { minecraft.keyboardHandler.setClipboard(link); info("Sign-in link copied."); }, false, true);
-            button(x + w - 16 - bw * 2, y + 44, bw, "Open link", null, () -> Util.getPlatform().openUri(URI.create(link)), true, true);
+            button(x + w - 16 - bw * 2, y + 44, bw, "Open link", null, () -> Blaze3D.openUri(URI.create(link)), true, true);
             return;
         }
         field(credential, x + 10, y + 50, w - 20);
@@ -135,7 +136,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         link = "";
         var proxy = minecraft.getProxy(); var directory = minecraft.gameDirectory;
         background("Waiting for Microsoft sign-in…", () -> {
-            var login = AccountAuthenticator.microsoft(url -> progress(screen -> { link = url; Util.getPlatform().openUri(URI.create(url)); rebuildWidgets(); }));
+            var login = AccountAuthenticator.microsoft(url -> progress(screen -> { link = url; Blaze3D.openUri(URI.create(url)); rebuildWidgets(); }));
             return AccountSession.prepare(login, proxy, directory);
         }, this::completeLogin);
     }

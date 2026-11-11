@@ -45,6 +45,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
@@ -209,7 +210,7 @@ public class VisualRangeModule extends Module {
                int signMessageId = -Math.abs(positionHash);
                MutableComponent notification = Component.literal("Found a sign: ");
                boolean empty = true;
-               SignText frontTextSnapshot = sign.getFrontText();
+               SignText frontTextSnapshot = sign.getText(SignTextSlot.FRONT);
                boolean filtered = false;
 
                for (Component line : frontTextSnapshot.getMessages(filtered)) {

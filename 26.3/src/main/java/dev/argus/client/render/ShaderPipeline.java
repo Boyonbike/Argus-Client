@@ -1,7 +1,7 @@
 package dev.argus.client.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
 import dev.argus.client.ClientAccess;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,5 +1,6 @@
 package dev.argus.client.commands;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -46,7 +47,7 @@ public final class FolderCommand extends Command {
 
    private static int openDirectory(Path directory) {
       if (GraphicsEnvironment.isHeadless()) {
-         Util.getPlatform().openPath(directory);
+         Blaze3D.openPath(directory);
          return 1;
       }
 

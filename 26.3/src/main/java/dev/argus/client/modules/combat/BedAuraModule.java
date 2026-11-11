@@ -31,7 +31,7 @@ import net.minecraft.core.Direction.Plane;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BedItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -80,8 +80,8 @@ public final class BedAuraModule extends Module {
       if (this.refillSetting.getValue()) {
          int refillSlot = this.slotSetting.getValue() - 1;
          ItemStack currentStack = ClientAccess.argusclientMinecraft.player.getInventory().getItem(refillSlot);
-         if (!(currentStack.getItem() instanceof BedItem)) {
-            Predicate<ItemStack> bedPredicate = candidateStack -> candidateStack.getItem() instanceof BedItem;
+         if (!(currentStack.is(ItemTags.BEDS))) {
+            Predicate<ItemStack> bedPredicate = candidateStack -> candidateStack.is(ItemTags.BEDS);
             int bedSlot = InventoryUtils.findInventorySlot(bedPredicate, true);
             if (bedSlot != -1) {
                InventoryUtils.swapWithHotbarSlot(bedSlot, refillSlot);
@@ -103,7 +103,7 @@ public final class BedAuraModule extends Module {
             gameMode.useItemOn(interactionPlayer, interactionHand, hit);
             LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
             InteractionHand swingHand = InteractionHand.MAIN_HAND;
-            swingPlayer.swing(swingHand);
+            swingPlayer.swing(swingHand, swingPlayer.getItemInHand(swingHand).getAttackAnimation(), false);
          };
          interactionScheduler.runWithoutSneaking(interactionCallback);
 
@@ -140,7 +140,7 @@ public final class BedAuraModule extends Module {
    }
 
    private void placeWithBedSlot(BedPlacementCandidate placement) {
-      Predicate<ItemStack> bedPredicate = candidateStack -> candidateStack.getItem() instanceof BedItem;
+      Predicate<ItemStack> bedPredicate = candidateStack -> candidateStack.is(ItemTags.BEDS);
       int bedSlot = InventoryUtils.findHotbarSlot(bedPredicate);
       int originalSlot = ClientAccess.argusclientMinecraft.player.getInventory().getSelectedSlot();
       if (bedSlot != -1) {
@@ -268,7 +268,7 @@ public final class BedAuraModule extends Module {
             placementScheduler.runSneaking(placementCallback);
             LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
             InteractionHand swingHand = InteractionHand.MAIN_HAND;
-            swingPlayer.swing(swingHand);
+            swingPlayer.swing(swingHand, swingPlayer.getItemInHand(swingHand).getAttackAnimation(), false);
             footSnapshot = placement.foot();
             BlockPos boundsHead = placement.head();
             AABB renderBounds = AABB.encapsulatingFullBlocks(footSnapshot, boundsHead);
@@ -291,7 +291,7 @@ public final class BedAuraModule extends Module {
                   PacketSender.sendUseItemOn(instantInteractionHand, instantHit);
                   LocalPlayer instantSwingPlayer = ClientAccess.argusclientMinecraft.player;
                   InteractionHand instantSwingHand = InteractionHand.MAIN_HAND;
-                  instantSwingPlayer.swing(instantSwingHand);
+                  instantSwingPlayer.swing(instantSwingHand, instantSwingPlayer.getItemInHand(instantSwingHand).getAttackAnimation(), false);
                };
                breakScheduler.runWithoutSneaking(breakCallback);
             }

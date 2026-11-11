@@ -48,7 +48,7 @@ public class KeybindArgumentType implements ArgumentType {
          }
       }
 
-      InputConstantsTypeAccessor keyboardType = (InputConstantsTypeAccessor)(Object)Type.KEYSYM;
+      InputConstantsTypeAccessor keyboardType = (InputConstantsTypeAccessor)(Object)Type.KEYBOARD;
       Int2ObjectMap<Key> keyMap = keyboardType.getKeyMap();
       ObjectCollection<Key> keyValues = keyMap.values();
       Iterator<Key> keyboardSuggestions = keyValues.iterator();

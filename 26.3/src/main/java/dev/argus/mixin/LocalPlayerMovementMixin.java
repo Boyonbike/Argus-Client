@@ -24,7 +24,7 @@ import dev.argus.client.utils.network.PacketSender;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -71,10 +71,11 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer impl
    public void applySwingOverride(InteractionHand hand, CallbackInfo callback) {
       if (swingModule.isToggled() && swingModule.handSetting.getValue() != SwingModule.HandChoice.VANILLA) {
          if (swingModule.handSetting.getValue() != SwingModule.HandChoice.PACKET) {
-            super.swing(swingModule.handSetting.getValue().getHand());
+            InteractionHand overrideHand = swingModule.handSetting.getValue().getHand();
+            super.swing(overrideHand, getItemInHand(overrideHand).getAttackAnimation(), false);
          }
 
-         PacketSender.send(new ServerboundSwingPacket(hand));
+         PacketSender.sendSwing(hand);
          callback.cancel();
       }
    }

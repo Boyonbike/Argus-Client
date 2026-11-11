@@ -105,12 +105,12 @@ public class LegacyCrystalModule extends Module {
    private void onPacketSend(PacketEvent.Send event) {
       if (event.getPacket() instanceof ServerboundUseItemOnPacket useItem) {
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-         InteractionHand hand = useItem.getHand();
+         InteractionHand hand = useItem.hand();
          ItemStack heldStack = player.getItemInHand(hand);
          Item crystal = Items.END_CRYSTAL;
          if (heldStack.is(crystal)) {
             Map<BlockPos, Long> placements = this.placementTimes;
-            BlockHitResult hit = useItem.getHitResult();
+            BlockHitResult hit = useItem.hitResult();
             BlockPos position = hit.getBlockPos();
             placements.compute(position, (ignoredKey, ignoredValue) -> System.currentTimeMillis());
          }

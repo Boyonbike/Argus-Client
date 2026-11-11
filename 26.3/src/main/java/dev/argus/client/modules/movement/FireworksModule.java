@@ -399,7 +399,7 @@ public final class FireworksModule extends Module {
    private void onMultiPlayerGameModeUseItemOnEvent(MultiPlayerGameModeUseItemOnEvent event) {
       if (this.antiWasteSetting.getValue() && ClientAccess.argusclientMinecraft.player.getItemInHand(event.getHand()).is(Items.FIREWORK_ROCKET)) {
          ClientAccess.argusclientMinecraft.gameMode.useItem(ClientAccess.argusclientMinecraft.player, event.getHand());
-         ClientAccess.argusclientMinecraft.player.swing(event.getHand());
+         ClientAccess.argusclientMinecraft.player.swing(event.getHand(), ClientAccess.argusclientMinecraft.player.getItemInHand(event.getHand()).getAttackAnimation(), false);
          event.cancel();
       }
    }

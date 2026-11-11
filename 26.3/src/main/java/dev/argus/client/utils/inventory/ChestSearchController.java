@@ -72,8 +72,8 @@ public class ChestSearchController {
          }
 
          ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
-         if (contents != null && contents.allItemsCopyStream().toList().size() == 27) {
-            for (ItemStack containedStack : contents.allItemsCopyStream().toList()) {
+         if (contents != null && contents.itemCopies().toList().size() == 27) {
+            for (ItemStack containedStack : contents.itemCopies().toList()) {
                if (!namesMatch(containedStack, query)) {
                   return false;
                }
@@ -172,7 +172,7 @@ public class ChestSearchController {
    private static boolean matchesBundleContents(ItemStack stack, String query) {
       BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
       if (contents != null) {
-         for (ItemStack containedStack : contents.itemCopyStream().toList()) {
+         for (ItemStack containedStack : contents.itemCopies().toList()) {
             if (namesMatch(containedStack, query)) {
                return true;
             }

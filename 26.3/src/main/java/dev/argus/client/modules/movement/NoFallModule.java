@@ -226,7 +226,7 @@ public class NoFallModule extends Module {
                                  gameMode.useItem(usePlayer, hand);
                                  LocalPlayer swingPlayer = ClientAccess.argusclientMinecraft.player;
                                  InteractionHand swingHand = bucket.hand();
-                                 swingPlayer.swing(swingHand);
+                                 swingPlayer.swing(swingHand, swingPlayer.getItemInHand(swingHand).getAttackAnimation(), false);
                                  InventoryUtils.swapBack(selectedSlot, bucket);
                                  this.skipNextMlgTick = true;
                                  return;

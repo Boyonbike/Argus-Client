@@ -58,7 +58,7 @@ public class AutoFishModule extends Module {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       gameMode.useItem(player, hand);
-      ClientAccess.argusclientMinecraft.player.swing(hand);
+      ClientAccess.argusclientMinecraft.player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
       this.castTimer.reset();
    }
 
