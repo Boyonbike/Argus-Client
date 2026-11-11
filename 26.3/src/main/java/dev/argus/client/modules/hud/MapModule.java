@@ -1,5 +1,6 @@
 package dev.argus.client.modules.hud;
 
+import org.joml.Matrix4f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.argus.client.ClientAccess;
@@ -193,7 +194,7 @@ public class MapModule extends HudWidgetModule {
             Camera camera = gameRenderer.mainCamera();
             float rotationDegrees = rotationOffset + camera.yRot();
             Quaternionf arrowRotation = rotationAxis.rotationDegrees(rotationDegrees);
-            poses.mulPose(arrowRotation);
+            poses.mulPose(new Matrix4f().rotation(arrowRotation));
             int[] renderStateValues = RenderUtils.getRenderColor();
             float renderAlpha = renderStateValues[3];
             Setting<Color> arrowColorOption = this.pointerColorSetting;

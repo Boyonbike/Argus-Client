@@ -57,7 +57,9 @@ public class SkyRendererMixin {
    @Inject(method = "extractRenderState", at = @At("TAIL"))
    private void overrideSkyRenderState(ClientLevel level, float partialTick, Camera camera, SkyRenderState renderState, CallbackInfo callback) {
       if (skyboxModule.isToggled() && skyboxModule.isCurrentDimensionEnabled()) {
-         renderState.skyColor = skyboxModule.skySetting.getValue().hashCode();
+         java.awt.Color skyColour = skyboxModule.skySetting.getValue();
+         renderState.skyColor = new org.joml.Vector3f(
+            skyColour.getRed() / 255.0F, skyColour.getGreen() / 255.0F, skyColour.getBlue() / 255.0F);
          if (skyboxModule.typeSetting.getValue() == SkyboxModule.SkyType.FLAT) {
             renderState.shouldRenderDarkDisc = false;
          }

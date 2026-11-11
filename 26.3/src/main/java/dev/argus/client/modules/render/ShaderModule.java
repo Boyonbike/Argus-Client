@@ -417,7 +417,12 @@ public class ShaderModule extends Module {
       Quaternionf inverseCameraRotation = cameraRotation.conjugate(inverseRotationDestination);
       Matrix4f viewMatrix = new Matrix4f();
       viewMatrix.rotation(inverseCameraRotation);
-      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState, event.getPartialTick(), viewMatrix);
+      var levelState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState;
+      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(
+         levelState.cameraRenderState,
+         levelState.playerRenderState,
+         ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView()
+      );
       RenderSystem.restoreProjectionMatrix();
    }
 

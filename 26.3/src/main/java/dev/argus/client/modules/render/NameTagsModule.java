@@ -1,5 +1,6 @@
 package dev.argus.client.modules.render;
 
+import org.joml.Matrix4f;
 import dev.argus.client.render.MeshRenderer;
 import dev.argus.client.utils.chat.LegacyFormatting;
 import com.mojang.authlib.GameProfile;
@@ -799,7 +800,7 @@ public class NameTagsModule extends Module {
       float tagAnchorY = anchorHeight + scaleHeightOffset;
       poses.translate(0.0F, tagAnchorY, 0.0F);
       Camera dispatcherCamera = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera;
-      poses.mulPose(dispatcherCamera.rotation());
+      poses.mulPose(new Matrix4f().rotation(dispatcherCamera.rotation()));
       float poseScaleX = tagScale * 0.025F;
       float negativeScaleY = -tagScale;
       float poseScaleY = negativeScaleY * 0.025F;

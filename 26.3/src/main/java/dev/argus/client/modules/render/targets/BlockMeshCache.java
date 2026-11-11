@@ -335,7 +335,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
             .createRenderPass(
                () -> "Argus ESP cells", target.getColorTextureView(), java.util.Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty()
             )) {
-         pass.setPipeline(PIPELINE);
+         pass.setPipeline(dev.argus.client.render.CompiledPipelines.get(PIPELINE));
          RenderSystem.bindDefaultUniforms(pass);
          pass.setIndexBuffer(indices, quadIndices.type());
          for (int i = 0; i < drawList.size(); i++) {

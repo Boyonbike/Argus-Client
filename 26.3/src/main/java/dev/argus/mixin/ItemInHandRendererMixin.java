@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import org.joml.Matrix4f;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -133,9 +134,9 @@ public abstract class ItemInHandRendererMixin {
       }
 
       pose.translate(offsetX, offsetY, offsetZ);
-      pose.mulPose(Axis.XN.rotationDegrees(this.itemRotation.x));
-      pose.mulPose(Axis.YP.rotationDegrees(this.itemRotation.y));
-      pose.mulPose(Axis.ZP.rotationDegrees(this.itemRotation.z));
+      pose.mulPose(new Matrix4f().rotation(Axis.XN.rotationDegrees(this.itemRotation.x)));
+      pose.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(this.itemRotation.y)));
+      pose.mulPose(new Matrix4f().rotation(Axis.ZP.rotationDegrees(this.itemRotation.z)));
    }
 
    @Inject(method = "renderPlayerArm", at = @At("HEAD"))

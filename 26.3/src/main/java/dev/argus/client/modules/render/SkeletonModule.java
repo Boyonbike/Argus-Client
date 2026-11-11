@@ -1,5 +1,6 @@
 package dev.argus.client.modules.render;
 
+import org.joml.Matrix4f;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -45,15 +46,15 @@ public class SkeletonModule extends Module {
 
    private void applyModelPartRotation(PoseStack poseStack, ModelPart part) {
       if (part.zRot != 0.0F) {
-         poseStack.mulPose(Axis.ZP.rotation(part.zRot));
+         poseStack.mulPose(new Matrix4f().rotation(Axis.ZP.rotation(part.zRot)));
       }
 
       if (part.yRot != 0.0F) {
-         poseStack.mulPose(Axis.YN.rotation(part.yRot));
+         poseStack.mulPose(new Matrix4f().rotation(Axis.YN.rotation(part.yRot)));
       }
 
       if (part.xRot != 0.0F) {
-         poseStack.mulPose(Axis.XN.rotation(part.xRot));
+         poseStack.mulPose(new Matrix4f().rotation(Axis.XN.rotation(part.xRot)));
       }
    }
 
@@ -106,26 +107,26 @@ public class SkeletonModule extends Module {
             renderScalarScratch *= Math.PI;
             renderScalarScratch /= 180.0;
             Quaternionfc bodyYawRotation = bodyRotation.setAngleAxis(renderScalarScratch, 0.0, -1.0, 0.0);
-            poseStack.mulPose(bodyYawRotation);
+            poseStack.mulPose(new Matrix4f().rotation(bodyYawRotation));
             if (fallFlying) {
                float fallFlyingScale = renderState.fallFlyingScale();
                if (!renderState.isAutoSpinAttack) {
                   Axis flyingPitchAxis = Axis.XP;
                   float flyingPitchAngle = fallFlyingScale * (-90.0F - renderState.xRot);
                   Quaternionfc flyingPitchRotation = flyingPitchAxis.rotationDegrees(flyingPitchAngle);
-                  poseStack.mulPose(flyingPitchRotation);
+                  poseStack.mulPose(new Matrix4f().rotation(flyingPitchRotation));
                }
 
                if (renderState.shouldApplyFlyingYRot) {
                   Axis flyingYawRotationAxis = Axis.YP;
                   float flyingYawAngle = renderState.flyingYRot;
                   Quaternionfc flyingYawRotation = flyingYawRotationAxis.rotation(flyingYawAngle);
-                  poseStack.mulPose(flyingYawRotation);
+                  poseStack.mulPose(new Matrix4f().rotation(flyingYawRotation));
                }
             } else if (renderState.swimAmount > 0.0F) {
                Axis swimPitchRotationAxis = Axis.XP;
                Quaternionfc swimPitchRotation = swimPitchRotationAxis.rotationDegrees(swimPitch);
-               poseStack.mulPose(swimPitchRotation);
+               poseStack.mulPose(new Matrix4f().rotation(swimPitchRotation));
                if (visuallySwimming) {
                   poseStack.translate(0.0F, -1.0F, 0.3F);
                }

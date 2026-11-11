@@ -1,5 +1,6 @@
 package dev.argus.client.modules.hud;
 
+import org.joml.Matrix4f;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.Lighting.Entry;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -63,7 +64,7 @@ public class PlayerModelModule extends HudWidgetModule {
       float modelY = modelTranslation.y;
       float modelX = modelTranslation.x;
       poses.translate(modelX, modelY, modelZ);
-      poses.mulPose(rotation);
+      poses.mulPose(new Matrix4f().rotation(rotation));
       Lighting lighting = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
       Entry entityLightingEntry = Entry.ENTITY_IN_UI;
       lighting.setupFor(entityLightingEntry);

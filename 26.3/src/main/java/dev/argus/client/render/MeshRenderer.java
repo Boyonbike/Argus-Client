@@ -1,19 +1,26 @@
 package dev.argus.client.render;
 
-import com.mojang.renderpearl.api.GpuFormat;
-import com.mojang.renderpearl.api.pipeline.IndexType;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
-import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import dev.argus.client.ClientAccess;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
@@ -51,7 +58,18 @@ public final class MeshRenderer {
       PENDING.add(vertexBuffer);
       PENDING.add(indexBuffer);
       PreparedRenderType prepared = renderType.prepare();
-      prepared.drawFromBuffer(vertexBuffer, indexBuffer, state.indexType(), 0, 0, state.indexCount());
+      RenderTarget target = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
+      CommandEncoder encoder = device.createCommandEncoder();
+      try (RenderPass pass = target.hasDepth()
+            ? encoder.createRenderPass(
+               () -> "argus-mesh", target.getColorTextureView(), Optional.empty(),
+               target.getDepthTextureView(), OptionalDouble.empty())
+            : encoder.createRenderPass(() -> "argus-mesh", target.getColorTextureView(), Optional.empty())) {
+         StagedVertexBuffer.ExecuteInfo info = new StagedVertexBuffer.ExecuteInfo(
+            vertexBuffer, indexBuffer, state.indexType(), 0, 0, state.indexCount(), state.primitiveTopology());
+         prepared.drawFromBuffer(info, pass);
+      }
+      encoder.submit();
    }
 
    private static void applyColorModifiers(ByteBuffer vertices, MeshData.DrawState state, RenderType renderType) {

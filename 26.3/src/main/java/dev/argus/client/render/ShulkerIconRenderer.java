@@ -115,16 +115,10 @@ public final class ShulkerIconRenderer {
             .withBindGroupLayout(net.minecraft.client.renderer.BindGroupLayouts.PROJECTION)
             .withVertexBinding(0, base.getVertexFormatBinding(0)).withPrimitiveTopology(base.getPrimitiveTopology())
             .withDepthStencilState(base.getDepthStencilState())
-            .withColorTargetState(base.getColorTargetState())
+            .withColorTargetState(base.getColorTargetStates().get(0))
             .withCull(base.isCull())
             .build();
-         RenderSystem.getDevice().precompilePipeline(created, (identifier, type) -> {
-            try (var input = Minecraft.getInstance().getResourceManager().open(identifier)) {
-               return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            } catch (IOException exception) {
-               throw new UncheckedIOException(exception);
-            }
-         });
+         CompiledPipelines.get(created);
          pipeline = created;
          failedAt = 0L;
          return created;

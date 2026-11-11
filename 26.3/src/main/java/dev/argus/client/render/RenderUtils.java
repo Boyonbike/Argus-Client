@@ -153,9 +153,9 @@ public final class RenderUtils implements ClientAccess {
       try (RenderPass renderPass = RenderSystem.getDevice()
             .createCommandEncoder()
             .createRenderPass(() -> "Blit render target", outputTexture, java.util.Optional.empty())) {
-         renderPass.setPipeline(pipeline);
+         renderPass.setPipeline(CompiledPipelines.get(pipeline));
          RenderSystem.bindDefaultUniforms(renderPass);
-         renderPass.bindTexture("InSampler", target.getColorTextureView(), RenderSystem.getSamplerCache().getClampToEdge(filter));
+         renderPass.setUniform("InSampler", target.getColorTextureView(), RenderSystem.getSamplerCache().getClampToEdge(filter));
          renderPass.draw(3, 1, 0, 0);
       }
    }
@@ -167,7 +167,7 @@ public final class RenderUtils implements ClientAccess {
    public void drawWorldTexture(PoseStack poses, Vec3 position, float width, float height, double scale, Color color, Identifier texture) {
       poses.pushPose();
       translateToCamera(poses, position);
-      poses.mulPose(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation());
+      poses.mulPose(new Matrix4f().rotation(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation()));
       poses.scale(0.025F * (float)scale, -0.025F * (float)scale, 1.0F);
       int halfWidth = (int)(width / 2.0F);
       GuiDrawUtils.drawTexture(poses, texture, -halfWidth, -halfWidth, 0.0F, 0.0F, (int)width, (int)height, (int)width, (int)height, color.hashCode());
@@ -177,7 +177,7 @@ public final class RenderUtils implements ClientAccess {
    public void drawWorldRect(PoseStack poses, Vec3 position, float offsetX, float offsetY, float width, float height, double scale, Color color) {
       poses.pushPose();
       translateToCamera(poses, position);
-      poses.mulPose(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation());
+      poses.mulPose(new Matrix4f().rotation(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation()));
       poses.translate(offsetX, offsetY, 0.0F);
       poses.scale(0.025F * (float)scale, -0.025F * (float)scale, (float)(0.025F * scale));
       int halfWidth = (int)(width / 2.0F);
@@ -218,7 +218,7 @@ public final class RenderUtils implements ClientAccess {
    ) {
       poses.pushPose();
       translateToCamera(poses, position);
-      poses.mulPose(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation());
+      poses.mulPose(new Matrix4f().rotation(ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().camera.rotation()));
       poses.translate(offsetX, offsetY, 0.0F);
       poses.scale(0.025F * (float)scale, -0.025F * (float)scale, (float)(0.025F * scale));
       if (shadow) {
@@ -288,8 +288,8 @@ public final class RenderUtils implements ClientAccess {
 
    public static void applyCameraRotation(PoseStack poses) {
       Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
-      poses.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
-      poses.mulPose(Axis.YP.rotationDegrees(camera.yRot() + 180.0F));
+      poses.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(camera.xRot())));
+      poses.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(camera.yRot() + 180.0F)));
    }
 
    public static void applyCameraRotation(Matrix4f matrix) {

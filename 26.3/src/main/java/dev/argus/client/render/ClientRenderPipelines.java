@@ -37,13 +37,13 @@ public final class ClientRenderPipelines {
       .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH).withPrimitiveTopology(PrimitiveTopology.LINES)
       .withCull(false)
       .buildSnippet();
-   public static final Snippet GUI_TRIANGLES_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+   public static final Snippet GUI_TRIANGLES_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.PROJECTION)
       .withVertexShader("core/gui")
       .withFragmentShader("core/gui")
       .withColorTargetState(blend(BlendFunction.TRANSLUCENT))
       .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
       .buildSnippet();
-   public static final Snippet GUI_TRIANGLE_STRIP_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+   public static final Snippet GUI_TRIANGLE_STRIP_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.PROJECTION)
       .withVertexShader("core/gui")
       .withFragmentShader("core/gui")
       .withColorTargetState(blend(BlendFunction.TRANSLUCENT))
@@ -190,7 +190,7 @@ public final class ClientRenderPipelines {
       .withDepthStencilState(DEPTH_NONE)
       .build();
    public static final RenderPipeline SHINE_GLINT = RenderPipeline.builder()
-         .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+         .withBindGroupLayout(BindGroupLayouts.PROJECTION)
          .withBindGroupLayout(BindGroupLayouts.FOG)
          .withBindGroupLayout(BindGroupLayouts.GLOBALS)
       .withLocation("pipeline/argusclient_shine_glint")
@@ -223,7 +223,7 @@ public final class ClientRenderPipelines {
       .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 1.0F, -500000.0F))
       .build();
    public static final RenderPipeline NAMETAG_ITEM_GLINT = RenderPipeline.builder()
-         .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+         .withBindGroupLayout(BindGroupLayouts.PROJECTION)
          .withBindGroupLayout(BindGroupLayouts.FOG)
          .withBindGroupLayout(BindGroupLayouts.GLOBALS)
       .withLocation("pipeline/argusclient_nametag_item_glint")

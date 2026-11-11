@@ -45,7 +45,7 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
 
    private class ColoredSubmitNodeCollection extends SubmitNodeCollection {
       public ColoredSubmitNodeCollection() {
-         super();
+         super(false, new net.minecraft.client.renderer.feature.phase.TranslucentFeatureRenderPhase());
       }
 
       @Override
@@ -88,42 +88,36 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
       }
 
       @Override
-      public void submitModel(
-         Model model,
-         Object state,
+      public <S> void submitModel(
+         Model<? super S> model,
+         S state,
          PoseStack poseStack,
          RenderType renderType,
          int packedLight,
          int packedOverlay,
          int tintColor,
-         TextureAtlasSprite sprite,
-         int outlineColor,
-         CrumblingOverlay crumblingOverlay
+         net.minecraft.client.renderer.texture.UvMapping uvMapping,
+         int outlineColor
       ) {
-         super.submitModel(model, state, poseStack, renderType, packedLight, packedOverlay, ColorSubmitNodeStorage.this.colorArgb, sprite, 0, crumblingOverlay);
+         super.submitModel(
+            model, state, poseStack, renderType, packedLight, packedOverlay,
+            ColorSubmitNodeStorage.this.colorArgb, uvMapping, 0);
       }
 
       @Override
-      public void submitModelPart(
-         ModelPart part,
+      public <S> void submitCrumblingOverlay(
+         Model<? super S> model,
+         S state,
          PoseStack poseStack,
          RenderType renderType,
          int packedLight,
          int packedOverlay,
-         TextureAtlasSprite sprite,
-         int outlineColor,
+         int tintColor,
          CrumblingOverlay crumblingOverlay
       ) {
-         super.submitModelPart(
-            part,
-            poseStack,
-            renderType,
-            packedLight,
-            packedOverlay,
-            sprite,
-            ColorSubmitNodeStorage.this.colorArgb,
-            crumblingOverlay
-         );
+         super.submitCrumblingOverlay(
+            model, state, poseStack, renderType, packedLight, packedOverlay,
+            ColorSubmitNodeStorage.this.colorArgb, crumblingOverlay);
       }
 
       @Override
@@ -153,7 +147,7 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
          int packedOverlay,
          int outlineColor,
          int[] tintColors,
-         List<net.minecraft.client.resources.model.geometry.BakedQuad> quads,
+         net.minecraft.client.resources.model.geometry.ItemQuads quads,
          FoilType foilType
       ) {
          if (ColorSubmitNodeStorage.this.itemTintColors == null || ColorSubmitNodeStorage.this.itemTintColors[0] != ColorSubmitNodeStorage.this.colorArgb) {

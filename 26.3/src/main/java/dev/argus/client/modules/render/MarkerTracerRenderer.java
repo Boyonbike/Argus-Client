@@ -53,7 +53,7 @@ public final class MarkerTracerRenderer extends TracerRenderer {
       Axis markerAxis = Axis.ZP;
       float markerRotation = relativeYaw - 90.0F;
       Quaternionf rotation = markerAxis.rotationDegrees(markerRotation);
-      poseStack.mulPose(rotation);
+      poseStack.mulPose(new Matrix4f().rotation(rotation));
       int packedColor = color.hashCode();
       this.drawArrow(poseStack, -4.0F, -4.0F, 8.0F, packedColor);
       poseStack.popPose();

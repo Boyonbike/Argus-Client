@@ -89,7 +89,7 @@ public class FreeLookModule extends Module {
       Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
       LocalPlayer cameraPlayer = ClientAccess.argusclientMinecraft.player;
-      camera.extractRenderState(new net.minecraft.client.renderer.state.level.CameraRenderState(), 1.0F);
+      camera.extractRenderState(new net.minecraft.client.renderer.state.level.CameraRenderState(), ClientAccess.argusclientMinecraft.getDeltaTracker());
    }
 
    public float getCameraDistanceOffset() {

@@ -135,6 +135,12 @@ public class MeshBuffer implements VertexConsumer {
       return this.getBuilder().setUv2(lightU, lightV);
    }
 
+   @Override
+   public VertexConsumer setUv3(float u, float v) {
+      this.getBuilder().setUv3(u, v);
+      return this;
+   }
+
    public void draw() {
       if (this.builder != null) {
          draw(this.builder);

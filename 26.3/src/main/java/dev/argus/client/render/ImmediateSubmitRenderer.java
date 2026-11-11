@@ -1,6 +1,12 @@
 package dev.argus.client.render;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import dev.argus.client.ClientAccess;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
@@ -15,14 +21,21 @@ public final class ImmediateSubmitRenderer implements ClientAccess {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
       FeatureRenderDispatcher dispatcher = minecraft.gameRenderer.featureRenderDispatcher();
       PreparedFrame frame = dispatcher.prepareFrame(storage);
-      try {
-         frame.executeSolid();
-         frame.executeTranslucent();
-         frame.executeOutline();
-         frame.executeTranslucentAfterTerrain();
-         frame.executeAlwaysOnTop();
+      RenderTarget target = minecraft.gameRenderer.mainRenderTarget();
+      CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+      try (RenderPass pass = target.hasDepth()
+            ? encoder.createRenderPass(
+               () -> "argus-immediate", target.getColorTextureView(), Optional.empty(),
+               target.getDepthTextureView(), OptionalDouble.empty())
+            : encoder.createRenderPass(() -> "argus-immediate", target.getColorTextureView(), Optional.empty())) {
+         frame.executeSolid(pass);
+         frame.executeTranslucent(pass);
+         frame.executeOutline(pass);
+         frame.executeTranslucentAfterTerrain(pass);
+         frame.executeAlwaysOnTop(pass);
       } finally {
          frame.close();
       }
+      encoder.submit();
    }
 }

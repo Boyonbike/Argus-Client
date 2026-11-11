@@ -36,7 +36,7 @@ accessible	field	net/minecraft/world/item/component/BundleContents	items	Ljava/u
 accessible	field	net/minecraft/world/level/block/entity/BlockEntityType	validBlocks	Ljava/util/Set;
 accessible	method	com/mojang/blaze3d/platform/NativeImage	writeToChannel	(Ljava/nio/channels/WritableByteChannel;)Z
 accessible	method	net/minecraft/client/multiplayer/PlayerInfo	setLatency	(I)V
-accessible	method	net/minecraft/client/renderer/GameRenderer	renderItemInHand	(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V
+accessible	method	net/minecraft/client/renderer/GameRenderer	renderItemInHand	(Lnet/minecraft/client/renderer/state/level/CameraRenderState;Lnet/minecraft/client/renderer/state/level/PlayerRenderState;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V
 accessible	method	net/minecraft/world/entity/animal/wolf/Wolf	getVariant	()Lnet/minecraft/core/Holder;
 accessible	method	net/minecraft/world/item/CrossbowItem	getShootingPower	(Lnet/minecraft/world/item/component/ChargedProjectiles;)F
 accessible	class	net/minecraft/client/gui/components/ChatComponent$ClickableTextOnlyGraphicsAccess

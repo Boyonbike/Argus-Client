@@ -92,7 +92,8 @@ public class RenderTypeMixin {
             : texture)
          .toList();
       return new PreparedRenderType(
-         prepared.pipeline(), prepared.outputTarget(), prepared.dynamicTransforms(), prepared.scissorState(), textures
+         prepared.name(), prepared.pipeline(), prepared.oitPipelineSet(), prepared.dynamicTransforms(),
+         prepared.scissorState(), textures
       );
    }
 
