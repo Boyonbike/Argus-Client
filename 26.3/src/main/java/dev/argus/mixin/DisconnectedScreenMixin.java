@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.client.UIModule;
 import dev.argus.client.modules.misc.AutoReconnectModule;
@@ -96,7 +97,7 @@ public class DisconnectedScreenMixin extends Screen {
 
    @Override
    public boolean keyPressed(KeyEvent keyEvent) {
-      if (keyEvent.key() == uiModule.getKeybind().code() && !(this.getFocused() instanceof EditBox)) {
+      if (InputKeys.glfw(keyEvent) == uiModule.getKeybind().code() && !(this.getFocused() instanceof EditBox)) {
          uiModule.enable();
          ClientContext.getClickGui().open();
          return false;

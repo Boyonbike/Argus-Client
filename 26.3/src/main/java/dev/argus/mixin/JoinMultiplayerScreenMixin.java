@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import dev.argus.client.utils.InputKeys;
 import dev.argus.client.ClientContext;
 import dev.argus.client.commands.PanicCommand;
 import dev.argus.client.modules.client.UIModule;
@@ -39,7 +40,7 @@ public class JoinMultiplayerScreenMixin extends Screen {
 
    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
    private void openClickGuiOnKeyPress(KeyEvent keyEvent, CallbackInfoReturnable<Boolean> callback) {
-      if (!(this.getFocused() instanceof EditBox) && keyEvent.key() == uiModule.getKeybind().code()) {
+      if (!(this.getFocused() instanceof EditBox) && InputKeys.glfw(keyEvent) == uiModule.getKeybind().code()) {
          callback.setReturnValue(false);
          callback.cancel();
          uiModule.enable();

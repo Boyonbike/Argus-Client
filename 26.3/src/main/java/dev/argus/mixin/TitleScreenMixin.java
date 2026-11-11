@@ -1,5 +1,6 @@
 package dev.argus.mixin;
 
+import dev.argus.client.utils.InputKeys;
 import com.llamalad7.mixinextras.sugar.Local;
 import dev.argus.client.ArgusClient;
 import dev.argus.client.ClientAccess;
@@ -43,7 +44,7 @@ public class TitleScreenMixin extends Screen {
 
    @Override
    public boolean keyPressed(KeyEvent keyEvent) {
-      if (!uiModule.getKeybind().mouse() && uiModule.getKeybind().code() == keyEvent.key()) {
+      if (!uiModule.getKeybind().mouse() && uiModule.getKeybind().code() == InputKeys.glfw(keyEvent)) {
          uiModule.enable();
          ClientContext.getClickGui().open();
       }

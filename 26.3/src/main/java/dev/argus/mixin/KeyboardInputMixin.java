@@ -55,7 +55,7 @@ public class KeyboardInputMixin extends ClientInput {
             return key;
          }
 
-         this.softwareKey.setDown(KeyUtils.isPhysicalKeyDown(keyCode));
+         this.softwareKey.setDown(com.mojang.blaze3d.platform.InputConstants.isKeyDown(keyCode));
          return this.softwareKey;
       } else {
          return key;
