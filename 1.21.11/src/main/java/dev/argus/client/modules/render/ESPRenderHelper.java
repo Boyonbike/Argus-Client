@@ -8,6 +8,9 @@ import dev.argus.client.events.WorldRenderEvent;
 import dev.argus.client.managers.RotationManager;
 import dev.argus.client.render.FontRenderer;
 import dev.argus.client.render.RenderUtils;
+import dev.argus.client.modules.render.targets.RuleSettings;
+import dev.argus.client.modules.render.targets.SpecificRules;
+import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetMatcher;
 import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.utils.entity.EntityUtils;
@@ -21,6 +24,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -52,6 +57,13 @@ import net.minecraft.world.phys.Vec3;
 public class ESPRenderHelper implements ClientAccess {
    private final ESPModule module;
    protected final HashMap<UUID, String> ownerNames = new HashMap<>();
+   private static final Resolved UNMATCHED = new Resolved(null, null, Color.white);
+   /** Each entity's target this frame, so the box, label and 2D passes don't each match it again. */
+   private final Map<Entity, Resolved> resolved = new IdentityHashMap<>();
+
+   /** What an entity matched this frame: its card (null if not drawn), its group's settings (or null) and colour. */
+   record Resolved(TargetSettings.Kind kind, RuleSettings settings, Color color) {
+   }
 
    public ESPRenderHelper(ESPModule module) {
       this.module = module;
@@ -121,29 +133,54 @@ public class ESPRenderHelper implements ClientAccess {
       }
    }
 
+   /** Forgets last frame's matches; call once at the start of each frame. */
+   void beginFrame() {
+      this.resolved.clear();
+   }
+
+   /** The entity's target for this frame, worked out on first use. */
+   Resolved resolve(Entity entity) {
+      Resolved result = this.resolved.get(entity);
+      if (result == null) {
+         Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+         SpecificTargets specific = this.module.targets.specific;
+         SpecificRules.Rule rule = specific.forEntity(entity);
+         RuleSettings settings = rule == null ? null : specific.settings(rule);
+         TargetSettings.Kind kind = TargetMatcher.kindOf(this.module.targets, entity, camera, rule);
+         result = kind == null && settings == null
+            ? UNMATCHED
+            : new Resolved(kind, settings, kind == null ? Color.white : TargetMatcher.entityColor(this.module.targets, kind, entity, camera, rule));
+         this.resolved.put(entity, result);
+      }
+
+      return result;
+   }
+
    /** Whether an entity is drawn: in one of the target groups (dropped items only if their group draws a box), and in view. */
    protected boolean shouldRenderEntity(Entity entity) {
       if (entity == null || entity.getBoundingBox() == null || !RotationManager.isVisible(entity.getBoundingBox().inflate(0.1))) {
          return false;
       }
 
-      Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
-      TargetSettings.Kind kind = TargetMatcher.kindOf(this.module.targets, entity, camera);
-      if (kind == TargetSettings.Kind.ITEMS) {
-         return this.module.drawsItemBox(entity);
+      Resolved target = this.resolve(entity);
+      if (target.kind() == TargetSettings.Kind.ITEMS) {
+         return target.settings() == null || target.settings().itemLook() != RuleSettings.ItemLook.LABEL;
       }
 
-      return kind != null;
+      return target.kind() != null;
    }
 
    protected Color getBaseEntityColor(Entity entity) {
-      Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
-      TargetSettings.Kind kind = TargetMatcher.kindOf(this.module.targets, entity, camera);
-      return kind == null ? Color.white : TargetMatcher.entityColor(this.module.targets, kind, entity, camera);
+      return this.resolve(entity).color();
    }
 
    protected Color getEntityColor(Entity entity, boolean fill) {
-      int color = ARGB.color((fill ? this.module.entityFillSetting : this.module.entityOutlineSetting).getValue(), this.getBaseEntityColor(entity).getRGB());
+      return this.getEntityColor(entity, this.getBaseEntityColor(entity).getRGB(), fill);
+   }
+
+   /** The fill or outline colour from a base colour, faded in over the entity's first ticks. */
+   protected Color getEntityColor(Entity entity, int baseColor, boolean fill) {
+      int color = ARGB.color((fill ? this.module.entityFillSetting : this.module.entityOutlineSetting).getValue(), baseColor);
       float age = Mth.clamp((entity.tickCount + RenderUtils.getPartialTick()) / 12.0F, 0.0F, 1.0F);
       float opacity = age * age * (3.0F - 2.0F * age);
       int alpha = entity instanceof ThrownExperienceBottle ? ARGB.alpha(color) : (int)(opacity * ARGB.alpha(color));

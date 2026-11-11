@@ -45,12 +45,16 @@ public final class TargetMatcher implements ClientAccess {
 
    /** The card an entity falls under for these settings (in range and accepted), or null. */
    public static TargetSettings.Kind kindOf(TargetSettings targets, Entity entity, Vec3 camera) {
+      return entity == null ? null : kindOf(targets, entity, camera, targets.specific.forEntity(entity));
+   }
+
+   /** {@link #kindOf(TargetSettings, Entity, Vec3)} with the entity's specific target already looked up. */
+   public static TargetSettings.Kind kindOf(TargetSettings targets, Entity entity, Vec3 camera, SpecificRules.Rule rule) {
       if (entity == null || entity == argusclientMinecraft.player || entity == argusclientMinecraft.getCameraEntity() || entity.isRemoved()) {
          return null;
       }
 
       double distanceSquared = entity.position().distanceToSqr(camera);
-      SpecificRules.Rule rule = targets.specific.forEntity(entity);
       if (rule != null) {
          // A specific target overrides the cards: shown inside its own range, hidden outside it.
          return targets.specific.settings(rule).acceptsEntity(entity, distanceSquared) ? naturalKind(entity) : null;
@@ -146,7 +150,11 @@ public final class TargetMatcher implements ClientAccess {
 
    /** The colour for an accepted entity (before any module-specific alpha). */
    public static Color entityColor(TargetSettings targets, TargetSettings.Kind kind, Entity entity, Vec3 from) {
-      SpecificRules.Rule rule = targets.specific.forEntity(entity);
+      return entityColor(targets, kind, entity, from, targets.specific.forEntity(entity));
+   }
+
+   /** {@link #entityColor(TargetSettings, TargetSettings.Kind, Entity, Vec3)} with the specific target already looked up. */
+   public static Color entityColor(TargetSettings targets, TargetSettings.Kind kind, Entity entity, Vec3 from, SpecificRules.Rule rule) {
       if (rule != null) {
          return targets.specific.settings(rule).entityColor(entity, from);
       }

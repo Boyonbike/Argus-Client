@@ -84,6 +84,7 @@ public final class SpecificTargets implements ClientAccess {
    /** Whether this is ESP's list (its groups get ESP's label settings). */
    private boolean esp;
    private final Map<String, Candidate> described = new HashMap<>();
+   private final Map<String, String> lowerNames = new HashMap<>();
 
    SpecificTargets(Module module) {
       this.store = module.add(new StringSetting("SpecificTargets", "[]", ignored -> false));
@@ -163,12 +164,7 @@ public final class SpecificTargets implements ClientAccess {
    }
 
    private static String signature(SpecificRules.Rule rule) {
-      StringBuilder text = new StringBuilder(rule.category().name());
-      for (SpecificRules.Member member : rule.members()) {
-         text.append('|').append(member.key());
-      }
-
-      return text.toString();
+      return rule.signature();
    }
 
    /** Gives every group real settings for its category and members (remade, keeping values, if its members changed). */
@@ -250,7 +246,7 @@ public final class SpecificTargets implements ClientAccess {
       this.refresh();
       if (entity instanceof Player player) {
          if (!this.players.isEmpty()) {
-            SpecificRules.Rule rule = this.players.get(player.getGameProfile().name().toLowerCase(Locale.ROOT));
+            SpecificRules.Rule rule = this.players.get(lowerName(player.getGameProfile().name()));
             if (rule != null) {
                return rule;
             }
@@ -276,6 +272,21 @@ public final class SpecificTargets implements ClientAccess {
       }
 
       return this.entities.isEmpty() ? null : this.entities.get(entity.getType());
+   }
+
+   /** A player name in lower case, remembered so lookups while drawing don't make a new string each time. */
+   private String lowerName(String name) {
+      String lower = this.lowerNames.get(name);
+      if (lower == null) {
+         if (this.lowerNames.size() > 512) {
+            this.lowerNames.clear();
+         }
+
+         lower = name.toLowerCase(Locale.ROOT);
+         this.lowerNames.put(name, lower);
+      }
+
+      return lower;
    }
 
    /** The enabled group holding an extra ({@link SpecificRules#LIGHT_LEVELS}, {@link SpecificRules#CHORUS_TELEPORTS}), or null. */

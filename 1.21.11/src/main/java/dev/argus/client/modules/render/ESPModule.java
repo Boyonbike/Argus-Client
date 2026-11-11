@@ -247,6 +247,7 @@ public class ESPModule extends Module {
       this.blockMeshes.close();
       this.closeRuleMeshes();
       this.chorusPositions.clear();
+      this.renderHelper.beginFrame();
       this.lightSpots.clear();
       this.lightSpotsStale = true;
    }
@@ -345,6 +346,7 @@ public class ESPModule extends Module {
          return;
       }
 
+      this.renderHelper.beginFrame();
       this.renderEntities.clear();
       for (Entity entity : argusclientMinecraft.level.entitiesForRendering()) {
          this.renderEntities.add(entity);
@@ -358,15 +360,16 @@ public class ESPModule extends Module {
       Map<RuleSettings, List<ESPItemGroup>> itemGroups = new IdentityHashMap<>();
       Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
       for (Entity entity : this.renderEntities) {
-         RuleSettings settings = this.settingsFor(entity);
-         if (entity instanceof ItemEntity item && TargetMatcher.kindOf(this.targets, item, camera) == TargetSettings.Kind.ITEMS) {
+         ESPRenderHelper.Resolved target = this.renderHelper.resolve(entity);
+         RuleSettings settings = target.settings();
+         if (entity instanceof ItemEntity item && target.kind() == TargetSettings.Kind.ITEMS) {
             TargetMatcher.alertItem(this.targets, item);
             if (settings != null && settings.itemLook() != RuleSettings.ItemLook.BOX) {
                this.addItemLabel(event, item, settings, itemGroups);
             }
          }
 
-         if (settings != null && settings.showOwner() && TargetMatcher.kindOf(this.targets, entity, camera) != null) {
+         if (settings != null && settings.showOwner() && target.kind() != null) {
             String owner = this.renderHelper.getOwnerName(entity);
             if (owner != null) {
                Vec3 position = entity.getPosition(event.getPartialTick()).add(0.0, 0.2, 0.0);
@@ -403,8 +406,9 @@ public class ESPModule extends Module {
       for (Entity entity : this.renderEntities) {
          if (this.renderHelper.shouldRenderEntity(entity)) {
             AABB bounds = BoundingBoxUtils.getRenderBounds(entity, partialTick);
-            WorldBoxRenderer.fillBox(event.getPoseStack(), bounds, this.renderHelper.getEntityColor(entity, true));
-            WorldBoxRenderer.outlineBox(event.getPoseStack(), bounds, this.renderHelper.getEntityColor(entity, false), this.lineWidthSetting.getValue());
+            int base = this.renderHelper.getBaseEntityColor(entity).getRGB();
+            WorldBoxRenderer.fillBox(event.getPoseStack(), bounds, this.renderHelper.getEntityColor(entity, base, true));
+            WorldBoxRenderer.outlineBox(event.getPoseStack(), bounds, this.renderHelper.getEntityColor(entity, base, false), this.lineWidthSetting.getValue());
          }
       }
    }
@@ -418,8 +422,7 @@ public class ESPModule extends Module {
 
    /** The target group settings an entity falls under, or null. */
    private RuleSettings settingsFor(Entity entity) {
-      SpecificRules.Rule rule = this.targets.specific.forEntity(entity);
-      return rule == null ? null : this.targets.specific.settings(rule);
+      return this.renderHelper.resolve(entity).settings();
    }
 
    /** Whether a dropped item gets a box (its group may show only a label). */

@@ -32,10 +32,6 @@ import dev.argus.client.settings.options.TracersHitboxChoice;
 import dev.argus.client.settings.options.TracersModeChoice;
 import dev.argus.client.utils.combat.BoundingBoxUtils;
 import dev.argus.client.utils.math.Vec3Utils;
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,11 +75,14 @@ public class TracersModule extends Module {
    /** Most block tracers drawn at once; past this the screen is unreadable anyway. */
    private static final int MAX_BLOCK_TRACERS = 256;
    private final List<Target> blockTargets = new ArrayList<>();
-   private final LongArrayList candidatePositions = new LongArrayList();
-   private final DoubleArrayList candidateDistances = new DoubleArrayList();
-   private final IntArrayList candidateColors = new IntArrayList();
+   /** Rebuild block targets at least this often even when nothing seems to have changed, so card edits show up. */
+   private static final int BLOCK_REFRESH_TICKS = 10;
+   private final NearestBlocks nearestBlocks = new NearestBlocks(MAX_BLOCK_TRACERS);
    private long tickCounter;
    private long blockTargetsTick = -1L;
+   private long blockIndexVersion = -1L;
+   private int blockSpecificVersion = -1;
+   private Vec3 blockTargetsCamera;
    private long alertMark;
    /** Recent chorus fruit teleports and when they happened, for the Chorus teleports extra. */
    private final java.util.Map<Vec3, Long> chorusPositions = java.util.Collections.synchronizedMap(new java.util.HashMap<>());
@@ -116,9 +115,17 @@ public class TracersModule extends Module {
       Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
       double minimum = this.minDistanceSetting.getValue();
       double minimumSquared = minimum * minimum;
+      SpecificTargets specific = this.targets.specific;
+      float heightFraction = this.hitboxSetting.getValue().getHeightFraction();
       for (Entity entity : argusclientMinecraft.level.entitiesForRendering()) {
-         TargetSettings.Kind kind = TargetMatcher.kindOf(this.targets, entity, camera);
-         if (kind == null || entity.position().distanceToSqr(camera) < minimumSquared) {
+         if (entity.position().distanceToSqr(camera) < minimumSquared) {
+            continue;
+         }
+
+         // Looked up once and handed to both checks, which would otherwise each look it up again.
+         SpecificRules.Rule rule = specific.forEntity(entity);
+         TargetSettings.Kind kind = TargetMatcher.kindOf(this.targets, entity, camera, rule);
+         if (kind == null) {
             continue;
          }
 
@@ -126,6 +133,7 @@ public class TracersModule extends Module {
             TargetMatcher.alertItem(this.targets, item);
          }
 
+         AABB bounds = BoundingBoxUtils.getRenderBounds(entity, tickDelta);
          Vec3 start;
          Vec3 end;
          if (entity instanceof Player player) {
@@ -133,14 +141,15 @@ public class TracersModule extends Module {
             start = endpoints.start();
             end = endpoints.end();
          } else {
-            AABB bounds = BoundingBoxUtils.getRenderBounds(entity, tickDelta);
-            start = new Vec3(bounds.getCenter().x, bounds.minY, bounds.getCenter().z);
-            end = new Vec3(bounds.getCenter().x, bounds.maxY, bounds.getCenter().z);
+            double centerX = (bounds.minX + bounds.maxX) * 0.5;
+            double centerZ = (bounds.minZ + bounds.maxZ) * 0.5;
+            start = new Vec3(centerX, bounds.minY, centerZ);
+            end = new Vec3(centerX, bounds.maxY, centerZ);
          }
 
-         Vec3 aim = Vec3Utils.lerp(this.hitboxSetting.getValue().getHeightFraction(), start, end);
-         Color color = this.colorFor(TargetMatcher.entityColor(this.targets, kind, entity, camera), aim);
-         this.collected.add(new Target(aim, start, end, BoundingBoxUtils.getRenderBounds(entity, tickDelta), color, entity));
+         Vec3 aim = Vec3Utils.lerp(heightFraction, start, end);
+         Color color = this.colorFor(TargetMatcher.entityColor(this.targets, kind, entity, camera, rule), aim);
+         this.collected.add(new Target(aim, start, end, bounds, color, entity));
       }
 
       this.collectBlocks(camera, minimumSquared);
@@ -183,12 +192,26 @@ public class TracersModule extends Module {
          return;
       }
 
-      // Block targets don't move, so they're rebuilt once per tick (or when the index changes) instead of
-      // every frame, and only the nearest MAX_BLOCK_TRACERS are kept: walking up to 300k indexed blocks
-      // per frame with several allocations each could freeze slower PCs.
+      // Block targets don't move, so they're rebuilt at most once per tick instead of every frame, and only the
+      // nearest MAX_BLOCK_TRACERS are kept: walking up to 300k indexed blocks per frame could freeze slower PCs.
+      // A tick is skipped when the index, the groups and the camera are all unchanged, with a rebuild every
+      // BLOCK_REFRESH_TICKS regardless so edits to the card's settings still show up.
       if (this.blockTargetsTick != this.tickCounter) {
-         this.blockTargetsTick = this.tickCounter;
-         this.rebuildBlockTargets(card, camera, minimumSquared);
+         long indexVersion = BlockTargetIndex.get().version();
+         int specificVersion = this.targets.specific.version();
+         boolean stale = this.blockTargetsTick < 0L
+            || this.tickCounter - this.blockTargetsTick >= BLOCK_REFRESH_TICKS
+            || indexVersion != this.blockIndexVersion
+            || specificVersion != this.blockSpecificVersion
+            || this.blockTargetsCamera == null
+            || this.blockTargetsCamera.distanceToSqr(camera) > 0.0625;
+         if (stale) {
+            this.blockTargetsTick = this.tickCounter;
+            this.blockIndexVersion = indexVersion;
+            this.blockSpecificVersion = specificVersion;
+            this.blockTargetsCamera = camera;
+            this.rebuildBlockTargets(card, camera, minimumSquared);
+         }
       }
 
       this.collected.addAll(this.blockTargets);
@@ -199,6 +222,7 @@ public class TracersModule extends Module {
       super.onDisable();
       this.blockTargets.clear();
       this.blockTargetsTick = -1L;
+      this.blockTargetsCamera = null;
    }
 
    private void rebuildBlockTargets(TargetSettings.Blocks card, Vec3 camera, double minimumSquared) {
@@ -215,30 +239,42 @@ public class TracersModule extends Module {
             range = settings.unlimited() ? -1.0 : Math.max(range, settings.range.getValue());
          }
       }
-      LongArrayList positions = this.candidatePositions;
-      DoubleArrayList distances = this.candidateDistances;
-      IntArrayList colors = this.candidateColors;
-      positions.clear();
-      distances.clear();
-      colors.clear();
+      NearestBlocks nearest = this.nearestBlocks;
+      nearest.clear();
       ColorsSchemeChoice scheme = colorsModule == null ? null : colorsModule.schemeSetting.getValue();
       for (CellIndex.Cell<BlockTargetIndex.Entry> cell : index.cells()) {
          if (cell.size() == 0) {
             continue;
          }
 
-         if (range > 0) {
-            CellIndex.CellKey key = cell.key();
-            double dx = key.minX() + 4.0 - camera.x;
-            double dy = key.minY() + 4.0 - camera.y;
-            double dz = key.minZ() + 4.0 - camera.z;
-            double reach = range + 7.0;
-            if (dx * dx + dy * dy + dz * dz > reach * reach) {
+         CellIndex.CellKey key = cell.key();
+         double cellX = key.minX() + 4.0 - camera.x;
+         double cellY = key.minY() + 4.0 - camera.y;
+         double cellZ = key.minZ() + 4.0 - camera.z;
+         double cellDistance = Math.sqrt(cellX * cellX + cellY * cellY + cellZ * cellZ);
+         if (range > 0 && cellDistance > range + 7.0) {
+            continue;
+         }
+
+         // Once the nearest MAX_BLOCK_TRACERS are found, a cell whose closest corner is further than all of them
+         // can't add any.
+         if (nearest.full()) {
+            double closest = Math.max(0.0, cellDistance - 7.0);
+            if (closest * closest >= nearest.furthest()) {
                continue;
             }
          }
 
          cell.forEach((packed, entry) -> {
+            double dx = CellIndex.unpackX(packed) + 0.5 - camera.x;
+            double dy = CellIndex.unpackY(packed) + 0.5 - camera.y;
+            double dz = CellIndex.unpackZ(packed) + 0.5 - camera.z;
+            double distanceSquared = dx * dx + dy * dy + dz * dz;
+            // Distance first: it's cheaper than matching, and most blocks are further than the nearest kept ones.
+            if (distanceSquared < minimumSquared || nearest.full() && distanceSquared >= nearest.furthest()) {
+               return;
+            }
+
             // A specific target overrides the card for its block.
             SpecificRules.Rule rule = specific.forBlock(entry.state().getBlock());
             RuleSettings settings = rule == null ? null : specific.settings(rule);
@@ -246,35 +282,18 @@ public class TracersModule extends Module {
                return;
             }
 
-            double dx = CellIndex.unpackX(packed) + 0.5 - camera.x;
-            double dy = CellIndex.unpackY(packed) + 0.5 - camera.y;
-            double dz = CellIndex.unpackZ(packed) + 0.5 - camera.z;
-            double distanceSquared = dx * dx + dy * dy + dz * dz;
-            if (distanceSquared < minimumSquared || !(settings == null ? card.inRange(distanceSquared) : settings.inRange(distanceSquared))) {
+            if (!(settings == null ? card.inRange(distanceSquared) : settings.inRange(distanceSquared))) {
                return;
             }
 
-            positions.add(packed);
-            distances.add(distanceSquared);
-            colors.add(settings == null ? TargetMatcher.blockColor(card, scheme, entry) : settings.blockColor(entry, scheme));
+            nearest.offer(packed, distanceSquared, settings == null ? TargetMatcher.blockColor(card, scheme, entry) : settings.blockColor(entry, scheme));
          });
       }
 
-      int count = positions.size();
-      int[] order = new int[count];
-      for (int i = 0; i < count; i++) {
-         order[i] = i;
-      }
-
-      if (count > MAX_BLOCK_TRACERS) {
-         IntArrays.quickSort(order, (left, right) -> Double.compare(distances.getDouble(left), distances.getDouble(right)));
-         count = MAX_BLOCK_TRACERS;
-      }
-
-      for (int i = 0; i < count; i++) {
-         long packed = positions.getLong(order[i]);
+      for (int i = 0; i < nearest.size(); i++) {
+         long packed = nearest.position(i);
          Vec3 center = new Vec3(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5);
-         Color color = this.colorFor(new Color(colors.getInt(order[i]), true), center);
+         Color color = this.colorFor(new Color(nearest.color(i), true), center);
          AABB bounds = new AABB(center.x - 0.5, center.y - 0.5, center.z - 0.5, center.x + 0.5, center.y + 0.5, center.z + 0.5);
          this.blockTargets.add(new Target(center, null, null, bounds, color, null));
       }
@@ -378,6 +397,98 @@ public class TracersModule extends Module {
          super.fromJson(migrated);
       } else {
          super.fromJson(json);
+      }
+   }
+
+   /**
+    * Keeps the nearest few blocks offered to it: a max-heap on distance, so the furthest kept block is on top and is
+    * the one dropped when a nearer block comes in.
+    */
+   private static final class NearestBlocks {
+      private final long[] positions;
+      private final double[] distances;
+      private final int[] colors;
+      private int size;
+
+      NearestBlocks(int capacity) {
+         this.positions = new long[capacity];
+         this.distances = new double[capacity];
+         this.colors = new int[capacity];
+      }
+
+      void clear() {
+         this.size = 0;
+      }
+
+      int size() {
+         return this.size;
+      }
+
+      boolean full() {
+         return this.size == this.positions.length;
+      }
+
+      /** The squared distance of the furthest kept block. */
+      double furthest() {
+         return this.distances[0];
+      }
+
+      long position(int i) {
+         return this.positions[i];
+      }
+
+      int color(int i) {
+         return this.colors[i];
+      }
+
+      void offer(long position, double distance, int color) {
+         if (!this.full()) {
+            int i = this.size++;
+            while (i > 0) {
+               int parent = (i - 1) >>> 1;
+               if (this.distances[parent] >= distance) {
+                  break;
+               }
+
+               this.move(parent, i);
+               i = parent;
+            }
+
+            this.put(i, position, distance, color);
+         } else if (distance < this.distances[0]) {
+            int i = 0;
+            while (true) {
+               int child = 2 * i + 1;
+               if (child >= this.size) {
+                  break;
+               }
+
+               if (child + 1 < this.size && this.distances[child + 1] > this.distances[child]) {
+                  child++;
+               }
+
+               if (this.distances[child] <= distance) {
+                  break;
+               }
+
+               this.move(child, i);
+               i = child;
+            }
+
+            this.put(i, position, distance, color);
+         }
+      }
+
+      private void move(int from, int to) {
+         this.positions[to] = this.positions[from];
+         this.distances[to] = this.distances[from];
+         this.colors[to] = this.colors[from];
+      }
+
+      private void put(int i, long position, double distance, int color) {
+         this.positions[i] = position;
+         this.distances[i] = distance;
+         this.colors[i] = color;
       }
    }
 }

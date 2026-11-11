@@ -20,6 +20,9 @@ public final class LineMeshRenderer implements ClientAccess {
    private static final Vector2f tracerPosition = new Vector2f();
    private static final Vector4f clipPosition = new Vector4f();
    private static final Vector3f pendingPosition = new Vector3f();
+   /** Where every tracer starts (the screen centre), worked out once per projection rather than per tracer. */
+   private static final Vector3f tracerOrigin = new Vector3f();
+   private static final Vector3f tracerTarget = new Vector3f();
    static final MeshBuffer vertices = MeshBuffer.create();
    static PoseStack poseStack;
    private static int pendingColor;
@@ -29,6 +32,7 @@ public final class LineMeshRenderer implements ClientAccess {
    public static void updateProjection(PoseStack poses) {
       projectionMatrix.set(RenderUtils.WORLD_PROJECTION_MATRIX).mul(poses.last().pose());
       inverseProjectionMatrix.set(projectionMatrix).invert();
+      unproject(0.0F, 0.0F, tracerOrigin);
    }
 
    public static void begin(WorldRenderEvent event, float width) {
@@ -94,9 +98,8 @@ public final class LineMeshRenderer implements ClientAccess {
    public static void addTracer(Vec3 position, int color) {
       Vector2f projected = projectTracer(position);
       if (projected != null) {
-         Vector3f origin = unproject(0.0F, 0.0F);
-         Vector3f target = unproject(projected.x, projected.y);
-         addVertex(origin.x, origin.y, origin.z, color, false, false);
+         Vector3f target = unproject(projected.x, projected.y, tracerTarget);
+         addVertex(tracerOrigin.x, tracerOrigin.y, tracerOrigin.z, color, false, false);
          addVertex(target.x, target.y, target.z, color, false, false);
       }
    }
@@ -133,10 +136,10 @@ public final class LineMeshRenderer implements ClientAccess {
       return clipPosition.w == 0.0F ? positionVector : new Vector3f(clipPosition.x, clipPosition.y, clipPosition.z).div(clipPosition.w);
    }
 
-   private static Vector3f unproject(float x, float y) {
+   private static Vector3f unproject(float x, float y, Vector3f out) {
       clipPosition.set(x, y, 0.0F, 1.0F);
       inverseProjectionMatrix.transform(clipPosition);
-      return new Vector3f(clipPosition.x, clipPosition.y, clipPosition.z).div(clipPosition.w);
+      return out.set(clipPosition.x, clipPosition.y, clipPosition.z).div(clipPosition.w);
    }
 
    private static Vector2f projectTracer(Vec3 position) {

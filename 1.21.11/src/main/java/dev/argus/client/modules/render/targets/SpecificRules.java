@@ -116,14 +116,30 @@ public final class SpecificRules {
       }
    }
 
+   /** A member list that exposes its change count, so a rule can tell when its members changed. */
+   private static final class MemberList extends ArrayList<Member> {
+      int mods() {
+         return this.modCount;
+      }
+
+      @Override
+      public Member set(int index, Member element) {
+         // ArrayList.set doesn't count as a change; count it so cached signatures are dropped.
+         this.modCount++;
+         return super.set(index, element);
+      }
+   }
+
    public static final class Rule {
       /** Identifies the group on both pages, so ESP's and Tracers' copies pair up. */
       public final String id;
-      private final List<Member> members = new ArrayList<>();
+      private final MemberList members = new MemberList();
       public boolean enabled = true;
       public boolean mirror;
       /** This group's settings (colour, range and the rest for its category). */
       public Body body = new TextBody("{}");
+      private String signature;
+      private int signatureMods = -1;
 
       public Rule(String id, Collection<Member> members) {
          this.id = id;
@@ -132,6 +148,25 @@ public final class SpecificRules {
 
       public List<Member> members() {
          return Collections.unmodifiableList(this.members);
+      }
+
+      /**
+       * Its category and member keys as text, which its settings are built for. Cached until the members change, as
+       * it's checked on every settings lookup while drawing.
+       */
+      public String signature() {
+         int mods = this.members.mods();
+         if (this.signature == null || mods != this.signatureMods) {
+            StringBuilder text = new StringBuilder(this.category().name());
+            for (Member member : this.members) {
+               text.append('|').append(member.key());
+            }
+
+            this.signature = text.toString();
+            this.signatureMods = mods;
+         }
+
+         return this.signature;
       }
 
       public Category category() {
