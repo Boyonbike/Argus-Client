@@ -59,7 +59,7 @@ public class AvoidModule extends Module {
 
       for (int x = -1; x <= 1; x++) {
          for (int z = -1; z <= 1; z++) {
-            if (!chunks.hasChunk(playerChunk.x + x, playerChunk.z + z)) {
+            if (!chunks.hasChunk(playerChunk.x() + x, playerChunk.z() + z)) {
                return false;
             }
          }

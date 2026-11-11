@@ -62,8 +62,8 @@ final class EntityControlPathContext {
    }
 
    void loadChunks(ChunkPos center) {
-      for (int x = center.x - 40; x <= center.x + 40; x++) {
-         for (int z = center.z - 40; z <= center.z + 40; z++) {
+      for (int x = center.x() - 40; x <= center.x() + 40; x++) {
+         for (int z = center.z() - 40; z <= center.z() + 40; z++) {
             this.loadChunk(x, z);
          }
       }
@@ -111,7 +111,7 @@ final class EntityControlPathContext {
          this.lastCullMillis = System.currentTimeMillis();
          this.executor.execute(() -> {
             try {
-               NetherPathfinder.cullFarChunks(this.pointer, center.x, center.z, 5000);
+               NetherPathfinder.cullFarChunks(this.pointer, center.x(), center.z(), 5000);
             } catch (Throwable var3) {
             }
          });
@@ -198,7 +198,7 @@ final class EntityControlPathContext {
 
    private void packChunk(LevelChunk chunk) {
       try {
-         long nativeChunk = NetherPathfinder.getOrCreateChunk(this.pointer, chunk.getPos().x, chunk.getPos().z);
+         long nativeChunk = NetherPathfinder.getOrCreateChunk(this.pointer, chunk.getPos().x(), chunk.getPos().z());
          if (nativeChunk == 0L) {
             return;
          }

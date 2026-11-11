@@ -111,7 +111,7 @@ public class InventoryTweaksModule extends Module {
                            int clickedSlotId = this.getClickSlotId(focusedSlot);
                            ContainerInput clickType = ContainerInput.QUICK_MOVE;
                            LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
-                           gameMode.handleInventoryMouseClick(containerId, clickedSlotId, mouseButton, clickType, clickPlayer);
+                           gameMode.handleContainerInput(containerId, clickedSlotId, mouseButton, clickType, clickPlayer);
                            this.lastQuickMovedSlotId = this.getClickSlotId(focusedSlot);
                         }
                      }

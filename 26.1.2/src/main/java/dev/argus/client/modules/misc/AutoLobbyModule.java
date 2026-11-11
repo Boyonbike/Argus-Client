@@ -296,6 +296,6 @@ public final class AutoLobbyModule extends Module {
     }
 
     private void notice(String message) {
-        if (mc.player != null) mc.player.displayClientMessage(Component.literal("[AutoLobby] " + message), false);
+        if (mc.player != null) mc.gui.getChat().addClientSystemMessage(Component.literal("[AutoLobby] " + message));
     }
 }

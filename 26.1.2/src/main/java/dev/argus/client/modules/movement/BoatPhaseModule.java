@@ -711,7 +711,7 @@ public final class BoatPhaseModule extends Module {
             && mc.getConnection() != null && event.getConnection() == mc.getConnection().getConnection() && !mc.player.isPassenger()
             && sent instanceof ServerboundInteractPacket interaction && lastBoardInteraction != interaction) {
             lastBoardInteraction = interaction;
-            if (mc.level.getEntity(((ServerboundInteractPacketAccessor) interaction).getEntityId()) instanceof AbstractBoat candidate) {
+            if (mc.level.getEntity(interaction.entityId()) instanceof AbstractBoat candidate) {
                 boolean grounded = supported(candidate, .35);
                 boolean armed = remount.intent(candidate.getId(), mc.player.tickCount, grounded || remountRetry.getValue(), true,
                     retryableFallback(), remountRetry.getValue() || landedRetry.getValue());

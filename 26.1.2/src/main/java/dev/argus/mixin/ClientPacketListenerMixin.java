@@ -68,7 +68,7 @@ public class ClientPacketListenerMixin {
       if (event.isCancelled()) {
          callback.cancel();
       } else if (event.isVelocityModified()) {
-         ClientboundSetEntityMotionPacketAccessor packetAccess = (ClientboundSetEntityMotionPacketAccessor)packet;
+         ClientboundSetEntityMotionPacketAccessor packetAccess = (ClientboundSetEntityMotionPacketAccessor)(Object)packet;
          packetAccess.setVelocity(new Vec3(event.getVelocityX(), event.getVelocityY(), event.getVelocityZ()));
       }
    }

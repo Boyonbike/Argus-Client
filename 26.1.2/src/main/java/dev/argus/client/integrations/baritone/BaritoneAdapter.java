@@ -132,7 +132,7 @@ public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
          Gui gui = ClientAccess.argusclientMinecraft.gui;
          ChatComponent chat = gui.getChat();
          GuiMessageTag tag = ChatUtils.MESSAGE_TAG;
-         chat.addMessage(copiedMessage, null, tag);
+         chat.addPlayerMessage(copiedMessage, null, tag);
       };
    }
 

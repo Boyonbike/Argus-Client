@@ -108,8 +108,8 @@ public final class ObstaclePasserModule extends Module {
       ClientChunkCache chunkSource = ClientAccess.argusclientMinecraft.level.getChunkSource();
       ChunkPos capturedChunk = ClientAccess.argusclientMinecraft.player.chunkPosition();
       return ChunkPos.rangeClosed(capturedChunk, 2).allMatch(chunk -> {
-         int chunkZ = chunk.z;
-         int chunkX = chunk.x;
+         int chunkZ = chunk.z();
+         int chunkX = chunk.x();
          return chunkSource.hasChunk(chunkX, chunkZ);
       }) || !this.onlyLoadedSetting.getValue();
    }

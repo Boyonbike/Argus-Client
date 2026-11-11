@@ -896,13 +896,13 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       int chestMenuSlot = chestSlot.index;
       if (Inventory.isHotbarSlot(slot) || slot == Inventory.SLOT_OFFHAND) {
          // A single click exchanges both items, even with a completely full inventory.
-         gameMode.handleInventoryMouseClick(containerId, chestMenuSlot, slot, ContainerInput.SWAP, player);
+         gameMode.handleContainerInput(containerId, chestMenuSlot, slot, ContainerInput.SWAP, player);
       } else {
          // Main inventory slots 9-35 share their index with the inventory menu.
-         gameMode.handleInventoryMouseClick(containerId, slot, 0, ContainerInput.PICKUP, player);
-         gameMode.handleInventoryMouseClick(containerId, chestMenuSlot, 0, ContainerInput.PICKUP, player);
+         gameMode.handleContainerInput(containerId, slot, 0, ContainerInput.PICKUP, player);
+         gameMode.handleContainerInput(containerId, chestMenuSlot, 0, ContainerInput.PICKUP, player);
          if (!player.inventoryMenu.getCarried().isEmpty()) {
-            gameMode.handleInventoryMouseClick(containerId, slot, 0, ContainerInput.PICKUP, player);
+            gameMode.handleContainerInput(containerId, slot, 0, ContainerInput.PICKUP, player);
          }
       }
       if (glider) this.boostDelay.swapped();

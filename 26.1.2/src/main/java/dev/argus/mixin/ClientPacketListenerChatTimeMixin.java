@@ -69,8 +69,15 @@ public class ClientPacketListenerChatTimeMixin {
    )
    private void overrideServerTimeForAmbience(ClientboundSetTimePacket packet, CallbackInfo callback) {
       if (ambienceModule.isToggled() && ambienceModule.worldTimeSetting.getValue()) {
-         ambienceModule.updateServerTimeSnapshot(packet.gameTime(), packet.dayTime());
-         this.level.setTimeFromServer(ambienceModule.getWorldTime(), ambienceModule.getWorldTime(), false);
+         long dayTime = this.level.getOverworldClockTime();
+         for (var clockUpdate : packet.clockUpdates().entrySet()) {
+            if (clockUpdate.getKey().is(net.minecraft.world.clock.WorldClocks.OVERWORLD)) {
+               dayTime = clockUpdate.getValue().totalTicks();
+               break;
+            }
+         }
+         ambienceModule.updateServerTimeSnapshot(packet.gameTime(), dayTime);
+         this.level.setTimeFromServer(ambienceModule.getWorldTime());
          callback.cancel();
       }
    }

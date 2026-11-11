@@ -377,8 +377,8 @@ public final class BlockCoatModule extends Module {
         if (origin == null) return;
         ChunkPos chunk = event.getChunk().getPos();
         int margin = scannedRadius + 2 * TntBlastPlanner.RADIUS + 1;
-        if (chunk.x < ((origin.getX() - margin) >> 4) || chunk.x > ((origin.getX() + margin) >> 4)
-            || chunk.z < ((origin.getZ() - margin) >> 4) || chunk.z > ((origin.getZ() + margin) >> 4)) return;
+        if (chunk.x() < ((origin.getX() - margin) >> 4) || chunk.x() > ((origin.getX() + margin) >> 4)
+            || chunk.z() < ((origin.getZ() - margin) >> 4) || chunk.z() > ((origin.getZ() + margin) >> 4)) return;
         blasts.markDirty();
         if ((conservativeTnt.getValue() || liquidFiller.getValue()) && activeBlock == Blocks.TNT) dirty.set(true);
     }

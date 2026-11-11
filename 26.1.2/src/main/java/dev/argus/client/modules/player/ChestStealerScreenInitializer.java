@@ -42,7 +42,7 @@ class ChestStealerScreenInitializer implements ClientAccess, AfterInit {
             });
             buttonBuilder.bounds(buttonX, buttonY, buttonWidth, 15);
             buttonY += 17;
-            Screens.getButtons(screen).add(buttonBuilder.build());
+            Screens.getWidgets(screen).add(buttonBuilder.build());
          }
       }
    }

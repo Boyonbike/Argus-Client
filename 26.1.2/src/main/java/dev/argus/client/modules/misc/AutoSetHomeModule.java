@@ -116,7 +116,7 @@ public final class AutoSetHomeModule extends Module {
         String name = ChatHomeNames.valid(home.getValue());
         if (name == null) {
             if (!invalidHomeWarning) {
-                mc.player.displayClientMessage(Component.literal("[AutoSetHome] Choose a valid single home name."), false);
+                mc.gui.getChat().addClientSystemMessage(Component.literal("[AutoSetHome] Choose a valid single home name."));
             }
             invalidHomeWarning = true;
             return;

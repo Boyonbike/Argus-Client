@@ -65,7 +65,7 @@ public final class EntityUtils implements ClientAccess {
          Identifier currentTexture = wolf.getTexture();
          Holder<WolfVariant> variantHolder = wolf.getVariant();
          WolfVariant variant = variantHolder.value();
-         AssetInfo assets = variant.assetInfo();
+         AssetInfo assets = variant.adultInfo();
          ResourceTexture angryTexture = assets.angry();
          return currentTexture == angryTexture.texturePath();
       } else if (entity instanceof NeutralMob neutralMob) {

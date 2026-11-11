@@ -38,7 +38,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       int column = 0;
       int row = 0;
       int mouseX = AbstractContainerScreenRenderTooltipEvent.mouseX;
@@ -133,7 +133,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
          MapRenderState extractState = sharedMapRenderState;
          mapRenderer.extractRenderState(mapId, data, extractState);
          MapRenderState submitState = sharedMapRenderState;
-         graphics.submitMapRenderState(submitState);
+         graphics.map(submitState);
          buffers.endBatch();
          poses.popMatrix();
       }

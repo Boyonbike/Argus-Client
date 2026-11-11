@@ -47,10 +47,10 @@ public final class ClientPacketListenerHandleSetEntityMotionEvent extends Cancel
    }
 
    public ClientPacketListenerHandleSetEntityMotionEvent(ClientboundSetEntityMotionPacket packet) {
-      this.entityId = packet.getId();
-      this.velocityX = (float)packet.getMovement().x();
-      this.velocityY = (float)packet.getMovement().y();
-      this.velocityZ = (float)packet.getMovement().z();
+      this.entityId = packet.id();
+      this.velocityX = (float)packet.movement().x();
+      this.velocityY = (float)packet.movement().y();
+      this.velocityZ = (float)packet.movement().z();
    }
 
    public boolean isVelocityModified() {

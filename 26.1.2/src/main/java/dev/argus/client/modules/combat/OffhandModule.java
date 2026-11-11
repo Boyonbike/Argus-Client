@@ -302,7 +302,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                      MultiPlayerGameMode swapGameMode = ClientAccess.argusclientMinecraft.gameMode;
                      ContainerInput swapClick = ContainerInput.SWAP;
                      LocalPlayer swapPlayer = ClientAccess.argusclientMinecraft.player;
-                     swapGameMode.handleInventoryMouseClick(containerId, chosenContainerSlot, 40, swapClick, swapPlayer);
+                     swapGameMode.handleContainerInput(containerId, chosenContainerSlot, 40, swapClick, swapPlayer);
                      this.swapDelayTimer.reset();
                   } else {
                      this.swapSlotToOffhand(chosenContainerSlot);
@@ -543,7 +543,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                   MultiPlayerGameMode discardGameMode = ClientAccess.argusclientMinecraft.gameMode;
                   ContainerInput discardClickType = ContainerInput.THROW;
                   LocalPlayer playerForDiscard = ClientAccess.argusclientMinecraft.player;
-                  discardGameMode.handleInventoryMouseClick(discardContainerId, 45, 1, discardClickType, playerForDiscard);
+                  discardGameMode.handleContainerInput(discardContainerId, 45, 1, discardClickType, playerForDiscard);
                }
             } else if (this.canUseCurrentMenu()) {
                ElapsedTimer delayTimerForCheck = this.swapDelayTimer;

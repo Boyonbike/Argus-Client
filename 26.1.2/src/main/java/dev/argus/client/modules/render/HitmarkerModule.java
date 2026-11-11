@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
@@ -182,14 +183,15 @@ public class HitmarkerModule extends Module {
    @EventHandler(priority = -100)
    private void onConnectionSendPacketEvent(PacketEvent.Send event) {
       if (!this.isWorldUnavailable()) {
-         if (event.getPacket() instanceof ServerboundInteractPacket packet) {
-            if (InteractPacketUtils.getAction(packet) == InteractPacketUtils.Action.ATTACK) {
-               ClientLevel levelCapture = ClientAccess.argusclientMinecraft.level;
-               int entityId = ((ServerboundInteractPacketAccessor)(Object)packet).getEntityId();
-               Entity target = levelCapture.getEntity(entityId);
+         Entity attackedEntity = event.getPacket() instanceof ServerboundAttackPacket attack ? InteractPacketUtils.getEntity(attack)
+            : event.getPacket() instanceof ServerboundInteractPacket interact && InteractPacketUtils.getAction(interact) == InteractPacketUtils.Action.ATTACK ? InteractPacketUtils.getEntity(interact)
+            : null;
+         if (attackedEntity != null) {
+            {
+               Entity target = attackedEntity;
                long elapsedMillis = System.currentTimeMillis() - this.lastHitTime;
                if (elapsedMillis > 100L) {
-                  boolean simulatedPlayer = InteractPacketUtils.getEntity(packet) instanceof FakeplayerCommand.SimulatedPlayer;
+                  boolean simulatedPlayer = target instanceof FakeplayerCommand.SimulatedPlayer;
                   if (!event.isCancelled() || simulatedPlayer) {
                      if (target != null) {
                         if (target.level() != null && target != ClientAccess.argusclientMinecraft.player) {

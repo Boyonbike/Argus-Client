@@ -31,6 +31,7 @@ import net.minecraft.network.protocol.common.ServerboundPongPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
 import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
@@ -183,7 +184,7 @@ public class FakeLagModule extends Module {
    private boolean shouldBufferPacket(Packet<?> packet) {
       return packet instanceof ServerboundMovePlayerPacket && this.movementSetting.getValue()
          || packet instanceof ServerboundUseItemOnPacket && this.interactSetting.getValue()
-         || packet instanceof ServerboundInteractPacket && this.interactEntitySetting.getValue()
+         || (packet instanceof ServerboundInteractPacket || packet instanceof ServerboundAttackPacket) && this.interactEntitySetting.getValue()
          || packet instanceof ServerboundPlayerActionPacket && this.diggingSetting.getValue()
          || packet instanceof ServerboundSwingPacket && this.swingSetting.getValue()
          || packet instanceof ServerboundSetCarriedItemPacket && this.swapSetting.getValue()

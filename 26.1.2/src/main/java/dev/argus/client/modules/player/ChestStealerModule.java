@@ -505,7 +505,7 @@ public class ChestStealerModule extends Module {
                                     byte throwButton = 1;
                                     ContainerInput throwType = ContainerInput.THROW;
                                     LocalPlayer throwPlayer = ClientAccess.argusclientMinecraft.player;
-                                    throwGameMode.handleInventoryMouseClick(containerId, slotIndex, throwButton, throwType, throwPlayer);
+                                    throwGameMode.handleContainerInput(containerId, slotIndex, throwButton, throwType, throwPlayer);
                                     this.transferredThisTick = this.hasTransferred = true;
                                     break;
                                  case FILL:
@@ -529,7 +529,7 @@ public class ChestStealerModule extends Module {
                                     byte quickMoveButton = 0;
                                     ContainerInput quickMoveType = ContainerInput.QUICK_MOVE;
                                     LocalPlayer quickMovePlayer = ClientAccess.argusclientMinecraft.player;
-                                    quickMoveGameMode.handleInventoryMouseClick(containerId, slotIndex, quickMoveButton, quickMoveType, quickMovePlayer);
+                                    quickMoveGameMode.handleContainerInput(containerId, slotIndex, quickMoveButton, quickMoveType, quickMovePlayer);
                                     this.trackingQuickMove = false;
                                     if (this.quickMoveDestination != null) {
                                        Slot sourceSlot = menu.getSlot(slotIndex);

@@ -22,6 +22,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.world.InteractionHand;
@@ -115,13 +116,11 @@ public class LegacyCrystalModule extends Module {
          }
       }
 
-      if (event.getPacket() instanceof ServerboundInteractPacket interaction
-         && this.optimizerSetting.getValue()
-         && InteractPacketUtils.getAction(interaction) == InteractPacketUtils.Action.ATTACK
-         && InteractPacketUtils.getEntity(interaction) instanceof EndCrystal) {
-         Entity crystal = InteractPacketUtils.getEntity(interaction);
-         RemovalReason reason = RemovalReason.KILLED;
-         crystal.setRemoved(reason);
+      Entity attackedEntity = event.getPacket() instanceof ServerboundAttackPacket attack ? InteractPacketUtils.getEntity(attack)
+         : event.getPacket() instanceof ServerboundInteractPacket interact && InteractPacketUtils.getAction(interact) == InteractPacketUtils.Action.ATTACK ? InteractPacketUtils.getEntity(interact)
+         : null;
+      if (attackedEntity instanceof EndCrystal crystal && this.optimizerSetting.getValue()) {
+         crystal.setRemoved(RemovalReason.KILLED);
       }
    }
 }

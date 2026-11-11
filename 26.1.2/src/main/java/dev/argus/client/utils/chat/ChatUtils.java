@@ -152,7 +152,7 @@ public final class ChatUtils implements ClientAccess {
                   ClientAccess.argusclientMinecraft
                      .gui
                      .getChat()
-                     .addMessage(Component.empty().append(createPrefix()).append(" ").append(message), signature, MESSAGE_TAG);
+                     .addPlayerMessage(Component.empty().append(createPrefix()).append(" ").append(message), signature, MESSAGE_TAG);
                } catch (RuntimeException failure) {
                   LOGGER.warn("Could not display chat message", failure);
                }

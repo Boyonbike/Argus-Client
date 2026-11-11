@@ -323,7 +323,7 @@ public final class AuraModule extends Module {
          ItemStack weaponStack = capturedWeaponStack;
          DataComponentType<AttackRange> attackRangeComponent = DataComponents.ATTACK_RANGE;
          AttackRange attackRange = weaponStack.get(attackRangeComponent);
-         return attackRange == null ? 3.0F : attackRange.maxRange();
+         return attackRange == null ? 3.0F : attackRange.maxReach();
       } else {
          return rangeSetting.getValue();
       }

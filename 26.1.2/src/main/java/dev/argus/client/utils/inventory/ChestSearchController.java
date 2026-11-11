@@ -72,8 +72,8 @@ public class ChestSearchController {
          }
 
          ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
-         if (contents != null && contents.stream().toList().size() == 27) {
-            for (ItemStack containedStack : contents.stream().toList()) {
+         if (contents != null && contents.allItemsCopyStream().toList().size() == 27) {
+            for (ItemStack containedStack : contents.allItemsCopyStream().toList()) {
                if (!namesMatch(containedStack, query)) {
                   return false;
                }
@@ -159,7 +159,7 @@ public class ChestSearchController {
    private static boolean matchesContainerContents(ItemStack stack, String query) {
       ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
       if (contents != null) {
-         for (ItemStack containedStack : contents.nonEmptyItems()) {
+         for (ItemStack containedStack : contents.nonEmptyItemCopyStream().toList()) {
             if (namesMatch(containedStack, query)) {
                return true;
             }
@@ -172,7 +172,7 @@ public class ChestSearchController {
    private static boolean matchesBundleContents(ItemStack stack, String query) {
       BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
       if (contents != null) {
-         for (ItemStack containedStack : contents.itemsCopy()) {
+         for (ItemStack containedStack : contents.itemCopyStream().toList()) {
             if (namesMatch(containedStack, query)) {
                return true;
             }
@@ -227,12 +227,12 @@ public class ChestSearchController {
          }
 
          graphics.fill(searchBox.getX() + 2, searchBox.getY(), searchBox.getRight(), searchBox.getBottom(), 1258291200);
-         graphics.hLine(searchBox.getX() + 2, searchBox.getRight(), searchBox.getBottom(), -1);
-         graphics.vLine(searchBox.getRight(), searchBox.getY(), searchBox.getBottom(), -1);
+         graphics.horizontalLine(searchBox.getX() + 2, searchBox.getRight(), searchBox.getBottom(), -1);
+         graphics.verticalLine(searchBox.getRight(), searchBox.getY(), searchBox.getBottom(), -1);
          graphics.nextStratum();
-         graphics.hLine(searchBox.getX() + 2, searchBox.getRight(), searchBox.getY(), 1895825408);
-         graphics.vLine(searchBox.getX() + 2, searchBox.getY(), searchBox.getBottom() + 1, 1895825408);
-         searchBox.render(graphics, (int)mouseX, (int)mouseY, partialTick);
+         graphics.horizontalLine(searchBox.getX() + 2, searchBox.getRight(), searchBox.getY(), 1895825408);
+         graphics.verticalLine(searchBox.getX() + 2, searchBox.getY(), searchBox.getBottom() + 1, 1895825408);
+         searchBox.extractRenderState(graphics, (int)mouseX, (int)mouseY, partialTick);
          poseStack.popPose();
       }
    }
@@ -264,7 +264,7 @@ public class ChestSearchController {
                ChestSearchController.searchBox.setMaxLength(32);
                ChestSearchController.searchBox.setBordered(true);
                ChestSearchController.searchBox.setResponder(newText -> ChestSearchController.text = newText);
-               Screens.getButtons(screen).add(ChestSearchController.searchBox);
+               Screens.getWidgets(screen).add(ChestSearchController.searchBox);
             }
          }
       }

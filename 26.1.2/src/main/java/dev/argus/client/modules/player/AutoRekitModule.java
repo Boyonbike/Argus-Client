@@ -134,8 +134,8 @@ public final class AutoRekitModule extends Module {
         Button button = Button.builder(Component.literal("Rekit"), ignored -> {
             AutoRekitModule module = get(); if (module != null) module.requestRekit();
         }).bounds(position.x(), position.y(), 58, 20).build();
-        Screens.getButtons(screen).add(button);
-        ScreenEvents.beforeRender(screen).register((s, graphics, mx, my, delta) -> {
+        Screens.getWidgets(screen).add(button);
+        ScreenEvents.beforeExtract(screen).register((s, graphics, mx, my, delta) -> {
             AutoRekitModule module = get();
             button.visible = module != null && module.isToggled() && module.mode.getValue() == Mode.MANUAL;
             button.active = button.visible && module.presets.names().contains(module.activePreset.getValue()) && !module.manualRequested;
@@ -222,7 +222,7 @@ public final class AutoRekitModule extends Module {
             var equippable = candidate.get(DataComponents.EQUIPPABLE);
             // Single pieces avoid vanilla's stacked-equipment fallback, which can drop displaced gear.
             if (candidate.getCount() != 1 || equippable == null || equippable.slot() != equipmentSlot
-                    || !equippable.swappable() || !equippable.canBeEquippedBy(mc.player.getType())
+                    || !equippable.swappable() || !equippable.canBeEquippedBy(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(mc.player.getType()))
                     || candidate.has(DataComponents.CONSUMABLE) || mc.player.getCooldowns().isOnCooldown(candidate)
                     || !slot.mayPickup(mc.player) || !slot.mayPlace(worn) || armourStagingSlot(mc, slot) < 0) return RekitPlanner.Stack.EMPTY;
             return snapshot(candidate);

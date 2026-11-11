@@ -377,7 +377,7 @@ public class AutoArmorModule extends Module {
          DataComponentType<Equippable> equippableType = DataComponents.EQUIPPABLE;
          if (stack.get(equippableType) instanceof Equippable equippable) {
             EntityType playerType = EntityType.PLAYER;
-            if (equippable.canBeEquippedBy(playerType) && !(stack.getItem() instanceof BlockItem)) {
+            if (equippable.canBeEquippedBy(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(playerType)) && !(stack.getItem() instanceof BlockItem)) {
                EquipmentSlot equipmentSlot = equippable.slot();
                int equipmentIndex = equipmentSlot.getIndex();
                if (equipmentIndex == armorKind.getArmorIndex()) {

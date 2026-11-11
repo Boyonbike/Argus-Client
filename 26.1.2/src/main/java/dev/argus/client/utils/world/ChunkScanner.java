@@ -103,9 +103,9 @@ public class ChunkScanner implements ClientAccess {
                throw new MatchException(extractionFailure.toString(), extractionFailure);
             }
 
-            ChunkPos copiedChunkPosition = new ChunkPos(extractedChunkPosition.x, extractedChunkPosition.z);
-            int chunkZ = copiedChunkPosition.z;
-            int chunkX = copiedChunkPosition.x;
+            ChunkPos copiedChunkPosition = new ChunkPos(extractedChunkPosition.x(), extractedChunkPosition.z());
+            int chunkZ = copiedChunkPosition.z();
+            int chunkX = copiedChunkPosition.x();
             LevelChunk chunk = level.getChunk(chunkX, chunkZ);
             this.dispatch(level, () -> this.chunkUnloadCallback.accept(copiedChunkPosition, chunk));
          }

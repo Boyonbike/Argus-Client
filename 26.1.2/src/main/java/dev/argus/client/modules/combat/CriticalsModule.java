@@ -21,6 +21,7 @@ import dev.argus.client.utils.movement.WallsVelocityHandler;
 import dev.argus.client.utils.network.InteractPacketUtils;
 import dev.argus.client.utils.network.PacketSender;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.thread.BlockableEventLoop;
@@ -117,8 +118,11 @@ public class CriticalsModule extends Module {
 
    @EventHandler
    private void onConnectionSendPacketEvent(PacketEvent.Send event) {
-      if (event.getPacket() instanceof ServerboundInteractPacket packet && this.shouldApplyCritical(packet)) {
-         Entity target = InteractPacketUtils.getEntity(packet);
+      Entity attackedTarget = event.getPacket() instanceof ServerboundAttackPacket attack ? InteractPacketUtils.getEntity(attack)
+         : event.getPacket() instanceof ServerboundInteractPacket interact && InteractPacketUtils.getAction(interact) == InteractPacketUtils.Action.ATTACK ? InteractPacketUtils.getEntity(interact)
+         : null;
+      if (attackedTarget != null && this.shouldApplyCritical(attackedTarget)) {
+         Entity target = attackedTarget;
          if (target == null) {
             return;
          }
@@ -209,15 +213,13 @@ public class CriticalsModule extends Module {
       }
    }
 
-   private boolean shouldApplyCritical(ServerboundInteractPacket packet) {
-      if (InteractPacketUtils.getAction(packet) == InteractPacketUtils.Action.ATTACK && this.canPerformCritical()) {
-         Entity target = InteractPacketUtils.getEntity(packet);
-         return auraModule.isToggled() && auraModule.criticalAttackFlag && this.modeSetting.getValue() != CriticalsModule.ModeChoice.GRIM
-            ? false
-            : target != null && target.isAlive() && !(target instanceof EndCrystal);
-      } else {
+   private boolean shouldApplyCritical(Entity target) {
+      if (!this.canPerformCritical()) {
          return false;
       }
+      return auraModule.isToggled() && auraModule.criticalAttackFlag && this.modeSetting.getValue() != CriticalsModule.ModeChoice.GRIM
+         ? false
+         : target != null && target.isAlive() && !(target instanceof EndCrystal);
    }
 
    public static void bindModules(ModuleRegistry registry) {

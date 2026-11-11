@@ -150,7 +150,7 @@ public class ActionCommand extends Command {
       if (equippable != null) {
          LocalPlayer playerForType = ClientAccess.argusclientMinecraft.player;
          EntityType playerType = playerForType.getType();
-         if (equippable.canBeEquippedBy(playerType)) {
+         if (equippable.canBeEquippedBy(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(playerType))) {
             return true;
          }
       }

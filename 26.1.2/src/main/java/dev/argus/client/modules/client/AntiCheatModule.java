@@ -166,19 +166,20 @@ public class AntiCheatModule extends PermanentModule {
          DataComponentType<ItemContainerContents> containerType = DataComponents.CONTAINER;
          ItemContainerContents containerContents = stack.get(containerType);
          if (bundleContents != null) {
-            List<ItemStack> items = bundleContents.items;
+            List<ItemStack> items = bundleContents.itemCopyStream().toList();
             Consumer<ItemStack> action = this::reverseBundleContents;
             items.forEach(action);
-            Stream<ItemStack> itemCopies = bundleContents.itemCopyStream();
-            List<ItemStack> copiedItems = itemCopies.toList();
-            List<ItemStack> reversedItems = copiedItems.reversed();
+            List<net.minecraft.world.item.ItemStackTemplate> reversedItems = items.reversed().stream()
+               .map(net.minecraft.world.item.ItemStackTemplate::fromNonEmptyStack).toList();
             DataComponentType<BundleContents> replacementType = DataComponents.BUNDLE_CONTENTS;
             BundleContents replacement = new BundleContents(reversedItems);
             stack.set(replacementType, replacement);
          } else if (containerContents != null) {
-            NonNullList<ItemStack> items = containerContents.items;
+            NonNullList<ItemStack> items = NonNullList.create();
+            containerContents.copyInto(items);
             Consumer<ItemStack> action = this::reverseBundleContents;
             items.forEach(action);
+            stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
          }
       }
    }

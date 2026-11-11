@@ -277,7 +277,7 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
+         target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.BEFORE
       )
    )
@@ -286,7 +286,7 @@ public abstract class GameRendererMixin {
       boolean manageProjection;
       if (this.minecraft.screen instanceof ClientScreen clientScreen) {
          if (clientScreen.hasMenuParent()) {
-            clientScreen.getParentScreen().renderWithTooltipAndSubtitles(graphics, -99, -99, RenderUtils.getPartialTick());
+            clientScreen.getParentScreen().extractRenderStateWithTooltipAndSubtitles(graphics, -99, -99, RenderUtils.getPartialTick());
          }
 
          manageProjection = false;
@@ -299,7 +299,6 @@ public abstract class GameRendererMixin {
       }
 
       this.guiRenderer.render(this.fogRenderer.getBuffer(FogMode.NONE));
-      this.guiRenderer.incrementFrameNumber();
       RenderUtils.clearDepth(this.minecraft.getMainRenderTarget());
       if (!manageProjection) {
          GuiProjectionUtils.beginGuiProjection();
@@ -312,7 +311,7 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
+         target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.AFTER
       )
    )

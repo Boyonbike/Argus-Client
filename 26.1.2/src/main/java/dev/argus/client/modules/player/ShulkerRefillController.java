@@ -50,7 +50,7 @@ public class ShulkerRefillController extends ChestStealerController {
 
       ArrayList<ItemStack> contentStacks = new ArrayList<>();
 
-      for (ItemStack contentStack : contents.nonEmptyItems()) {
+      for (ItemStack contentStack : contents.nonEmptyItemCopyStream().toList()) {
          contentStacks.add(contentStack);
       }
 

@@ -210,7 +210,7 @@ public class AnnouncerModule extends Module {
                   String countedMessage = template.replace("{amount}", String.valueOf(announcedCount));
                   ItemStack finishedStack = event.getStack();
                   Item food = finishedStack.getItem();
-                  String message = countedMessage.replace("{name}", food.getName().getString());
+                  String message = countedMessage.replace("{name}", food.getName(finishedStack).getString());
                   this.announce(message);
                   this.foodConsumed = 0;
                   timer = this.announcementTimer;

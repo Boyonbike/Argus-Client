@@ -9,6 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
@@ -70,14 +71,7 @@ public final class PacketSender implements ClientAccess {
    }
 
    public static void sendAttack(int entityId) {
-      FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-      buffer.writeVarInt(entityId);
-      buffer.writeVarInt(1);
-      LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-      boolean sneaking = player.isShiftKeyDown();
-      buffer.writeBoolean(sneaking);
-      ServerboundInteractPacket packet = new ServerboundInteractPacket(buffer);
-      send(packet);
+      send(new ServerboundAttackPacket(entityId));
    }
 
    public static void sendPlayerAction(Action action, BlockPos position, Direction direction) {

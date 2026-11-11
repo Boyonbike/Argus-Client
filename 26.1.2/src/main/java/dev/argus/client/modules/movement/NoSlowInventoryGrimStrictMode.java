@@ -93,7 +93,7 @@ public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
             this.queueOrRunAction(
                () -> ClientAccess.argusclientMinecraft
                   .gameMode
-                  .handleInventoryMouseClick(containerId, slotId, button, clickType, ClientAccess.argusclientMinecraft.player)
+                  .handleContainerInput(containerId, slotId, button, clickType, ClientAccess.argusclientMinecraft.player)
             );
             event.cancel();
          }

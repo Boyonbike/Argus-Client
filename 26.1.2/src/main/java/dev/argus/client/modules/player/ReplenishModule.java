@@ -206,7 +206,7 @@ public class ReplenishModule extends Module {
             byte mouseButton = 0;
             ContainerInput quickMove = ContainerInput.QUICK_MOVE;
             LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
-            gameMode.handleInventoryMouseClick(containerId, clickSourceSlot, mouseButton, quickMove, clickPlayer);
+            gameMode.handleContainerInput(containerId, clickSourceSlot, mouseButton, quickMove, clickPlayer);
          } else {
             int conversionHotbarSlot = hotbarSlot;
             int targetSlot = InventoryUtils.toMenuSlot(conversionHotbarSlot);

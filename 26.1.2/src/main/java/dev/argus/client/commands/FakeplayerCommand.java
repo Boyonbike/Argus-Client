@@ -42,6 +42,7 @@ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.network.protocol.game.ClientboundLoginPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
@@ -185,9 +186,11 @@ public final class FakeplayerCommand extends Command {
             this.fakePlayer = null;
          }
 
-         if (event.getPacket() instanceof ServerboundInteractPacket interactionPacket
-            && InteractPacketUtils.getAction(interactionPacket) == InteractPacketUtils.Action.ATTACK) {
-            Entity target = InteractPacketUtils.getEntity(interactionPacket);
+         Entity attackedTarget = event.getPacket() instanceof ServerboundAttackPacket attack ? InteractPacketUtils.getEntity(attack)
+            : event.getPacket() instanceof ServerboundInteractPacket interact && InteractPacketUtils.getAction(interact) == InteractPacketUtils.Action.ATTACK ? InteractPacketUtils.getEntity(interact)
+            : null;
+         if (attackedTarget != null) {
+            Entity target = attackedTarget;
             int attackedEntityId = target.getId();
             FakeplayerCommand.SimulatedPlayer targetPlayer = this.fakePlayer;
             if (attackedEntityId == targetPlayer.getId()) {

@@ -132,7 +132,7 @@ public class GuiMixin {
          if (openProgress != 0.0F) {
             poses.pushMatrix();
             poses.translate(0.0F, (1.0F - openProgress) * -graphics.guiHeight());
-            this.tabList.render(graphics, graphics.guiWidth(), scoreboard, objective);
+            this.tabList.extractRenderState(graphics, graphics.guiWidth(), scoreboard, objective);
             poses.popMatrix();
          }
       }

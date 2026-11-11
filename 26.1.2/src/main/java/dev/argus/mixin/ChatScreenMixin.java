@@ -138,7 +138,7 @@ public abstract class ChatScreenMixin extends Screen {
          FontActiveTextCollector.ClickableStyleFinder styleFinder = new FontActiveTextCollector.ClickableStyleFinder(
             mouseEvent.x(), mouseEvent.y(), this.insertionClickMode()
          );
-         this.minecraft.gui.getChat().captureClickableText(styleFinder, screenHeight, this.minecraft.gui.getGuiTicks(), true);
+         this.minecraft.gui.getChat().captureClickableText(styleFinder, screenHeight, this.minecraft.gui.getGuiTicks(), net.minecraft.client.gui.components.ChatComponent.DisplayMode.FOREGROUND);
          return styleFinder.result();
       } else {
          return originalStyle;

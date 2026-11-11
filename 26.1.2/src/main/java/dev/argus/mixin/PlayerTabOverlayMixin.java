@@ -140,7 +140,7 @@ public class PlayerTabOverlayMixin {
                ? ColorUtils.getLatencyColor(playerInfo.getLatency()).hashCode()
                : ChatFormatting.YELLOW.getColor();
             MutableComponent latencyText = Component.literal(String.valueOf(playerInfo.getLatency())).withColor(latencyColor);
-            graphics.drawString(this.minecraft.font, latencyText, entryX + entryWidth - this.minecraft.font.width(latencyText), entryY, -1);
+            graphics.text(this.minecraft.font, latencyText, entryX + entryWidth - this.minecraft.font.width(latencyText), entryY, -1);
             callback.cancel();
          }
       }

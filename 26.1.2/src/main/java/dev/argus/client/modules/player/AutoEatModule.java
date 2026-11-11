@@ -79,7 +79,7 @@ public class AutoEatModule extends Module {
       int selectedHotbarSlot = ClientAccess.argusclientMinecraft.player.getInventory().getSelectedSlot();
       ContainerInput clickType = ContainerInput.SWAP;
       LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
-      gameMode.handleInventoryMouseClick(containerId, containerSlot, selectedHotbarSlot, clickType, clickPlayer);
+      gameMode.handleContainerInput(containerId, containerSlot, selectedHotbarSlot, clickType, clickPlayer);
    }
 
    @EventHandler

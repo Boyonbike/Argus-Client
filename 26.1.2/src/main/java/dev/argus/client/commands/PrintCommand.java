@@ -32,7 +32,7 @@ public final class PrintCommand extends Command {
          int signatureId = (int)(random * 10000.0);
          MessageSignature signature = ChatUtils.createSignature(signatureId);
          GuiMessageTag tag = ChatUtils.MESSAGE_TAG;
-         chat.addMessage(component, signature, tag);
+         chat.addPlayerMessage(component, signature, tag);
          return 1;
       };
       ArgumentBuilder messageCommand = messageArgument.executes(printMessage);

@@ -128,7 +128,7 @@ public class AutoTradeModule extends Module {
       if (event.getPacket() instanceof ServerboundInteractPacket interactPacket
          && InteractPacketUtils.getEntity(interactPacket) instanceof Villager
          && InteractPacketUtils.getAction(interactPacket) == InteractPacketUtils.Action.INTERACT) {
-         this.villagerId = ((ServerboundInteractPacketAccessor)interactPacket).getEntityId();
+         this.villagerId = interactPacket.entityId();
       }
    }
 
@@ -258,13 +258,13 @@ public class AutoTradeModule extends Module {
          LocalPlayer dropPlayer = ClientAccess.argusclientMinecraft.player;
          ContainerInput dropClick = ContainerInput.THROW;
          byte dropButton = 0;
-         gameMode.handleInventoryMouseClick(containerId, 2, dropButton, dropClick, dropPlayer);
+         gameMode.handleContainerInput(containerId, 2, dropButton, dropClick, dropPlayer);
       } else {
          MultiPlayerGameMode quickMoveGameMode = ClientAccess.argusclientMinecraft.gameMode;
          LocalPlayer movePlayer = ClientAccess.argusclientMinecraft.player;
          ContainerInput moveClick = ContainerInput.QUICK_MOVE;
          byte moveButton = 0;
-         quickMoveGameMode.handleInventoryMouseClick(containerId, 2, moveButton, moveClick, movePlayer);
+         quickMoveGameMode.handleContainerInput(containerId, 2, moveButton, moveClick, movePlayer);
       }
    }
 

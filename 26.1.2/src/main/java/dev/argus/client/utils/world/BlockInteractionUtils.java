@@ -418,8 +418,8 @@ public final class BlockInteractionUtils implements ClientAccess {
       MultiPlayerGameMode gameModeSnapshot = ClientAccess.argusclientMinecraft.gameMode;
       LocalPlayer playerSnapshot = ClientAccess.argusclientMinecraft.player;
       EntityHitResult hitResultSnapshot = new EntityHitResult(entity);
-      gameModeSnapshot.interactAt(playerSnapshot, entity, hitResultSnapshot, hand);
-      ClientAccess.argusclientMinecraft.gameMode.interact(ClientAccess.argusclientMinecraft.player, entity, hand);
+      gameModeSnapshot.interact(playerSnapshot, entity, hitResultSnapshot, hand);
+      ClientAccess.argusclientMinecraft.gameMode.interact(ClientAccess.argusclientMinecraft.player, entity, hitResultSnapshot, hand);
       ClientAccess.argusclientMinecraft.player.swing(hand);
    }
 

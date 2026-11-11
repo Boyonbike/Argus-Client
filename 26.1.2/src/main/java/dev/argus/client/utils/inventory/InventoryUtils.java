@@ -77,13 +77,13 @@ public final class InventoryUtils implements ClientAccess {
 
    public static void clickSlot(int slot, int button, ContainerInput clickType) {
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
-      ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(containerId, slot, button, clickType, ClientAccess.argusclientMinecraft.player);
+      ClientAccess.argusclientMinecraft.gameMode.handleContainerInput(containerId, slot, button, clickType, ClientAccess.argusclientMinecraft.player);
    }
 
    public static void clickSlot(int containerId, int slot, int button, ContainerInput clickType) {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-      gameMode.handleInventoryMouseClick(containerId, slot, button, clickType, player);
+      gameMode.handleContainerInput(containerId, slot, button, clickType, player);
    }
 
    public static int getSelectedSlot() {

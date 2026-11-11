@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.common.ServerboundPongPacket;
 import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
@@ -108,11 +109,12 @@ public final class PacketRateLimiter {
    }
 
    private static boolean isInteractPacket(Packet packet) {
-      return packet instanceof ServerboundInteractPacket || packet instanceof ServerboundPlayerActionPacket;
+      return packet instanceof ServerboundInteractPacket || packet instanceof ServerboundAttackPacket || packet instanceof ServerboundPlayerActionPacket;
    }
 
    private static boolean isGlobalPacket(Packet packet) {
       return packet instanceof ServerboundInteractPacket
+         || packet instanceof ServerboundAttackPacket
          || packet instanceof ServerboundUseItemPacket
          || packet instanceof ServerboundUseItemOnPacket
          || packet instanceof ServerboundPlayerActionPacket

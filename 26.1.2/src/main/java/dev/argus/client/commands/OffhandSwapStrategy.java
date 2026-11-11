@@ -16,13 +16,13 @@ public class OffhandSwapStrategy implements ActionSwapStrategy {
    public void apply(SwapSlots slots) {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
-      gameMode.handleInventoryMouseClick(containerId, slots.sourceSlot(), 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
+      gameMode.handleContainerInput(containerId, slots.sourceSlot(), 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
    }
 
    @Override
    public void undo(SwapSlots slots) {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
-      gameMode.handleInventoryMouseClick(containerId, slots.sourceSlot(), 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
+      gameMode.handleContainerInput(containerId, slots.sourceSlot(), 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
    }
 }

@@ -348,9 +348,9 @@ public class NoSlowModule extends Module {
          Predicate<ItemStack> inventoryPredicate = stack -> !this.isFoodBowShieldOrPearl(stack);
          int inventorySlot = InventoryUtils.findInventorySlot(inventoryPredicate, true);
          int containerSlot = InventoryUtils.toMenuSlot(inventorySlot);
-         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
+         ClientAccess.argusclientMinecraft.gameMode.handleContainerInput(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
          PacketSender.sendUseItem(otherHand);
-         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
+         ClientAccess.argusclientMinecraft.gameMode.handleContainerInput(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
       } else {
          PacketSender.sendUseItem(otherHand);
       }
