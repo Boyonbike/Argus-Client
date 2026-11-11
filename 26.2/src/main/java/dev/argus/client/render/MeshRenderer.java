@@ -43,7 +43,8 @@ public final class MeshRenderer {
       MeshData.DrawState state = mesh.drawState();
       ByteBuffer vertices = copy(mesh.vertexBuffer());
       applyColorModifiers(vertices, state, renderType);
-      ByteBuffer indices = buildIndices(state);
+      ByteBuffer sorted = mesh.indexBuffer();
+      ByteBuffer indices = sorted != null ? copy(sorted) : buildIndices(state);
       GpuDevice device = RenderSystem.getDevice();
       GpuBuffer vertexBuffer = device.createBuffer(() -> "argus-vertices", GpuBuffer.USAGE_VERTEX, vertices);
       GpuBuffer indexBuffer = device.createBuffer(() -> "argus-indices", GpuBuffer.USAGE_INDEX, indices);
@@ -73,15 +74,9 @@ public final class MeshRenderer {
       int stride = format.getVertexSize();
       int offset = colour.offset();
       for (int index = 0; index < state.vertexCount(); index++) {
-         int base = index * stride + offset;
-         int r = vertices.get(base) & 0xFF;
-         int g = vertices.get(base + 1) & 0xFF;
-         int b = vertices.get(base + 2) & 0xFF;
-         int a = vertices.get(base + 3) & 0xFF;
-         vertices.put(base, (byte)r);
-         vertices.put(base + 1, (byte)g);
-         vertices.put(base + 2, (byte)b);
-         vertices.put(base + 3, (byte)((int)(a * alpha)));
+         int alphaIndex = index * stride + offset + 3;
+         int a = vertices.get(alphaIndex) & 0xFF;
+         vertices.put(alphaIndex, (byte)((int)(a * alpha)));
       }
    }
 
@@ -108,6 +103,18 @@ public final class MeshRenderer {
             put(buffer, type, base);
             put(buffer, type, base + 2);
             put(buffer, type, base + 3);
+         }
+      } else if (state.primitiveTopology() == PrimitiveTopology.LINES) {
+         // Each line segment is 4 vertices expanded into a quad; matches vanilla's sharedSequentialLines.
+         int segments = Math.min(vertexCount / 4, indexCount / 6);
+         for (int segment = 0; segment < segments; segment++) {
+            int base = segment * 4;
+            put(buffer, type, base);
+            put(buffer, type, base + 1);
+            put(buffer, type, base + 2);
+            put(buffer, type, base + 3);
+            put(buffer, type, base + 2);
+            put(buffer, type, base + 1);
          }
       } else {
          for (int index = 0; index < indexCount; index++) {

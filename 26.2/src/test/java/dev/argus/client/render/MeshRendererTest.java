@@ -24,9 +24,28 @@ class MeshRendererTest {
    }
 
    @Test
-   void linesStaySequential() {
+   void linesUseVanillaSegmentPattern() {
+      // 26.2 LINES: 4 vertices per segment, 6 indices per segment (PrimitiveTopology.indexCount).
       MeshData.DrawState state = new MeshData.DrawState(
-         DefaultVertexFormat.POSITION_COLOR, 4, 4, PrimitiveTopology.LINES, IndexType.SHORT
+         DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH, 8, 12, PrimitiveTopology.LINES, IndexType.SHORT
+      );
+      ByteBuffer indices = MeshRenderer.buildIndices(state);
+      short[] expected = {0, 1, 2, 3, 2, 1, 4, 5, 6, 7, 6, 5};
+      assertEquals(expected.length * 2, indices.remaining());
+      for (short value : expected) {
+         assertEquals(value, indices.getShort());
+      }
+   }
+
+   @Test
+   void linesIndexCountMatchesVanilla() {
+      assertEquals(12, PrimitiveTopology.LINES.indexCount(8));
+   }
+
+   @Test
+   void triangleStripStaysSequential() {
+      MeshData.DrawState state = new MeshData.DrawState(
+         DefaultVertexFormat.POSITION_COLOR, 4, 4, PrimitiveTopology.TRIANGLE_STRIP, IndexType.SHORT
       );
       ByteBuffer indices = MeshRenderer.buildIndices(state);
       for (short value = 0; value < 4; value++) {
