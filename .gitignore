@@ -9,3 +9,6 @@ __pycache__/
 /1.21.11/argusclient/
 /1.21.11/mods/
 /1.21.11/logs/
+
+# Local design notes, plans and previews stay off GitHub.
+docs/
