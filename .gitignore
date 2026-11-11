@@ -4,11 +4,6 @@ __pycache__/
 *.pyc
 
 # Local game data must never be distributed.
-/1.21.11/run/
-/1.21.11/config/
-/1.21.11/argusclient/
-/1.21.11/mods/
-/1.21.11/logs/
 /26.1.2/run/
 /26.1.2/config/
 /26.1.2/argusclient/

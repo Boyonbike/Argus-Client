@@ -1,13 +1,12 @@
 # Argus Client
 
 A Fabric client with a Meteor-style floating-window GUI, pastel Light/Dark
-themes, ranked module/settings search, and Friends management. Client projects are organised by Minecraft version.
+themes, ranked module/settings search, and Friends management. This branch holds the Minecraft 26.1.2 client; other versions live on their own branches (for example `1.21.11`).
 
 ## Versions
 
 | Minecraft | Client project | Download |
 | --- | --- | --- |
-| **1.21.11** | [Source, build files, and documentation](1.21.11/) | [argus-client.jar](1.21.11/argus-client.jar) |
 | **26.1.2** | [Source, build files, and documentation](26.1.2/) | [argus-client.jar](26.1.2/argus-client.jar) |
 
 ## Install for Minecraft 26.1.2
@@ -15,12 +14,6 @@ themes, ranked module/settings search, and Friends management. Client projects a
 1. Set up Minecraft **26.1.2** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
 2. Install Fabric API for Minecraft 26.1.2.
 3. Download [`argus-client.jar`](26.1.2/argus-client.jar) and place it in your instance's `mods` folder, replacing older copies.
-
-## Install for Minecraft 1.21.11
-
-1. Set up Minecraft **1.21.11** with Fabric Loader **0.19.5 or newer** and Java **21 or newer**.
-2. Install Fabric API for Minecraft 1.21.11.
-3. Download [`argus-client.jar`](1.21.11/argus-client.jar) and place it in your instance's `mods` folder, replacing older copies of the client or its separate GUI add-on.
 
 ## Menus
 
@@ -45,13 +38,13 @@ under `dev.argus`.
 The **Volytra Fly** ElytraFly mode is ported and adapted from
 [VolytraFly](https://github.com/Volizray/VolytraFly-Addon) by **Volizray**,
 released under **CC0 1.0 Universal**. See the
-[third-party notices](1.21.11/THIRD_PARTY_NOTICES.md) for attribution and the
-[full CC0 text](1.21.11/licenses/VolytraFly-CC0.txt).
+[third-party notices](26.1.2/THIRD_PARTY_NOTICES.md) for attribution and the
+[full CC0 text](26.1.2/licenses/VolytraFly-CC0.txt).
 
 ## Repository layout
 
 ```text
-1.21.11/
+26.1.2/
 ├── README.md                 Version-specific instructions
 ├── THIRD_PARTY_NOTICES.md    Third-party attribution and licence notices
 ├── licenses/                 Full third-party licence texts
@@ -77,9 +70,8 @@ cd 26.1.2
 ```
 
 On Windows use `gradlew.bat build`. The client JAR is generated at
-`26.1.2/build/libs/argus-client.jar`. The 1.21.11 project builds the same way
-from its own folder.
+`26.1.2/build/libs/argus-client.jar`.
 
-See the [1.21.11 README](1.21.11/README.md) for controls, verification commands,
+See the [26.1.2 README](26.1.2/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.
 In-game appearance and controls have not been verified in a running Minecraft instance.
