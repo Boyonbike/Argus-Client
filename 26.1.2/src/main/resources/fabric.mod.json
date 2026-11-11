@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "argusclient",
+  "version": "${version}",
+  "name": "Argus Client",
+  "authors": [
+    "Boyonbike"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Boyonbike/Argus-Client",
+    "sources": "https://github.com/Boyonbike/Argus-Client"
+  },
+  "icon": "assets/argusclient/textures/argusclient.png",
+  "description": "Argus Client with module search, a tabbed module menu, and Friends management.",
+  "environment": "client",
+  "accessWidener": "argusclient.accesswidener",
+  "entrypoints": {
+    "main": [
+      "dev.argus.client.ArgusClient"
+    ],
+    "client": [
+      "dev.argus.client.ArgusClient",
+      "dev.argus.client.gui.FriendsMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "baritone-meteor": "26.1-SNAPSHOT",
+    "viafabricplus": "4.5.6",
+    "entityculling": "*",
+    "sodium": "*",
+    "lithium": "*",
+    "immediatelyfast": "*",
+    "xaerominimap": "*"
+  },
+  "mixins": [
+    "argusclient.mixins.json",
+    "argusclient.gui.mixins.json"
+  ]
+}

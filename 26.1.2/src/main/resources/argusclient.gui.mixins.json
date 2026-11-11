@@ -1,0 +1,36 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.argus.client.gui.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "UIModuleMixin",
+    "LegacyClickGuiMixin",
+    "MinecraftSetScreenMixin",
+    "ClickGuiSearchBoxMixin",
+    "HudEditorProviderMixin",
+    "HudEditorScreenAccessor",
+    "EditBoxAccessor",
+    "ModuleRegistryMixin",
+    "ChestStealerRekitMixin",
+    "ImportedPresetMixin",
+    "AccountSessionAccessor",
+    "HandshakeSessionRecoveryMixin",
+    "ConnectionProxyMixin",
+    "SmartElytraTakeoffMixin",
+    "HUDModuleMixin",
+    "ModuleConfigMixin",
+    "HudAnchorGroupMixin",
+    "HudMarginControllerMixin",
+    "ArmorModuleMixin",
+    "EntityArgumentAccessor",
+    "ChatScreenPlayerClickMixin",
+    "BetterChatClanHighlightMixin",
+    "TabListClanHighlightMixin",
+    "BetterChatDmSoundMixin",
+    "MenuBlurFadeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
