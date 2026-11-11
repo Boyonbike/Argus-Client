@@ -22,16 +22,17 @@ public class ModelBlockRendererMixin {
    private static final XrayModule xrayModule = ClientContext.getModule(XrayModule.class);
    private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
 
-   @Inject(method = {"tesselateWithAO", "tesselateWithoutAO"}, at = @At("HEAD"), cancellable = true)
+   @Inject(method = "tesselateBlock", at = @At("HEAD"), cancellable = true)
    private void suppressHiddenBlockEntityMesh(
+      net.minecraft.client.renderer.block.BlockQuadOutput output,
+      float x,
+      float y,
+      float z,
       BlockAndTintGetter level,
-      List parts,
-      BlockState blockState,
       BlockPos blockPos,
-      PoseStack poses,
-      VertexConsumer vertices,
-      boolean checkSides,
-      int packedOverlay,
+      BlockState blockState,
+      net.minecraft.client.renderer.block.dispatch.BlockStateModel model,
+      long seed,
       CallbackInfo callback
    ) {
       XrayModule xray = XrayModule.getInstance();
@@ -42,24 +43,4 @@ public class ModelBlockRendererMixin {
       }
    }
 
-   // Runs for every quad of every block model; @ModifyArg on the single alpha argument avoids the
-   // per-call Args array (and boxing) that @ModifyArgs allocated.
-   @ModifyArg(
-      method = "putQuadData",
-      at = @At(
-         value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;[FFFFF[II)V"
-      ),
-      index = 6
-   )
-   private float applyXrayQuadAlpha(float alpha, @Local(argsOnly = true) BlockPos blockPos, @Local(argsOnly = true) BlockState blockState) {
-      if (xrayModule.isToggled()
-         && !xrayModule.alphaSetting.isAtMinimum()
-         && !xrayModule.alphaSetting.isAtMaximum()
-         && !xrayModule.shouldRenderBlock(blockPos, blockState.getBlock())) {
-         return xrayModule.alphaSetting.getValue().intValue() / 100.0F;
-      }
-
-      return alpha;
-   }
 }

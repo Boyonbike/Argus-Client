@@ -22,7 +22,7 @@ public class MultiPlayerGameModeMixin {
    @Final
    private Minecraft minecraft;
 
-   @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "handleContainerInput", at = @At("HEAD"), cancellable = true)
    private void onInventoryMouseClickHead(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent event = new MultiPlayerGameModeHandleInventoryMouseClickEvent(
@@ -35,7 +35,7 @@ public class MultiPlayerGameModeMixin {
       }
    }
 
-   @Inject(method = "handleInventoryMouseClick", at = @At("TAIL"), cancellable = true)
+   @Inject(method = "handleContainerInput", at = @At("TAIL"), cancellable = true)
    private void onInventoryMouseClickTail(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent.After event = new MultiPlayerGameModeHandleInventoryMouseClickEvent.After(
@@ -49,7 +49,7 @@ public class MultiPlayerGameModeMixin {
    }
 
    @Inject(
-      method = "handleInventoryMouseClick",
+      method = "handleContainerInput",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/network/HashedStack;create(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/network/HashedPatchMap$HashGenerator;)Lnet/minecraft/network/HashedStack;",
@@ -72,7 +72,7 @@ public class MultiPlayerGameModeMixin {
    }
 
    @WrapWithCondition(
-      method = "handleInventoryMouseClick",
+      method = "handleContainerInput",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;clicked(IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V"

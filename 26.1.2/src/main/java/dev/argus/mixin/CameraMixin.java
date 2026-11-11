@@ -1,5 +1,7 @@
 package dev.argus.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
 import dev.argus.client.ClientAccess;
@@ -123,7 +125,7 @@ public abstract class CameraMixin {
       }
    }
 
-   @ModifyArgs(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
+   @ModifyArgs(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
    private void modifySetupPosition(Args args, @Local(argsOnly = true) Entity entity, @Local(argsOnly = true) float partialTick) {
       CameraSetupEvent event = new CameraSetupEvent(entity, partialTick, (Double)args.get(0), (Double)args.get(1), (Double)args.get(2));
       ClientAccess.eventBus.post(event);
@@ -134,7 +136,7 @@ public abstract class CameraMixin {
       }
    }
 
-   @ModifyArgs(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V"))
+   @ModifyArgs(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V"))
    private void applyCameraSetupRotations(Args arguments) {
       if (elytrafly.isToggled()
          && elytrafly.modeSetting.getValue() == ElytraFlyModule.ModeChoice.BOUNCE
@@ -150,7 +152,7 @@ public abstract class CameraMixin {
       }
    }
 
-   @Inject(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 1, shift = Shift.AFTER))
+   @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 1, shift = Shift.AFTER))
    public void applyFreeLookRotation(Level level, Entity cameraEntity, boolean detached, boolean mirrored, float partialTick, CallbackInfo callback) {
       if (!freecam.isToggled() && freelook.isToggled() && cameraEntity instanceof EntityMotionAccess motionAccess) {
          this.setRotation(motionAccess.getCameraYaw(), motionAccess.getCameraPitch());

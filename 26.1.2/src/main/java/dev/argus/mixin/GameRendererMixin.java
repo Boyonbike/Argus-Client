@@ -39,7 +39,6 @@ import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.ScreenEffectRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer.FogMode;
 import net.minecraft.util.Mth;
@@ -79,10 +78,6 @@ public abstract class GameRendererMixin {
    @Shadow
    @Final
    public FogRenderer fogRenderer;
-   private boolean pickingFromFreecam = false;
-
-   @Shadow
-   public abstract void pick(float var1);
 
    @ModifyExpressionValue(method = "bobView", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;sin(D)F"))
    private float invertViewBobSine(float originalSine) {
@@ -96,7 +91,7 @@ public abstract class GameRendererMixin {
 
    @Inject(method = "<init>", at = @At("RETURN"))
    public void initializeShaderRegistry(
-      Minecraft client, ItemInHandRenderer handRenderer, RenderBuffers renderBuffers, BlockRenderDispatcher blockRenderer, CallbackInfo callback
+      Minecraft client, ItemInHandRenderer handRenderer, RenderBuffers renderBuffers, net.minecraft.client.resources.model.ModelManager modelManager, CallbackInfo callback
    ) {
       ClientContext.shaderRegistry = new ShaderRegistry();
    }
@@ -137,7 +132,7 @@ public abstract class GameRendererMixin {
 
    @WrapWithCondition(
       method = "renderLevel",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(FZLorg/joml/Matrix4f;)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V")
    )
    private boolean shouldRenderHands(GameRenderer renderer, float partialTick, boolean ignoredHandFlag, Matrix4f projectionMatrix) {
       return !shader.isToggled() || !shader.handsSetting.getValue();
@@ -158,29 +153,18 @@ public abstract class GameRendererMixin {
       return false;
    }
 
-   @ModifyReturnValue(method = "getFov", at = @At(value = "RETURN", ordinal = 1))
-   private float applyZoomAndViewModelFov(float originalFov, @Local(argsOnly = true) boolean useFovSetting) {
-      if (useFovSetting) {
-         return originalFov;
-      }
-
-      float zoomScale = 1.0F - zoom.getZoomBlend();
-      return viewmodel.isToggled() && viewmodel.viewModelFovSetting.getValue()
-         ? viewmodel.fovAmountSetting.getValue().intValue() * zoomScale
-         : originalFov * zoomScale;
-   }
-
    @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
    private void prepareHandRendering(
-      float partialTick, boolean ignoredHandFlag, Matrix4f projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
+      net.minecraft.client.renderer.state.level.CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
    ) {
-      backupMatrix.set(new Matrix4f(projectionMatrix));
+      Matrix4f mutableProjection = (Matrix4f) projectionMatrix;
+      backupMatrix.set(new Matrix4f(mutableProjection));
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, noRenderModule.getHandOpacity());
       if (viewmodel.isToggled() && viewmodel.lighterSetting.getValue()) {
          float handYaw = -95.0F;
          float handPitch = 45.0F;
          Quaternionf handRotation = new Quaternionf().rotationYXZ((float)Math.toRadians(180.0F - handYaw), (float)Math.toRadians(-handPitch), 0.0F).conjugate();
-         projectionMatrix.set(new Matrix4f().rotation(handRotation));
+         mutableProjection.set(new Matrix4f().rotation(handRotation));
       }
 
       if (freecam.shouldHideHands()) {
@@ -190,11 +174,11 @@ public abstract class GameRendererMixin {
 
    @Inject(method = "renderItemInHand", at = @At("RETURN"))
    private void restoreHandRendering(
-      float partialTick, boolean ignoredHandFlag, Matrix4f projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
+      net.minecraft.client.renderer.state.level.CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
    ) {
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
       if (viewmodel.isToggled() && viewmodel.lighterSetting.getValue()) {
-         projectionMatrix.set((Matrix4fc)backupMatrix.get());
+         ((Matrix4f)projectionMatrix).set((Matrix4fc)backupMatrix.get());
       }
    }
 
@@ -213,64 +197,11 @@ public abstract class GameRendererMixin {
       method = "renderLevel",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/ScreenEffectRenderer;renderScreenEffect(ZFLnet/minecraft/client/renderer/SubmitNodeCollector;)V"
+         target = "Lnet/minecraft/client/renderer/ScreenEffectRenderer;renderScreenEffect(ZZFLnet/minecraft/client/renderer/SubmitNodeCollector;Z)V"
       )
    )
-   private boolean shouldRenderScreenEffects(ScreenEffectRenderer renderer, boolean ignoredEffectFlag, float partialTick, SubmitNodeCollector collector) {
+   private boolean shouldRenderScreenEffects(ScreenEffectRenderer renderer, boolean ignoredEffectFlag1, boolean ignoredEffectFlag2, float partialTick, SubmitNodeCollector collector, boolean ignoredEffectFlag3) {
       return !ClientContext.shaderRegistry.renderingIntoTarget;
-   }
-
-   @Inject(method = "pick", at = @At("HEAD"), cancellable = true)
-   private void applyCameraPicking(float partialTick, CallbackInfo callback) {
-      if (freecam.isToggled() && this.minecraft.getCameraEntity() != null && !this.pickingFromFreecam) {
-         callback.cancel();
-         Entity cameraEntity = this.minecraft.getCameraEntity();
-         double savedX = cameraEntity.getX();
-         double savedY = cameraEntity.getY();
-         double savedZ = cameraEntity.getZ();
-         double savedPreviousX = cameraEntity.xo;
-         double savedPreviousY = cameraEntity.yo;
-         double savedPreviousZ = cameraEntity.zo;
-         float savedYaw = cameraEntity.getYRot();
-         float savedPitch = cameraEntity.getXRot();
-         float savedPreviousYaw = cameraEntity.yRotO;
-         float savedPreviousPitch = cameraEntity.xRotO;
-         float savedHeadYaw = cameraEntity.getYHeadRot();
-         cameraEntity.xo = freecam.previousCameraPosition.x;
-         cameraEntity.yo = freecam.previousCameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose());
-         cameraEntity.zo = freecam.previousCameraPosition.z;
-         cameraEntity.setYRot(freecam.cameraYaw);
-         cameraEntity.setYHeadRot(freecam.cameraYaw);
-         cameraEntity.setXRot(freecam.cameraPitch);
-         cameraEntity.yRotO = freecam.previousCameraYaw;
-         cameraEntity.xRotO = freecam.previousCameraPitch;
-         this.pickingFromFreecam = true;
-         LockUtils.runWithSharedLock(
-            () -> {
-               Vec3Utils.setComponents(
-                  cameraEntity.position(),
-                  freecam.cameraPosition.x,
-                  freecam.cameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose()),
-                  freecam.cameraPosition.z
-               );
-               this.pick(partialTick);
-               Vec3Utils.setComponents(cameraEntity.position(), savedX, savedY, savedZ);
-            }
-         );
-         this.pickingFromFreecam = false;
-         cameraEntity.xo = savedPreviousX;
-         cameraEntity.yo = savedPreviousY;
-         cameraEntity.zo = savedPreviousZ;
-         cameraEntity.setYRot(savedYaw);
-         cameraEntity.setYHeadRot(savedHeadYaw);
-         cameraEntity.setXRot(savedPitch);
-         cameraEntity.yRotO = savedPreviousYaw;
-         cameraEntity.xRotO = savedPreviousPitch;
-      }
-
-      if (freelook.isToggled() && !freecam.isToggled()) {
-         callback.cancel();
-      }
    }
 
    @Inject(

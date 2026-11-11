@@ -41,26 +41,26 @@ public class GuiMixin {
    @Final
    private Minecraft minecraft;
 
-   @Inject(method = "render", at = @At("HEAD"))
+   @Inject(method = "extractRenderState", at = @At("HEAD"))
    private void resetHudRenderColor(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
-   @Inject(method = "renderSelectedItemName", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractSelectedItemName", at = @At("HEAD"), cancellable = true)
    private void suppressHeldItemTooltip(GuiGraphicsExtractor graphics, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.heldTooltipsSetting.getValue()) {
          callback.cancel();
       }
    }
 
-   @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractEffects", at = @At("HEAD"), cancellable = true)
    private void suppressEffectIcons(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (hudModule.isToggled() && hudModule.iconsSetting.getValue() == HUDModule.EffectIconMode.HIDE) {
          callback.cancel();
       }
    }
 
-   @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
    private void cancelVanillaCrosshair(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (crosshair.isToggled()) {
          if (crosshair.shouldHideVanillaCrosshair()) {
@@ -82,19 +82,19 @@ public class GuiMixin {
       }
    }
 
-   @Inject(method = "renderCrosshair", at = @At("RETURN"))
+   @Inject(method = "extractCrosshair", at = @At("RETURN"))
    private void restoreCrosshairPose(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (crosshair.isToggled() && !crosshair.shouldHideVanillaCrosshair()) {
          graphics.pose().popMatrix();
       }
    }
 
-   @ModifyExpressionValue(method = "renderCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;isFirstPerson()Z"))
+   @ModifyExpressionValue(method = "extractCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;isFirstPerson()Z"))
    private boolean showVanillaCrosshairInThirdPerson(boolean firstPerson) {
       return firstPerson || crosshair.isToggled() && !crosshair.shouldHideVanillaCrosshair() && crosshair.thirdPersonSetting.getValue();
    }
 
-   @ModifyExpressionValue(method = "renderCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"))
+   @ModifyExpressionValue(method = "extractCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"))
    public Object suppressCrosshairAttackIndicator(Object originalStatus) {
       return noHitDelayModule.isToggled() ? AttackIndicatorStatus.OFF : originalStatus;
    }
@@ -114,14 +114,14 @@ public class GuiMixin {
       graphics.pose().popMatrix();
    }
 
-   @Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractOverlayMessage", at = @At("HEAD"), cancellable = true)
    private void suppressActionBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.actionBarSetting.getValue()) {
          callback.cancel();
       }
    }
 
-   @Inject(method = "renderTabList", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractTabList", at = @At("HEAD"), cancellable = true)
    private void renderSmoothTabList(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (extraTabModule.isToggled() && extraTabModule.smoothSetting.getValue()) {
          callback.cancel();
@@ -139,10 +139,10 @@ public class GuiMixin {
    }
 
    @ModifyArgs(
-      method = "renderCameraOverlays",
+      method = "extractCameraOverlays",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/Gui;renderTextureOverlay(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/resources/Identifier;F)V",
+         target = "Lnet/minecraft/client/gui/Gui;extractTextureOverlay(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/resources/Identifier;F)V",
          ordinal = 0
       )
    )

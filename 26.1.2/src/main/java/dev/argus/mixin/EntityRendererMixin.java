@@ -22,18 +22,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class EntityRendererMixin {
    private static final NameTagsModule nameTagsModule = ClientContext.getModule(NameTagsModule.class);
 
-   @Inject(method = "submitNameTag", at = @At("HEAD"), cancellable = true)
-   private void postNameTagRenderCheck(
-      EntityRenderState renderState, PoseStack poses, SubmitNodeCollector collector, CameraRenderState cameraState, CallbackInfo callback
-   ) {
+   @Inject(method = "extractRenderState", at = @At("TAIL"))
+   private void postNameTagRenderCheck(Entity entity, EntityRenderState renderState, float partialTick, CallbackInfo callback) {
       if (ClientContext.shaderRegistry.renderingIntoTarget) {
-         callback.cancel();
+         renderState.nameTag = null;
       } else {
-         Entity entity = EntityRenderStateAccess.getEntity(renderState);
-         NameTagRenderEvent event = new NameTagRenderEvent(poses, entity);
+         NameTagRenderEvent event = new NameTagRenderEvent(new PoseStack(), entity);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
-            callback.cancel();
+            renderState.nameTag = null;
          }
       }
    }

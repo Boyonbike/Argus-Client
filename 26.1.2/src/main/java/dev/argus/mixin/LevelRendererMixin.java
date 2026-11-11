@@ -57,6 +57,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -97,13 +98,13 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    private Stack<ResourceHandle<RenderTarget>> entityOutlineHandleStack;
 
    @WrapWithCondition(
-      method = "method_62216(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;IF)V",
+      method = "lambda$addWeatherPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;I)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/WeatherEffectRenderer;render(Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/WeatherRenderState;)V"
+         target = "Lnet/minecraft/client/renderer/WeatherEffectRenderer;render(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/level/WeatherRenderState;)V"
       )
    )
-   private boolean shouldRenderWeather(WeatherEffectRenderer weatherRenderer, MultiBufferSource buffers, Vec3 cameraPosition, WeatherRenderState weatherState) {
+   private boolean shouldRenderWeather(WeatherEffectRenderer weatherRenderer, Vec3 cameraPosition, WeatherRenderState weatherState) {
       return !ambienceModule.isToggled()
          || !ambienceModule.worldWeatherSetting.getValue()
          || ambienceModule.weatherSetting.getValue() != AmbienceModule.WeatherChoice.CLEAR;
@@ -114,10 +115,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
@@ -143,7 +142,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @Inject(
-      method = "method_62214(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;ZLcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;)V",
+      method = "lambda$addMainPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;ZLorg/joml/Matrix4fc;)V",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/RenderBuffers;bufferSource()Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;",
@@ -154,16 +153,17 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       LevelRenderState renderState,
       ProfilerFiller profiler,
-      Matrix4f inputMatrix,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       ResourceHandle firstTarget,
       ResourceHandle secondTarget,
-      boolean renderFlag,
       ResourceHandle thirdTarget,
       ResourceHandle fourthTarget,
-      CallbackInfo callback,
-      @Local PoseStack poses
+      ResourceHandle fifthTarget,
+      boolean renderFlag,
+      Matrix4fc inputMatrix,
+      CallbackInfo callback
    ) {
-      WorldRenderEvent.BeforeBufferSource event = WorldRenderEvent.BeforeBufferSource.create(poses, RenderUtils.getPartialTick());
+      WorldRenderEvent.BeforeBufferSource event = WorldRenderEvent.BeforeBufferSource.create(new PoseStack(), RenderUtils.getPartialTick());
       ClientAccess.eventBus.post(event);
    }
 
@@ -171,7 +171,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "renderLevel",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/culling/Frustum;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;ZLnet/minecraft/client/renderer/state/LevelRenderState;Lnet/minecraft/client/DeltaTracker;Lnet/minecraft/util/profiling/ProfilerFiller;)V",
+         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/culling/Frustum;Lorg/joml/Matrix4fc;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;ZLnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/client/DeltaTracker;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
          shift = Shift.BEFORE
       )
    )
@@ -179,10 +179,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
@@ -204,7 +202,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @WrapWithCondition(
-      method = "method_62214(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;ZLcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;)V",
+      method = "lambda$addMainPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;Lcom/mojang/blaze3d/resource/ResourceHandle;ZLorg/joml/Matrix4fc;)V",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/LevelRenderer;renderBlockOutline(Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lcom/mojang/blaze3d/vertex/PoseStack;ZLnet/minecraft/client/renderer/state/LevelRenderState;)V"
@@ -223,10 +221,10 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       return !event.isCancelled();
    }
 
-   @Inject(method = "doesMobEffectBlockSky", at = @At("HEAD"), cancellable = true)
-   private void suppressSkyBlindness(Camera camera, CallbackInfoReturnable<Boolean> callback) {
+   @Inject(method = "addSkyPass", at = @At("HEAD"), cancellable = true)
+   private void suppressSkyBlindness(com.mojang.blaze3d.framegraph.FrameGraphBuilder frameGraph, CameraRenderState cameraState, GpuBufferSlice buffer, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.blindnessSetting.getValue()) {
-         callback.setReturnValue(null);
+         callback.cancel();
       }
    }
 
@@ -240,10 +238,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
@@ -253,7 +249,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       this.worldPoseStack = new PoseStack();
    }
 
-   @ModifyExpressionValue(method = "method_62218(Lorg/joml/Vector4f;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;colorFromFloat(FFFF)I"))
+   @ModifyExpressionValue(method = "lambda$renderLevel$0(Lorg/joml/Vector4f;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;colorFromFloat(FFFF)I"))
    private int applySkyboxBackgroundColor(int originalColor) {
       return skyboxModule.isToggled() && skyboxModule.isCurrentDimensionEnabled()
          ? ARGB.color(0, skyboxModule.backgroundSetting.getValue().hashCode())
@@ -261,7 +257,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    }
 
    @ModifyArgs(
-      method = "method_62215(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/SkyRenderState;Lnet/minecraft/client/renderer/SkyRenderer;)V",
+      method = "lambda$addSkyPass$0(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/SkyRenderState;Lnet/minecraft/client/renderer/SkyRenderer;)V",
       at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFog(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;)V")
    )
    private static void applySkyFogSlice(Args arguments) {
@@ -274,7 +270,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "submitEntities",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lnet/minecraft/client/renderer/state/CameraRenderState;DDDLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;)V"
+         target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lnet/minecraft/client/renderer/state/level/CameraRenderState;DDDLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;)V"
       )
    )
    private boolean shouldSubmitVisibleEntity(
@@ -341,10 +337,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
@@ -362,10 +356,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
@@ -388,10 +380,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GraphicsResourceAllocator allocator,
       DeltaTracker deltaTracker,
       boolean renderFlag1,
-      Camera camera,
-      Matrix4f inputMatrix1,
-      Matrix4f inputMatrix2,
-      Matrix4f inputMatrix3,
+      CameraRenderState cameraState,
+      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,

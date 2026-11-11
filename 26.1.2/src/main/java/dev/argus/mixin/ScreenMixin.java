@@ -35,7 +35,7 @@ public abstract class ScreenMixin {
       }
    }
 
-   @Inject(method = "renderTransparentBackground", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractTransparentBackground", at = @At("HEAD"), cancellable = true)
    private void suppressScreenTint(GuiGraphicsExtractor graphics, CallbackInfo callback) {
       if (noRenderModule.shouldHideScreenTint()) {
          callback.cancel();
@@ -43,7 +43,7 @@ public abstract class ScreenMixin {
    }
 
    @Inject(
-      method = "renderBackground",
+      method = "extractBackground",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/gui/screens/Screen;renderBlurredBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",

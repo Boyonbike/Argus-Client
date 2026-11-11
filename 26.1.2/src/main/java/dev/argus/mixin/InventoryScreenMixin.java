@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(InventoryScreen.class)
 public class InventoryScreenMixin {
-   @Inject(method = "renderEntityInInventoryFollowsMouse", at = @At("HEAD"))
+   @Inject(method = "extractEntityInInventoryFollowsMouse", at = @At("HEAD"))
    private static void beginInventoryEntityRender(
       GuiGraphicsExtractor graphics,
       int left,
@@ -28,7 +28,7 @@ public class InventoryScreenMixin {
       RotationManager.renderingInventory = true;
    }
 
-   @Inject(method = "renderEntityInInventoryFollowsMouse", at = @At("RETURN"))
+   @Inject(method = "extractEntityInInventoryFollowsMouse", at = @At("RETURN"))
    private static void endInventoryEntityRender(
       GuiGraphicsExtractor graphics,
       int left,

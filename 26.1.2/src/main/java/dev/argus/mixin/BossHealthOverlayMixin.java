@@ -16,7 +16,7 @@ public class BossHealthOverlayMixin {
    private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
    private static final SkyboxModule skyboxModule = ClientContext.getModule(SkyboxModule.class);
 
-   @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
    private void suppressBossBars(GuiGraphicsExtractor graphics, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.bossBarsSetting.getValue()) {
          callback.cancel();

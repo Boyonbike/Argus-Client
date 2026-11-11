@@ -36,18 +36,18 @@ abstract class LoadingOverlayMixin {
       return new LoadingOverlayRenderer();
    }
 
-   @ModifyExpressionValue(method = "render", at = @At(value = "INVOKE", target =
+   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE", target =
          "Ljava/util/function/IntSupplier;getAsInt()I"), require = 3, allow = 3)
    private int useArgusBackground(int original) {
       return LoadingAnimation.BACKGROUND;
    }
 
-   @Inject(method = "render", at = @At("HEAD"))
+   @Inject(method = "extractRenderState", at = @At("HEAD"))
    private void trackMouse(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
       this.argus$animation.mouse(mouseX, mouseY);
    }
 
-   @WrapOperation(method = "render", at = @At(value = "INVOKE", target =
+   @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE", target =
          "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"),
          require = 2, allow = 2)
    private void drawArgusLoadingScreen(GuiGraphicsExtractor graphics, RenderPipeline pipeline, Identifier texture, int x, int y,
@@ -61,7 +61,7 @@ abstract class LoadingOverlayMixin {
       }
    }
 
-   @Inject(method = "drawProgressBar", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractProgressBar", at = @At("HEAD"), cancellable = true)
    private void hideVanillaProgressBar(GuiGraphicsExtractor graphics, int x0, int y0, int x1, int y1, float alpha, CallbackInfo ci) {
       // The animated screen draws its own progress bar.
       ci.cancel();

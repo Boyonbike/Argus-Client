@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(RegistryDataLoader.class)
 public class RegistryDataLoaderMixin {
    @ModifyExpressionValue(
-      method = "load(Lnet/minecraft/resources/RegistryDataLoader$LoadingFunction;Ljava/util/List;Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;",
+      method = "load(Lnet/minecraft/resources/RegistryDataLoader$LoaderFactory;Ljava/util/List;Ljava/util/List;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;",
       at = @At(value = "INVOKE", target = "Ljava/util/Map;isEmpty()Z")
    )
    private static boolean reportRegistryErrorsAsEmpty(boolean originalEmpty) {

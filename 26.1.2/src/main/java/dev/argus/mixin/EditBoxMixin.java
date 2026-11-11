@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(EditBox.class)
 public class EditBoxMixin {
    @ModifyExpressionValue(
-      method = "renderWidget",
+      method = "extractWidgetRenderState",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;isBordered()Z", ordinal = 0)
    )
    public boolean argusclient$hideSearchBoxBorder(boolean original) {

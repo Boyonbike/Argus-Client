@@ -63,7 +63,7 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
    protected abstract void addMessageToQueue(GuiMessage var1);
 
    @Shadow
-   public abstract void addMessage(Component var1, @Nullable MessageSignature var2, @Nullable GuiMessageTag var3);
+   public abstract void addMessage(Component var1, @Nullable MessageSignature var2, net.minecraft.client.multiplayer.chat.GuiMessageSource var3, @Nullable GuiMessageTag var4);
 
    @Inject(method = "logChatMessage", at = @At("HEAD"), cancellable = true)
    private void cancelTaggedMessageLogging(GuiMessage message, CallbackInfo callback) {
@@ -112,7 +112,7 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
    }
 
    @WrapWithCondition(
-      method = "method_75802(IILnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;IFLnet/minecraft/client/GuiMessage$Line;IF)V",
+      method = "extractRenderState(Lnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;fill(IIIII)V", ordinal = 0)
    )
    private static boolean queueCustomChatBackground(ChatGraphicsAccess graphicsAccess, int left, int top, int right, int bottom, int color) {
@@ -134,7 +134,7 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
    }
 
    @Inject(
-      method = "method_75801(FLorg/joml/Matrix3x2f;)V",
+      method = "lambda$extractRenderState$0(FLorg/joml/Matrix3x2f;)V",
       at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2f;translate(FF)Lorg/joml/Matrix3x2f;", remap = false, ordinal = 0)
    )
    private static void applyChatTranslation(float ignoredRenderFloat, Matrix3x2f matrix, CallbackInfo callback) {
@@ -155,16 +155,16 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
    }
 
    @Inject(
-      method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/GuiMessageTag;)V",
+      method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/components/ChatComponent;logChatMessage(Lnet/minecraft/client/GuiMessage;)V",
+         target = "Lnet/minecraft/client/gui/components/ChatComponent;logChatMessage(Lnet/minecraft/client/multiplayer/chat/GuiMessage;)V",
          shift = Shift.BEFORE
       ),
       cancellable = true
    )
    private void interceptChatMessage(
-      Component message, MessageSignature messageSignature, GuiMessageTag tag, CallbackInfo callback, @Local GuiMessage queuedMessage
+      Component message, MessageSignature messageSignature, net.minecraft.client.multiplayer.chat.GuiMessageSource source, GuiMessageTag tag, CallbackInfo callback, @Local GuiMessage queuedMessage
    ) {
       if (!skip) {
          Component originalMessage = message;
@@ -176,7 +176,7 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
          if (!event.isCancelled()) {
             if (!originalMessage.equals(message)) {
                skip = true;
-               this.addMessage(message, messageSignature, tag);
+               this.addMessage(message, messageSignature, source, tag);
                skip = false;
                return;
             }
@@ -210,28 +210,28 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
       return originalCommandMatch ? true : message.startsWith(CommandRegistry.getPrefix());
    }
 
-   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("HEAD"))
+   @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;Z)V", at = @At("HEAD"))
    private void enableCustomChatText(
       GuiGraphicsExtractor graphics,
       Font font,
       int ignoredRenderInt1,
       int ignoredRenderInt2,
       int ignoredRenderInt3,
-      boolean ignoredRenderFlag1,
+      ChatComponent.DisplayMode ignoredDisplayMode,
       boolean ignoredRenderFlag2,
       CallbackInfo callback
    ) {
       FontActiveTextCollector.customChatTextEnabled = fontsModule.isToggled() && fontsModule.chatSetting.getValue();
    }
 
-   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("RETURN"))
+   @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;Z)V", at = @At("RETURN"))
    private void disableCustomChatText(
       GuiGraphicsExtractor graphics,
       Font font,
       int ignoredRenderInt1,
       int ignoredRenderInt2,
       int ignoredRenderInt3,
-      boolean ignoredRenderFlag1,
+      ChatComponent.DisplayMode ignoredDisplayMode,
       boolean ignoredRenderFlag2,
       CallbackInfo callback
    ) {

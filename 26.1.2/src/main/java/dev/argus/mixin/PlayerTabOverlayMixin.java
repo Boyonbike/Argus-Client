@@ -76,7 +76,7 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @ModifyExpressionValue(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/PlayerInfo;showHat()Z"))
+   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/PlayerInfo;showHat()Z"))
    private boolean enablePlayerHatLayer(boolean originalHatVisible) {
       return extraTabModule.isToggled() && extraTabModule.betterSkinSetting.getValue() ? true : originalHatVisible;
    }
@@ -103,7 +103,7 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isLocalServer()Z"))
+   @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isLocalServer()Z"))
    private void updateTabLayout(
       GuiGraphicsExtractor graphics,
       int screenWidth,
@@ -130,7 +130,7 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @Inject(method = "renderPingIcon", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "extractPingIcon", at = @At("HEAD"), cancellable = true)
    private void renderCustomLatency(GuiGraphicsExtractor graphics, int entryWidth, int entryX, int entryY, PlayerInfo playerInfo, CallbackInfo callback) {
       if (extraTabModule.isToggled() && extraTabModule.latencySetting.getValue() != ExtraTabModule.LatencyChoice.VANILLA) {
          if (extraTabModule.latencySetting.getValue() == ExtraTabModule.LatencyChoice.NONE) {
@@ -146,12 +146,12 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @ModifyExpressionValue(method = "render", at = @At(value = "CONSTANT", args = "intValue=13"))
+   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "CONSTANT", args = "intValue=13"))
    private int overridePingIconWidth(int originalWidth) {
       return extraTabModule.isToggled() && extraTabModule.latencySetting.getValue() != ExtraTabModule.LatencyChoice.VANILLA ? 0 : originalWidth;
    }
 
-   @ModifyArgs(method = "render", at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(II)I", ordinal = 0))
+   @ModifyArgs(method = "extractRenderState", at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(II)I", ordinal = 0))
    private void includeLatencyTextInEntryWidth(Args arguments, @Local PlayerInfo playerInfo) {
       if (extraTabModule.isToggled() && extraTabModule.latencySetting.getValue() == ExtraTabModule.LatencyChoice.TEXT) {
          arguments.set(1, (Integer)arguments.get(1) + this.minecraft.font.width(" " + playerInfo.getLatency()));
@@ -159,10 +159,10 @@ public class PlayerTabOverlayMixin {
    }
 
    @ModifyArgs(
-      method = "render",
+      method = "extractRenderState",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/components/PlayerTabOverlay;renderTablistScore(Lnet/minecraft/world/scores/Objective;ILnet/minecraft/client/gui/components/PlayerTabOverlay$ScoreDisplayEntry;IILjava/util/UUID;Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V"
+         target = "Lnet/minecraft/client/gui/components/PlayerTabOverlay;extractTablistScore(Lnet/minecraft/world/scores/Objective;ILnet/minecraft/client/gui/components/PlayerTabOverlay$ScoreDisplayEntry;IILjava/util/UUID;Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V"
       )
    )
    private void reserveLatencyTextInScoreBounds(Args arguments, @Local PlayerInfo playerInfo) {
@@ -175,12 +175,12 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @ModifyExpressionValue(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;isEncrypted()Z"))
+   @ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;isEncrypted()Z"))
    private boolean suppressTabIcons(boolean originalVisible) {
       return originalVisible && !noRenderModule.shouldHideTabIcons();
    }
 
-   @Inject(method = "render", at = @At("HEAD"))
+   @Inject(method = "extractRenderState", at = @At("HEAD"))
    private void applyTabScale(GuiGraphicsExtractor graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
       if (extraTabModule.getTabScale() != 1.0F) {
          graphics.pose().pushMatrix();
@@ -188,27 +188,28 @@ public class PlayerTabOverlayMixin {
       }
    }
 
-   @Inject(method = "render", at = @At("TAIL"))
+   @Inject(method = "extractRenderState", at = @At("TAIL"))
    private void restoreTabScale(GuiGraphicsExtractor graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
       if (extraTabModule.getTabScale() != 1.0F) {
          graphics.pose().popMatrix();
       }
    }
 
-   @ModifyVariable(method = "render", at = @At("HEAD"), argsOnly = true)
+   @ModifyVariable(method = "extractRenderState", at = @At("HEAD"), argsOnly = true)
    private int adjustTabWidthForScale(int originalWidth) {
       return extraTabModule.getTabScale() == 1.0F ? originalWidth : (int)(originalWidth / extraTabModule.getTabScale());
    }
 
-   @Inject(method = "method_46511(Lnet/minecraft/client/multiplayer/PlayerInfo;)Ljava/lang/String;", at = @At("HEAD"), cancellable = true)
-   private static void protectPlayerName(PlayerInfo playerInfo, CallbackInfoReturnable<String> callback) {
+   @com.llamalad7.mixinextras.injector.ModifyReturnValue(method = "getNameForDisplay(Lnet/minecraft/client/multiplayer/PlayerInfo;)Lnet/minecraft/network/chat/Component;", at = @At("RETURN"))
+   private net.minecraft.network.chat.Component protectPlayerName(net.minecraft.network.chat.Component original, PlayerInfo playerInfo) {
       GameProfile localProfile = Minecraft.getInstance().player.getGameProfile();
       if (nameProtectModule.isToggled()) {
          if (playerInfo.getProfile().equals(localProfile)) {
-            callback.setReturnValue(nameProtectModule.getProtectedName());
+            return net.minecraft.network.chat.Component.literal(nameProtectModule.getProtectedName());
          } else if (nameProtectModule.othersSetting.getValue()) {
-            callback.setReturnValue("redacted");
+            return net.minecraft.network.chat.Component.literal("redacted");
          }
       }
+      return original;
    }
 }

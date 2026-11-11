@@ -95,7 +95,7 @@ public abstract class EntityMixin implements EntityMotionAccess {
    }
 
    @ModifyExpressionValue(
-      method = "updateFluidHeightAndDoFluidPushing",
+      method = "updateFluidInteraction",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/level/material/FluidState;getFlow(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/Vec3;"

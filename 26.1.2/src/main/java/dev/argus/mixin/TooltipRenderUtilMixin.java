@@ -17,7 +17,7 @@ public class TooltipRenderUtilMixin {
    private static final TooltipsModule tooltipsModule = ClientContext.getModule(TooltipsModule.class);
 
    @WrapWithCondition(
-      method = "renderTooltipBackground",
+      method = "extractTooltipBackground",
       at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V",

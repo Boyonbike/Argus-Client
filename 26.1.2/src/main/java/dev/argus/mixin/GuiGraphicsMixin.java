@@ -39,7 +39,7 @@ public abstract class GuiGraphicsMixin {
    @Shadow
    protected abstract Parameters createDefaultTextParameters(float var1);
 
-   @Inject(method = "renderItemCount", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "itemCount", at = @At("HEAD"), cancellable = true)
    private void renderEmptyPreviewItemCount(Font font, ItemStack stack, int x, int y, String countText, CallbackInfo callback) {
       if (!this.renderingPreviewItemCount && ShulkerPreviewScreen.isRenderingPreview() && stack.getCount() == 0) {
          this.renderingPreviewItemCount = true;

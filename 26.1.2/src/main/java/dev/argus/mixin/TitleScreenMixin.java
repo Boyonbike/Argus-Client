@@ -31,7 +31,7 @@ public class TitleScreenMixin extends Screen {
       super(title);
    }
 
-   @Inject(method = "render", at = @At("TAIL"))
+   @Inject(method = "extractRenderState", at = @At("TAIL"))
    private void renderTitleWatermark(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback, @Local(ordinal = 1) float opacity) {
       if (!PanicCommand.unloaded) {
          Minecraft client = ClientAccess.argusclientMinecraft;

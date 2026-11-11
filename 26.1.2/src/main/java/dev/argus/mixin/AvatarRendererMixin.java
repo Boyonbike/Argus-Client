@@ -122,26 +122,6 @@ public abstract class AvatarRendererMixin extends LivingEntityRenderer {
       return noRenderModule.getHandOpacity() != 1.0F ? ClientRenderTypes.entitySolid(texture) : originalType;
    }
 
-   @Inject(
-      method = "submitNameTag(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
-      at = @At("HEAD"),
-      cancellable = true
-   )
-   private void onAvatarNameTag(
-      AvatarRenderState renderState, PoseStack poses, SubmitNodeCollector collector, CameraRenderState cameraState, CallbackInfo callback
-   ) {
-      if (ClientContext.shaderRegistry.renderingIntoTarget) {
-         callback.cancel();
-      } else {
-         Entity entity = EntityRenderStateAccess.getEntity(renderState);
-         NameTagRenderEvent event = new NameTagRenderEvent(poses, entity);
-         ClientAccess.eventBus.post(event);
-         if (event.isCancelled()) {
-            callback.cancel();
-         }
-      }
-   }
-
    @Override
    protected float getShadowRadius(EntityRenderState renderState) {
       return super.getShadowRadius((LivingEntityRenderState)renderState);

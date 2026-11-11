@@ -37,13 +37,10 @@ accessible	field	net/minecraft/world/entity/WalkAnimationState	position	F
 accessible	field	net/minecraft/world/entity/WalkAnimationState	speed	F
 accessible	field	net/minecraft/world/entity/WalkAnimationState	speedOld	F
 accessible	field	net/minecraft/world/item/component/BundleContents	items	Ljava/util/List;
-accessible	field	net/minecraft/world/item/component/ItemContainerContents	items	Lnet/minecraft/core/NonNullList;
 accessible	field	net/minecraft/world/level/block/entity/BlockEntityType	validBlocks	Ljava/util/Set;
 accessible	method	com/mojang/blaze3d/platform/NativeImage	writeToChannel	(Ljava/nio/channels/WritableByteChannel;)Z
 accessible	method	net/minecraft/client/multiplayer/PlayerInfo	setLatency	(I)V
 accessible	method	net/minecraft/client/renderer/GameRenderer	renderItemInHand	(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V
-accessible	method	net/minecraft/network/protocol/game/ServerboundInteractPacket	<init>	(Lnet/minecraft/network/FriendlyByteBuf;)V
-accessible	method	net/minecraft/network/protocol/game/ServerboundInteractPacket	write	(Lnet/minecraft/network/FriendlyByteBuf;)V
 accessible	method	net/minecraft/world/entity/Entity	collectColliders	(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/level/Level;Ljava/util/List;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;
 accessible	method	net/minecraft/world/entity/animal/wolf/Wolf	getVariant	()Lnet/minecraft/core/Holder;
 accessible	method	net/minecraft/world/item/CrossbowItem	getShootingPower	(Lnet/minecraft/world/item/component/ChargedProjectiles;)F

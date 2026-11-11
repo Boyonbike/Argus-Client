@@ -18,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GuiGraphicsExtractor.class)
 public abstract class ShulkerIconsMixin {
    @ModifyArg(
-      method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;III)V",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/state/GuiRenderState;submitItem(Lnet/minecraft/client/gui/render/state/GuiItemRenderState;)V")
+      method = "item(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;III)V",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/state/gui/GuiRenderState;addItem(Lnet/minecraft/client/gui/render/state/GuiItemRenderState;)V")
    )
    private GuiItemRenderState argus$iconStyle(GuiItemRenderState state) {
       ((ShulkerIconRenderState)(Object)state).argus$iconColour(ShulkerIconRenderer.extractingColour());
@@ -28,7 +28,7 @@ public abstract class ShulkerIconsMixin {
 
    // Shared by real and fake GUI items, covering the hotbar, container slots, creative inventory and carried stacks.
    @Inject(
-      method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;III)V",
+      method = "item(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;III)V",
       at = @At("TAIL")
    )
    private void argus$shulkerIcon(LivingEntity entity, Level level, ItemStack stack, int x, int y, int seed, CallbackInfo info) {

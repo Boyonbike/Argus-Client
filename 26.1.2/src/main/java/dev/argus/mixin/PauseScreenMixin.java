@@ -26,18 +26,4 @@ public abstract class PauseScreenMixin extends Screen {
       super(title);
    }
 
-   @Inject(method = "method_72129()V", at = @At("HEAD"), cancellable = true)
-   private void confirmOrInterceptDisconnect(CallbackInfo callback) {
-      Minecraft client = Minecraft.getInstance();
-      if (antiQuitModule.isToggled() && antiQuitModule.disconnectSetting.getValue() && !disconnectConfirmed) {
-         client.setScreen(new DisconnectConfirmationScreen(() -> {
-            disconnectConfirmed = true;
-            client.getReportingContext().draftReportHandled(client, this, () -> this.minecraft.disconnectFromWorld(ClientLevel.DEFAULT_QUIT_MESSAGE), true);
-         }));
-         callback.cancel();
-      } else if (illegalDisconnectModule.isToggled() && client.player != null && !client.isLocalServer()) {
-         illegalDisconnectModule.requestDisconnect();
-         callback.cancel();
-      }
-   }
 }

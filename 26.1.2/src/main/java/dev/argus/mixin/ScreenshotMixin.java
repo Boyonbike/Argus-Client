@@ -18,7 +18,7 @@ public class ScreenshotMixin {
    private static ExtraScreenshotModule extraScreenshotModule = ClientContext.getModule(ExtraScreenshotModule.class);
 
    @Inject(
-      method = "method_22691(Lcom/mojang/blaze3d/platform/NativeImage;Ljava/io/File;Ljava/util/function/Consumer;)V",
+      method = "lambda$grab$1(Lcom/mojang/blaze3d/platform/NativeImage;Ljava/io/File;Ljava/util/function/Consumer;)V",
       at = @At("HEAD"),
       cancellable = true
    )

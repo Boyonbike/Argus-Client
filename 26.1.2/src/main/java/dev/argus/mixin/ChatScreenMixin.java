@@ -66,24 +66,24 @@ public abstract class ChatScreenMixin extends Screen {
       }
    }
 
-   @WrapWithCondition(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(IIIII)V"))
+   @WrapWithCondition(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(IIIII)V"))
    private boolean allowChatInputBackgroundFill(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color) {
       return false;
    }
 
    @WrapWithCondition(
-      method = "render",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V")
+      method = "extractRenderState",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V")
    )
    private boolean allowChatSuperclassRender(Screen screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       return hudModule.getChatInputOffset() / 12.0F > 0.25;
    }
 
    @Inject(
-      method = "render",
+      method = "extractRenderState",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/components/CommandSuggestions;render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
+         target = "Lnet/minecraft/client/gui/components/CommandSuggestions;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
          shift = Shift.BEFORE
       )
    )

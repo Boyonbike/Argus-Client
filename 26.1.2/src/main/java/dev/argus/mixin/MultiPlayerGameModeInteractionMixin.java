@@ -106,7 +106,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
       }
    }
 
-   @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
+   @Inject(method = "handleContainerInput", at = @At("HEAD"), cancellable = true)
    public void applyInventoryClickTweaks(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (inventoryTweaksModule.isToggled()) {
          AbstractContainerMenu menu = actingPlayer.containerMenu;
@@ -205,7 +205,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    }
 
    @ModifyReturnValue(
-      method = "method_41933(Lorg/apache/commons/lang3/mutable/MutableObject;Lnet/minecraft/client/player/LocalPlayer;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;I)Lnet/minecraft/network/protocol/Packet;",
+      method = "lambda$useItemOn$0(Lorg/apache/commons/lang3/mutable/MutableObject;Lnet/minecraft/client/player/LocalPlayer;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;I)Lnet/minecraft/network/protocol/Packet;",
       at = @At("RETURN")
    )
    private Packet<?> markImportantUseItemOnPacket(Packet<?> packet, @Local(argsOnly = true) LocalPlayer actingPlayer) {
@@ -217,7 +217,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    }
 
    @Inject(
-      method = "method_41929(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/entity/player/Player;Lorg/apache/commons/lang3/mutable/MutableObject;I)Lnet/minecraft/network/protocol/Packet;",
+      method = "lambda$useItem$0(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/entity/player/Player;Lorg/apache/commons/lang3/mutable/MutableObject;I)Lnet/minecraft/network/protocol/Packet;",
       at = @At("TAIL")
    )
    private void markImportantUseItemPacket(
@@ -285,7 +285,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    }
 
    @ModifyExpressionValue(
-      method = "method_41929(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/entity/player/Player;Lorg/apache/commons/lang3/mutable/MutableObject;I)Lnet/minecraft/network/protocol/Packet;",
+      method = "lambda$useItem$0(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/entity/player/Player;Lorg/apache/commons/lang3/mutable/MutableObject;I)Lnet/minecraft/network/protocol/Packet;",
       at = @At(value = "NEW", target = "(Lnet/minecraft/world/InteractionHand;IFF)Lnet/minecraft/network/protocol/game/ServerboundUseItemPacket;")
    )
    private ServerboundUseItemPacket modifyPredictedUseItemPacket(ServerboundUseItemPacket packet) {
@@ -300,7 +300,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    }
 
    @ModifyExpressionValue(
-      method = "method_41930(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;I)Lnet/minecraft/network/protocol/Packet;",
+      method = "lambda$startDestroyBlock$1(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;I)Lnet/minecraft/network/protocol/Packet;",
       at = @At(value = "CONSTANT", args = "floatValue=1.0"),
       require = 0
    )
