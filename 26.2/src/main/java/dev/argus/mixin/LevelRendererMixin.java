@@ -126,7 +126,6 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       boolean renderFlag2,
       CallbackInfo callback
    ) {
-      dev.argus.client.render.MeshRenderer.beginFrame();
       PoseStack poses = new PoseStack();
       float partialTick = RenderUtils.getPartialTick();
       GpuBufferSlice previousFog = RenderSystem.getShaderFog();

@@ -238,6 +238,7 @@ public abstract class GameRendererMixin {
 
    @Inject(method = "render", at = @At("HEAD"))
    private void updateFrameTimingAndChatHeight(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
+      dev.argus.client.render.MeshRenderer.beginFrame();
       hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen ? 12.0F : 0.0F);
       ClientContext.frameTiming.recordFrame();
    }
