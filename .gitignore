@@ -9,6 +9,11 @@ __pycache__/
 /26.1.2/argusclient/
 /26.1.2/mods/
 /26.1.2/logs/
+/26.2/run/
+/26.2/config/
+/26.2/argusclient/
+/26.2/mods/
+/26.2/logs/
 
 # Local design notes, plans and previews stay off GitHub.
 docs/

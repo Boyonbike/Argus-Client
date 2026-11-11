@@ -1,19 +1,20 @@
 # Argus Client
 
 A Fabric client with a Meteor-style floating-window GUI, pastel Light/Dark
-themes, ranked module/settings search, and Friends management. This branch holds the Minecraft 26.1.2 client; other versions live on their own branches (for example `1.21.11`).
+themes, ranked module/settings search, and Friends management. This branch holds the Minecraft 26.2 client; other versions live on their own branches (for example `26.1.2` and `1.21.11`).
 
 ## Versions
 
 | Minecraft | Client project | Download |
 | --- | --- | --- |
+| **26.2** | [Source, build files, and documentation](26.2/) | [argus-client.jar](26.2/argus-client.jar) |
 | **26.1.2** | [Source, build files, and documentation](26.1.2/) | [argus-client.jar](26.1.2/argus-client.jar) |
 
-## Install for Minecraft 26.1.2
+## Install for Minecraft 26.2
 
-1. Set up Minecraft **26.1.2** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
-2. Install Fabric API for Minecraft 26.1.2.
-3. Download [`argus-client.jar`](26.1.2/argus-client.jar) and place it in your instance's `mods` folder, replacing older copies.
+1. Set up Minecraft **26.2** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
+2. Install Fabric API for Minecraft 26.2.
+3. Download [`argus-client.jar`](26.2/argus-client.jar) and place it in your instance's `mods` folder, replacing older copies.
 
 ## Menus
 
@@ -44,7 +45,7 @@ released under **CC0 1.0 Universal**. See the
 ## Repository layout
 
 ```text
-26.1.2/
+26.2/
 ├── README.md                 Version-specific instructions
 ├── THIRD_PARTY_NOTICES.md    Third-party attribution and licence notices
 ├── licenses/                 Full third-party licence texts
@@ -65,13 +66,13 @@ released under **CC0 1.0 Universal**. See the
 From the repository root:
 
 ```sh
-cd 26.1.2
+cd 26.2
 ./gradlew build
 ```
 
 On Windows use `gradlew.bat build`. The client JAR is generated at
-`26.1.2/build/libs/argus-client.jar`.
+`26.2/build/libs/argus-client.jar`.
 
-See the [26.1.2 README](26.1.2/README.md) for controls, verification commands,
+See the [26.2 README](26.2/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.
 In-game appearance and controls have not been verified in a running Minecraft instance.
