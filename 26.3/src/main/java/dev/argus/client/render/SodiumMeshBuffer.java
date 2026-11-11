@@ -9,7 +9,8 @@ public class SodiumMeshBuffer extends MeshBuffer implements VertexBufferWriter {
       super(capacity);
    }
 
-   public void push(MemoryStack stack, long vertices, int vertexCount, VertexFormat format) {
+   @Override
+   public void sodium$push(MemoryStack stack, long vertices, int vertexCount, VertexFormat format) {
    }
 
    public boolean canUseIntrinsics() {

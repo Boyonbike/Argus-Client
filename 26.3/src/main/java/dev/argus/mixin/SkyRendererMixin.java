@@ -14,6 +14,10 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
 import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.dimension.DimensionType.Skybox;
@@ -80,15 +84,19 @@ public class SkyRendererMixin {
       }
    }
 
+   @Shadow
+   private void renderStars(com.mojang.renderpearl.api.commands.RenderPass pass, float brightness, PoseStack poses) {
+   }
+
    @Inject(method = "renderStars", at = @At("HEAD"), cancellable = true)
-   private void hideStars(float brightness, PoseStack poses, CallbackInfo callback) {
+   private void hideStars(RenderPass pass, float brightness, PoseStack poses, CallbackInfo callback) {
       if (noRenderModule.shouldHideStars()) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderStars", at = @At("TAIL"))
-   private void renderFancyStarBloom(float brightness, PoseStack poses, CallbackInfo callback) {
+   private void renderFancyStarBloom(RenderPass pass, float brightness, PoseStack poses, CallbackInfo callback) {
       if (skyboxModule.isToggled() && skyboxModule.fancyStarsSetting.getValue() && !hook) {
          this.renderStarsToBloomMask(brightness, poses);
       }
@@ -116,7 +124,13 @@ public class SkyRendererMixin {
       RenderUtils.clearDepth(MaskShaderRenderer.MASK_TARGET);
       RenderTargetUtils.setMainRenderTarget(MaskShaderRenderer.MASK_TARGET);
       hook = true;
-      this.renderStars(brightness, poses);
+      CommandEncoder encoder = com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder();
+      try (RenderPass pass = encoder.createRenderPass(
+            () -> "argus-stars", MaskShaderRenderer.MASK_TARGET.getColorTextureView(), Optional.empty(),
+            MaskShaderRenderer.MASK_TARGET.getDepthTextureView(), OptionalDouble.empty())) {
+         this.renderStars(pass, brightness, poses);
+      }
+      encoder.submit();
       hook = false;
       RenderTargetUtils.setMainRenderTarget(previousTarget);
       MaskShaderRenderer.setParameters(4.0F, 1.5F, 1.0F, 2.0F);

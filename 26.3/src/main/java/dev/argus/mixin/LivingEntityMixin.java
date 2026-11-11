@@ -20,7 +20,10 @@ import dev.argus.client.modules.movement.JesusModule;
 import dev.argus.client.modules.movement.NoJumpDelayModule;
 import dev.argus.client.render.ForcedEntityLayers;
 import dev.argus.client.utils.math.Vec3Utils;
+import dev.argus.client.utils.network.PacketSender;
 import dev.argus.client.utils.network.ServerSideDeathState;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,6 +40,7 @@ import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
@@ -74,8 +78,38 @@ public abstract class LivingEntityMixin extends Entity implements ServerSideDeat
    @Override
    public abstract float getViewYRot(float var1);
 
-   @Inject(method = "getCurrentSwingDuration", at = @At("HEAD"), cancellable = true)
-   private void overrideSwingDuration(CallbackInfoReturnable<Integer> callback) {
+   @ModifyVariable(
+      method = "swing(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/component/SwingAnimation;Z)Z",
+      at = @At("HEAD"), argsOnly = true, ordinal = 0
+   )
+   private InteractionHand overrideSwingHand(InteractionHand hand) {
+      if (ClientAccess.isLocalPlayer(this)
+         && swing.isToggled()
+         && swing.handSetting.getValue() != SwingModule.HandChoice.VANILLA
+         && swing.handSetting.getValue() != SwingModule.HandChoice.PACKET) {
+         InteractionHand overrideHand = swing.handSetting.getValue().getHand();
+         PacketSender.sendSwing(hand);
+         return overrideHand;
+      }
+      return hand;
+   }
+
+   @Inject(
+      method = "swing(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/component/SwingAnimation;Z)Z",
+      at = @At("HEAD"), cancellable = true
+   )
+   private void packetOnlySwing(
+      InteractionHand hand, SwingAnimation animation, boolean notify, CallbackInfoReturnable<Boolean> callback
+   ) {
+      if (ClientAccess.isLocalPlayer(this) && swing.isToggled() && swing.handSetting.getValue() == SwingModule.HandChoice.PACKET) {
+         PacketSender.sendSwing(hand);
+         callback.setReturnValue(false);
+         callback.cancel();
+      }
+   }
+
+   @Inject(method = "getModifiedSwingDuration(Lnet/minecraft/world/item/component/SwingAnimation;)I", at = @At("HEAD"), cancellable = true)
+   private void overrideSwingDuration(net.minecraft.world.item.component.SwingAnimation animation, CallbackInfoReturnable<Integer> callback) {
       if (swing.isToggled()) {
          LivingEntity entity = (LivingEntity)(Object)this;
          callback.cancel();

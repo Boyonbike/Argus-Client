@@ -50,16 +50,16 @@ public abstract class GuiGraphicsMixin {
    }
 
    @Inject(
-      method = "setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;)V",
+      method = "setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;Z)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrameInternal(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;Z)V",
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrameInternal(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;ZZ)V",
          shift = Shift.BEFORE
       ),
       cancellable = true
    )
    private void captureTooltipComponents(
-      Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background, CallbackInfo callback, @Local(ordinal = 1) List components
+      Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background, boolean elideText, CallbackInfo callback, @Local(ordinal = 1) List components
    ) {
       if (TooltipComponentCapture.isCaptureEnabled()) {
          TooltipComponentCapture.setCapturedComponents(components);

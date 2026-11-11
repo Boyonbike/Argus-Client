@@ -48,7 +48,7 @@ public abstract class LivingEntityRendererMixin implements ClientAccess {
       method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IIILnet/minecraft/client/renderer/texture/TextureAtlasSprite;ILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
+         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IIILnet/minecraft/client/renderer/texture/UvMapping;I)V"
       ),
       require = 0
    )
@@ -61,9 +61,8 @@ public abstract class LivingEntityRendererMixin implements ClientAccess {
       int packedLight,
       int packedOverlay,
       int color,
-      TextureAtlasSprite sprite,
+      net.minecraft.client.renderer.texture.UvMapping uvMapping,
       int originalOutlineColor,
-      CrumblingOverlay crumblingOverlay,
       @Local(argsOnly = true) LivingEntityRenderState renderState
    ) {
       if (!ClientContext.shaderRegistry.renderingIntoTarget && EntityRenderStateAccess.getEntity(renderState) != null) {
@@ -85,9 +84,8 @@ public abstract class LivingEntityRendererMixin implements ClientAccess {
                event.getLightCoords(),
                packedOverlay,
                color,
-               (TextureAtlasSprite)null,
-               renderState.outlineColor,
-               (CrumblingOverlay)null
+               uvMapping,
+               renderState.outlineColor
             );
          }
 

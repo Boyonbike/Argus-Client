@@ -94,19 +94,6 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    @Unique
    private Stack<ResourceHandle<RenderTarget>> entityOutlineHandleStack;
 
-   @WrapWithCondition(
-      method = "lambda$addWeatherPass$0(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;I)V",
-      at = @At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/WeatherEffectRenderer;render(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/level/WeatherRenderState;)V"
-      )
-   )
-   private boolean shouldRenderWeather(WeatherEffectRenderer weatherRenderer, Vec3 cameraPosition, WeatherRenderState weatherState) {
-      return !ambienceModule.isToggled()
-         || !ambienceModule.worldWeatherSetting.getValue()
-         || ambienceModule.weatherSetting.getValue() != AmbienceModule.WeatherChoice.CLEAR;
-   }
-
    @Inject(
       method = "render",
       at = @At(
@@ -117,13 +104,12 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    )
    private void renderWorldEvents(
       GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
       boolean renderFlag1,
       CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      boolean renderFlag3,
       CallbackInfo callback
    ) {
       PoseStack poses = new PoseStack();
@@ -155,19 +141,18 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/util/profiling/ProfilerFiller;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
+         target = "Lnet/minecraft/client/renderer/LevelRenderer;addMainPass(Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;Z)V",
          shift = Shift.BEFORE
       )
    )
    private void addSkyShaderPass(
       GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
       boolean renderFlag1,
       CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      boolean renderFlag3,
       CallbackInfo callback,
       @Local FrameGraphBuilder frameGraph
    ) {
@@ -206,16 +191,15 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    @Inject(method = "render", at = @At("HEAD"))
    private void captureWorldRenderState(
       GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
       boolean renderFlag1,
       CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      boolean renderFlag3,
       CallbackInfo callback
    ) {
-      RenderUtils.setPartialTick(deltaTracker.getGameTimeDeltaPartialTick(false));
+      RenderUtils.setPartialTick(ClientAccess.argusclientMinecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false));
       this.worldPoseStack = new PoseStack();
    }
 
@@ -230,16 +214,6 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       if (skyboxModule.isToggled() && skyboxModule.isCurrentDimensionEnabled()) {
          int color = skyboxModule.backgroundSetting.getValue().hashCode();
          arguments.set(1, new Vector4f(ARGB.red(color) / 255.0F, ARGB.green(color) / 255.0F, ARGB.blue(color) / 255.0F, 0.0F));
-      }
-   }
-
-   @ModifyArgs(
-      method = "lambda$addSkyPass$0(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lnet/minecraft/client/renderer/state/level/SkyRenderState;)V",
-      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFog(Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;)V")
-   )
-   private static void applySkyFogSlice(Args arguments) {
-      if (skyboxModule.isToggled() && skyboxModule.splitFogSetting.getValue() && skyboxModule.isCurrentDimensionEnabled()) {
-         arguments.set(0, skyboxModule.getSkySlice());
       }
    }
 
@@ -270,26 +244,15 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       RenderTargetRegistry.resizeRenderTargets(width, height);
    }
 
-   @Inject(method = "addWeatherPass", at = @At("HEAD"))
-   private void beginWeatherPassColor(FrameGraphBuilder frameGraph, GpuBufferSlice fogBuffer, CallbackInfo callback) {
-      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 0.25F);
-   }
-
-   @Inject(method = "addWeatherPass", at = @At("TAIL"))
-   private void resetWeatherPassColor(FrameGraphBuilder frameGraph, GpuBufferSlice fogBuffer, CallbackInfo callback) {
-      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
-   }
-
    @Inject(method = "render", at = @At("HEAD"))
    private void hideGuiForFreecamHands(
       GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
       boolean renderFlag1,
       CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      boolean renderFlag3,
       CallbackInfo callback
    ) {
       if (freecam.shouldHideHands() && IrisShaderBridge.isHandRendererAvailable()) {
@@ -302,13 +265,12 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
    @Inject(method = "render", at = @At("RETURN"))
    private void restoreGuiAfterFreecamHands(
       GraphicsResourceAllocator allocator,
-      DeltaTracker deltaTracker,
       boolean renderFlag1,
       CameraRenderState cameraState,
-      Matrix4fc inputMatrix,
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      boolean renderFlag3,
       CallbackInfo callback
    ) {
       if (freecam.shouldHideHands() && this.savedHideGui != null) {

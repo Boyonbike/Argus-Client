@@ -86,7 +86,7 @@ public abstract class AvatarRendererMixin extends LivingEntityRenderer {
 
    @ModifyArgs(
       method = "setupRotations(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;FF)V",
-      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;mulPose(Lorg/joml/Quaternionfc;)V")
+      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;rotateDegrees(Lcom/mojang/math/Axis;F)V", ordinal = 0)
    )
    private void applySilentElytraPitch(Args arguments) {
       if (elytraFlyModule.isToggled()
@@ -94,7 +94,7 @@ public abstract class AvatarRendererMixin extends LivingEntityRenderer {
          && elytraFlyModule.canStartFlightFromJump()
          && elytraFlyModule.pitchLockSetting.getValue()
          && elytraFlyModule.silentSetting.getValue()) {
-         arguments.set(0, Axis.XP.rotationDegrees(-45.0F));
+         arguments.set(1, -45.0F);
       }
    }
 

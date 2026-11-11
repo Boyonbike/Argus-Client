@@ -42,8 +42,8 @@ public abstract class ClientLevelMixin {
       }
    }
 
-   @Inject(method = "addBreakingBlockEffect", at = @At("HEAD"), cancellable = true)
-   private void suppressBreakingBlockEffect(BlockPos blockPos, Direction face, CallbackInfo callback) {
+   @Inject(method = "addBreakingBlockEffects", at = @At("HEAD"), cancellable = true)
+   private void suppressBreakingBlockEffect(BlockPos blockPos, Direction face, boolean flag, CallbackInfo callback) {
       if (noRenderModule.shouldHideBlockBreakingParticles()) {
          callback.cancel();
       }

@@ -35,7 +35,6 @@ import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.ScreenEffectRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -101,36 +100,15 @@ public abstract class GameRendererMixin {
       }
    }
 
-   @Inject(method = "displayItemActivation", at = @At("HEAD"), cancellable = true)
-   private void suppressTotemActivation(ItemStack stack, CallbackInfo callback) {
-      if (stack.getItem() == Items.TOTEM_OF_UNDYING && noRenderModule.isToggled() && noRenderModule.totemOverlaySetting.getValue()) {
-         callback.cancel();
-      }
-   }
-
-   @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;lerp(FFF)F"), require = 0)
-   private float suppressBlindnessInterpolation(float fraction, float start, float end, Operation original) {
-      return noRenderModule.isToggled() && noRenderModule.blindnessSetting.getValue() ? 0.0F : Mth.lerp(fraction, start, end);
-   }
-
    @Inject(
       method = "renderLevel",
       at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=level")
    )
    private void captureWorldProjectionMatrix(
-      DeltaTracker deltaTracker,
       CallbackInfo callback,
-      @Local(ordinal = 0) Matrix4f projectionMatrix // 26.1.2: the only Matrix4f local (view matrix is now Matrix4fc)
+      @Local(ordinal = 0) Matrix4f projectionMatrix
    ) {
       RenderUtils.WORLD_PROJECTION_MATRIX.set(projectionMatrix);
-   }
-
-   @WrapWithCondition(
-      method = "renderLevel",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V")
-   )
-   private boolean shouldRenderHands(GameRenderer renderer, CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix) {
-      return !shader.isToggled() || !shader.handsSetting.getValue();
    }
 
    @WrapWithCondition(method = "bobView", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V"))
@@ -150,53 +128,25 @@ public abstract class GameRendererMixin {
 
    @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
    private void prepareHandRendering(
-      net.minecraft.client.renderer.state.level.CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
+      net.minecraft.client.renderer.state.level.CameraRenderState cameraState,
+      net.minecraft.client.renderer.state.level.PlayerRenderState playerState,
+      com.mojang.renderpearl.api.textures.GpuTextureView texture,
+      CallbackInfo callback
    ) {
-      Matrix4f mutableProjection = (Matrix4f) projectionMatrix;
-      backupMatrix.set(new Matrix4f(mutableProjection));
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, noRenderModule.getHandOpacity());
-      if (viewmodel.isToggled() && viewmodel.lighterSetting.getValue()) {
-         float handYaw = -95.0F;
-         float handPitch = 45.0F;
-         Quaternionf handRotation = new Quaternionf().rotationYXZ((float)Math.toRadians(180.0F - handYaw), (float)Math.toRadians(-handPitch), 0.0F).conjugate();
-         mutableProjection.set(new Matrix4f().rotation(handRotation));
-      }
-
-      if (freecam.shouldHideHands()) {
+      if (freecam.shouldHideHands() || shader.isToggled() && shader.handsSetting.getValue()) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderItemInHand", at = @At("RETURN"))
    private void restoreHandRendering(
-      net.minecraft.client.renderer.state.level.CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix, CallbackInfo callback, @Share("backupMatrix") LocalRef backupMatrix
+      net.minecraft.client.renderer.state.level.CameraRenderState cameraState,
+      net.minecraft.client.renderer.state.level.PlayerRenderState playerState,
+      com.mojang.renderpearl.api.textures.GpuTextureView texture,
+      CallbackInfo callback
    ) {
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
-      if (viewmodel.isToggled() && viewmodel.lighterSetting.getValue()) {
-         ((Matrix4f)projectionMatrix).set((Matrix4fc)backupMatrix.get());
-      }
-   }
-
-   @ModifyExpressionValue(
-      method = "renderItemInHand",
-      at = @At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;getPackedLightCoords(Lnet/minecraft/world/entity/Entity;F)I"
-      )
-   )
-   private int applyViewModelHandLight(int originalLight) {
-      return viewmodel.isToggled() && viewmodel.lighterSetting.getValue() ? 15728864 : originalLight;
-   }
-
-   @WrapWithCondition(
-      method = "renderLevel",
-      at = @At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/ScreenEffectRenderer;submit(ZZFLnet/minecraft/client/renderer/SubmitNodeCollector;Z)V"
-      )
-   )
-   private boolean shouldRenderScreenEffects(ScreenEffectRenderer renderer, boolean ignoredEffectFlag1, boolean ignoredEffectFlag2, float partialTick, SubmitNodeCollector collector, boolean ignoredEffectFlag3) {
-      return !ClientContext.shaderRegistry.renderingIntoTarget;
    }
 
    /** Below the vanilla GUI pass: the Before event, plus the Argus HUD while a screen is open (the screen draws over it). */
@@ -204,7 +154,7 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;render()V")
    )
-   private void renderHudBeforeGui(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
+   private void renderHudBeforeGui(CallbackInfo callback) {
       GuiGraphicsExtractor graphics = dev.argus.client.gui.GuiCapture.hudGraphics;
       if (graphics == null) {
          return;
@@ -229,7 +179,7 @@ public abstract class GameRendererMixin {
 
    /** On top of the vanilla GUI when no screen is open (the old post-incrementFrameNumber hook). */
    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;endFrame()V", shift = Shift.AFTER))
-   private void renderHudWithoutScreen(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
+   private void renderHudWithoutScreen(CallbackInfo callback) {
       if (this.minecraft.gui.screen() == null && dev.argus.client.gui.GuiCapture.hudGraphics != null) {
          RenderUtils.clearDepth(this.minecraft.gameRenderer.mainRenderTarget());
          this.renderClientHud(dev.argus.client.gui.GuiCapture.hudGraphics, true);
@@ -237,7 +187,7 @@ public abstract class GameRendererMixin {
    }
 
    @Inject(method = "render", at = @At("HEAD"))
-   private void updateFrameTimingAndChatHeight(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
+   private void updateFrameTimingAndChatHeight(CallbackInfo callback) {
       dev.argus.client.render.MeshRenderer.beginFrame();
       hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen ? 12.0F : 0.0F);
       ClientContext.frameTiming.recordFrame();

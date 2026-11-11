@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(ShaderManager.class)
 public class ShaderManagerMixin {
    @ModifyExpressionValue(
-      method = "prepare(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)Lnet/minecraft/client/renderer/ShaderManager$Configs;",
+      method = "loadConfigs(Lnet/minecraft/server/packs/resources/ResourceManager;)Lnet/minecraft/client/renderer/ShaderManager$Configs;",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/server/packs/resources/ResourceManager;listResources(Ljava/lang/String;Ljava/util/function/Predicate;)Ljava/util/Map;"
+         target = "Lnet/minecraft/server/packs/resources/ResourceManager;listResources(Ljava/lang/String;Lnet/minecraft/server/packs/resources/ResourceManager$Selector;)Ljava/util/Map;"
       )
    )
    private Map includeBuiltinShaderResources(Map resources) {

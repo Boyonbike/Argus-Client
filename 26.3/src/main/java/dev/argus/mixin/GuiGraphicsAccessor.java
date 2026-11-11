@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(GuiGraphicsExtractor.class)
 public interface GuiGraphicsAccessor {
    @Invoker("tooltip")
-   void drawTooltipsHook(Font var1, List var2, int var3, int var4, ClientTooltipPositioner var5, @Nullable Identifier var6);
+   void drawTooltipsHook(Font var1, List var2, int var3, int var4, ClientTooltipPositioner var5, @Nullable Identifier var6, boolean var7);
 
    @Accessor("hoveredTextStyle")
    void argusclient$hoverStyle(Style var1);

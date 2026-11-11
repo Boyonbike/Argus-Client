@@ -38,7 +38,7 @@ public class LightTextureMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lcom/mojang/renderpearl/api/buffers/Std140Builder;putVec3(Lorg/joml/Vector3fc;)Lcom/mojang/renderpearl/api/buffers/Std140Builder;",
+         target = "Lcom/mojang/blaze3d/buffers/Std140Builder;putVec3(Lorg/joml/Vector3fc;)Lcom/mojang/blaze3d/buffers/Std140Builder;",
          ordinal = 1
       )
    )

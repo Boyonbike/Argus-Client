@@ -62,12 +62,12 @@ public class EndCrystalRendererMixin {
       method = "submit(Lnet/minecraft/client/renderer/entity/state/EndCrystalRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/resources/Identifier;IIILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
+         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/resources/Identifier;III)V"
       )
    )
    private void selectCrystalRenderType(
       SubmitNodeCollector collector, Model<?> model, Object state, PoseStack poses, Identifier texture, int light, int overlay, int outlineColor,
-      ModelFeatureRenderer.CrumblingOverlay crumbling, Operation<Void> original
+      Operation<Void> original
    ) {
       // 26.1.2 derives the render type from the texture inside submitModel; Chams swaps in the RenderType overload instead.
       if (chamsModule.isToggled()
@@ -76,9 +76,9 @@ public class EndCrystalRendererMixin {
             && !ClientContext.shaderRegistry.renderingIntoTarget) {
          @SuppressWarnings("unchecked")
          Model<Object> typedModel = (Model<Object>)model;
-         collector.submitModel(typedModel, state, poses, ClientRenderTypes.armorCutoutNoCull(texture), light, overlay, outlineColor, crumbling);
+         collector.submitModel(typedModel, state, poses, ClientRenderTypes.armorCutoutNoCull(texture), light, overlay, outlineColor);
       } else {
-         original.call(collector, model, state, poses, texture, light, overlay, outlineColor, crumbling);
+         original.call(collector, model, state, poses, texture, light, overlay, outlineColor);
       }
    }
 

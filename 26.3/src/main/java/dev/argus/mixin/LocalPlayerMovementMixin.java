@@ -16,17 +16,14 @@ import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.LocalPlayerTickPhaseEvent;
 import dev.argus.client.managers.RotationManager;
 import dev.argus.client.modules.exploit.ReachModule;
-import dev.argus.client.modules.misc.SwingModule;
 import dev.argus.client.modules.movement.EntityControlModule;
 import dev.argus.client.modules.movement.NoSlowModule;
 import dev.argus.client.modules.movement.SprintModule;
-import dev.argus.client.utils.network.PacketSender;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.HitResult;
@@ -44,7 +41,6 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer implements ClientAccess, LocalPlayerTickAccess {
-   private static final SwingModule swingModule = ClientContext.getModule(SwingModule.class);
    private static final NoSlowModule noSlowModule = ClientContext.getModule(NoSlowModule.class);
    private static final EntityControlModule entityControlModule = ClientContext.getModule(EntityControlModule.class);
    private static final SprintModule sprintModule = ClientContext.getModule(SprintModule.class);
@@ -65,19 +61,6 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer impl
 
    @Shadow
    private void sendPosition() {
-   }
-
-   @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;)V", at = @At("HEAD"), cancellable = true)
-   public void applySwingOverride(InteractionHand hand, CallbackInfo callback) {
-      if (swingModule.isToggled() && swingModule.handSetting.getValue() != SwingModule.HandChoice.VANILLA) {
-         if (swingModule.handSetting.getValue() != SwingModule.HandChoice.PACKET) {
-            InteractionHand overrideHand = swingModule.handSetting.getValue().getHand();
-            super.swing(overrideHand, getItemInHand(overrideHand).getAttackAnimation(), false);
-         }
-
-         PacketSender.sendSwing(hand);
-         callback.cancel();
-      }
    }
 
    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;tick()V", shift = Shift.BEFORE))
@@ -113,9 +96,19 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer impl
       }
    }
 
-   @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isPassenger()Z", shift = Shift.BEFORE))
+   @Inject(method = "tick", at = @At("HEAD"))
    private void postBeforePassengerCheckEvent(CallbackInfo callback) {
       ClientAccess.eventBus.post(new LocalPlayerTickPhaseEvent.BeforePassengerCheck());
+   }
+
+   @Inject(method = "displayItemActivation", at = @At("HEAD"), cancellable = true)
+   private void suppressTotemActivation(net.minecraft.world.item.ItemStack stack, CallbackInfo callback) {
+      dev.argus.client.modules.render.NoRenderModule noRender =
+         ClientContext.getModule(dev.argus.client.modules.render.NoRenderModule.class);
+      if (stack.getItem() == net.minecraft.world.item.Items.TOTEM_OF_UNDYING
+         && noRender.isToggled() && noRender.totemOverlaySetting.getValue()) {
+         callback.cancel();
+      }
    }
 
    @Inject(

@@ -163,17 +163,18 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "mouseClicked",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
+         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;ILnet/minecraft/client/input/MouseButtonEvent;Lnet/minecraft/world/inventory/ContainerInput;)V",
          ordinal = 1
       )
    )
    private void argusclient$useBundleInspectButton(Args arguments) {
-      int mouseButton = (Integer)arguments.get(2);
+      net.minecraft.client.input.MouseButtonEvent original = (net.minecraft.client.input.MouseButtonEvent)arguments.get(2);
+      int mouseButton = original.button();
       if (this.argusclient$cachedHoveredSlot != null
          && argusclient$tooltips.shouldInspectContents(this.argusclient$cachedHoveredSlot.getItem())
-         && mouseButton == 0
+         && mouseButton == 1
          && this.argusclient$cachedHoveredSlot.getItem().is(ItemTags.BUNDLES)) {
-         arguments.set(2, 1);
+         arguments.set(2, argusclient$withButton(original, 2));
       }
    }
 
@@ -181,15 +182,16 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "mouseReleased",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
+         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;ILnet/minecraft/client/input/MouseButtonEvent;Lnet/minecraft/world/inventory/ContainerInput;)V",
          ordinal = 3 // last call: releasing a click while carrying an item (PICKUP / QUICK_MOVE)
       )
    )
    private void argusclient$swapBundleReleaseButton(Args arguments) {
       Slot slot = (Slot)arguments.get(0);
-      int mouseButton = (Integer)arguments.get(2);
-      if (argusclient$inventoryTweaks.isToggled() && argusclient$inventoryTweaks.shouldSwapBundleClickButton(slot, mouseButton)) {
-         arguments.set(2, mouseButton == 0 ? 1 : 0);
+      net.minecraft.client.input.MouseButtonEvent original = (net.minecraft.client.input.MouseButtonEvent)arguments.get(2);
+      int mouseButton = original.button();
+      if (argusclient$inventoryTweaks.isToggled() && argusclient$inventoryTweaks.shouldSwapBundleClickButton(slot, mouseButton == 1 ? 0 : mouseButton == 0 ? 1 : mouseButton)) {
+         arguments.set(2, argusclient$withButton(original, mouseButton == 1 ? 0 : 1));
       }
    }
 
@@ -197,11 +199,11 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "extractTooltip",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;)V"
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;Z)V"
       )
    )
    private boolean argusclient$renderTooltipWithEvent(
-      GuiGraphicsExtractor graphics, Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background
+      GuiGraphicsExtractor graphics, Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background, boolean elideText
    ) {
       if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          tooltipX = this.argusclient$tooltipX;
@@ -217,7 +219,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       );
       ClientAccess.eventBus.post(event);
       if (!event.isCancelled()) {
-         ((GuiGraphicsAccessor)graphics).drawTooltipsHook(font, event.getTooltipComponents(), tooltipX, tooltipY, DefaultTooltipPositioner.INSTANCE, null);
+         ((GuiGraphicsAccessor)graphics).drawTooltipsHook(font, event.getTooltipComponents(), tooltipX, tooltipY, DefaultTooltipPositioner.INSTANCE, null, false);
       }
 
       return false;
@@ -264,5 +266,13 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       } else {
          return true;
       }
+   }
+
+   @Unique
+   private static net.minecraft.client.input.MouseButtonEvent argusclient$withButton(
+      net.minecraft.client.input.MouseButtonEvent event, int button
+   ) {
+      return new net.minecraft.client.input.MouseButtonEvent(
+         event.x(), event.y(), new net.minecraft.client.input.MouseButtonInfo(button, event.modifiers()));
    }
 }
