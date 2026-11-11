@@ -8,12 +8,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import dev.argus.client.ClientAccess;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
 
 public final class GuiProjectionUtils implements ClientAccess {
-   public static final CachedOrthoProjectionMatrixBuffer GUI_PROJECTION_CACHE = new CachedOrthoProjectionMatrixBuffer("gui_argus", 1000.0F, 11000.0F, true);
+   private static final Projection GUI_PROJECTION = new Projection();
+   public static final ProjectionMatrixBuffer GUI_PROJECTION_CACHE = new ProjectionMatrixBuffer("gui_argus");
    private static GpuBufferSlice savedProjectionBuffer;
    private static ProjectionType savedProjectionType;
    private static Matrix4f savedModelView;
@@ -37,7 +39,8 @@ public final class GuiProjectionUtils implements ClientAccess {
          savedProjectionType = RenderSystem.getProjectionType();
          Matrix4f modelView = RenderSystem.getModelViewMatrix();
          savedModelView = new Matrix4f(modelView);
-         RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(guiWidth, guiHeight), ProjectionType.ORTHOGRAPHIC);
+         GUI_PROJECTION.setupOrtho(1000.0F, 11000.0F, guiWidth, guiHeight, true);
+         RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(GUI_PROJECTION), ProjectionType.ORTHOGRAPHIC);
          modelView.identity().translate(0.0F, 0.0F, -11000.0F);
       }
    }

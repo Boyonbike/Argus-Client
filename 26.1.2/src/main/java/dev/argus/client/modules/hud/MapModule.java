@@ -112,7 +112,7 @@ public class MapModule extends HudWidgetModule {
          NewChunksModule dungeonSource = newChunks;
 
          for (BlockPos dungeonPosition : dungeonSource.getDetectedDungeons()) {
-            ChunkPos dungeonChunk = new ChunkPos(dungeonPosition);
+            ChunkPos dungeonChunk = ChunkPos.containing(dungeonPosition);
             if (this.isChunkWithinRange(dungeonChunk)) {
                Setting<Color> dungeonColorOption = newChunks.dungeonFillSetting;
                Color dungeonFill = dungeonColorOption.getValue();

@@ -252,7 +252,7 @@ public final class BlockTargetIndex implements ClientAccess {
 
       List<LevelChunk> chunks = new ArrayList<>(WorldUtils.getLoadedChunks());
       ChunkPos center = argusclientMinecraft.player.chunkPosition();
-      chunks.sort(java.util.Comparator.comparingInt(chunk -> chunkDistance(chunk.getPos().x, chunk.getPos().z, center)));
+      chunks.sort(java.util.Comparator.comparingInt(chunk -> chunkDistance(chunk.getPos().x(), chunk.getPos().z(), center)));
       java.util.concurrent.ExecutorService executor = this.scanner.getExecutor();
       for (LevelChunk chunk : chunks) {
          executor.submit(() -> this.scanChunk(chunk.getPos(), chunk));
@@ -260,8 +260,8 @@ public final class BlockTargetIndex implements ClientAccess {
    }
 
    private static int chunkDistance(int chunkX, int chunkZ, ChunkPos center) {
-      int dx = chunkX - center.x;
-      int dz = chunkZ - center.z;
+      int dx = chunkX - center.x();
+      int dz = chunkZ - center.z();
       return dx * dx + dz * dz;
    }
 
@@ -297,7 +297,7 @@ public final class BlockTargetIndex implements ClientAccess {
          }
 
          this.removeChunk(x, z);
-         this.skipped.add(ChunkPos.asLong(x, z));
+         this.skipped.add(ChunkPos.pack(x, z));
       }
 
       return this.index.size() + needed <= MAX_ENTRIES;
@@ -371,7 +371,7 @@ public final class BlockTargetIndex implements ClientAccess {
             continue;
          }
 
-         long chunkKey = ChunkPos.asLong(result.chunkX(), result.chunkZ());
+         long chunkKey = ChunkPos.pack(result.chunkX(), result.chunkZ());
          if (result.wholeChunk()) {
             this.removeChunk(result.chunkX(), result.chunkZ());
             this.skipped.remove(chunkKey);
@@ -424,7 +424,7 @@ public final class BlockTargetIndex implements ClientAccess {
       // Block-entity marks for this chunk are pruned by reconcileBlockEntities() once their index entry is gone,
       // so there's no need to walk every tracked block entity on each chunk unload.
       this.index.removeChunk(chunkX, chunkZ);
-      this.chunkCounts.remove(ChunkPos.asLong(chunkX, chunkZ));
+      this.chunkCounts.remove(ChunkPos.pack(chunkX, chunkZ));
       this.version++;
    }
 
@@ -510,7 +510,7 @@ public final class BlockTargetIndex implements ClientAccess {
          }
       }
 
-      this.results.add(new Result(scanGeneration, chunkPosition.x, chunkPosition.z, true, positions.toLongArray(), entries.toArray(Entry[]::new)));
+      this.results.add(new Result(scanGeneration, chunkPosition.x(), chunkPosition.z(), true, positions.toLongArray(), entries.toArray(Entry[]::new)));
    }
 
    /**
@@ -530,7 +530,7 @@ public final class BlockTargetIndex implements ClientAccess {
    }
 
    private void unloadChunk(ChunkPos chunkPosition, LevelChunk chunk) {
-      this.results.add(new Result(this.generation, chunkPosition.x, chunkPosition.z, true, new long[0], new Entry[0]));
+      this.results.add(new Result(this.generation, chunkPosition.x(), chunkPosition.z(), true, new long[0], new Entry[0]));
    }
 
    private void updateBlock(BlockPos position, BlockState state) {

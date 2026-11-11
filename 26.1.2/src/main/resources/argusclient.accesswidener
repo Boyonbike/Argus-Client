@@ -23,7 +23,8 @@ accessible	field	net/minecraft/client/particle/Particle	yd	D
 accessible	field	net/minecraft/client/particle/Particle	zd	D
 accessible	field	net/minecraft/client/player/ClientInput	moveVector	Lnet/minecraft/world/phys/Vec2;
 accessible	field	net/minecraft/client/renderer/GameRenderer	fogRenderer	Lnet/minecraft/client/renderer/fog/FogRenderer;
-accessible	field	net/minecraft/client/renderer/GameRenderer	hud3dProjectionMatrixBuffer	Lnet/minecraft/client/renderer/CachedPerspectiveProjectionMatrixBuffer;
+accessible	field	net/minecraft/client/renderer/GameRenderer	hud3dProjectionMatrixBuffer	Lnet/minecraft/client/renderer/ProjectionMatrixBuffer;
+accessible	field	net/minecraft/client/renderer/GameRenderer	hudProjection	Lnet/minecraft/client/renderer/Projection;
 accessible	field	net/minecraft/client/renderer/entity/EndCrystalRenderer	model	Lnet/minecraft/client/model/object/crystal/EndCrystalModel;
 accessible	field	net/minecraft/client/renderer/rendertype/RenderSetup	outputTarget	Lnet/minecraft/client/renderer/rendertype/OutputTarget;
 accessible	field	net/minecraft/client/renderer/rendertype/RenderType	state	Lnet/minecraft/client/renderer/rendertype/RenderSetup;
@@ -40,8 +41,7 @@ accessible	field	net/minecraft/world/item/component/ItemContainerContents	items	
 accessible	field	net/minecraft/world/level/block/entity/BlockEntityType	validBlocks	Ljava/util/Set;
 accessible	method	com/mojang/blaze3d/platform/NativeImage	writeToChannel	(Ljava/nio/channels/WritableByteChannel;)Z
 accessible	method	net/minecraft/client/multiplayer/PlayerInfo	setLatency	(I)V
-accessible	method	net/minecraft/client/renderer/GameRenderer	getFov	(Lnet/minecraft/client/Camera;FZ)F
-accessible	method	net/minecraft/client/renderer/GameRenderer	renderItemInHand	(FZLorg/joml/Matrix4f;)V
+accessible	method	net/minecraft/client/renderer/GameRenderer	renderItemInHand	(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V
 accessible	method	net/minecraft/network/protocol/game/ServerboundInteractPacket	<init>	(Lnet/minecraft/network/FriendlyByteBuf;)V
 accessible	method	net/minecraft/network/protocol/game/ServerboundInteractPacket	write	(Lnet/minecraft/network/FriendlyByteBuf;)V
 accessible	method	net/minecraft/world/entity/Entity	collectColliders	(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/level/Level;Ljava/util/List;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;

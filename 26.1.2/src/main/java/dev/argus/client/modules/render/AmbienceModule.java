@@ -59,7 +59,7 @@ public class AmbienceModule extends Module {
       this.savedGamma = gammaOption.get();
       if (ClientAccess.argusclientMinecraft.level != null) {
          this.serverTimeSnapshot = new AmbienceModule.ServerTimeSnapshot(
-            ClientAccess.argusclientMinecraft.level.getGameTime(), ClientAccess.argusclientMinecraft.level.getDayTime()
+            ClientAccess.argusclientMinecraft.level.getGameTime(), ClientAccess.argusclientMinecraft.level.getOverworldClockTime()
          );
       } else {
          this.serverTimeSnapshot = null;
@@ -86,7 +86,7 @@ public class AmbienceModule extends Module {
       }
 
       if (this.serverTimeSnapshot != null && ClientAccess.argusclientMinecraft.level != null) {
-         ClientAccess.argusclientMinecraft.level.setTimeFromServer(this.serverTimeSnapshot.gameTime(), this.serverTimeSnapshot.dayTime(), true);
+         ClientAccess.argusclientMinecraft.level.setTimeFromServer(this.serverTimeSnapshot.gameTime());
       }
 
       Options options = ClientAccess.argusclientMinecraft.options;
@@ -130,7 +130,7 @@ public class AmbienceModule extends Module {
          if (worldTimeOption.getValue()) {
             long worldTime = this.getWorldTime();
             DimensionTypeAccessor dimensionType = (DimensionTypeAccessor)(Object)ClientAccess.argusclientMinecraft.level.dimensionType();
-            ClientAccess.argusclientMinecraft.level.setTimeFromServer(worldTime, worldTime, false);
+            ClientAccess.argusclientMinecraft.level.setTimeFromServer(worldTime);
             if (dimensionType != null) {
                dimensionType.argusclient$setFixedTime(false);
             }
@@ -237,7 +237,7 @@ public class AmbienceModule extends Module {
          Setting<Boolean> worldTimeOption = this.worldTimeSetting;
          if (!worldTimeOption.getValue()) {
             if (this.serverTimeSnapshot != null && ClientAccess.argusclientMinecraft.level != null) {
-               ClientAccess.argusclientMinecraft.level.setTimeFromServer(this.serverTimeSnapshot.gameTime(), this.serverTimeSnapshot.dayTime(), false);
+               ClientAccess.argusclientMinecraft.level.setTimeFromServer(this.serverTimeSnapshot.gameTime());
                this.serverTimeSnapshot = null;
             }
          }

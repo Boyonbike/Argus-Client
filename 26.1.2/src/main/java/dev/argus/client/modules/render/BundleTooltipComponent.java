@@ -46,8 +46,9 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       List<BundleTooltipComponent.BundleEntry> entries = new ArrayList<>();
       int index = 0;
 
-      for (ItemStack item : contents.items()) {
-         boolean selected = contents.hasSelectedItem() && contents.getSelectedItem() == index;
+      for (net.minecraft.world.item.ItemStackTemplate template : contents.items()) {
+         ItemStack item = template.create();
+         boolean selected = contents.getSelectedItemIndex() != BundleContents.NO_SELECTED_ITEM_INDEX && contents.getSelectedItemIndex() == index;
          entries.add(new BundleTooltipComponent.BundleEntry(item, selected));
          index++;
       }
@@ -56,7 +57,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       int columns = this.columns();
       x += Math.max((tooltipWidth - this.getWidth(font)) / 2, 0);
       int mouseX = AbstractContainerScreenRenderTooltipEvent.mouseX;
@@ -69,7 +70,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
          int itemY = y + index / columns * 20;
          if (mouseX >= itemX && mouseX < itemX + 20 && mouseY >= itemY && mouseY < itemY + 20) {
             hoveredItem = entry.item();
-            if (this.bundleContents.getSelectedItem() != index) {
+            if (this.bundleContents.getSelectedItemIndex() != index) {
                BundleItem.toggleSelectedItem(this.slot.getItem(), index);
                PacketSender.send(new ServerboundSelectBundleItemPacket(this.slot.index, index));
             }
@@ -96,11 +97,11 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       if (mapOverlay.getValue() && mapData != null) {
          ContainerTooltipComponent.renderMapOverlay(graphics, mapData, mapId, x + 1, y + 1);
          if (!KeyUtils.isPhysicalKeyDown(342)) {
-            graphics.renderItemDecorations(font, item, x + 1, y + 1);
+            graphics.itemDecorations(font, item, x + 1, y + 1);
          }
       } else {
-         graphics.renderItem(item, x + 2, y + 2);
-         graphics.renderItemDecorations(font, item, x + 2, y + 2);
+         graphics.item(item, x + 2, y + 2);
+         graphics.itemDecorations(font, item, x + 2, y + 2);
       }
    }
 
@@ -116,7 +117,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       poses.pushMatrix();
 
       try {
-         graphics.drawString(font, "x", x + 3, y + 1, color.hashCode(), true);
+         graphics.text(font, "x", x + 3, y + 1, color.hashCode(), true);
       } finally {
          poses.popMatrix();
       }
@@ -124,7 +125,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
 
    private void renderWeightBar(GuiGraphicsExtractor graphics, int x, int y) {
       int barWidth = this.columns() * 20 - 2;
-      Fraction weight = this.bundleContents.weight();
+      Fraction weight = this.bundleContents.weight().getOrThrow();
       int filledWidth = Mth.mulAndTruncate(weight, barWidth);
       weightWidthAnimation.setTarget(filledWidth, 150L);
       int animatedWidth = (int)weightWidthAnimation.getValue();

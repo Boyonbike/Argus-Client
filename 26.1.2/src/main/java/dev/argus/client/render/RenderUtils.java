@@ -78,7 +78,7 @@ public final class RenderUtils implements ClientAccess {
       double entityY = Mth.lerp(partialTick, entity.yOld, entity.getY());
       double entityZ = Mth.lerp(partialTick, entity.zOld, entity.getZ());
       EntityRenderState renderState = dispatcher.extractEntity(entity, partialTick);
-      CameraRenderState cameraRenderState = ClientAccess.argusclientMinecraft.gameRenderer.getLevelRenderState().cameraRenderState;
+      CameraRenderState cameraRenderState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
       dispatcher.submit(
          renderState,
          cameraRenderState,

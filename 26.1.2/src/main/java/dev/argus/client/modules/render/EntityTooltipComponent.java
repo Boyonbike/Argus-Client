@@ -31,7 +31,7 @@ public record EntityTooltipComponent(LivingEntity entity) implements ClientAcces
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       EntityRenderState state = argusclientMinecraft.getEntityRenderDispatcher().getRenderer(this.entity).createRenderState(this.entity, 1.0F);
       state.lightCoords = FULL_BRIGHT;
       state.shadowPieces.clear();
@@ -45,7 +45,7 @@ public record EntityTooltipComponent(LivingEntity entity) implements ClientAcces
       int left = x + (tooltipWidth - WIDTH) / 2;
       int top = y + 4;
       float scale = Math.max(WIDTH, HEIGHT) / 2.0F * 1.25F;
-      graphics.submitEntityRenderState(
+      graphics.entity(
          state, scale, new Vector3f(0.0F, 0.1F, 0.0F), new Quaternionf().rotateZ((float)Math.PI), null, left, top, left + WIDTH, top + HEIGHT
       );
       spin += 3.0F * argusclientMinecraft.getDeltaTracker().getGameTimeDeltaTicks();

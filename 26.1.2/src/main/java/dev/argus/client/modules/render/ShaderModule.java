@@ -40,6 +40,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -139,14 +140,12 @@ public class ShaderModule extends Module {
    }
 
    private GpuBufferSlice getHandProjectionBuffer() {
-      DeltaTracker deltaTracker = ClientAccess.argusclientMinecraft.getDeltaTracker();
-      float partialTick = deltaTracker.getGameTimeDeltaPartialTick(true);
       Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera();
-      CachedPerspectiveProjectionMatrixBuffer projectionBuffer = ClientAccess.argusclientMinecraft.gameRenderer.hud3dProjectionMatrixBuffer;
+      Projection projection = ClientAccess.argusclientMinecraft.gameRenderer.hudProjection;
       int width = ClientAccess.argusclientMinecraft.getWindow().getWidth();
       int height = ClientAccess.argusclientMinecraft.getWindow().getHeight();
-      float fov = ClientAccess.argusclientMinecraft.gameRenderer.getFov(camera, partialTick, false);
-      return projectionBuffer.getBuffer(width, height, fov);
+      projection.setupPerspective(0.05F, 100.0F, camera.getFov(), width, height);
+      return ClientAccess.argusclientMinecraft.gameRenderer.hud3dProjectionMatrixBuffer.getBuffer(projection);
    }
 
    @Override
@@ -164,7 +163,7 @@ public class ShaderModule extends Module {
       }
 
       PoseStack poseStack = event.getPoseStack();
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getLevelRenderState().cameraRenderState;
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
       Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
       float partialTick = event.getPartialTick();
       double xPartialTick = partialTick;
@@ -412,7 +411,7 @@ public class ShaderModule extends Module {
       Quaternionf inverseCameraRotation = cameraRotation.conjugate(inverseRotationDestination);
       Matrix4f viewMatrix = new Matrix4f();
       viewMatrix.rotation(inverseCameraRotation);
-      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(event.getPartialTick(), cameraSleeping, viewMatrix);
+      ClientAccess.argusclientMinecraft.gameRenderer.renderItemInHand(ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState, event.getPartialTick(), viewMatrix);
       RenderSystem.restoreProjectionMatrix();
    }
 

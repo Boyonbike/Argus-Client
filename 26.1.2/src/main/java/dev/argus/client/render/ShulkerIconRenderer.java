@@ -114,10 +114,8 @@ public final class ShulkerIconRenderer {
             .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
             .withUniform("Projection", UniformType.UNIFORM_BUFFER)
             .withVertexFormat(base.getVertexFormat(), base.getVertexFormatMode())
-            .withDepthTestFunction(base.getDepthTestFunction())
-            .withDepthWrite(base.isWriteDepth())
-            .withBlend(base.getBlendFunction().orElseThrow())
-            .withColorWrite(base.isWriteColor(), base.isWriteAlpha())
+            .withDepthStencilState(base.getDepthStencilState())
+            .withColorTargetState(base.getColorTargetState())
             .withCull(base.isCull())
             .build();
          RenderSystem.getDevice().precompilePipeline(created, (identifier, type) -> {

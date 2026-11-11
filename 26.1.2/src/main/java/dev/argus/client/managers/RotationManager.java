@@ -476,7 +476,7 @@ public final class RotationManager implements ClientAccess {
          ContainerInput clickType = event.getClickType();
          MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
-         gameMode.handleInventoryMouseClick(containerId, slotId, mouseButton, clickType, player);
+         gameMode.handleContainerInput(containerId, slotId, mouseButton, clickType, player);
       }
    }
 

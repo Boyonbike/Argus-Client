@@ -68,7 +68,7 @@ public class PlayerModelModule extends HudWidgetModule {
       Entry entityLightingEntry = Entry.ENTITY_IN_UI;
       lighting.setupFor(entityLightingEntry);
       SubmitNodeStorage submitNodes = ClientAccess.argusclientMinecraft.gameRenderer.getSubmitNodeStorage();
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getLevelRenderState().cameraRenderState;
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
       Minecraft clientForEntityRenderer = Minecraft.getInstance();
       EntityRenderDispatcher entityRenderer = clientForEntityRenderer.getEntityRenderDispatcher();
       float partialTick = RenderUtils.getPartialTick();

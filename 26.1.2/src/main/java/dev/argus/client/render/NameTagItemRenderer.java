@@ -14,12 +14,13 @@ public final class NameTagItemRenderer {
    private static final NameTagItemRenderer.NameTagBufferSource buffers = new NameTagItemRenderer.NameTagBufferSource();
    private static final FeatureRenderDispatcher featureDispatcher = new FeatureRenderDispatcher(
       submitNodes,
-      ClientAccess.argusclientMinecraft.getBlockRenderer(),
+      ClientAccess.argusclientMinecraft.getModelManager(),
       buffers,
       ClientAccess.argusclientMinecraft.getAtlasManager(),
       NoOpOutlineBufferSource.INSTANCE,
       DiscardingBufferSource.INSTANCE,
-      ClientAccess.argusclientMinecraft.font
+      ClientAccess.argusclientMinecraft.font,
+      ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
    );
 
    private NameTagItemRenderer() {

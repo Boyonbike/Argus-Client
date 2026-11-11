@@ -4,7 +4,9 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -57,10 +59,10 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
    public static final RenderPipeline PIPELINE = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
       .withLocation("pipeline/argusclient_esp_cells")
       .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
-      .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-      .withDepthWrite(true)
+      .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+      .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
       .withCull(false)
-      .withoutBlend()
+      .withColorTargetState(new ColorTargetState(java.util.Optional.empty(), ColorTargetState.WRITE_ALL))
       .build();
    private static final int MAX_MODELS_PER_FRAME = 128;
 
@@ -213,7 +215,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
    private void bake(CellIndex.CellKey key, CellIndex.Cell<BlockTargetIndex.Entry> cell, float partialTick, Paint paint) {
       ClientLevel current = this.level;
       BlockEntityRenderDispatcher dispatcher = argusclientMinecraft.getBlockEntityRenderDispatcher();
-      CameraRenderState cameraState = argusclientMinecraft.gameRenderer.getLevelRenderState().cameraRenderState;
+      CameraRenderState cameraState = argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
       ColorOutlineBufferSource buffers = ShaderRegistry.getBufferSource();
       BlockPos.MutableBlockPos position = new BlockPos.MutableBlockPos();
       for (Long2Entry item : entries(cell)) {

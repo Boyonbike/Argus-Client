@@ -229,7 +229,7 @@ public class TooltipsModule extends Module {
             DataComponentType<ItemContainerContents> containerComponentType = DataComponents.CONTAINER;
             ItemContainerContents containedItems = hoveredStack.get(containerComponentType);
             if (containedItems != null) {
-               List<ItemStack> contentList = containedItems.stream().toList();
+               List<ItemStack> contentList = containedItems.allItemsCopyStream().toList();
                int slotCount = Math.min(contentList.size(), containerItems.size());
 
                for (int contentIndex = 0; contentIndex < slotCount; contentIndex++) {
@@ -504,17 +504,13 @@ public class TooltipsModule extends Module {
          return new BannerTooltipComponent(banner.getColor(), stack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY));
       }
 
-      TagKey<BannerPattern> providedPatterns = stack.get(DataComponents.PROVIDES_BANNER_PATTERNS);
+      HolderSet<BannerPattern> providedPatterns = stack.get(DataComponents.PROVIDES_BANNER_PATTERNS);
       if (providedPatterns != null) {
-         Optional<HolderSet.Named<BannerPattern>> patterns = ClientAccess.argusclientMinecraft.player
-            .registryAccess()
-            .lookupOrThrow(Registries.BANNER_PATTERN)
-            .get(providedPatterns);
-         if (patterns.isEmpty() || patterns.get().size() == 0) {
+         if (providedPatterns.size() == 0) {
             return null;
          }
 
-         Holder<BannerPattern> pattern = patterns.get().get(0);
+         Holder<BannerPattern> pattern = providedPatterns.get(0);
          return new BannerTooltipComponent(DyeColor.GRAY, new BannerPatternLayers.Builder().add(pattern, DyeColor.WHITE).build());
       }
 
@@ -722,7 +718,7 @@ public class TooltipsModule extends Module {
    /** The first enabled matching combo wins; otherwise the item with the greatest total quantity (ties: first slot). */
    private RenderedIcon selectIcon(IconKey key) {
       List<ShulkerIconSelector.Entry<Item>> entries = new ArrayList<>();
-      key.contents().nonEmptyStream().forEach(stack -> entries.add(new ShulkerIconSelector.Entry<>(stack.getItem(), stack.getCount())));
+      key.contents().nonEmptyItemCopyStream().forEach(stack -> entries.add(new ShulkerIconSelector.Entry<>(stack.getItem(), stack.getCount())));
       ShulkerIconSelector.Icon<Item> selected = ShulkerIconSelector.selectIcon(entries, key.customName(), this.iconRules);
       if (selected == null) {
          return new RenderedIcon(ItemStack.EMPTY, null, null);

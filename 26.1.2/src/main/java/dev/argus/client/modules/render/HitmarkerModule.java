@@ -185,7 +185,7 @@ public class HitmarkerModule extends Module {
          if (event.getPacket() instanceof ServerboundInteractPacket packet) {
             if (InteractPacketUtils.getAction(packet) == InteractPacketUtils.Action.ATTACK) {
                ClientLevel levelCapture = ClientAccess.argusclientMinecraft.level;
-               int entityId = ((ServerboundInteractPacketAccessor)packet).getEntityId();
+               int entityId = ((ServerboundInteractPacketAccessor)(Object)packet).getEntityId();
                Entity target = levelCapture.getEntity(entityId);
                long elapsedMillis = System.currentTimeMillis() - this.lastHitTime;
                if (elapsedMillis > 100L) {

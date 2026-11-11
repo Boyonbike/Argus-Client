@@ -429,7 +429,7 @@ public class ChamsModule extends Module {
       OptionInstance filteringOption = ClientAccess.argusclientMinecraft.options.textureFiltering();
       boolean rgssFiltering = filteringOption.get() == TextureFilteringMethod.RGSS;
       Options currentOptions = ClientAccess.argusclientMinecraft.options;
-      globalSettings.update(windowWidth, windowHeight, strength, gameTime, deltaTracker, currentOptions.getMenuBackgroundBlurriness(), camera, rgssFiltering);
+      globalSettings.update(windowWidth, windowHeight, strength, gameTime, deltaTracker, currentOptions.getMenuBackgroundBlurriness(), camera.position(), rgssFiltering);
    }
 
    private static Setting<ChamsStyle> getStyleSetting(ChamsModule owner, Entity entity) {

@@ -21,7 +21,7 @@ import dev.argus.client.render.SkyboxShaderPass;
 import dev.argus.client.render.SolidShaderPass;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.resources.model.sprite.AtlasManager;
 
@@ -37,20 +37,21 @@ public final class ShaderRegistry implements ClientAccess {
       if (featureDispatcher == null) {
          featureDispatcher = new FeatureRenderDispatcher(
             submitNodes,
-            readBlockRenderer(),
+            readModelManager(),
             new ColorOutlineBufferSource.SuppliedBufferSource(ShaderRegistry::getBufferSource),
             readAtlasManager(),
             NoOpOutlineBufferSource.INSTANCE,
             DiscardingBufferSource.INSTANCE,
-            ClientAccess.argusclientMinecraft.font
+            ClientAccess.argusclientMinecraft.font,
+            ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
          );
       }
 
       return featureDispatcher;
    }
 
-   private static BlockRenderDispatcher readBlockRenderer() {
-      return ClientAccess.argusclientMinecraft.getBlockRenderer();
+   private static ModelManager readModelManager() {
+      return ClientAccess.argusclientMinecraft.getModelManager();
    }
 
    private static AtlasManager readAtlasManager() {

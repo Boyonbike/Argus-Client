@@ -29,6 +29,12 @@ import net.minecraft.world.level.block.ShulkerBoxBlock;
  * Each card starts with Enabled and ends with Range; the Mirror flag is hidden and saved with the module.
  */
 public final class TargetSettings {
+   private static ShulkerBoxBlock shulkerBlock(DyeColor color) {
+      for (Block block : BuiltInRegistries.BLOCK) {
+         if (block instanceof ShulkerBoxBlock shulker && shulker.getColor() == color) return shulker;
+      }
+      return (ShulkerBoxBlock) net.minecraft.world.level.block.Blocks.SHULKER_BOX;
+   }
    public enum Kind {
       PLAYERS("Players"),
       MOBS("Mobs"),
@@ -312,7 +318,7 @@ public final class TargetSettings {
             net.minecraft.world.item.Items.EXPERIENCE_BOTTLE, net.minecraft.world.item.Items.SHULKER_BOX
          ));
          for (DyeColor dye : DyeColor.values()) {
-            items.add(ShulkerBoxBlock.getBlockByColor(dye).asItem());
+            items.add(shulkerBlock(dye).asItem());
          }
 
          return items.toArray(Item[]::new);
@@ -379,7 +385,7 @@ public final class TargetSettings {
             net.minecraft.world.level.block.Blocks.SHULKER_BOX
          ));
          for (DyeColor dye : DyeColor.values()) {
-            blocks.add(ShulkerBoxBlock.getBlockByColor(dye));
+            blocks.add(shulkerBlock(dye));
          }
 
          return blocks.toArray(Block[]::new);

@@ -34,12 +34,13 @@ public final class EntityChamsRenderer implements ClientAccess {
    private static final SubmitNodeStorage submitNodes = new SubmitNodeStorage();
    private static final FeatureRenderDispatcher featureDispatcher = new FeatureRenderDispatcher(
       submitNodes,
-      ClientAccess.argusclientMinecraft.getBlockRenderer(),
+      ClientAccess.argusclientMinecraft.getModelManager(),
       ChamsBufferSource.INSTANCE,
       ClientAccess.argusclientMinecraft.getAtlasManager(),
       NoOpOutlineBufferSource.INSTANCE,
       DiscardingBufferSource.INSTANCE,
-      ClientAccess.argusclientMinecraft.font
+      ClientAccess.argusclientMinecraft.font,
+      ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState()
    );
    static Color fillColor;
    static Color outlineColor;
@@ -111,7 +112,7 @@ public final class EntityChamsRenderer implements ClientAccess {
 
    public static void renderEntity(PoseStack poses, Entity entity) {
       renderingEntity = true;
-      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getLevelRenderState().cameraRenderState;
+      CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
       Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
       float partialTick = RenderUtils.getPartialTick();
       if (entity instanceof SidePlayer) {

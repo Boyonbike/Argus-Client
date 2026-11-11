@@ -33,7 +33,7 @@ public record MapTooltipComponent(int mapId, MapItemSavedData mapData) implement
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       Matrix3x2fStack poses = graphics.pose();
       poses.pushMatrix();
 
@@ -45,7 +45,7 @@ public record MapTooltipComponent(int mapId, MapItemSavedData mapData) implement
          poses.scale(0.75F, 0.75F);
          MapRenderer renderer = argusclientMinecraft.getMapRenderer();
          renderer.extractRenderState(new MapId(this.mapId), this.mapData, MAP_RENDER_STATE);
-         graphics.submitMapRenderState(MAP_RENDER_STATE);
+         graphics.map(MAP_RENDER_STATE);
          argusclientMinecraft.renderBuffers().bufferSource().endBatch();
       } finally {
          poses.popMatrix();

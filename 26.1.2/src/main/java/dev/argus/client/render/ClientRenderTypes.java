@@ -23,7 +23,7 @@ public final class ClientRenderTypes {
    private static final RenderType SHINE_GLINT = RenderType.create(
       "argusclient_shine_glint",
       RenderSetup.builder(ClientRenderPipelines.SHINE_GLINT)
-         .withTexture("Sampler0", RenderTypes.ENCHANTED_GLINT_ARMOR)
+         .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/misc/enchanted_glint_armor.png"))
          .setTextureTransform(TextureTransform.ARMOR_ENTITY_GLINT_TEXTURING)
          .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
          .createRenderSetup()

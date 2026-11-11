@@ -29,12 +29,12 @@ public record BannerTooltipComponent(DyeColor baseColor, BannerPatternLayers pat
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       if (flagModel == null) {
          flagModel = new BannerFlagModel(argusclientMinecraft.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG));
       }
 
       int left = x + (tooltipWidth - WIDTH) / 2;
-      graphics.submitBannerPatternRenderState(flagModel, this.baseColor, this.patterns, left, y, left + WIDTH, y + HEIGHT);
+      graphics.bannerPattern(flagModel, this.baseColor, this.patterns, left, y, left + WIDTH, y + HEIGHT);
    }
 }

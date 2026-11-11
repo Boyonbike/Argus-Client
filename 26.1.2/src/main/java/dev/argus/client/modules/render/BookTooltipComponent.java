@@ -34,7 +34,7 @@ public record BookTooltipComponent(Component page) implements ClientTooltipCompo
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
+   public void extractImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       graphics.blit(RenderPipelines.GUI_TEXTURED, BookViewScreen.BOOK_LOCATION, x - 10, y, 0.0F, 0.0F, 128, 128, TEXTURE_SIZE, TEXTURE_SIZE);
       Matrix3x2fStack poses = graphics.pose();
       poses.pushMatrix();
