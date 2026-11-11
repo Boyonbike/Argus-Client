@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.joml.Matrix4f;
@@ -26,21 +28,30 @@ public final class EffectUniforms {
    private static final Pattern FIELD = Pattern.compile(
       "\\b(float|int|bool|vec2|vec3|vec4|mat4)\\s+([A-Za-z_]\\w*)\\s*;");
 
+   private static final Pattern SAMPLER = Pattern.compile("uniform\\s+sampler2D\\s+([A-Za-z_]\\w*)\\s*;");
+
    private final List<Field> fields;
    private final Map<String, Field> byName;
+   private final Set<String> samplers;
    private final ByteBuffer data;
    private final Map<String, TextureBinding> textures = new HashMap<>();
 
-   private EffectUniforms(List<Field> fields, Map<String, Field> byName, ByteBuffer data) {
+   private EffectUniforms(List<Field> fields, Map<String, Field> byName, Set<String> samplers, ByteBuffer data) {
       this.fields = fields;
       this.byName = byName;
+      this.samplers = samplers;
       this.data = data;
    }
 
    public static EffectUniforms fromSource(String fragmentSource) {
       Matcher block = BLOCK.matcher(fragmentSource);
+      Set<String> samplers = new HashSet<>();
+      Matcher samplerMatcher = SAMPLER.matcher(fragmentSource);
+      while (samplerMatcher.find()) {
+         samplers.add(samplerMatcher.group(1));
+      }
       if (!block.find()) {
-         return new EffectUniforms(List.of(), Map.of(), ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder()));
+         return new EffectUniforms(List.of(), Map.of(), samplers, ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder()));
       }
       List<Field> fields = new ArrayList<>();
       Map<String, Field> byName = new HashMap<>();
@@ -57,9 +68,9 @@ public final class EffectUniforms {
          byName.put(name, field);
          offset += size;
       }
-      int total = align(offset, 16);
+      int total = align(offset, 64);
       ByteBuffer data = ByteBuffer.allocateDirect(total).order(ByteOrder.nativeOrder());
-      return new EffectUniforms(fields, byName, data);
+      return new EffectUniforms(fields, byName, samplers, data);
    }
 
    public boolean isEmpty() {
@@ -114,18 +125,38 @@ public final class EffectUniforms {
    }
 
    public void setTexture(String name, GpuTextureView texture, GpuSampler sampler) {
-      this.textures.put(name, new TextureBinding(texture, sampler));
+      if (texture != null) {
+         this.textures.put(name, new TextureBinding(texture, sampler));
+      }
+   }
+
+   public boolean hasTexture(String name) {
+      TextureBinding binding = this.textures.get(name);
+      return binding != null && binding.texture != null;
+   }
+
+   public GpuTextureView anyTexture() {
+      for (TextureBinding binding : this.textures.values()) {
+         if (binding.texture != null) {
+            return binding.texture;
+         }
+      }
+      return null;
    }
 
    public void bind(RenderPass pass, CommandEncoder encoder) {
       if (!this.fields.isEmpty()) {
          GpuBufferSlice slice = encoder.transientMemory().uploadStaging(
-            this.data.duplicate(), 16L, GpuBuffer.USAGE_UNIFORM);
+            this.data.duplicate(), 64L, GpuBuffer.USAGE_UNIFORM);
          pass.setUniform(BLOCK_NAME, slice);
       }
       for (Map.Entry<String, TextureBinding> entry : this.textures.entrySet()) {
          TextureBinding binding = entry.getValue();
-         pass.setUniform(entry.getKey(), binding.texture, binding.sampler);
+         try {
+            pass.setUniform(entry.getKey(), binding.texture, binding.sampler);
+         } catch (IllegalStateException missingSampler) {
+            // The shader compiler dead-stripped an unused sampler; nothing to bind.
+         }
       }
    }
 

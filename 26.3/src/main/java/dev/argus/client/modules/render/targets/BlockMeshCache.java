@@ -330,12 +330,17 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
 
       RenderSystem.AutoStorageIndexBuffer quadIndices = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
       GpuBuffer indices = quadIndices.getBuffer(maxQuads * 6);
+      com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline compiledPipeline =
+         dev.argus.client.render.CompiledPipelines.get(PIPELINE);
+      if (compiledPipeline == null) {
+         return false;
+      }
       try (RenderPass pass = RenderSystem.getDevice()
             .createCommandEncoder()
             .createRenderPass(
                () -> "Argus ESP cells", target.getColorTextureView(), java.util.Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty()
             )) {
-         pass.setPipeline(dev.argus.client.render.CompiledPipelines.get(PIPELINE));
+         pass.setPipeline(compiledPipeline);
          RenderSystem.bindDefaultUniforms(pass);
          pass.setIndexBuffer(indices, quadIndices.type());
          for (int i = 0; i < drawList.size(); i++) {

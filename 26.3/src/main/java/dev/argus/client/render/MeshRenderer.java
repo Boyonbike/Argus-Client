@@ -58,7 +58,7 @@ public final class MeshRenderer {
       PENDING.add(vertexBuffer);
       PENDING.add(indexBuffer);
       PreparedRenderType prepared = renderType.prepare();
-      RenderTarget target = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
+      RenderTarget target = RenderTargetUtils.currentRenderTarget();
       CommandEncoder encoder = device.createCommandEncoder();
       try (RenderPass pass = target.hasDepth()
             ? encoder.createRenderPass(

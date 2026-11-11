@@ -16,7 +16,7 @@ public class WorldBorderRendererMixin {
 
    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
    private void suppressWorldBorder(
-      WorldBorderRenderState borderState, Vec3 cameraPosition, double ignoredRenderDouble1, double ignoredRenderDouble2, CallbackInfo callback
+      WorldBorderRenderState borderState, com.mojang.renderpearl.api.commands.RenderPass pass, Vec3 cameraPosition, double ignoredRenderDouble, CallbackInfo callback
    ) {
       if (noRenderModule.isToggled() && noRenderModule.worldBorderSetting.getValue()) {
          callback.cancel();

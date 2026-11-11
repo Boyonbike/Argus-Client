@@ -29,9 +29,7 @@ public class ClientChunkCacheMixin {
    private void postChunkPacketDataEvent(
       int chunkX,
       int chunkZ,
-      FriendlyByteBuf packetData,
-      Map<Types, long[]> heightmaps,
-      Consumer<BlockEntityTagOutput> blockEntityConsumer,
+      net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData packetData,
       CallbackInfoReturnable<LevelChunk> callback,
       @Local LevelChunk chunk
    ) {

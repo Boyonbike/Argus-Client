@@ -71,14 +71,14 @@ public class SkyRendererMixin {
    }
 
    @Inject(method = "renderSun", at = @At("HEAD"), cancellable = true)
-   private void hideSun(float brightness, PoseStack poses, CallbackInfo callback) {
+   private void hideSun(RenderPass pass, float brightness, PoseStack poses, CallbackInfo callback) {
       if (noRenderModule.shouldHideCelestialBodies()) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderMoon", at = @At("HEAD"), cancellable = true)
-   private void hideMoon(MoonPhase phase, float brightness, PoseStack poses, CallbackInfo callback) {
+   private void hideMoon(RenderPass pass, MoonPhase phase, float brightness, PoseStack poses, CallbackInfo callback) {
       if (noRenderModule.shouldHideCelestialBodies()) {
          callback.cancel();
       }
@@ -135,9 +135,5 @@ public class SkyRendererMixin {
       RenderTargetUtils.setMainRenderTarget(previousTarget);
       MaskShaderRenderer.setParameters(4.0F, 1.5F, 1.0F, 2.0F);
       MaskShaderRenderer.renderEffect("bloom_mask");
-   }
-
-   @Shadow
-   private void renderStars(float brightness, PoseStack poses) {
    }
 }

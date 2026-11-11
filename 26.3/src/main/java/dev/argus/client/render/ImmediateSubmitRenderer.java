@@ -20,7 +20,13 @@ public final class ImmediateSubmitRenderer implements ClientAccess {
    public static void flush(SubmitNodeStorage storage) {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
       FeatureRenderDispatcher dispatcher = minecraft.gameRenderer.featureRenderDispatcher();
-      PreparedFrame frame = dispatcher.prepareFrame(storage);
+      PreparedFrame frame;
+      try {
+         frame = dispatcher.prepareFrame(storage);
+      } catch (IllegalStateException frameInUse) {
+         // The main feature frame is already being prepared this tick; its own pass covers the geometry.
+         return;
+      }
       RenderTarget target = minecraft.gameRenderer.mainRenderTarget();
       CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
       try (RenderPass pass = target.hasDepth()

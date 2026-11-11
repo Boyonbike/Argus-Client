@@ -4,6 +4,7 @@ import dev.argus.client.managers.RenderTargetRegistry;
 
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.textures.FilterMode;
@@ -145,10 +146,18 @@ public final class RenderUtils implements ClientAccess {
    public static void blitToMain(RenderTarget target, RenderPipeline pipeline, FilterMode filter) {
       GpuTextureView outputTexture = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView();
 
+      CompiledRenderPipeline compiledPipeline = CompiledPipelines.get(pipeline);
+      if (compiledPipeline == null) {
+         return;
+      }
+      com.mojang.blaze3d.pipeline.RenderTarget mainTarget =
+         ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget();
       try (RenderPass renderPass = RenderSystem.getDevice()
             .createCommandEncoder()
-            .createRenderPass(() -> "Blit render target", outputTexture, java.util.Optional.empty())) {
-         renderPass.setPipeline(CompiledPipelines.get(pipeline));
+            .createRenderPass(
+               () -> "Blit render target", outputTexture, java.util.Optional.empty(),
+               mainTarget.getDepthTextureView(), java.util.OptionalDouble.empty())) {
+         renderPass.setPipeline(compiledPipeline);
          RenderSystem.bindDefaultUniforms(renderPass);
          renderPass.setUniform("InSampler", target.getColorTextureView(), RenderSystem.getSamplerCache().getClampToEdge(filter));
          renderPass.draw(3, 1, 0, 0);

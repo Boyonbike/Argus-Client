@@ -72,12 +72,12 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin implements ClientAccess, LevelRendererFramebufferAccess {
-   private static final ViewClipModule viewClip = ClientContext.getModule(ViewClipModule.class);
-   private static final AmbienceModule ambienceModule = ClientContext.getModule(AmbienceModule.class);
-   private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
-   private static final FreecamModule freecam = ClientContext.getModule(FreecamModule.class);
-   private static final SkyboxModule skyboxModule = ClientContext.getModule(SkyboxModule.class);
-   private static final ChamsModule chamsModule = ClientContext.getModule(ChamsModule.class);
+   private static ViewClipModule viewClip() { return ClientContext.getModule(ViewClipModule.class); }
+   private static AmbienceModule ambienceModule() { return ClientContext.getModule(AmbienceModule.class); }
+   private static NoRenderModule noRenderModule() { return ClientContext.getModule(NoRenderModule.class); }
+   private static FreecamModule freecam() { return ClientContext.getModule(FreecamModule.class); }
+   private static SkyboxModule skyboxModule() { return ClientContext.getModule(SkyboxModule.class); }
+   private static ChamsModule chamsModule() { return ClientContext.getModule(ChamsModule.class); }
    @Unique
    private PoseStack worldPoseStack;
    @Unique
@@ -156,7 +156,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       CallbackInfo callback,
       @Local FrameGraphBuilder frameGraph
    ) {
-      if (skyboxModule.isToggled() && skyboxModule.shaderSetting.getValue()) {
+      if (skyboxModule().isToggled() && skyboxModule().shaderSetting.getValue()) {
          FramePass skyFramePass = frameGraph.addPass("sky_argusclient");
          this.targets.main = skyFramePass.readsAndWrites(this.targets.main);
          skyFramePass.executes(() -> {
@@ -211,8 +211,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       )
    )
    private static void applySkyboxBackgroundColor(Args arguments) {
-      if (skyboxModule.isToggled() && skyboxModule.isCurrentDimensionEnabled()) {
-         int color = skyboxModule.backgroundSetting.getValue().hashCode();
+      if (skyboxModule().isToggled() && skyboxModule().isCurrentDimensionEnabled()) {
+         int color = skyboxModule().backgroundSetting.getValue().hashCode();
          arguments.set(1, new Vector4f(ARGB.red(color) / 255.0F, ARGB.green(color) / 255.0F, ARGB.blue(color) / 255.0F, 0.0F));
       }
    }
@@ -235,8 +235,8 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       SubmitNodeCollector collector
    ) {
       Entity entity = EntityRenderStateAccess.getEntity(renderState);
-      return (!noRenderModule.entitiesSetting.getValue() || entity == null || !noRenderModule.shouldHideEntity(entity))
-         && !chamsModule.shouldRenderThroughWalls(entity);
+      return (!noRenderModule().entitiesSetting.getValue() || entity == null || !noRenderModule().shouldHideEntity(entity))
+         && !chamsModule().shouldRenderThroughWalls(entity);
    }
 
    @Inject(method = "resize", at = @At("HEAD"))
@@ -255,7 +255,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       boolean renderFlag3,
       CallbackInfo callback
    ) {
-      if (freecam.shouldHideHands() && IrisShaderBridge.isHandRendererAvailable()) {
+      if (freecam().shouldHideHands() && IrisShaderBridge.isHandRendererAvailable()) {
          this.savedHideGui = new AtomicBoolean();
          this.savedHideGui.setPlain(ClientAccess.argusclientMinecraft.gui.hud.isHidden);
          ClientAccess.argusclientMinecraft.gui.hud.isHidden = true;
@@ -273,7 +273,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       boolean renderFlag3,
       CallbackInfo callback
    ) {
-      if (freecam.shouldHideHands() && this.savedHideGui != null) {
+      if (freecam().shouldHideHands() && this.savedHideGui != null) {
          ClientAccess.argusclientMinecraft.gui.hud.isHidden = this.savedHideGui.getPlain();
          this.savedHideGui = null;
       }

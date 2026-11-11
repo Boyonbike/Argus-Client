@@ -29,31 +29,36 @@ import net.minecraft.resources.Identifier;
  */
 public final class EffectPipeline {
    private static int sequence;
+   private CompiledRenderPipeline compiled;
+   private java.util.concurrent.CompletableFuture<CompiledRenderPipeline> compilation;
+   private boolean failed;
+   private static final java.util.List<RenderPipeline> REGISTERED = new java.util.concurrent.CopyOnWriteArrayList<>();
    private static final Pattern SAMPLER = Pattern.compile("uniform\\s+sampler2D\\s+([A-Za-z_]\\w*)\\s*;");
 
    private final EffectShaderSource source;
    private final RenderPipeline pipeline;
    private final EffectUniforms uniforms;
-   private CompiledRenderPipeline compiled;
+   private final boolean vanilla;
    private GpuBuffer quad;
 
-   private EffectPipeline(EffectShaderSource source, RenderPipeline pipeline, EffectUniforms uniforms) {
+   private EffectPipeline(EffectShaderSource source, RenderPipeline pipeline, EffectUniforms uniforms, boolean vanilla) {
       this.source = source;
       this.pipeline = pipeline;
       this.uniforms = uniforms;
+      this.vanilla = vanilla;
    }
 
    public static EffectPipeline fromResources(String vertexResource, String fragmentResource) {
       EffectShaderSource source = EffectShaderSource.fromResources(vertexResource, fragmentResource);
-      return create(source, vertexResource, fragmentResource);
+      return create(source, vertexResource, fragmentResource, true);
    }
 
    public static EffectPipeline fromSources(String name, String vertexSource, String fragmentSource) {
       EffectShaderSource source = EffectShaderSource.fromSources(name, vertexSource, fragmentSource);
-      return create(source, name + ".vsh", name + ".fsh");
+      return create(source, name + ".vsh", name + ".fsh", false);
    }
 
-   private static EffectPipeline create(EffectShaderSource source, String vertexResource, String fragmentResource) {
+   private static EffectPipeline create(EffectShaderSource source, String vertexResource, String fragmentResource, boolean vanilla) {
       BindGroupLayout.Builder layout = BindGroupLayout.builder()
          .withUniform(EffectUniforms.BLOCK_NAME, UniformType.UNIFORM_BUFFER);
       Matcher samplerMatcher = SAMPLER.matcher(source.fragmentSource());
@@ -67,48 +72,113 @@ public final class EffectPipeline {
 
       RenderPipeline pipeline = RenderPipeline.builder()
          .withLocation(Identifier.fromNamespaceAndPath("argusclient", "pipeline/effect_" + (sequence++)))
-         .withVertexShader(EffectShaderSource.shaderId(vertexResource))
-         .withFragmentShader(EffectShaderSource.shaderId(fragmentResource))
+         .withVertexShader(vanilla
+            ? EffectShaderSource.pipelineShaderId(vertexResource)
+            : EffectShaderSource.shaderId(vertexResource))
+         .withFragmentShader(vanilla
+            ? EffectShaderSource.pipelineShaderId(fragmentResource)
+            : EffectShaderSource.shaderId(fragmentResource))
          .withBindGroupLayout(layout.build())
          .withVertexBinding(0, DefaultVertexFormat.POSITION)
          .withPrimitiveTopology(PrimitiveTopology.QUADS)
          .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
          .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
          .build();
-      return new EffectPipeline(source, pipeline, EffectUniforms.fromSource(source.fragmentSource()));
+      if (vanilla) {
+         REGISTERED.add(pipeline);
+      }
+      return new EffectPipeline(source, pipeline, EffectUniforms.fromSource(source.fragmentSource()), vanilla);
    }
 
    public EffectUniforms uniforms() {
       return this.uniforms;
    }
 
+   public static java.util.List<RenderPipeline> registered() {
+      return java.util.List.copyOf(REGISTERED);
+   }
+
    public void draw(CommandEncoder encoder, EffectTarget output) {
+      if (this.compiled() == null) {
+         return;
+      }
       try (RenderPass pass = encoder.createRenderPass(
-            () -> "argus-effect", output.colorView(), Optional.empty())) {
+            () -> "argus-effect", output.colorView(), Optional.empty(),
+            output.depthView(), java.util.OptionalDouble.empty())) {
          this.draw(pass, encoder);
       }
    }
 
    public void draw(CommandEncoder encoder, com.mojang.blaze3d.pipeline.RenderTarget output) {
-      try (RenderPass pass = encoder.createRenderPass(
-            () -> "argus-effect", output.getColorTextureView(), Optional.empty())) {
+      if (this.compiled() == null) {
+         return;
+      }
+      try (RenderPass pass = output.hasDepth()
+            ? encoder.createRenderPass(
+               () -> "argus-effect", output.getColorTextureView(), Optional.empty(),
+               output.getDepthTextureView(), java.util.OptionalDouble.empty())
+            : encoder.createRenderPass(
+               () -> "argus-effect", output.getColorTextureView(), Optional.empty())) {
          this.draw(pass, encoder);
       }
    }
 
    public void draw(RenderPass pass, CommandEncoder encoder) {
-      pass.setPipeline(this.compiled());
+      CompiledRenderPipeline pipeline = this.compiled();
+      if (pipeline == null) {
+         return;
+      }
+      pass.setPipeline(pipeline);
       pass.setVertexBuffer(0, this.quad().slice());
       this.uniforms.bind(pass, encoder);
+      if (pipeline instanceof com.mojang.renderpearl.frontend.FrontendRenderPipeline frontend) {
+         com.mojang.renderpearl.api.textures.GpuTextureView fallbackView = this.uniforms.anyTexture();
+         if (fallbackView == null) {
+            fallbackView = net.minecraft.client.Minecraft.getInstance()
+               .gameRenderer.mainRenderTarget().getColorTextureView();
+         }
+         com.mojang.renderpearl.api.textures.GpuSampler fallbackSampler =
+            RenderSystem.getSamplerCache().getClampToEdge(
+               com.mojang.renderpearl.api.textures.FilterMode.LINEAR);
+         for (var uniform : frontend.uniforms()) {
+            if (uniform.type() == com.mojang.renderpearl.api.pipeline.UniformType.COMBINED_IMAGE_SAMPLER
+               && !this.uniforms.hasTexture(uniform.name())) {
+               pass.setUniform(uniform.name(), fallbackView, fallbackSampler);
+            }
+         }
+      }
       pass.draw(4, 1, 0, 0);
    }
 
    private CompiledRenderPipeline compiled() {
-      if (this.compiled == null) {
-         this.compiled = RenderSystem.getDevice()
-            .compilePipeline(this.pipeline, this.source, Runnable::run)
-            .join()
-            .finishCompile();
+      if (this.vanilla) {
+         return RenderSystem.getCompiledPipelineNullable(this.pipeline);
+      }
+      if (this.compiled != null || this.failed) {
+         return this.compiled;
+      }
+      if (this.compilation == null) {
+         this.compilation = RenderSystem.getDevice()
+            .compilePipeline(this.pipeline, this.source, net.minecraft.util.Util.backgroundExecutor())
+            .thenApplyAsync(
+               pending -> pending.finishCompile(),
+               command -> net.minecraft.client.Minecraft.getInstance().execute(command))
+            .thenApply(compiled -> compiled);
+         this.compilation.whenComplete((result, failure) -> {
+            if (failure != null) {
+               this.failed = true;
+               dev.argus.client.ArgusClient.LOGGER.error(
+                  "Argus effect pipeline {} failed to compile; the effect will be skipped",
+                  this.pipeline.getLocation(), failure);
+            }
+         });
+      }
+      if (this.compilation.isDone()) {
+         try {
+            this.compiled = this.compilation.getNow(null);
+         } catch (RuntimeException failure) {
+            this.failed = true;
+         }
       }
       return this.compiled;
    }

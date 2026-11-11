@@ -58,14 +58,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
-   private static ZoomModule zoom = ClientContext.getModule(ZoomModule.class);
-   private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
-   private static ShaderModule shader = ClientContext.getModule(ShaderModule.class);
-   private static FreecamModule freecam = ClientContext.getModule(FreecamModule.class);
-   private static FreeLookModule freelook = ClientContext.getModule(FreeLookModule.class);
-   private static ViewModelModule viewmodel = ClientContext.getModule(ViewModelModule.class);
-   private static NoBobModule noBob = ClientContext.getModule(NoBobModule.class);
-   private static HUDModule hud = ClientContext.getModule(HUDModule.class);
+   private static ZoomModule zoom() { return ClientContext.getModule(ZoomModule.class); }
+   private static NoRenderModule noRenderModule() { return ClientContext.getModule(NoRenderModule.class); }
+   private static ShaderModule shader() { return ClientContext.getModule(ShaderModule.class); }
+   private static FreecamModule freecam() { return ClientContext.getModule(FreecamModule.class); }
+   private static FreeLookModule freelook() { return ClientContext.getModule(FreeLookModule.class); }
+   private static ViewModelModule viewmodel() { return ClientContext.getModule(ViewModelModule.class); }
+   private static NoBobModule noBob() { return ClientContext.getModule(NoBobModule.class); }
+   private static HUDModule hud() { return ClientContext.getModule(HUDModule.class); }
    @Final
    @Shadow
    private Minecraft minecraft;
@@ -95,7 +95,7 @@ public abstract class GameRendererMixin {
 
    @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
    private void suppressHurtCamera(CameraRenderState cameraState, PoseStack poses, CallbackInfo callback) {
-      if (noRenderModule.isToggled() && noRenderModule.hurtCamSetting.getValue()) {
+      if (noRenderModule().isToggled() && noRenderModule().hurtCamSetting.getValue()) {
          callback.cancel();
       }
    }
@@ -113,11 +113,11 @@ public abstract class GameRendererMixin {
 
    @WrapWithCondition(method = "bobView", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V"))
    private boolean applyNoBobTranslation(PoseStack poseStack, float x, float y, float z) {
-      if (!noBob.isToggled()) {
+      if (!noBob().isToggled()) {
          return true;
       }
 
-      float multiplier = noBob.multiplierSetting.getValue();
+      float multiplier = noBob().multiplierSetting.getValue();
       if (multiplier == 0.0F) {
          return true;
       }
@@ -133,8 +133,8 @@ public abstract class GameRendererMixin {
       com.mojang.renderpearl.api.textures.GpuTextureView texture,
       CallbackInfo callback
    ) {
-      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, noRenderModule.getHandOpacity());
-      if (freecam.shouldHideHands() || shader.isToggled() && shader.handsSetting.getValue()) {
+      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, noRenderModule().getHandOpacity());
+      if (freecam().shouldHideHands() || shader().isToggled() && shader().handsSetting.getValue()) {
          callback.cancel();
       }
    }
@@ -189,7 +189,7 @@ public abstract class GameRendererMixin {
    @Inject(method = "render", at = @At("HEAD"))
    private void updateFrameTimingAndChatHeight(CallbackInfo callback) {
       dev.argus.client.render.MeshRenderer.beginFrame();
-      hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen ? 12.0F : 0.0F);
+      hud().updateChatInputHeight(ClientAccess.argusclientMinecraft.gui.screen() instanceof ChatScreen ? 12.0F : 0.0F);
       ClientContext.frameTiming.recordFrame();
    }
 

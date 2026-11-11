@@ -24,22 +24,24 @@ public final class EffectShaderSource implements ShaderSource {
    }
 
    public static EffectShaderSource fromResources(String vertexResource, String fragmentResource) {
-      String vertex = toStd140(readResource(vertexResource));
-      String fragment = toStd140(readResource(fragmentResource));
-      String utility = readResource("util/util.frag");
-      if (fragment.contains("u_Overlay")) {
-         utility = utility + "\n" + readResource("util/blur_util.frag");
-      }
-      fragment = insertBeforeMain(fragment, utility);
+      String vertexName = normalize(vertexResource);
+      String fragmentName = normalize(fragmentResource);
+      String vertex = toStd140(readResource(vertexName));
+      String fragment = toStd140(readResource(fragmentName));
       Map<Identifier, String> map = new HashMap<>();
-      map.put(shaderId(vertexResource), vertex);
-      map.put(shaderId(fragmentResource), fragment);
+      map.put(pipelineShaderId(vertexName), vertex);
+      map.put(pipelineShaderId(fragmentName), fragment);
       return new EffectShaderSource(map, vertex, fragment);
    }
 
    public static EffectShaderSource fromSources(String name, String vertex, String fragment) {
       vertex = toStd140(vertex);
       fragment = toStd140(fragment);
+      String utility = readResource("util/util.frag");
+      if (fragment.contains("u_Overlay")) {
+         utility = utility + "\n" + readResource("util/blur_util.frag");
+      }
+      fragment = insertBeforeMain(fragment, utility);
       Map<Identifier, String> map = new HashMap<>();
       map.put(shaderId(name + ".vsh"), vertex);
       map.put(shaderId(name + ".fsh"), fragment);
@@ -92,6 +94,25 @@ public final class EffectShaderSource implements ShaderSource {
 
    public static Identifier shaderId(String resource) {
       return Identifier.fromNamespaceAndPath("argusclient", resource);
+   }
+
+   /** Pipeline shader ids have no file extension; RenderPearl adds .vsh/.fsh. */
+   public static Identifier pipelineShaderId(String resource) {
+      String name = normalize(resource);
+      if (name.endsWith(".vsh") || name.endsWith(".fsh")) {
+         name = name.substring(0, name.length() - 4);
+      }
+      return Identifier.fromNamespaceAndPath("argusclient", name);
+   }
+
+   private static String normalize(String resource) {
+      if (resource.endsWith(".vert")) {
+         return resource.substring(0, resource.length() - 5) + ".vsh";
+      }
+      if (resource.endsWith(".frag")) {
+         return resource.substring(0, resource.length() - 5) + ".fsh";
+      }
+      return resource;
    }
 
    public String vertexSource() {

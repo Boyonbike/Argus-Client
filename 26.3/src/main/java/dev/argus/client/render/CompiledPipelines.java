@@ -5,25 +5,30 @@ import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.Minecraft;
 
-/**
- * Compiles and caches Argus's custom RenderPipelines. Minecraft 26.3 made the
- * device pipeline compiler asynchronous, so each pipeline is compiled once and
- * reused through its {@link CompiledRenderPipeline}.
- */
+/** Compiles and caches Argus's custom RenderPipelines off the render thread. */
 public final class CompiledPipelines {
-   private static final Map<RenderPipeline, CompiledRenderPipeline> CACHE = new HashMap<>();
+   private static final Map<RenderPipeline, CompletableFuture<CompiledRenderPipeline>> CACHE = new HashMap<>();
 
    public static CompiledRenderPipeline get(RenderPipeline pipeline) {
-      return CACHE.computeIfAbsent(pipeline, key -> {
-         try (ResourceShaderSource source = new ResourceShaderSource(Minecraft.getInstance().getResourceManager())) {
-            return RenderSystem.getDevice()
-               .compilePipeline(key, source, Runnable::run)
-               .join()
-               .finishCompile();
-         }
+      CompletableFuture<CompiledRenderPipeline> future = CACHE.computeIfAbsent(pipeline, key -> {
+         ResourceShaderSource source = new ResourceShaderSource(Minecraft.getInstance().getResourceManager());
+         return RenderSystem.getDevice()
+            .compilePipeline(key, source, net.minecraft.util.Util.backgroundExecutor())
+            .thenApplyAsync(
+               pending -> pending.finishCompile(),
+               command -> Minecraft.getInstance().execute(command));
       });
+      if (!future.isDone()) {
+         return null;
+      }
+      try {
+         return future.getNow(null);
+      } catch (RuntimeException failure) {
+         return null;
+      }
    }
 
    private CompiledPipelines() {

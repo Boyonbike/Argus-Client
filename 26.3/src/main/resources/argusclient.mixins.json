@@ -232,7 +232,8 @@
     "PlayerModuleBindings",
     "LevelExtractorMixin",
     "GuiAccessor",
-    "GuiExtractMixin"
+    "GuiExtractMixin",
+    "RenderPipelinesMixin"
   ],
   "injectors": {
     "defaultRequire": 0,

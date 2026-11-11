@@ -157,8 +157,8 @@ public final class ClientInitializer {
             .getMetadata()
             .getVersion()
             .getFriendlyString();
-         if (!minecraft.startsWith("26.2")) {
-            throw new IllegalStateException("Argus Client requires Minecraft 26.2; found " + minecraft);
+         if (!minecraft.startsWith("26.3")) {
+            throw new IllegalStateException("Argus Client requires Minecraft 26.3; found " + minecraft);
          }
       } else {
          throw new IllegalStateException("Argus Client requires the Fabric client environment and Java 25 or newer.");

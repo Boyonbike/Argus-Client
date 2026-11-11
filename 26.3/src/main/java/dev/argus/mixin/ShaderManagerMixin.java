@@ -21,7 +21,7 @@ public class ShaderManagerMixin {
          target = "Lnet/minecraft/server/packs/resources/ResourceManager;listResources(Ljava/lang/String;Lnet/minecraft/server/packs/resources/ResourceManager$Selector;)Ljava/util/Map;"
       )
    )
-   private Map includeBuiltinShaderResources(Map resources) {
+   private static Map includeBuiltinShaderResources(Map resources) {
       if (resources.keySet().stream().noneMatch(resourceId -> resourceId.toString().contains("argusclient_lightmap"))) {
          addBuiltinShaderFiles(resources, "shaders/core/argusclient_lightmap");
       }

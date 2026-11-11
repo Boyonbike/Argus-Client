@@ -57,8 +57,8 @@ public abstract class ItemStackMixin {
 
    @Inject(method = "addToTooltip", at = @At("HEAD"), cancellable = true)
    private void argusclient$hideContentsText(
-      DataComponentType<?> type, Item.TooltipContext context, TooltipDisplay display,
-      Consumer<Component> lines, TooltipFlag flag, CallbackInfo callback
+      DataComponentType<?> type, net.minecraft.world.item.component.TooltipProvider.Getter getter,
+      Item.TooltipContext context, TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag, CallbackInfo callback
    ) {
       if (type != DataComponents.CONTAINER) return;
       TooltipsModule tooltips = ClientContext.getModule(TooltipsModule.class);

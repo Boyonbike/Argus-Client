@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class EffectShaderCoverageTest {
    private static final List<String> SHADERS = List.of(
-      "base.vert", "bloom.frag", "gradient.frag", "rainbow.frag", "solid.frag",
-      "custom.frag", "outline.frag", "blur_mask.frag",
-      "multi/bloom_mask.frag", "multi/blur_mask.frag", "multi/coverage.frag",
-      "multi/distance.frag", "multi/dof.frag", "multi/glowy.frag",
-      "sky/base.vert", "sky/sky.frag", "shulker_icon.vert", "shulker_icon.frag",
+      "base.vsh", "bloom.fsh", "gradient.fsh", "rainbow.fsh", "solid.fsh",
+      "custom.fsh", "outline.fsh", "blur_mask.fsh",
+      "multi/bloom_mask.fsh", "multi/blur_mask.fsh", "multi/coverage.fsh",
+      "multi/distance.fsh", "multi/dof.fsh", "multi/glowy.fsh",
+      "sky/base.vsh", "sky/sky.fsh", "shulker_icon.vert", "shulker_icon.frag",
       "custom/example.frag", "util/util.frag", "util/blur_util.frag");
 
    @Test

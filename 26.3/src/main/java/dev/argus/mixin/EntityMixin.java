@@ -72,7 +72,9 @@ public abstract class EntityMixin implements EntityMotionAccess {
    public abstract boolean hasPose(Pose var1);
 
    @Shadow
-   public abstract Vec3 calculateViewVector(float var1, float var2);
+   public static Vec3 calculateViewVector(float var1, float var2) {
+      throw new AbstractMethodError();
+   }
 
    @ModifyReceiver(
       method = "getBlockSpeedFactor",
@@ -89,7 +91,7 @@ public abstract class EntityMixin implements EntityMotionAccess {
 
    @Inject(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
    private void cancelEntityPush(Entity otherEntity, CallbackInfo callback) {
-      if (this.equals(Minecraft.getInstance().player) && velocityModule.isToggled() && velocityModule.pushSetting.getValue()) {
+      if ((Object)this == Minecraft.getInstance().player && velocityModule.isToggled() && velocityModule.pushSetting.getValue()) {
          callback.cancel();
       }
    }
@@ -118,7 +120,7 @@ public abstract class EntityMixin implements EntityMotionAccess {
       }
 
       Vector2f cameraRotation = freelook.getCameraRotation();
-      return this.calculateViewVector(cameraRotation.y(), cameraRotation.x());
+      return calculateViewVector(cameraRotation.y(), cameraRotation.x());
    }
 
    @Inject(method = "turn", at = @At("HEAD"), cancellable = true)
