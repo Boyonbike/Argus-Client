@@ -16,6 +16,8 @@ import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
 import dev.argus.client.modules.render.targets.BlockTargetIndex;
 import dev.argus.client.modules.render.targets.CellIndex;
+import dev.argus.client.modules.render.targets.SpecificRules;
+import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetMatcher;
 import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ColorUtils;
@@ -94,7 +96,7 @@ public class TracersModule extends Module {
       super("Tracers", "Draws lines from your crosshair to players, mobs, items and chosen blocks.", ModuleCategory.RENDER);
       this.lineRenderer = new LineTracerRenderer(this);
       this.markerRenderer = new MarkerTracerRenderer(this);
-      BlockTargetIndex.get().register(this, this.targets.blocks);
+      BlockTargetIndex.get().register(this, this.targets);
    }
 
    public static void bindReferencedModules(ModuleRegistry moduleRegistry) {
@@ -144,7 +146,7 @@ public class TracersModule extends Module {
 
    private void collectBlocks(Vec3 camera, double minimumSquared) {
       TargetSettings.Blocks card = this.targets.blocks;
-      if (!card.active()) {
+      if (!card.active() && !this.targets.specific.hasBlocks()) {
          this.blockTargets.clear();
          return;
       }
@@ -170,8 +172,16 @@ public class TracersModule extends Module {
    private void rebuildBlockTargets(TargetSettings.Blocks card, Vec3 camera, double minimumSquared) {
       this.blockTargets.clear();
       int ignored = card.ignoredStructures();
+      boolean cardOn = card.active();
+      SpecificTargets specific = this.targets.specific;
       CellIndex<BlockTargetIndex.Entry> index = BlockTargetIndex.get().index();
-      double range = card.range.isAtMaximum() ? -1.0 : card.range.getValue();
+      // Cells are skipped beyond the furthest range of the card and of every specific block target.
+      double range = cardOn ? (card.range.isAtMaximum() ? -1.0 : card.range.getValue()) : 0.0;
+      for (SpecificRules.Rule rule : specific.rules().all()) {
+         if (range >= 0 && rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
+            range = rule.unlimited() ? -1.0 : Math.max(range, rule.range);
+         }
+      }
       LongArrayList positions = this.candidatePositions;
       DoubleArrayList distances = this.candidateDistances;
       IntArrayList colors = this.candidateColors;
@@ -196,7 +206,9 @@ public class TracersModule extends Module {
          }
 
          cell.forEach((packed, entry) -> {
-            if (!TargetMatcher.acceptsBlock(card, ignored, packed, entry)) {
+            // A specific target overrides the card for its block.
+            SpecificRules.Rule rule = specific.forBlock(entry.state().getBlock());
+            if (rule == null && (!cardOn || !TargetMatcher.acceptsBlock(card, ignored, packed, entry))) {
                return;
             }
 
@@ -204,13 +216,13 @@ public class TracersModule extends Module {
             double dy = CellIndex.unpackY(packed) + 0.5 - camera.y;
             double dz = CellIndex.unpackZ(packed) + 0.5 - camera.z;
             double distanceSquared = dx * dx + dy * dy + dz * dz;
-            if (distanceSquared < minimumSquared || !card.inRange(distanceSquared)) {
+            if (distanceSquared < minimumSquared || !(rule == null ? card.inRange(distanceSquared) : rule.inRange(distanceSquared))) {
                return;
             }
 
             positions.add(packed);
             distances.add(distanceSquared);
-            colors.add(TargetMatcher.blockColor(card, scheme, entry));
+            colors.add(rule == null ? TargetMatcher.blockColor(card, scheme, entry) : TargetMatcher.ruleColor(rule, scheme));
          });
       }
 

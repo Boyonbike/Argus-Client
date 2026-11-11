@@ -176,13 +176,22 @@ abstract class InlineCard {
     static final class Items extends InlineCard {
         /** Draws a 16-unit square at the row's left. */
         interface Icon { void draw(GuiGraphics g, float x, float y); }
-        /** A button; {@code done} is the message shown after it runs, or null. */
-        record Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run) {
+        /** Runs with the button's bounds and the card's left and right edges, e.g. to open a colour picker beside it. */
+        interface Placed { void run(float x, float y, float w, float h, float left, float right); }
+        /**
+         * A button; {@code done} is the message shown after it runs, or null. A {@code swatch} draws the button as a
+         * colour square; a {@code placed} action gets the button's position when clicked.
+         */
+        record Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run, IntSupplier swatch, Placed placed) {
+            Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run) { this(label, tip, accent, confirm, done, run, null, null); }
             static Action of(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, false, done, run); }
             static Action main(String label, String tip, String done, Runnable run) { return new Action(label, tip, true, false, done, run); }
             static Action on(String label, String tip, boolean lit, Runnable run) { return new Action(label, tip, lit, false, null, run); }
             static Action danger(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, true, done, run); }
+            static Action colour(String label, String tip, IntSupplier swatch, Placed placed) { return new Action(label, tip, false, false, null, () -> {}, swatch, placed); }
         }
+        /** The tag at a row's right: given the entry and whether it's hovered. */
+        interface Tagger { String tag(Entry entry, boolean hover); }
         record Entry(String label, String detail, boolean active, Icon icon, Runnable select, String selectDone, List<Action> actions) {}
 
         private final String title, icon, empty;
@@ -196,11 +205,15 @@ abstract class InlineCard {
         private Consumer<String> submit;
         private String armed = "";
         private long armedAt;
+        private float cardX, cardW;
+        private Tagger tagger = (e, hover) -> e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
 
         Items(UiScreen host, String title, String icon, Supplier<String> subtitle, String empty, Supplier<List<Entry>> entries) {
             super(host); this.title = title; this.icon = icon; this.subtitle = subtitle; this.empty = empty; this.entries = entries;
         }
 
+        /** Replaces the "In use" / "Click to use" tags at the rows' right. */
+        Items tags(Tagger tagger) { this.tagger = tagger; return this; }
         /** A line of help shown at the left of the top row, when there is no field. */
         Items hint(String text) { hint = text; return this; }
         /** Buttons at the right of the top row. */
@@ -244,6 +257,16 @@ abstract class InlineCard {
 
         /** Draws one button right-to-left from {@code right}; returns the new right edge. */
         private float actionButton(GuiGraphics g, int mx, int my, UiTheme t, String key, float right, float cy, Action a) {
+            if (a.swatch() != null) {
+                float sw = 20, sx = right - sw, sy = cy - 8;
+                boolean hover = hovering(mx, my, sx, sy, sw, 16);
+                UiDraw.rounded(g, sx, sy, sw, 16, 5, a.swatch().getAsInt() | 0xFF000000);
+                UiDraw.outline(g, sx, sy, sw, 16, 5, hover ? 1.2f : .6f, hover ? t.text() : UiDraw.alpha(t.overlay(), .8f));
+                float left = cardX, cardRight = cardX + cardW;
+                hit(sx, sy, sw, 16, () -> { armed = ""; if (a.placed() != null) a.placed().run(sx, sy, sw, 16, left, cardRight); });
+                if (hover && a.tip() != null) host.tooltip(title() + "." + key, a.label(), a.tip());
+                return right - sw - 4;
+            }
             boolean waiting = a.confirm() && isArmed(key);
             String label = waiting ? "Confirm" : a.label();
             float bw = Math.max(a.label().length() <= 2 ? 20 : 0, buttonWidth(a.confirm() ? "Confirm" : label) + 4);
@@ -256,6 +279,7 @@ abstract class InlineCard {
         }
 
         @Override void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
+            cardX = x; cardW = w;
             float top = 0;
             if (hasTop()) {
                 float cy = y + 12, right = x + w;
@@ -287,7 +311,7 @@ abstract class InlineCard {
                 float tx = x + 10;
                 if (e.icon() != null) { e.icon().draw(g, x + 6, ry + (rh - 16) / 2); tx = x + 30; }
                 int colour = e.active() ? t.accent() : t.text();
-                String tag = e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
+                String tag = tagger.tag(e, hover);
                 float tagW = tag.isEmpty() ? 0 : UiDraw.width(tag, UiDraw.SMALL) + 10;
                 if (e.detail().isEmpty()) UiDraw.text(g, UiDraw.fit(e.label(), x + rowW - tx - tagW - 6), tx, cy, colour);
                 else {

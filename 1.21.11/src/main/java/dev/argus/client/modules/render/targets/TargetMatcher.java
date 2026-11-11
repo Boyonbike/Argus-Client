@@ -50,6 +50,12 @@ public final class TargetMatcher implements ClientAccess {
       }
 
       double distanceSquared = entity.position().distanceToSqr(camera);
+      SpecificRules.Rule rule = targets.specific.forEntity(entity);
+      if (rule != null) {
+         // A specific target overrides the cards: shown inside its own range, hidden outside it.
+         return rule.inRange(distanceSquared) ? naturalKind(entity) : null;
+      }
+
       if (entity instanceof Player player) {
          TargetSettings.Players card = targets.players;
          return card.active() && card.inRange(distanceSquared) && acceptsPlayer(card, player) ? TargetSettings.Kind.PLAYERS : null;
@@ -62,6 +68,15 @@ public final class TargetMatcher implements ClientAccess {
 
       TargetSettings.Mobs card = targets.mobs;
       return card.active() && card.inRange(distanceSquared) && acceptsMob(card, entity) ? TargetSettings.Kind.MOBS : null;
+   }
+
+   /** The card an entity would fall under by what it is. */
+   private static TargetSettings.Kind naturalKind(Entity entity) {
+      if (entity instanceof Player) {
+         return TargetSettings.Kind.PLAYERS;
+      }
+
+      return entity instanceof ItemEntity ? TargetSettings.Kind.ITEMS : TargetSettings.Kind.MOBS;
    }
 
    public static boolean acceptsPlayer(TargetSettings.Players card, Player player) {
@@ -131,6 +146,11 @@ public final class TargetMatcher implements ClientAccess {
 
    /** The colour for an accepted entity (before any module-specific alpha). */
    public static Color entityColor(TargetSettings targets, TargetSettings.Kind kind, Entity entity, Vec3 from) {
+      SpecificRules.Rule rule = targets.specific.forEntity(entity);
+      if (rule != null) {
+         return new Color(rule.color, true);
+      }
+
       switch (kind) {
          case PLAYERS: {
             TargetSettings.Players card = targets.players;
@@ -200,6 +220,12 @@ public final class TargetMatcher implements ClientAccess {
          color = autoColor(entry.state());
       }
 
+      return scheme == null ? color.getRGB() : scheme.transform(color).getRGB();
+   }
+
+   /** A specific block rule's colour, after the Colors module's scheme. */
+   public static int ruleColor(SpecificRules.Rule rule, ColorsSchemeChoice scheme) {
+      Color color = new Color(rule.color, true);
       return scheme == null ? color.getRGB() : scheme.transform(color).getRGB();
    }
 

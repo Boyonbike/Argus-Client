@@ -25,6 +25,8 @@ public final class TargetLinks implements ClientAccess {
    private final Module tracers;
    private final TargetSettings tracersTargets;
    private final LinkSync[] syncs = new LinkSync[TargetSettings.Kind.values().length];
+   /** Last agreed values of mirrored specific targets, by rule key. */
+   private final java.util.Map<String, String> agreedRules = new java.util.HashMap<>();
 
    private TargetLinks(Module esp, TargetSettings espTargets, Module tracers, TargetSettings tracersTargets) {
       this.esp = esp;
@@ -49,6 +51,11 @@ public final class TargetLinks implements ClientAccess {
 
    public String otherName(boolean fromEsp) {
       return (fromEsp ? this.tracers : this.esp).getName();
+   }
+
+   /** This page's card of the given kind. */
+   public TargetSettings.Group group(boolean fromEsp, TargetSettings.Kind kind) {
+      return this.mine(fromEsp, kind);
    }
 
    private TargetSettings.Group mine(boolean fromEsp, TargetSettings.Kind kind) {
@@ -110,6 +117,111 @@ public final class TargetLinks implements ClientAccess {
    private void onTick(MinecraftTickEvent event) {
       for (TargetSettings.Kind kind : TargetSettings.Kind.values()) {
          this.syncNow(kind);
+      }
+
+      this.syncRules();
+   }
+
+   // ---- specific targets ----------------------------------------------------------------------------------------------
+
+   public SpecificTargets specific(boolean fromEsp) {
+      return (fromEsp ? this.espTargets : this.tracersTargets).specific;
+   }
+
+   private SpecificTargets otherSpecific(boolean fromEsp) {
+      return this.specific(!fromEsp);
+   }
+
+   /** Whether this specific target is on in the other module (and the other module itself is on). */
+   public boolean onInOther(boolean fromEsp, SpecificRules.Rule rule) {
+      SpecificRules.Rule other = this.otherSpecific(fromEsp).rules().find(rule.type, rule.id);
+      return (fromEsp ? this.tracers : this.esp).isToggled() && other != null && other.enabled;
+   }
+
+   /**
+    * Switches the specific target in the other module. Switching it on adds it there (copying this page's colour and
+    * range once, unless mirrored) and turns the other module on if it was off.
+    */
+   public void toggleInOther(boolean fromEsp, SpecificRules.Rule rule) {
+      SpecificTargets theirs = this.otherSpecific(fromEsp);
+      Module otherModule = fromEsp ? this.tracers : this.esp;
+      if (this.onInOther(fromEsp, rule)) {
+         theirs.rules().find(rule.type, rule.id).enabled = false;
+      } else {
+         SpecificRules.Rule other = theirs.rules().add(rule.type, rule.id);
+         if (!rule.mirror) {
+            other.copyValues(rule);
+         }
+
+         other.enabled = true;
+         if (!otherModule.isToggled()) {
+            otherModule.enable();
+         }
+      }
+
+      theirs.changed();
+      this.syncRules();
+   }
+
+   /** Links the specific target in both modules, starting from this page's colour and range. */
+   public void mirror(boolean fromEsp, SpecificRules.Rule rule) {
+      SpecificTargets mine = this.specific(fromEsp);
+      SpecificTargets theirs = this.otherSpecific(fromEsp);
+      SpecificRules.Rule other = theirs.rules().add(rule.type, rule.id);
+      other.copyValues(rule);
+      other.mirror = true;
+      rule.mirror = true;
+      this.agreedRules.put(rule.key(), rule.values());
+      mine.changed();
+      theirs.changed();
+   }
+
+   public void breakLink(SpecificRules.Rule rule) {
+      for (boolean esp : new boolean[]{true, false}) {
+         SpecificTargets targets = this.specific(esp);
+         SpecificRules.Rule found = targets.rules().find(rule.type, rule.id);
+         if (found != null && found.mirror) {
+            found.mirror = false;
+            targets.changed();
+         }
+      }
+
+      this.agreedRules.remove(rule.key());
+   }
+
+   /** Removes the specific target from this page, and from the other page too while the two are mirrored. */
+   public void remove(boolean fromEsp, SpecificRules.Rule rule) {
+      SpecificTargets mine = this.specific(fromEsp);
+      SpecificRules.Rule found = mine.rules().find(rule.type, rule.id);
+      if (found == null) {
+         return;
+      }
+
+      if (found.mirror) {
+         SpecificTargets theirs = this.otherSpecific(fromEsp);
+         SpecificRules.Rule other = theirs.rules().find(rule.type, rule.id);
+         if (other != null && other.mirror) {
+            theirs.rules().remove(other);
+            theirs.changed();
+         }
+      }
+
+      mine.rules().remove(found);
+      mine.changed();
+      this.agreedRules.remove(rule.key());
+   }
+
+   /** Applies changes on mirrored specific targets right away (the GUI calls this after a click). */
+   public void syncRules() {
+      SpecificTargets esp = this.espTargets.specific;
+      SpecificTargets tracers = this.tracersTargets.specific;
+      int changed = SpecificRules.sync(esp.rules(), tracers.rules(), this.agreedRules);
+      if ((changed & SpecificRules.LEFT_CHANGED) != 0) {
+         esp.changed();
+      }
+
+      if ((changed & SpecificRules.RIGHT_CHANGED) != 0) {
+         tracers.changed();
       }
    }
 

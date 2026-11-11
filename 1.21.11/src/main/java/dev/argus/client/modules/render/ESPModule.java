@@ -27,6 +27,8 @@ import dev.argus.client.modules.client.ColorsModule;
 import dev.argus.client.modules.render.targets.BlockMeshCache;
 import dev.argus.client.modules.render.targets.BlockTargetIndex;
 import dev.argus.client.modules.render.targets.CellIndex;
+import dev.argus.client.modules.render.targets.SpecificRules;
+import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetMatcher;
 import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ClientRenderTypes;
@@ -45,6 +47,7 @@ import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.settings.SettingLabelCondition;
 import dev.argus.client.settings.options.DimensionType;
+import dev.argus.client.settings.options.ColorsSchemeChoice;
 import dev.argus.client.settings.options.ESPModeChoice;
 import dev.argus.client.utils.combat.BoundingBoxUtils;
 import dev.argus.client.utils.math.MathUtils;
@@ -54,10 +57,12 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
@@ -135,6 +140,8 @@ public class ESPModule extends Module {
    private final ESP2DRenderer entity2DRenderer;
    public final ESPRenderHelper renderHelper;
    private final BlockMeshCache blockMeshes = new BlockMeshCache();
+   /** Meshes for specific block targets, one per range in use (cells are culled by range, so ranges can't share). */
+   private final Map<Float, BlockMeshCache> ruleMeshes = new HashMap<>();
    private final List<Entity> renderEntities = new ArrayList<>();
    private static final int LIGHT_RADIUS = 12;
    private final LongArrayList lightSpots = new LongArrayList();
@@ -206,7 +213,7 @@ public class ESPModule extends Module {
 
       this.entity2DRenderer = new ESP2DRenderer(this);
       this.renderHelper = new ESPRenderHelper(this);
-      BlockTargetIndex.get().register(this, this.targets.blocks);
+      BlockTargetIndex.get().register(this, this.targets);
       this.setDrawn(false);
    }
 
@@ -234,6 +241,7 @@ public class ESPModule extends Module {
    @Override
    public void onDisable() {
       this.blockMeshes.close();
+      this.closeRuleMeshes();
       this.chorusPositions.clear();
       this.lightSpots.clear();
       this.lightSpotsStale = true;
@@ -241,7 +249,16 @@ public class ESPModule extends Module {
 
    @Override
    public String getInfoString() {
-      return this.targets.blocks.active() ? Integer.toString(this.blockMeshes.drawnCount()) : super.getInfoString();
+      if (!this.targets.blocks.active() && this.ruleMeshes.isEmpty()) {
+         return super.getInfoString();
+      }
+
+      int drawn = this.targets.blocks.active() ? this.blockMeshes.drawnCount() : 0;
+      for (BlockMeshCache meshes : this.ruleMeshes.values()) {
+         drawn += meshes.drawnCount();
+      }
+
+      return Integer.toString(drawn);
    }
 
    // ---- ticking ---------------------------------------------------------------------------------------------------
@@ -261,7 +278,8 @@ public class ESPModule extends Module {
          card.height.getValue(),
          card.onlyOminous.getValue(),
          this.ignoredStructures,
-         colorsModule == null ? null : colorsModule.schemeSetting.getValue()
+         colorsModule == null ? null : colorsModule.schemeSetting.getValue(),
+         this.targets.specific.version()
       );
       if (card.active() && card.sound.getValue()) {
          this.alertNewBlocks(card);
@@ -561,30 +579,44 @@ public class ESPModule extends Module {
    @EventHandler(priority = -99999999)
    private void onBlockRender(WorldRenderEvent.Overlay event) {
       TargetSettings.Blocks card = this.targets.blocks;
-      if (this.isWorldUnavailable() || !card.active()) {
+      SpecificTargets specific = this.targets.specific;
+      if (this.isWorldUnavailable() || !card.active() && !specific.hasBlocks()) {
+         if (!this.ruleMeshes.isEmpty()) {
+            this.closeRuleMeshes();
+         }
+
          return;
       }
 
       ClientContext.shaderRegistry.render("outline", () -> {
          this.renderingBlockEntities = true;
          try {
-            double range = card.range.isAtMaximum() ? 0.0 : card.range.getValue();
-            boolean drew = this.blockMeshes.render(
-               event.getPoseStack(),
-               event.getPartialTick(),
-               PostProcessShaderPass.POST_TARGET,
-               (packed, entry) -> TargetMatcher.acceptsBlock(card, this.ignoredStructures, packed, entry)
-                  ? TargetMatcher.blockColor(card, colorsModule == null ? null : colorsModule.schemeSetting.getValue(), entry)
-                  : 0,
-               this.blockLook,
-               range * range,
-               this.rebuildBudgetSetting.getValue()
-            );
+            ColorsSchemeChoice scheme = colorsModule == null ? null : colorsModule.schemeSetting.getValue();
+            double budget = this.rebuildBudgetSetting.getValue();
+            boolean drew = false;
+            if (card.active()) {
+               double range = card.range.isAtMaximum() ? 0.0 : card.range.getValue();
+               drew = this.blockMeshes.render(
+                  event.getPoseStack(),
+                  event.getPartialTick(),
+                  PostProcessShaderPass.POST_TARGET,
+                  // Blocks with a specific target are drawn by that target's mesh instead.
+                  (packed, entry) -> specific.forBlock(entry.state().getBlock()) == null && TargetMatcher.acceptsBlock(card, this.ignoredStructures, packed, entry)
+                     ? TargetMatcher.blockColor(card, scheme, entry)
+                     : 0,
+                  this.blockLook,
+                  range * range,
+                  budget
+               );
+            }
+
+            drew |= this.renderRuleMeshes(event, specific, scheme, budget);
             if (drew) {
                ShaderRegistry.getBufferSource().setColorArgb(-1);
             }
          } catch (RuntimeException failure) {
             this.blockMeshes.close();
+            this.closeRuleMeshes();
             card.enabled.setValue(false);
             dev.argus.client.utils.chat.ChatUtils.printChat(
                net.minecraft.network.chat.Component.literal("ESP couldn't draw blocks (" + failure.getMessage() + "). Blocks turned off; see the log."),
@@ -595,6 +627,53 @@ public class ESPModule extends Module {
             this.renderingBlockEntities = false;
          }
       });
+   }
+
+   /** Draws specific block targets, one mesh cache per range in use. */
+   private boolean renderRuleMeshes(WorldRenderEvent event, SpecificTargets specific, ColorsSchemeChoice scheme, double budget) {
+      Set<Float> ranges = new HashSet<>();
+      for (SpecificRules.Rule rule : specific.rules().all()) {
+         if (rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
+            ranges.add(rule.range);
+         }
+      }
+
+      this.ruleMeshes.entrySet().removeIf(entry -> {
+         if (ranges.contains(entry.getKey())) {
+            return false;
+         }
+
+         entry.getValue().close();
+         return true;
+      });
+      int look = Objects.hash(specific.version(), scheme);
+      boolean drew = false;
+      for (float range : ranges) {
+         BlockMeshCache meshes = this.ruleMeshes.computeIfAbsent(range, ignored -> new BlockMeshCache());
+         double limit = range >= SpecificRules.UNLIMITED ? 0.0 : range;
+         drew |= meshes.render(
+            event.getPoseStack(),
+            event.getPartialTick(),
+            PostProcessShaderPass.POST_TARGET,
+            (packed, entry) -> {
+               SpecificRules.Rule rule = specific.forBlock(entry.state().getBlock());
+               return rule != null && rule.range == range ? TargetMatcher.ruleColor(rule, scheme) : 0;
+            },
+            look,
+            limit * limit,
+            budget
+         );
+      }
+
+      return drew;
+   }
+
+   private void closeRuleMeshes() {
+      for (BlockMeshCache meshes : this.ruleMeshes.values()) {
+         meshes.close();
+      }
+
+      this.ruleMeshes.clear();
    }
 
    // ---- config migration ------------------------------------------------------------------------------------------

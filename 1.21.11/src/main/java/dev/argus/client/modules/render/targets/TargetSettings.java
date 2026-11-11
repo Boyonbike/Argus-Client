@@ -98,6 +98,8 @@ public final class TargetSettings {
    public final Mobs mobs;
    public final Items items;
    public final Blocks blocks;
+   /** Rules for one specific block, entity type, item or player; they override the cards above for that thing. */
+   public final SpecificTargets specific;
    private final List<Group> groups;
 
    /** Adds the four cards to the module, in order, at the current end of its settings. */
@@ -107,6 +109,7 @@ public final class TargetSettings {
       this.items = new Items(module, enabledByDefault.contains(Kind.ITEMS));
       this.blocks = new Blocks(module, enabledByDefault.contains(Kind.BLOCKS));
       this.groups = List.of(this.players, this.mobs, this.items, this.blocks);
+      this.specific = new SpecificTargets(module);
    }
 
    public TargetSettings(Module module, Kind... enabledByDefault) {

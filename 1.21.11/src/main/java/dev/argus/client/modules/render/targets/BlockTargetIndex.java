@@ -58,9 +58,17 @@ public final class BlockTargetIndex implements ClientAccess {
       }
    }
 
-   private record Source(Module module, TargetSettings.Blocks card) {
-      boolean wants() {
-         return this.module.isToggled() && this.card.active();
+   private record Source(Module module, TargetSettings targets) {
+      void addWanted(Set<Block> wanted) {
+         if (!this.module.isToggled()) {
+            return;
+         }
+
+         if (this.targets.blocks.active()) {
+            wanted.addAll(this.targets.blocks.list.getValue());
+         }
+
+         wanted.addAll(this.targets.specific.blocks());
       }
    }
 
@@ -95,9 +103,12 @@ public final class BlockTargetIndex implements ClientAccess {
       return instance;
    }
 
-   /** Registers a module's Blocks card. The index runs while any registered card is on in an enabled module. */
-   public void register(Module module, TargetSettings.Blocks card) {
-      this.sources.add(new Source(module, card));
+   /**
+    * Registers a module's Blocks card and specific block targets. The index runs while an enabled module has its card
+    * on or a specific block target.
+    */
+   public void register(Module module, TargetSettings targets) {
+      this.sources.add(new Source(module, targets));
       if (!this.subscribed) {
          this.subscribed = true;
          ClientAccess.eventBus.subscribe(this);
@@ -147,9 +158,7 @@ public final class BlockTargetIndex implements ClientAccess {
 
       Set<Block> wanted = new HashSet<>();
       for (Source source : this.sources) {
-         if (source.wants()) {
-            wanted.addAll(source.card().list.getValue());
-         }
+         source.addWanted(wanted);
       }
 
       if (current == null || wanted.isEmpty()) {

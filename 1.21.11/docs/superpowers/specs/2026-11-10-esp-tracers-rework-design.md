@@ -173,3 +173,22 @@ These differ from, or add to, the design above:
 - **Migration:** if Search was on and ESP was off, ESP is switched on with only the cards Search covered.
 - **Not done:** the Search block-colour scheme callback is gone. A Colors scheme change now rebuilds meshes
   through the look key on the next tick. Changes made with `.color` are only picked up when a cell rebuilds.
+
+## Specific targets (added 2026-11-11)
+
+The "Pair with" card is now **Active targets**. It lists the four general cards and then every **specific target**:
+one block, entity type, dropped item type or named player, each with its own colour and range.
+
+- **Adding:** type a name in the card's field. A prefix (`block:`, `entity:`/`mob:`, `item:`, `player:`) picks the kind.
+  Without a prefix, blocks are tried first, then entities, then items, then player names.
+- **Override:** a specific target always shows its thing in its own colour, inside its own range, even if the general
+  card is off or filters it out. Outside its range the thing is hidden, even if the general card would show it.
+- **Rows:** clicking a row turns it on or off on this page. Specific rows have a colour swatch (opens the colour
+  picker), a range button (16, 32, 64, 128, 256 m, then any range), **Toggle in other**, **Mirror**/**Break link**
+  and **Remove**. Removing a mirrored target removes it from both pages.
+- **Storage:** saved per module as a hidden `SpecificTargets` setting (a JSON list). Mirror sync works like the cards:
+  the side that changed since the last agreed value is copied, ESP wins ties, and a link with only one side set is
+  treated as broken (`SpecificRules.sync`).
+- **Blocks:** the block index also scans for blocks with an enabled specific target while the module is on. ESP
+  draws them in separate retained mesh caches, one per range in use, and the general Blocks mesh skips them. Tracers
+  draws them in the same per-tick block pass as the card.
