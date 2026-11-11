@@ -1,20 +1,21 @@
 # Argus Client
 
 A Fabric client with a Meteor-style floating-window GUI, pastel Light/Dark
-themes, ranked module/settings search, and Friends management. This branch holds the Minecraft 26.2 client; other versions live on their own branches (for example `26.1.2` and `1.21.11`).
+themes, ranked module/settings search, and Friends management. This branch holds the Minecraft 26.3 client; other versions live on their own branches (for example `26.2`, `26.1.2` and `1.21.11`).
 
 ## Versions
 
 | Minecraft | Client project | Download |
 | --- | --- | --- |
-| **26.2** | [Source, build files, and documentation](26.2/) | [Argus-2.5.5-mc26.2.jar](26.2/Argus-2.5.5-mc26.2.jar) |
-| **26.1.2** | [Source, build files, and documentation](26.1.2/) | [Argus-2.5.5-mc26.1.2.jar](26.1.2/Argus-2.5.5-mc26.1.2.jar) |
+| **26.3** | [Source, build files, and documentation](26.3/) | [Argus-2.5.5-mc26.3.jar](26.3/Argus-2.5.5-mc26.3.jar) |
+| **26.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.2/26.2) | [Argus-2.5.5-mc26.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.2/26.2/Argus-2.5.5-mc26.2.jar) |
+| **26.1.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.1.2/26.1.2) | [Argus-2.5.5-mc26.1.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.1.2/26.1.2/Argus-2.5.5-mc26.1.2.jar) |
 
-## Install for Minecraft 26.2
+## Install for Minecraft 26.3
 
-1. Set up Minecraft **26.2** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
-2. Install Fabric API for Minecraft 26.2.
-3. Download [`Argus-2.5.5-mc26.2.jar`](26.2/Argus-2.5.5-mc26.2.jar) and place it in your instance's `mods` folder, replacing older copies.
+1. Set up Minecraft **26.3** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
+2. Install Fabric API for Minecraft 26.3.
+3. Download [`Argus-2.5.5-mc26.3.jar`](26.3/Argus-2.5.5-mc26.3.jar) and place it in your instance's `mods` folder, replacing older copies.
 
 ## Menus
 
@@ -39,13 +40,13 @@ under `dev.argus`.
 The **Volytra Fly** ElytraFly mode is ported and adapted from
 [VolytraFly](https://github.com/Volizray/VolytraFly-Addon) by **Volizray**,
 released under **CC0 1.0 Universal**. See the
-[third-party notices](26.1.2/THIRD_PARTY_NOTICES.md) for attribution and the
-[full CC0 text](26.1.2/licenses/VolytraFly-CC0.txt).
+[third-party notices](26.3/THIRD_PARTY_NOTICES.md) for attribution and the
+[full CC0 text](26.3/licenses/VolytraFly-CC0.txt).
 
 ## Repository layout
 
 ```text
-26.2/
+26.3/
 ├── README.md                 Version-specific instructions
 ├── THIRD_PARTY_NOTICES.md    Third-party attribution and licence notices
 ├── licenses/                 Full third-party licence texts
@@ -58,7 +59,7 @@ released under **CC0 1.0 Universal**. See the
 ├── build.gradle              Fabric Loom build
 ├── gradle.properties         Version and dependency settings
 ├── settings.gradle           Project and plugin configuration
-└── Argus-2.5.5-mc26.2.jar  Installable client
+└── Argus-2.5.5-mc26.3.jar  Installable client
 ```
 
 ## Build
@@ -66,13 +67,13 @@ released under **CC0 1.0 Universal**. See the
 From the repository root:
 
 ```sh
-cd 26.2
+cd 26.3
 ./gradlew build
 ```
 
 On Windows use `gradlew.bat build`. The client JAR is generated at
-`26.2/build/libs/Argus-2.5.5-mc26.2.jar`.
+`26.3/build/libs/Argus-2.5.5-mc26.3.jar`.
 
-See the [26.2 README](26.2/README.md) for controls, verification commands,
+See the [26.3 README](26.3/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.
 In-game appearance and controls have been exercised in a development client; the final Prism instance test is the user sign-off.

@@ -1,0 +1,19 @@
+package dev.argus.mixin;
+
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.mojang.blaze3d.platform.FramerateLimitTracker;
+import dev.argus.client.gui.screens.ClientScreen;
+import net.minecraft.client.gui.screens.Screen;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+
+@Mixin(FramerateLimitTracker.class)
+public class FramerateLimitTrackerMixin {
+   @ModifyExpressionValue(
+      method = "getThrottleReason",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;")
+   )
+   private Screen argusclient$ignoreClientScreenForThrottle(Screen screen) {
+      return screen instanceof ClientScreen ? null : screen;
+   }
+}
