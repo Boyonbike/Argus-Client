@@ -1,6 +1,11 @@
 package dev.argus.client.events;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -30,6 +35,25 @@ public final class BlockCollisionShapeEvent extends CancellableEvent {
       INSTANCE.pos = pos;
       INSTANCE.state = state;
       return INSTANCE;
+   }
+
+   /**
+    * Whether a collision query should go through the event bus. Queries for other entities (mobs, items,
+    * other players) are skipped: listeners only change what the local player and its vehicle collide with,
+    * and posting for every entity in the world was a large constant cost. Queries without an entity still post.
+    */
+   public static boolean shouldPost(CollisionContext context) {
+      if (!(context instanceof EntityCollisionContext entityContext)) {
+         return true;
+      }
+
+      Entity entity = entityContext.getEntity();
+      if (entity == null) {
+         return true;
+      }
+
+      LocalPlayer player = Minecraft.getInstance().player;
+      return player != null && (entity == player || player.getVehicle() == entity || entity.hasPassenger(player));
    }
 
    public void setShape(VoxelShape shape) {

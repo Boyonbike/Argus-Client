@@ -21,6 +21,7 @@ import java.util.stream.StreamSupport;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
@@ -88,15 +89,16 @@ public final class WorldUtils implements ClientAccess {
    }
 
    public static List<LevelChunk> getLoadedChunks() {
-      List<LevelChunk> chunks = new ArrayList<>();
       int distance = ClientAccess.argusclientMinecraft.options.renderDistance().get();
+      List<LevelChunk> chunks = new ArrayList<>((distance * 2 + 1) * (distance * 2 + 1));
+      // Floor to the chunk grid once; integer division rounded the wrong way at negative coordinates.
+      int centerX = Mth.floor(ClientAccess.argusclientMinecraft.player.getX()) >> 4;
+      int centerZ = Mth.floor(ClientAccess.argusclientMinecraft.player.getZ()) >> 4;
+      net.minecraft.client.multiplayer.ClientChunkCache chunkSource = ClientAccess.argusclientMinecraft.level.getChunkSource();
 
       for (int x = -distance; x <= distance; x++) {
          for (int z = -distance; z <= distance; z++) {
-            LevelChunk chunk = ClientAccess.argusclientMinecraft
-               .level
-               .getChunkSource()
-               .getChunkNow((int)ClientAccess.argusclientMinecraft.player.getX() / 16 + x, (int)ClientAccess.argusclientMinecraft.player.getZ() / 16 + z);
+            LevelChunk chunk = chunkSource.getChunkNow(centerX + x, centerZ + z);
             if (chunk != null) {
                chunks.add(chunk);
             }
@@ -126,7 +128,7 @@ public final class WorldUtils implements ClientAccess {
       for (LevelChunk chunk : getLoadedChunks()) {
          if (!chunk.getBlockEntities().isEmpty()) {
             try {
-               blockEntities.addAll(new ArrayList<>(chunk.getBlockEntities().values()));
+               blockEntities.addAll(chunk.getBlockEntities().values());
             } catch (Throwable failure) {
                autoCrystal.completeCalculation();
                break;

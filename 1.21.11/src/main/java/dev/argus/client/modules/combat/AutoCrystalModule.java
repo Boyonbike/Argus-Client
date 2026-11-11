@@ -80,6 +80,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -120,7 +121,20 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public class AutoCrystalModule extends Module {
-   private static final ExecutorService calculationExecutor = Executors.newFixedThreadPool(4);
+   /**
+    * Only one calculation is current at a time; a second thread lets a new one start while a stale one exits.
+    * Daemon, low-priority threads so slow CPUs keep the render thread responsive.
+    */
+   private static final ExecutorService calculationExecutor = Executors.newFixedThreadPool(
+      Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() - 1)), task -> {
+         Thread thread = new Thread(task, "Argus AutoCrystal calculation");
+         thread.setDaemon(true);
+         thread.setPriority(Thread.NORM_PRIORITY - 1);
+         return thread;
+      }
+   );
+   /** Minimum gap between calculations; they used to restart on every rendered frame. */
+   private static final long CALCULATION_INTERVAL_MILLIS = 25L;
    private static SpeedMineModule speedMine = ClientContext.getModule(SpeedMineModule.class);
    private static AntiCheatModule antiCheat = ClientContext.getModule(AntiCheatModule.class);
    private static AnchorAuraModule anchorAura = ClientContext.getModule(AnchorAuraModule.class);
@@ -240,7 +254,8 @@ public class AutoCrystalModule extends Module {
    private final LinkedList<Long> placementTimes;
    private final List<Integer> predictedAttackIds;
    private final Set ignoredBlocks;
-   private final MutableBlockPos scanPosition;
+   private final AtomicInteger calculationGeneration = new AtomicInteger();
+   private final ElapsedTimer calculationIntervalTimer = new ElapsedTimer();
    private CompletableFuture<CrystalPlacementResult> calculationFuture;
    protected volatile BlockPos lastPlacedBase;
    protected volatile BlockPos lastAttackedBase;
@@ -287,6 +302,7 @@ public class AutoCrystalModule extends Module {
       this.target = null;
       this.lastPlacedBase = null;
       this.placementData.set(null);
+      this.calculationGeneration.incrementAndGet();
       if (this.calculationFuture != null) {
          try {
             this.calculationFuture.complete(null);
@@ -311,7 +327,10 @@ public class AutoCrystalModule extends Module {
       }
    }
 
-   private CrystalPlacementResult calculatePlacement(List<LivingEntity> targets) {
+   private CrystalPlacementResult calculatePlacement(List<LivingEntity> targets, int generation) {
+      // Local copies: overlapping calculations used to share (and race on) these fields.
+      MutableBlockPos scanPosition = new MutableBlockPos();
+      Vec3 eyePosition = this.eyePosition;
       float selectedCrystalRange;
       if (this.shouldIgnoreMiningBlock()) {
          selectedCrystalRange = 999.0F;
@@ -364,29 +383,33 @@ public class AutoCrystalModule extends Module {
             offsetY < Math.ceil(this.placeRangeSetting.getValue().floatValue());
             offsetY++
          ) {
+            if (generation != this.calculationGeneration.get()) {
+               return null;
+            }
+
             for (double offsetZ = -Math.floor(this.placeRangeSetting.getValue().floatValue());
                offsetZ < Math.ceil(this.placeRangeSetting.getValue().floatValue());
                offsetZ++
             ) {
-               if (this.eyePosition != null) {
-                  double scanXSnapshot = this.eyePosition.x + offsetX;
-                  double scanYSnapshot = this.eyePosition.y + offsetY;
-                  double scanZ = this.eyePosition.z + offsetZ;
-                  this.scanPosition.set(scanXSnapshot, scanYSnapshot, scanZ);
-                  boolean hasCrystalBase = WorldUtils.isBedrockOrObsidian(this.scanPosition);
+               if (eyePosition != null) {
+                  double scanXSnapshot = eyePosition.x + offsetX;
+                  double scanYSnapshot = eyePosition.y + offsetY;
+                  double scanZ = eyePosition.z + offsetZ;
+                  scanPosition.set(scanXSnapshot, scanYSnapshot, scanZ);
+                  boolean hasCrystalBase = WorldUtils.isBedrockOrObsidian(scanPosition);
                   if (bestPlacement == null || bestPlacement.kind() == CrystalPlacementKind.OBSIDIAN || hasCrystalBase) {
-                     Vec3 distanceEyeSnapshot = this.eyePosition;
-                     Vec3 center = this.scanPosition.getCenter();
+                     Vec3 distanceEyeSnapshot = eyePosition;
+                     Vec3 center = scanPosition.getCenter();
                      double distance = distanceEyeSnapshot.distanceTo(center);
                      Float distanceLimit = this.placeRangeSetting.getValue();
-                     if (!(distance > distanceLimit.floatValue()) && !(distance > selectedCrystalRange) && placementValidator.canPlace(this.scanPosition)) {
+                     if (!(distance > distanceLimit.floatValue()) && !(distance > selectedCrystalRange) && placementValidator.canPlace(scanPosition)) {
                         boolean visible = true;
                         Object wallRangeValue = this.placeWallRangeSetting.getValue();
                         Setting<Float> visibleRangeProbeSetting = this.placeRangeSetting;
                         if (!Objects.equals(wallRangeValue, visibleRangeProbeSetting.getValue())) {
                            BlockSampleMode samplingMode = this.multipointSetting.getValue() ? BlockSampleMode.X8 : BlockSampleMode.FAST;
-                           List visibilitySamples = samplingMode.sampleBlock(this.scanPosition);
-                           Vec3 visibilityEye = this.eyePosition;
+                           List visibilitySamples = samplingMode.sampleBlock(scanPosition);
+                           Vec3 visibilityEye = eyePosition;
                            visible = WorldUtils.canSeeAny(visibilityEye, visibilitySamples);
                         }
 
@@ -398,25 +421,24 @@ public class AutoCrystalModule extends Module {
                         }
 
                         if (this.strictDirectionSetting.getValue()) {
-                           MutableBlockPos wallRangePosition = this.scanPosition;
+                           MutableBlockPos wallRangePosition = scanPosition;
                            if (BlockInteractionUtils.getStrictDirections(wallRangePosition).isEmpty()) {
                               continue;
                            }
                         }
 
-                        MutableBlockPos wallRangePosition = this.scanPosition;
-                        Vec3 explosionPosition = Vec3.upFromBottomCenterOf(wallRangePosition, 1.0);
-                        LocalPlayer selfDamagePlayer = ClientAccess.argusclientMinecraft.player;
-                        LocalPlayer selfBoundsPlayerSnapshot = ClientAccess.argusclientMinecraft.player;
-                        AABB selfBounds = this.getTargetBounds(selfBoundsPlayerSnapshot);
-                        List<Object> selfDamageIgnoredPositions = Collections.emptyList();
-                        MutableBlockPos selfDamageScanPosition = this.scanPosition;
-                        double selfDamage = DamageUtils.getExplosionDamage(
-                           explosionPosition, selfDamagePlayer, selfBounds, 6.0, true, selfDamageIgnoredPositions, selfDamageScanPosition
-                        );
-                        MutableBlockPos targetDamageBase = this.scanPosition;
+                        // Target damage first: most spots fail it, so the self-damage raycasts are skipped for them.
+                        MutableBlockPos targetDamageBase = scanPosition;
                         CrystalTargetDamage candidateTargetDamage = CrystalTargetDamage.calculateForBase(this, targetDamageBase, hasCrystalBase, targets);
                         if (candidateTargetDamage != null) {
+                           MutableBlockPos wallRangePosition = scanPosition;
+                           Vec3 explosionPosition = Vec3.upFromBottomCenterOf(wallRangePosition, 1.0);
+                           LocalPlayer selfDamagePlayer = ClientAccess.argusclientMinecraft.player;
+                           AABB selfBounds = this.getTargetBounds(selfDamagePlayer);
+                           List<Object> selfDamageIgnoredPositions = Collections.emptyList();
+                           double selfDamage = DamageUtils.getExplosionDamage(
+                              explosionPosition, selfDamagePlayer, selfBounds, 6.0, true, selfDamageIgnoredPositions, scanPosition
+                           );
                            CrystalDamagePolicy placeDamagePolicy = CrystalDamagePolicy.PLACE;
                            LivingEntity policyTargetSnapshot = candidateTargetDamage.target();
                            double policyDamageSnapshot = candidateTargetDamage.damage();
@@ -425,7 +447,7 @@ public class AutoCrystalModule extends Module {
                            CrystalLethality lethality = CrystalLethality.classifyLethality(lethalityTargetSnapshot, lethalityDamage);
                            if (!placeDamagePolicy.shouldRejectDamage(policyTargetSnapshot, selfDamage, policyDamageSnapshot, lethality)) {
                               CrystalPlacementKind placementKind = CrystalPlacementKind.NONE;
-                              if (currentTargetDamage != null && !currentPlacement.base().equals(this.scanPosition)) {
+                              if (currentTargetDamage != null && !currentPlacement.base().equals(scanPosition)) {
                                  double previousDamage = currentTargetDamage.damage();
                                  double roundedPreviousDamage = Math.round(previousDamage);
                                  if (roundedPreviousDamage >= candidateTargetDamage.damage()) {
@@ -445,18 +467,18 @@ public class AutoCrystalModule extends Module {
                                  AABB predictedBounds = this.getTargetBounds(predictedTargetSnapshot);
                                  LivingEntity currentBoundsTarget = candidateTargetDamage.target();
                                  AABB targetBoundsUnion = predictedBounds.minmax(currentBoundsTarget.getBoundingBox());
-                                 AABB baseBounds = new AABB(this.scanPosition);
+                                 AABB baseBounds = new AABB(scanPosition);
                                  if (targetBoundsUnion.intersects(baseBounds)) {
                                     continue;
                                  }
 
-                                 wallRangePosition = this.scanPosition;
+                                 wallRangePosition = scanPosition;
                                  if (!BlockInteractionUtils.canPlaceAt(wallRangePosition, false)) {
                                     continue;
                                  }
 
                                  if (!this.basePlaceAirSetting.getValue()) {
-                                    wallRangePosition = this.scanPosition;
+                                    wallRangePosition = scanPosition;
                                     boolean supportDirectionMode = BlockInteractionUtils.isStrictDirectionEnabled();
                                     if (BlockInteractionUtils.findSupportDirection(wallRangePosition, supportDirectionMode) == null) {
                                        continue;
@@ -471,7 +493,7 @@ public class AutoCrystalModule extends Module {
                               }
 
                               CrystalPlacementResult newPlacement = new CrystalPlacementResult(
-                                 this.scanPosition.immutable(), candidateTargetDamage.target(), candidateTargetDamage.damage(), placementKind
+                                 scanPosition.immutable(), candidateTargetDamage.target(), candidateTargetDamage.damage(), placementKind
                               );
                               bestPlacement = newPlacement.selectBetterPlacement(bestPlacement);
                            }
@@ -1638,11 +1660,14 @@ public class AutoCrystalModule extends Module {
             }
          }
 
-         if (this.calculationFuture == null || this.calculationFuture.isDone() || this.calculationFuture.isCancelled()) {
+         if ((this.calculationFuture == null || this.calculationFuture.isDone() || this.calculationFuture.isCancelled())
+            && this.calculationIntervalTimer.hasElapsedAndReset(CALCULATION_INTERVAL_MILLIS)) {
             this.clearInvalidTarget();
             List<LivingEntity> targets = this.targeting.snapshot();
+            // A new generation makes any timed-out calculation still running stop at its next row.
+            int generation = this.calculationGeneration.incrementAndGet();
             CompletableFuture<CrystalPlacementResult> scheduledCalculation = CompletableFuture.supplyAsync(
-               () -> this.calculatePlacement(targets), calculationExecutor
+               () -> this.calculatePlacement(targets, generation), calculationExecutor
             );
             TimeUnit timeoutUnit = TimeUnit.MILLISECONDS;
             CrystalPlacementResult timeoutResult = null;
@@ -1815,6 +1840,7 @@ public class AutoCrystalModule extends Module {
    }
 
    public void completeCalculation() {
+      this.calculationGeneration.incrementAndGet();
       CompletableFuture<CrystalPlacementResult> pending = this.calculationFuture;
       if (pending != null && !pending.isDone() && !pending.isCancelled()) {
          pending.complete(null);
@@ -1878,7 +1904,6 @@ public class AutoCrystalModule extends Module {
       this.placementTimes = new LinkedList<>();
       this.predictedAttackIds = Collections.synchronizedList(new ArrayList<>());
       this.ignoredBlocks = new HashSet();
-      this.scanPosition = new MutableBlockPos();
       this.lastAttackedCrystalId = -1;
       FeatureBoxRenderer boxManagerSnapshot = ClientContext.featureBoxRenderer;
       FeatureBoxRenderer.RenderConfiguration boxSettings = new FeatureBoxRenderer.RenderConfiguration(

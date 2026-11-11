@@ -25,6 +25,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class JesusModule extends Module {
+   /** Shared; building a new VoxelShape for every water collision query was wasted allocation. */
+   private static final VoxelShape WATER_SURFACE_SHAPE = Shapes.create(new AABB(0.0, 0.0, 0.0, 1.0, 0.98, 1.0));
    final Setting<JesusModule.ModeChoice> modeSetting = this.add(new EnumSetting<>("Mode", JesusModule.ModeChoice.SOLID));
    private final Setting<Boolean> strictSetting;
    private final Setting<Float> ascendingSetting;
@@ -95,9 +97,7 @@ public class JesusModule extends Module {
                double liquidSurfaceY = blockYAsFloat + 0.2F;
                if (!(liquidSurfaceY > ClientAccess.argusclientMinecraft.player.getY())) {
                   if (event.getState().is(Blocks.WATER)) {
-                     AABB waterBounds = new AABB(0.0, 0.0, 0.0, 1.0, 0.98, 1.0);
-                     VoxelShape waterShape = Shapes.create(waterBounds);
-                     event.setShape(waterShape);
+                     event.setShape(WATER_SURFACE_SHAPE);
                   }
                }
             }

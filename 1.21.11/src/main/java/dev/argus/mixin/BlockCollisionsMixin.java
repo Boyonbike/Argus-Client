@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.BlockCollisions;
 import net.minecraft.world.level.CollisionGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Final;
@@ -23,6 +24,9 @@ public class BlockCollisionsMixin {
    private CollisionGetter collisionGetter;
    @Shadow
    @Final
+   private CollisionContext context;
+   @Shadow
+   @Final
    private MutableBlockPos pos;
 
    @ModifyExpressionValue(
@@ -33,7 +37,7 @@ public class BlockCollisionsMixin {
       )
    )
    private VoxelShape postBlockCollisionShapeEvent(VoxelShape originalShape, @Local BlockState blockState) {
-      if (this.collisionGetter != Minecraft.getInstance().level) {
+      if (this.collisionGetter != Minecraft.getInstance().level || !BlockCollisionShapeEvent.shouldPost(this.context)) {
          return originalShape;
       }
 

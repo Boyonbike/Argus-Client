@@ -160,7 +160,7 @@ final class ESP2DRenderer implements ClientAccess {
       List<Component> below = new ArrayList<>();
       if (this.module.distanceSetting.getValue()) {
          double distance = argusclientMinecraft.player.distanceTo(entity);
-         below.add(Component.literal(String.format(Locale.ROOT, "%.1f%s", distance > 1000.0 ? distance / 1000.0 : distance, distance > 1000.0 ? "km" : "m")));
+         below.add(Component.literal(formatDistance(distance)));
       }
 
       if (entity instanceof LivingEntity living) {
@@ -349,5 +349,12 @@ final class ESP2DRenderer implements ClientAccess {
       result.y = Math.min(result.y, screenY);
       result.z = Math.max(result.z, screenX);
       result.w = Math.max(result.w, screenY);
+   }
+
+   /** Same output as {@code "%.1f%s"}, without String.format's parsing cost for every entity on every frame. */
+   private static String formatDistance(double distance) {
+      boolean kilometres = distance > 1000.0;
+      long tenths = Math.round((kilometres ? distance / 1000.0 : distance) * 10.0);
+      return (tenths / 10) + "." + (tenths % 10) + (kilometres ? "km" : "m");
    }
 }

@@ -1,5 +1,7 @@
 package dev.argus.client.render;
 
+import dev.argus.client.managers.RenderTargetRegistry;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -89,6 +91,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void clearColor(RenderTarget target, Color color) {
+      RenderTargetRegistry.activate(target);
       int clearColor = ARGB.color(0, color.getRed(), color.getGreen(), color.getBlue());
       RenderSystem.getDevice().createCommandEncoder().clearColorTexture(target.getColorTexture(), clearColor);
    }
@@ -255,6 +258,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void clearDepth(RenderTarget target) {
+      RenderTargetRegistry.activate(target);
       RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(target.getDepthTexture(), 1.0);
    }
 

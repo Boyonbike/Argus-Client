@@ -102,7 +102,7 @@ final class ShulkerComboEditScreen extends UiScreen {
             minecraft.setScreen(new ShulkerPixelEditorScreen(this, icon, pixels, result -> {
                 pixels = result;
                 commit();
-                if (ClientContext.configurationManager != null) ClientContext.configurationManager.save();
+                if (ClientContext.configurationManager != null) ClientContext.configurationManager.saveAsync();
             }))));
         addRenderableWidget(new UiButton(left + 161, top + 86, 54, 20, solid ? "Solid" : "Normal", solid, () -> {
             solid = !solid;

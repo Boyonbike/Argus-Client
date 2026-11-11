@@ -1,6 +1,7 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
 import dev.argus.client.ClientAccess;
@@ -185,30 +186,32 @@ public abstract class LivingEntityMixin extends Entity implements ServerSideDeat
       }
    }
 
-   @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
-   private void filterHasEffect(Holder effect, CallbackInfoReturnable<Boolean> callback) {
-      Minecraft client = Minecraft.getInstance();
-      if (this.equals(client.player)) {
+   // Return-value modifiers instead of cancellable injects: these run for every living entity's effect
+   // checks, and a cancellable inject allocated a callback object on each call.
+   @ModifyReturnValue(method = "hasEffect", at = @At("RETURN"))
+   private boolean filterHasEffect(boolean original, Holder effect) {
+      if (original && (Object)this == Minecraft.getInstance().player) {
          StatusEffectQueryEvent event = new StatusEffectQueryEvent(effect);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
-            callback.cancel();
-            callback.setReturnValue(false);
+            return false;
          }
       }
+
+      return original;
    }
 
-   @Inject(method = "getEffect", at = @At("HEAD"), cancellable = true)
-   private void filterGetEffect(Holder effect, CallbackInfoReturnable<MobEffectInstance> callback) {
-      Minecraft client = Minecraft.getInstance();
-      if (this.equals(client.player)) {
+   @ModifyReturnValue(method = "getEffect", at = @At("RETURN"))
+   private MobEffectInstance filterGetEffect(MobEffectInstance original, Holder effect) {
+      if (original != null && (Object)this == Minecraft.getInstance().player) {
          StatusEffectQueryEvent event = new StatusEffectQueryEvent(effect);
          ClientAccess.eventBus.post(event);
          if (event.isCancelled()) {
-            callback.cancel();
-            callback.setReturnValue(null);
+            return null;
          }
       }
+
+      return original;
    }
 
    @Inject(

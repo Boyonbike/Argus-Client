@@ -50,6 +50,7 @@ import dev.argus.client.utils.combat.BoundingBoxUtils;
 import dev.argus.client.utils.math.MathUtils;
 import dev.argus.client.utils.world.WorldUtils;
 import java.awt.Color;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import java.util.Objects;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.sounds.SoundEvents;
@@ -134,6 +136,9 @@ public class ESPModule extends Module {
    public final ESPRenderHelper renderHelper;
    private final BlockMeshCache blockMeshes = new BlockMeshCache();
    private final List<Entity> renderEntities = new ArrayList<>();
+   private static final int LIGHT_RADIUS = 12;
+   private final LongArrayList lightSpots = new LongArrayList();
+   private boolean lightSpotsStale = true;
    private final Map<Vec3, Long> chorusPositions = Collections.synchronizedMap(new HashMap<>());
    private boolean renderingBlockEntities;
    private int blockLook;
@@ -230,6 +235,8 @@ public class ESPModule extends Module {
    public void onDisable() {
       this.blockMeshes.close();
       this.chorusPositions.clear();
+      this.lightSpots.clear();
+      this.lightSpotsStale = true;
    }
 
    @Override
@@ -245,7 +252,7 @@ public class ESPModule extends Module {
       TargetSettings.Blocks card = this.targets.blocks;
       this.ignoredStructures = card.ignoredStructures();
       this.blockLook = Objects.hash(
-         card.list.toJson().toString(),
+         card.list.getValue().hashCode(),
          card.colorMode.getValue(),
          card.color.getValue().getRGB(),
          card.markOpened.getValue(),
@@ -258,6 +265,16 @@ public class ESPModule extends Module {
       );
       if (card.active() && card.sound.getValue()) {
          this.alertNewBlocks(card);
+      }
+
+      // Light-level spots only change when blocks or light change, so scan them every few ticks
+      // instead of re-checking ~7,000 blocks on every rendered frame.
+      if (this.lightSetting.getValue()) {
+         if (this.pruneTicks % 4 == 0 || this.lightSpots.isEmpty() && this.lightSpotsStale) {
+            this.rebuildLightSpots();
+         }
+      } else if (!this.lightSpots.isEmpty()) {
+         this.lightSpots.clear();
       }
 
       if (++this.pruneTicks % 100 == 0) {
@@ -462,30 +479,74 @@ public class ESPModule extends Module {
       }
    }
 
-   private void renderLightLevels(WorldRenderEvent event) {
+   private void rebuildLightSpots() {
+      this.lightSpots.clear();
+      this.lightSpotsStale = false;
+      if (this.isWorldUnavailable()) {
+         return;
+      }
+
       int maximumSpawnLight = WorldUtils.getDimension().isNether() ? 11 : 0;
+      ClientLevel level = argusclientMinecraft.level;
+      LayerLightEventListener blockLight = level.getLightEngine().getLayerListener(LightLayer.BLOCK);
+      BlockPos center = BlockPos.containing(argusclientMinecraft.player.getEyePosition());
+      MutableBlockPos position = new MutableBlockPos();
+      MutableBlockPos above = new MutableBlockPos();
+      int radius = LIGHT_RADIUS;
+      double radiusSquared = (double)radius * radius;
+      for (int dx = -radius; dx <= radius; dx++) {
+         for (int dy = -radius; dy <= radius; dy++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+               if (dx * dx + dy * dy + dz * dz >= radiusSquared) {
+                  continue;
+               }
+
+               position.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+               BlockState state = level.getBlockState(position);
+               if (state.isAir()) {
+                  continue;
+               }
+
+               above.set(position.getX(), position.getY() + 1, position.getZ());
+               if (level.getBlockState(above).isAir() && blockLight.getLightValue(above) <= maximumSpawnLight
+                  && state.isValidSpawn(level, position, EntityType.ZOMBIE) && !level.getBiome(position).is(Biomes.MUSHROOM_FIELDS)) {
+                  this.lightSpots.add(position.asLong());
+               }
+            }
+         }
+      }
+   }
+
+   private void renderLightLevels(WorldRenderEvent event) {
+      if (this.lightSpotsStale) {
+         this.rebuildLightSpots();
+      }
+
+      if (this.lightSpots.isEmpty()) {
+         return;
+      }
+
       Vec3 camera = argusclientMinecraft.getEntityRenderDispatcher().camera.position();
       PoseStack poses = event.getPoseStack();
       BufferBuilder lines = Tesselator.getInstance().begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
-      ClientLevel level = argusclientMinecraft.level;
-      LayerLightEventListener blockLight = level.getLightEngine().getLayerListener(LightLayer.BLOCK);
-      for (BlockPos position : WorldUtils.collectSphereBlocks(argusclientMinecraft.player.getEyePosition(), 12.0F, true)) {
-         BlockState state = level.getBlockState(position);
-         if (WorldUtils.isAir(position.above()) && blockLight.getLightValue(position.above()) <= maximumSpawnLight
-            && state.isValidSpawn(level, position, EntityType.ZOMBIE) && !level.getBiome(position).is(Biomes.MUSHROOM_FIELDS)) {
-            double distance = camera.distanceTo(position.getCenter());
-            int color = Color.red.hashCode();
-            if (distance >= 8.0) {
-               color = ColorUtils.toArgb(Color.red, 1.0F - (float)Mth.clamp((distance - 8.0) / 2.0, 0.0, 1.0));
-            }
-
-            poses.pushPose();
-            poses.translate(position.getX() - camera.x, position.getY() - camera.y + 1.02, position.getZ() - camera.z);
-            Pose pose = poses.last();
-            VertexGeometry.appendLine(lines, pose, 0.25F, 0.0F, 0.25F, 0.75F, 0.0F, 0.75F, 1.0F, color);
-            VertexGeometry.appendLine(lines, pose, 0.75F, 0.0F, 0.25F, 0.25F, 0.0F, 0.75F, 1.0F, color);
-            poses.popPose();
+      int red = Color.red.hashCode();
+      for (int i = 0; i < this.lightSpots.size(); i++) {
+         long packed = this.lightSpots.getLong(i);
+         int x = BlockPos.getX(packed);
+         int y = BlockPos.getY(packed);
+         int z = BlockPos.getZ(packed);
+         double distance = Math.sqrt(camera.distanceToSqr(x + 0.5, y + 0.5, z + 0.5));
+         int color = red;
+         if (distance >= 8.0) {
+            color = ColorUtils.toArgb(Color.red, 1.0F - (float)Mth.clamp((distance - 8.0) / 2.0, 0.0, 1.0));
          }
+
+         poses.pushPose();
+         poses.translate(x - camera.x, y - camera.y + 1.02, z - camera.z);
+         Pose pose = poses.last();
+         VertexGeometry.appendLine(lines, pose, 0.25F, 0.0F, 0.25F, 0.75F, 0.0F, 0.75F, 1.0F, color);
+         VertexGeometry.appendLine(lines, pose, 0.75F, 0.0F, 0.25F, 0.25F, 0.0F, 0.75F, 1.0F, color);
+         poses.popPose();
       }
 
       MeshData mesh = lines.build();

@@ -29,6 +29,10 @@ import dev.argus.client.settings.options.TracersHitboxChoice;
 import dev.argus.client.settings.options.TracersModeChoice;
 import dev.argus.client.utils.combat.BoundingBoxUtils;
 import dev.argus.client.utils.math.Vec3Utils;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +73,14 @@ public class TracersModule extends Module {
    private final LineTracerRenderer lineRenderer;
    private final MarkerTracerRenderer markerRenderer;
    private final List<Target> collected = new ArrayList<>();
+   /** Most block tracers drawn at once; past this the screen is unreadable anyway. */
+   private static final int MAX_BLOCK_TRACERS = 256;
+   private final List<Target> blockTargets = new ArrayList<>();
+   private final LongArrayList candidatePositions = new LongArrayList();
+   private final DoubleArrayList candidateDistances = new DoubleArrayList();
+   private final IntArrayList candidateColors = new IntArrayList();
+   private long tickCounter;
+   private long blockTargetsTick = -1L;
    private long alertMark;
 
    /**
@@ -133,13 +145,40 @@ public class TracersModule extends Module {
    private void collectBlocks(Vec3 camera, double minimumSquared) {
       TargetSettings.Blocks card = this.targets.blocks;
       if (!card.active()) {
+         this.blockTargets.clear();
          return;
       }
 
+      // Block targets don't move, so they're rebuilt once per tick (or when the index changes) instead of
+      // every frame, and only the nearest MAX_BLOCK_TRACERS are kept: walking up to 300k indexed blocks
+      // per frame with several allocations each could freeze slower PCs.
+      if (this.blockTargetsTick != this.tickCounter) {
+         this.blockTargetsTick = this.tickCounter;
+         this.rebuildBlockTargets(card, camera, minimumSquared);
+      }
+
+      this.collected.addAll(this.blockTargets);
+   }
+
+   @Override
+   public void onDisable() {
+      super.onDisable();
+      this.blockTargets.clear();
+      this.blockTargetsTick = -1L;
+   }
+
+   private void rebuildBlockTargets(TargetSettings.Blocks card, Vec3 camera, double minimumSquared) {
+      this.blockTargets.clear();
       int ignored = card.ignoredStructures();
-      ColorsSchemeChoice scheme = colorsModule == null ? null : colorsModule.schemeSetting.getValue();
       CellIndex<BlockTargetIndex.Entry> index = BlockTargetIndex.get().index();
       double range = card.range.isAtMaximum() ? -1.0 : card.range.getValue();
+      LongArrayList positions = this.candidatePositions;
+      DoubleArrayList distances = this.candidateDistances;
+      IntArrayList colors = this.candidateColors;
+      positions.clear();
+      distances.clear();
+      colors.clear();
+      ColorsSchemeChoice scheme = colorsModule == null ? null : colorsModule.schemeSetting.getValue();
       for (CellIndex.Cell<BlockTargetIndex.Entry> cell : index.cells()) {
          if (cell.size() == 0) {
             continue;
@@ -161,16 +200,37 @@ public class TracersModule extends Module {
                return;
             }
 
-            Vec3 center = new Vec3(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5);
-            double distanceSquared = center.distanceToSqr(camera);
+            double dx = CellIndex.unpackX(packed) + 0.5 - camera.x;
+            double dy = CellIndex.unpackY(packed) + 0.5 - camera.y;
+            double dz = CellIndex.unpackZ(packed) + 0.5 - camera.z;
+            double distanceSquared = dx * dx + dy * dy + dz * dz;
             if (distanceSquared < minimumSquared || !card.inRange(distanceSquared)) {
                return;
             }
 
-            Color color = this.colorFor(new Color(TargetMatcher.blockColor(card, scheme, entry), true), center);
-            AABB bounds = new AABB(center.subtract(0.5, 0.5, 0.5), center.add(0.5, 0.5, 0.5));
-            this.collected.add(new Target(center, null, null, bounds, color, null));
+            positions.add(packed);
+            distances.add(distanceSquared);
+            colors.add(TargetMatcher.blockColor(card, scheme, entry));
          });
+      }
+
+      int count = positions.size();
+      int[] order = new int[count];
+      for (int i = 0; i < count; i++) {
+         order[i] = i;
+      }
+
+      if (count > MAX_BLOCK_TRACERS) {
+         IntArrays.quickSort(order, (left, right) -> Double.compare(distances.getDouble(left), distances.getDouble(right)));
+         count = MAX_BLOCK_TRACERS;
+      }
+
+      for (int i = 0; i < count; i++) {
+         long packed = positions.getLong(order[i]);
+         Vec3 center = new Vec3(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5);
+         Color color = this.colorFor(new Color(colors.getInt(order[i]), true), center);
+         AABB bounds = new AABB(center.x - 0.5, center.y - 0.5, center.z - 0.5, center.x + 0.5, center.y + 0.5, center.z + 0.5);
+         this.blockTargets.add(new Target(center, null, null, bounds, color, null));
       }
    }
 
@@ -203,6 +263,7 @@ public class TracersModule extends Module {
 
    @EventHandler
    private void onTick(LocalPlayerTickEvent event) {
+      this.tickCounter++;
       TargetSettings.Blocks card = this.targets.blocks;
       if (!card.active() || !card.sound.getValue() || argusclientMinecraft.player == null) {
          return;

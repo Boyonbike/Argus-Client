@@ -32,7 +32,7 @@ public abstract class ChunkAwareBlockCollisionSweeperVoxelShapeMixin extends Chu
       )
    )
    private VoxelShape modifyClientBlockCollisionShape(VoxelShape originalShape, @Local(name = "state") BlockState blockState) {
-      if (this.world != Minecraft.getInstance().level) {
+      if (this.world != Minecraft.getInstance().level || !BlockCollisionShapeEvent.shouldPost(this.context)) {
          return originalShape;
       }
 

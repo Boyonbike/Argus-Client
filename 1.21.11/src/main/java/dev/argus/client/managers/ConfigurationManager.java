@@ -141,6 +141,42 @@ public final class ConfigurationManager implements ClientAccess {
       }
    }
 
+   /** Writes saves one at a time, in order, away from the render thread. */
+   private static final java.util.concurrent.ExecutorService SAVE_WRITER = java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+      Thread thread = new Thread(task, "Argus config writer");
+      thread.setDaemon(true);
+      return thread;
+   });
+
+   /**
+    * Like {@link #save()}, but only the JSON snapshot is taken on the calling thread; the disk writes happen on a
+    * background thread so a slow drive can't stutter the game. Use for saves triggered by in-game actions.
+    */
+   public void saveAsync() {
+      if (PanicCommand.unloaded) {
+         return;
+      }
+
+      Map<Path, String> serialized = new LinkedHashMap<>();
+      for (JsonConfigurable configurable : this.configurables) {
+         try {
+            serialized.put(ROOT_DIRECTORY.resolve(configurable.getConfigName()), ClientAccess.gson.toJson(configurable.toJson().getAsJsonObject()));
+         } catch (Throwable failure) {
+            failure.printStackTrace();
+         }
+      }
+
+      SAVE_WRITER.execute(() -> {
+         for (var entry : serialized.entrySet()) {
+            try {
+               FileUtils.writeUtf8Atomically(entry.getKey(), entry.getValue());
+            } catch (Throwable failure) {
+               failure.printStackTrace();
+            }
+         }
+      });
+   }
+
    /** Saves the requested stores and propagates failures to the caller performing the change. */
    public void saveChecked(JsonConfigurable... stores) throws IOException {
       if (PanicCommand.unloaded) throw new IOException("Configuration saving is disabled.");

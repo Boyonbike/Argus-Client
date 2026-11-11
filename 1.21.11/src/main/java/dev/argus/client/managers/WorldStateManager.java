@@ -61,6 +61,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public final class WorldStateManager implements ClientAccess {
    private static final AntiCheatModule antiCheatModule = ClientContext.getModule(AntiCheatModule.class);
    private final List<BlockEntity> blockEntities = Collections.synchronizedList(new ArrayList<>());
+   private volatile boolean blockEntitiesStale = true;
    private final Map<BlockPos, PendingPlacement> pendingPlacements = Collections.synchronizedMap(new HashMap<>());
    private final Set<BlockPos> confirmedPlacements = Collections.synchronizedSet(new HashSet<>());
    private final Set<BlockPos> currentTickPlacements = Collections.synchronizedSet(new HashSet<>());
@@ -92,6 +93,19 @@ public final class WorldStateManager implements ClientAccess {
    }
 
    public List<BlockEntity> getBlockEntities() {
+      // Rebuilt lazily, at most once per tick and only when something asks for it,
+      // instead of copying every loaded chunk's block entities on every tick.
+      if (this.blockEntitiesStale && ClientAccess.argusclientMinecraft.isSameThread()) {
+         this.blockEntitiesStale = false;
+         synchronized (this.blockEntities) {
+            this.blockEntities.clear();
+            if (ClientAccess.argusclientMinecraft.level != null && ClientAccess.argusclientMinecraft.player != null) {
+               this.blockEntities.addAll(WorldUtils.getLoadedBlockEntities());
+               this.blockEntities.removeIf(Objects::isNull);
+            }
+         }
+      }
+
       return this.blockEntities;
    }
 
@@ -187,11 +201,7 @@ public final class WorldStateManager implements ClientAccess {
          }
       }
 
-      synchronized (this.getBlockEntities()) {
-         this.blockEntities.clear();
-         this.blockEntities.addAll(WorldUtils.getLoadedBlockEntities());
-         this.blockEntities.removeIf(Objects::isNull);
-      }
+      this.blockEntitiesStale = true;
 
       synchronized (this.rollbackBlocks) {
          this.rollbackBlocks.forEach((position, snapshot) -> {

@@ -17,7 +17,34 @@ public class NameProtectModule extends Module {
    public final Setting<Boolean> skinSetting = this.add(new BooleanSetting("Skin", true));
    public final Setting<Boolean> slimSetting = this.add(new BooleanSetting("Slim", false).dependsOn(this.skinSetting));
 
+   /**
+    * Recent results. Every drawn or measured string passes through here, and with "Others" on each one was
+    * rescanned for every player in the level on every frame. Cleared often so name or setting changes show quickly.
+    */
+   private final java.util.HashMap<String, String> recentResults = new java.util.HashMap<>();
+   private long recentResultsMillis;
+
    public String protectNames(String text) {
+      if (!replacementBypassed && text != null && !text.isEmpty() && ClientAccess.argusclientMinecraft.isSameThread()) {
+         long now = System.currentTimeMillis();
+         if (now - this.recentResultsMillis > 250L || this.recentResults.size() > 2048) {
+            this.recentResults.clear();
+            this.recentResultsMillis = now;
+         }
+
+         String cached = this.recentResults.get(text);
+         if (cached == null) {
+            cached = this.computeProtectedNames(text);
+            this.recentResults.put(text, cached);
+         }
+
+         return cached;
+      }
+
+      return this.computeProtectedNames(text);
+   }
+
+   private String computeProtectedNames(String text) {
       if (!replacementBypassed && text != null && !text.isEmpty()) {
          String nameToReplace = ClientAccess.argusclientMinecraft.getUser().getName();
          String protectedName = this.getProtectedName();
@@ -39,7 +66,7 @@ public class NameProtectModule extends Module {
    }
 
    private String replaceWholeName(String text, String name, String replacement) {
-      if (name != null && !name.isEmpty()) {
+      if (name != null && !name.isEmpty() && text.indexOf(name) >= 0) {
          StringBuilder result = new StringBuilder(text.length());
          int cursor = 0;
          int nameLength = name.length();

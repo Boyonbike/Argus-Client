@@ -21,6 +21,9 @@ import net.minecraft.world.phys.Vec3;
 public final class MovementPredictionManager implements ClientAccess {
    private final Map<Integer, PlayerMotionPredictor> playerPredictions = Collections.synchronizedMap(new HashMap<>());
    private final ElapsedTimer predictionTimer = new ElapsedTimer();
+   /** Predictions only run while a module has asked for one recently. */
+   private static final long DEMAND_MILLIS = 2000L;
+   private volatile long lastDemandMillis = Long.MIN_VALUE / 2;
    private Vec3 previousPlayerPosition;
 
    public Vec3 getAdjustedLocalMotion() {
@@ -54,6 +57,16 @@ public final class MovementPredictionManager implements ClientAccess {
 
    @EventHandler
    private void onMinecraftRunTickEvent(MinecraftRunTickEvent event) {
+      if (System.currentTimeMillis() - this.lastDemandMillis >= DEMAND_MILLIS) {
+         // Nobody reads predictions: skip simulating every player, and drop old history so the
+         // next request starts from fresh motion instead of positions from seconds ago.
+         if (!this.playerPredictions.isEmpty()) {
+            this.playerPredictions.clear();
+         }
+
+         return;
+      }
+
       if (!this.isWorldUnavailable() && this.predictionTimer.hasElapsedAndReset(25L)) {
          for (AbstractClientPlayer player : ClientAccess.argusclientMinecraft.level.players()) {
             this.playerPredictions.computeIfAbsent(player.getId(), ignored -> new PlayerMotionPredictor(player)).updatePredictions();
@@ -67,6 +80,7 @@ public final class MovementPredictionManager implements ClientAccess {
    }
 
    public synchronized AABB getPredictedBoundingBox(Player player, int tickIndex) {
+      this.lastDemandMillis = System.currentTimeMillis();
       PlayerMotionPredictor prediction = this.playerPredictions.get(player.getId());
       if (prediction == null) {
          return player.getBoundingBox();

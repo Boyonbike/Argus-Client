@@ -1,5 +1,7 @@
 package dev.argus.client.render;
 
+import dev.argus.client.managers.RenderTargetRegistry;
+
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import dev.argus.client.ClientAccess;
 import dev.argus.mixin.MinecraftAccessor;
@@ -32,12 +34,14 @@ public final class RenderTargetUtils implements ClientAccess {
    }
 
    public static void overrideRenderTargets(RenderTarget target) {
+      RenderTargetRegistry.activate(target);
       savedMainRenderTarget = ClientAccess.argusclientMinecraft.getMainRenderTarget();
       pushFramebuffer(target);
       setMainRenderTarget(target);
    }
 
    public static void setMainRenderTarget(RenderTarget target) {
+      RenderTargetRegistry.activate(target);
       ((MinecraftAccessor)ClientAccess.argusclientMinecraft).argusclient$setFramebuffer(target);
    }
 

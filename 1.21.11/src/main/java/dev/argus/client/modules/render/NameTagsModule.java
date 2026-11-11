@@ -174,6 +174,7 @@ public class NameTagsModule extends Module {
    private final MeshBuffer overlayMesh;
    private final Color itemOverlayColor;
    private final List<Entity> visibleEntities;
+   private final java.util.IdentityHashMap<Entity, Vec3> renderOffsets = new java.util.IdentityHashMap<>();
    private final List<ItemStack> equipmentItems;
    private final ElapsedTimer entityRefreshTimer;
    private boolean hasEquipmentItem;
@@ -447,7 +448,7 @@ public class NameTagsModule extends Module {
 
                   Enchantment enchantment = (Enchantment)((Holder)enchantmentEntry.getKey()).value();
                   boolean singleLevelEnchantment = enchantment.getMaxLevel() == 1;
-                  String enchantmentName = Enchantment.getFullname((Holder<Enchantment>)enchantmentEntry.getKey(), enchantmentEntry.getIntValue()).getString();
+                  String enchantmentName = enchantmentName((Holder<Enchantment>)enchantmentEntry.getKey(), enchantmentEntry.getIntValue());
                   int enchantmentPrefixLimit;
                   if (singleLevelEnchantment) {
                      enchantmentPrefixLimit = 3;
@@ -636,10 +637,11 @@ public class NameTagsModule extends Module {
          double previousZSnapshot = entity.zo;
          double currentZ = entity.getZ();
          double relativeZ = Mth.lerp(interpolationPartialTick, previousZSnapshot, currentZ) - cameraPosition.z;
-         EntityRenderDispatcher entityDispatcherSnapshot = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher();
-         EntityRenderer entityRenderer = entityDispatcherSnapshot.getRenderer(entity);
-         EntityRenderState renderState = entityRenderer.createRenderState(entity, partialTick);
-         Vec3 renderOffset = entityRenderer.getRenderOffset(renderState);
+         Vec3 renderOffset = this.renderOffsets.get(entity);
+         if (renderOffset == null) {
+            renderOffset = computeRenderOffset(entity, partialTick);
+            this.renderOffsets.put(entity, renderOffset);
+         }
          event.getPoseStack().pushPose();
          PoseStack translatePosesSnapshot = event.getPoseStack();
          double translatedXSnapshot = relativeX + renderOffset.x();
@@ -709,13 +711,35 @@ public class NameTagsModule extends Module {
                }
             }
 
-            this.visibleEntities.sort(Comparator.comparingDouble(sortedEntity -> {
-               Vec3 sortCameraPositionSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
-               Vec3 sortEntityPosition = sortedEntity.position();
-               return -sortCameraPositionSnapshot.distanceToSqr(sortEntityPosition);
-            }));
+            Vec3 sortCamera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
+            this.visibleEntities.sort(Comparator.comparingDouble(sortedEntity -> -sortCamera.distanceToSqr(sortedEntity.position())));
+            // Offsets (e.g. crouching) are refreshed with the entity list rather than by building a
+            // whole render state for every tagged entity on every frame.
+            this.renderOffsets.clear();
          }
       }
+   }
+
+   /** Enchantment names are the same every frame; building the text component each time was wasted work. */
+   private static final java.util.Map<EnchantmentNameKey, String> ENCHANTMENT_NAMES = new java.util.HashMap<>();
+
+   private record EnchantmentNameKey(Holder<Enchantment> enchantment, int level) {
+   }
+
+   private static String enchantmentName(Holder<Enchantment> enchantment, int level) {
+      if (ENCHANTMENT_NAMES.size() > 1024) {
+         ENCHANTMENT_NAMES.clear();
+      }
+
+      return ENCHANTMENT_NAMES.computeIfAbsent(
+         new EnchantmentNameKey(enchantment, level), key -> Enchantment.getFullname(key.enchantment(), key.level()).getString()
+      );
+   }
+
+   private static Vec3 computeRenderOffset(Entity entity, float partialTick) {
+      EntityRenderer renderer = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher().getRenderer(entity);
+      EntityRenderState renderState = renderer.createRenderState(entity, partialTick);
+      return renderer.getRenderOffset(renderState);
    }
 
    private static boolean isEntityRefreshDue(ElapsedTimer timer) {

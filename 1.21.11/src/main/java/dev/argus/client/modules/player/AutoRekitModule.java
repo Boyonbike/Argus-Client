@@ -86,7 +86,7 @@ public final class AutoRekitModule extends Module {
         presets.put(name, slots); activePreset.setValue(name); invalidate(); saveConfig();
     }
     private static void saveConfig() {
-        if (ClientContext.configurationManager != null) ClientContext.configurationManager.save();
+        if (ClientContext.configurationManager != null) ClientContext.configurationManager.saveAsync();
     }
     private void invalidate() { decodedName = null; manualRequested = false; }
     @Override public void onDisable() { manualRequested = false; currentMenu = null; }

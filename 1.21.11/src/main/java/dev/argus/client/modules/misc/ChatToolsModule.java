@@ -301,7 +301,7 @@ public final class ChatToolsModule extends Module {
         boolean changed = !wasMerged;
         if (tools.isToggled() != decision.on()) { if (decision.on()) tools.enable(); else tools.disable(); changed = true; }
         if (betterChat.isToggled() != decision.on()) { if (decision.on()) betterChat.enable(); else betterChat.disable(); changed = true; }
-        if (changed && !wasMerged && ClientContext.configurationManager != null) ClientContext.configurationManager.save();
+        if (changed && !wasMerged && ClientContext.configurationManager != null) ClientContext.configurationManager.saveAsync();
     }
 
     /** BetterChat's settings, shown on this module's page. */
@@ -600,7 +600,7 @@ public final class ChatToolsModule extends Module {
             social.removeSocial(player);
             if (role == SocialRole.FRIEND) social.addFriend(player); else social.addEnemy(player);
         }
-        if (ClientContext.configurationManager != null) ClientContext.configurationManager.save();
+        if (ClientContext.configurationManager != null) ClientContext.configurationManager.saveAsync();
         syncAutoTpy();
     }
     /** Argus friends, without yourself, alphabetically. */

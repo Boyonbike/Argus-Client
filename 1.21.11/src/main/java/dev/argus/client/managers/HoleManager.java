@@ -10,11 +10,9 @@ import dev.argus.client.utils.world.BlockStateUtils;
 import dev.argus.client.utils.world.HoleInfo;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -29,9 +27,18 @@ import net.minecraft.world.phys.AABB;
 
 public final class HoleManager implements ClientAccess {
    private static final Direction[] horizontalDirections;
-   private static final ScheduledExecutorService scanExecutor = Executors.newSingleThreadScheduledExecutor();
-   private static final MutableBlockPos classificationCursor = new MutableBlockPos();
+   /** How long the full nearby-hole scan keeps running after something last asked for the hole list. */
+   private static final long SCAN_DEMAND_MILLIS = 2000L;
+   private static final ScheduledExecutorService scanExecutor = Executors.newSingleThreadScheduledExecutor(task -> {
+      Thread thread = new Thread(task, "Argus hole scanner");
+      thread.setDaemon(true);
+      thread.setPriority(Thread.MIN_PRIORITY);
+      return thread;
+   });
+   /** Per thread, so the scanner thread and the client thread never share a cursor. */
+   private static final ThreadLocal<MutableBlockPos> CLASSIFICATION_CURSOR = ThreadLocal.withInitial(MutableBlockPos::new);
    private volatile List<HoleInfo> holes = new ArrayList<>();
+   private volatile long lastDemandMillis = Long.MIN_VALUE / 2;
    private boolean inHole;
 
    public boolean intersectsHole(BlockPos position) {
@@ -39,27 +46,42 @@ public final class HoleManager implements ClientAccess {
    }
 
    public boolean intersectsHole(AABB bounds) {
-      return this.holes.stream().anyMatch(hole -> {
-         AABB holeBounds = hole.bounds();
-         return holeBounds.intersects(bounds);
-      });
+      for (HoleInfo hole : this.demandHoles()) {
+         if (hole.bounds().intersects(bounds)) {
+            return true;
+         }
+      }
+
+      return false;
    }
 
    public List<HoleInfo> getHoles() {
-      return this.holes;
+      return this.demandHoles();
    }
 
    public HoleInfo findIntersectingHole(BlockPos position) {
-      Stream<HoleInfo> matchingHoles = this.holes.stream().filter(hole -> {
-         AABB holeBounds = hole.bounds();
-         return holeBounds.intersects(new AABB(position));
-      });
-      Optional<HoleInfo> firstMatch = matchingHoles.findFirst();
-      return firstMatch.orElse(null);
+      AABB bounds = new AABB(position);
+      for (HoleInfo hole : this.demandHoles()) {
+         if (hole.bounds().intersects(bounds)) {
+            return hole;
+         }
+      }
+
+      return null;
    }
 
    public boolean isInHole() {
       return this.inHole;
+   }
+
+   /** Marks the hole list as wanted, so the scan only runs while a module actually reads it. */
+   private List<HoleInfo> demandHoles() {
+      this.lastDemandMillis = System.currentTimeMillis();
+      return this.holes;
+   }
+
+   boolean isScanDemanded() {
+      return System.currentTimeMillis() - this.lastDemandMillis < SCAN_DEMAND_MILLIS;
    }
 
    public HoleManager() {
@@ -67,10 +89,11 @@ public final class HoleManager implements ClientAccess {
       ScheduledExecutorService executor = scanExecutor;
       HoleScanTask scanTask = new HoleScanTask(this);
       TimeUnit scanTimeUnit = TimeUnit.MILLISECONDS;
-      executor.scheduleAtFixedRate(scanTask, 0L, 50L, scanTimeUnit);
+      executor.scheduleWithFixedDelay(scanTask, 0L, 50L, scanTimeUnit);
    }
 
    static HoleInfo classifyHole(BlockPos position, Direction fromDirection) {
+      MutableBlockPos classificationCursor = CLASSIFICATION_CURSOR.get();
       classificationCursor.set(position);
       MutableBlockPos cursorSnapshot = classificationCursor;
       if (BlockStateUtils.isBlockingExceptCarpet(cursorSnapshot)) {
@@ -161,8 +184,13 @@ public final class HoleManager implements ClientAccess {
 
    @EventHandler
    private void onLocalPlayerTickEvent(LocalPlayerTickEvent event) {
+      // Only the player's own block is needed here, so this no longer depends on the full scan.
       BlockPos roundedPosition = PlayerStateUtils.getLocalRoundedBlockPosition();
-      this.inHole = this.intersectsHole(roundedPosition);
+      this.inHole = roundedPosition != null && argusclientMinecraft.level != null && classifyHole(roundedPosition, null) != null;
+   }
+
+   List<HoleInfo> getHolesWithoutDemand() {
+      return this.holes;
    }
 
    public void setHoles(List updatedHoles) {

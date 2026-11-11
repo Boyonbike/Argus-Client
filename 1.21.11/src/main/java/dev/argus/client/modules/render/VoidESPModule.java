@@ -16,14 +16,15 @@ import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.world.WorldUtils;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import java.awt.Color;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.network.protocol.game.ClientboundLoginPacket;
 import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
 import net.minecraft.util.Mth;
@@ -43,6 +44,7 @@ public class VoidESPModule extends Module {
    private final Setting<Color> lineSetting;
    private final Set<BlockPos> voidBlocks;
    private boolean resetPending;
+   private final Long2IntOpenHashMap columnHeights = new Long2IntOpenHashMap();
 
    private boolean shouldRemoveVoidBlock(BlockPos position) {
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
@@ -86,6 +88,7 @@ public class VoidESPModule extends Module {
    @Override
    public void onDisable() {
       this.voidBlocks.clear();
+      this.columnHeights.clear();
    }
 
    @EventHandler
@@ -98,10 +101,34 @@ public class VoidESPModule extends Module {
       this.voidBlocks.removeIf(this::shouldRemoveVoidBlock);
       GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;
       Vec3 cameraPosition = gameRenderer.getMainCamera().position();
-      float scanRadius = this.radiusSetting.getValue().intValue();
-      Stream voidBlockStream = WorldUtils.streamSphereBlocks(cameraPosition, scanRadius).filter(this::isVoidBlock);
-      Set destinationBlocks = this.voidBlocks;
-      voidBlockStream.forEach(destinationBlocks::add);
+      int scanRadius = this.radiusSetting.getValue();
+      // Void holes can only be on the bottom layer, so scan that flat disc of the sphere
+      // instead of every block in it (about 20x fewer lookups at radius 16).
+      BlockPos center = BlockPos.containing(cameraPosition);
+      int minY = ClientAccess.argusclientMinecraft.level.getMinY();
+      int dy = minY - center.getY();
+      int radiusSquared = scanRadius * scanRadius;
+      if (dy * dy < radiusSquared) {
+         MutableBlockPos position = new MutableBlockPos();
+         for (int dx = -scanRadius; dx <= scanRadius; dx++) {
+            for (int dz = -scanRadius; dz <= scanRadius; dz++) {
+               if (dx * dx + dy * dy + dz * dz >= radiusSquared) {
+                  continue;
+               }
+
+               position.set(center.getX() + dx, minY, center.getZ() + dz);
+               if (!isBedrock(position)) {
+                  this.voidBlocks.add(position.immutable());
+               }
+            }
+         }
+      }
+
+      // Column heights only change with blocks, so work them out per tick rather than per block per frame.
+      this.columnHeights.clear();
+      for (BlockPos position : this.voidBlocks) {
+         this.columnHeights.put(position.asLong(), getColumnHeight(this, position));
+      }
    }
 
    @EventHandler
@@ -109,7 +136,8 @@ public class VoidESPModule extends Module {
       for (BlockPos position : this.voidBlocks) {
          AABB blockBox = new AABB(position);
          int baseY = position.getY();
-         double maxY = baseY + getColumnHeight(this, position);
+         long key = position.asLong();
+         double maxY = baseY + (this.columnHeights.containsKey(key) ? this.columnHeights.get(key) : getColumnHeight(this, position));
          AABB box = blockBox.setMaxY(maxY);
          if (RotationManager.isVisible(box)) {
             GameRenderer gameRenderer = ClientAccess.argusclientMinecraft.gameRenderer;

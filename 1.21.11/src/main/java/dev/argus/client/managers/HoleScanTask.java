@@ -1,9 +1,8 @@
 package dev.argus.client.managers;
 
 import dev.argus.client.utils.world.HoleInfo;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -15,10 +14,19 @@ public final class HoleScanTask implements Runnable {
    private final HoleManager holeManager;
 
    private void scanNearbyHoles() {
+      if (!this.holeManager.isScanDemanded()) {
+         // Nothing reads the hole list, so skip the 32x32x32 scan and drop the stale result.
+         if (!this.holeManager.getHolesWithoutDemand().isEmpty()) {
+            this.holeManager.setHoles(new ArrayList<>());
+         }
+
+         return;
+      }
+
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft != null && minecraft.player != null && minecraft.level != null) {
          ArrayList<HoleInfo> holes = new ArrayList<>();
-         HashSet<Long> coveredPositions = new HashSet<>();
+         LongOpenHashSet coveredPositions = new LongOpenHashSet();
          LocalPlayer player = minecraft.player;
          BlockPos origin = player.blockPosition();
 
@@ -60,7 +68,7 @@ public final class HoleScanTask implements Runnable {
       }
    }
 
-   private void addCoveredPositions(Set<Long> positions, AABB bounds) {
+   private void addCoveredPositions(LongOpenHashSet positions, AABB bounds) {
       for (int x = (int)bounds.minX; x < (int)bounds.maxX; x++) {
          for (int z = (int)bounds.minZ; z < (int)bounds.maxZ; z++) {
             int y = (int)bounds.minY;

@@ -46,6 +46,7 @@ public final class BlockTargetIndex implements ClientAccess {
    public static final int ANCIENT_CITY = 8;
    public static final int TRIAL_CHAMBERS = 16;
    private static final int MAX_ENTRIES = 300_000;
+   private static final long DRAIN_BUDGET_NANOS = 3_000_000L;
    /** Containers the player opened in this world and dimension; the oldest are forgotten first beyond this. */
    private static final int MAX_OPENED = 65_536;
    private static BlockTargetIndex instance;
@@ -231,8 +232,11 @@ public final class BlockTargetIndex implements ClientAccess {
    /** Applies worker results on the client thread. */
    private void drain() {
       int current = this.generation;
+      // Bounded per tick so joining a world at high render distance spreads the work out instead of
+      // applying every scanned chunk in one frame; anything left over waits for the next tick.
+      long deadline = System.nanoTime() + DRAIN_BUDGET_NANOS;
       Result result;
-      while ((result = this.results.poll()) != null) {
+      while (System.nanoTime() < deadline && (result = this.results.poll()) != null) {
          if (result.generation() != current) {
             continue;
          }
@@ -278,14 +282,8 @@ public final class BlockTargetIndex implements ClientAccess {
    }
 
    private void removeChunk(int chunkX, int chunkZ) {
-      LongIterator iterator = this.blockEntities.iterator();
-      while (iterator.hasNext()) {
-         long packed = iterator.nextLong();
-         if (CellIndex.unpackX(packed) >> 4 == chunkX && CellIndex.unpackZ(packed) >> 4 == chunkZ) {
-            iterator.remove();
-         }
-      }
-
+      // Block-entity marks for this chunk are pruned by reconcileBlockEntities() once their index entry is gone,
+      // so there's no need to walk every tracked block entity on each chunk unload.
       this.index.removeChunk(chunkX, chunkZ);
       this.version++;
    }
