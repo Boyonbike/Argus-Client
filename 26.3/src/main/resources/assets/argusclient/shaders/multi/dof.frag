@@ -1,5 +1,12 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+    float FocusDistance;
+    float BlurStrength;
+    vec2 u_Direction;
+};
+
 out vec4 color;
 
 in vec2 v_TexCoord;
@@ -8,10 +15,7 @@ in vec2 v_OneTexel;
 uniform sampler2D DepthSampler;
 uniform sampler2D u_Texture;
 
-uniform float FocusDistance;
-uniform float BlurStrength;
 
-uniform vec2 u_Direction;
 
 float getDepth(vec2 uv) {
     return texture(DepthSampler, uv).r;

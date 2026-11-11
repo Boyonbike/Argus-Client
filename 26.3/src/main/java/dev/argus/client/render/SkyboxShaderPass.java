@@ -25,6 +25,7 @@ public class SkyboxShaderPass extends BaseShaderPass implements ReloadableShader
       cameraRotation = clientInstance.gameRenderer.mainCamera().yRot();
       float normalizedYaw = cameraRotation / 180.0F * aspectRatio;
       ShaderUniforms scaleUniformsCapture = this.uniforms;
+      this.uniforms.set("u_Size", (float)screenWidth, (float)screenHeight);
       scaleUniformsCapture.set("u_Scale", 1.0F);
       ShaderUniforms mouseUniformsCapture = this.uniforms;
       SkyboxModule yawModuleCapture = SKYBOX_MODULE;

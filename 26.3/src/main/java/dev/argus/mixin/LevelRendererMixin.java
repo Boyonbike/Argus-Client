@@ -176,10 +176,14 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
          this.targets.main = skyFramePass.readsAndWrites(this.targets.main);
          skyFramePass.executes(() -> {
             ShaderPass skyShader = ClientContext.shaderRegistry.getPass("sky");
-            ShaderPassRenderState.INSTANCE.configure(skyShader);
-            RenderStateManager.addStates(ShaderPassRenderState.INSTANCE);
-            skyboxModule.drawShaderQuad();
-            RenderStateManager.reset();
+            if (skyShader instanceof dev.argus.client.render.SkyboxShaderPass sky && sky.getProgram() != null) {
+               sky.updateUniforms();
+               com.mojang.renderpearl.api.commands.CommandEncoder encoder =
+                  com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder();
+               sky.getProgram().pipeline().draw(
+                  encoder, ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
+               encoder.submit();
+            }
             RenderUtils.INSTANCE.fillRect(this.worldPoseStack, 0.0F, 0.0F, 1.0F, 1.0F, 0);
          });
       }

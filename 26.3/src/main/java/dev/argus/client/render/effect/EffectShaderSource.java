@@ -24,8 +24,8 @@ public final class EffectShaderSource implements ShaderSource {
    }
 
    public static EffectShaderSource fromResources(String vertexResource, String fragmentResource) {
-      String vertex = readResource(vertexResource);
-      String fragment = readResource(fragmentResource);
+      String vertex = toStd140(readResource(vertexResource));
+      String fragment = toStd140(readResource(fragmentResource));
       String utility = readResource("util/util.frag");
       if (fragment.contains("u_Overlay")) {
          utility = utility + "\n" + readResource("util/blur_util.frag");
@@ -38,10 +38,56 @@ public final class EffectShaderSource implements ShaderSource {
    }
 
    public static EffectShaderSource fromSources(String name, String vertex, String fragment) {
+      vertex = toStd140(vertex);
+      fragment = toStd140(fragment);
       Map<Identifier, String> map = new HashMap<>();
       map.put(shaderId(name + ".vsh"), vertex);
       map.put(shaderId(name + ".fsh"), fragment);
       return new EffectShaderSource(map, vertex, fragment);
+   }
+
+   /** Converts loose non-sampler uniforms (e.g. a user sky shader) to a std140 block. */
+   public static String toStd140(String source) {
+      if (source.contains("uniform EffectUniforms")) {
+         return source;
+      }
+      java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+         "^\\s*uniform\\s+(?!sampler)([A-Za-z0-9_]+)\\s+([A-Za-z_]\\w*)\\s*;\\s*(//.*)?$");
+      java.util.List<String> kept = new java.util.ArrayList<>();
+      java.util.List<String> declarations = new java.util.ArrayList<>();
+      for (String line : source.split("\n", -1)) {
+         java.util.regex.Matcher matcher = pattern.matcher(line);
+         if (matcher.matches()) {
+            String type = matcher.group(1);
+            String name = matcher.group(2);
+            if (!name.equals("u_Size")) {
+               declarations.add("    " + type + " " + name + ";");
+            }
+         } else {
+            kept.add(line);
+         }
+      }
+      if (declarations.isEmpty()) {
+         return source;
+      }
+      declarations.add(0, "    vec2 u_Size;");
+      int headerEnd = 0;
+      for (int i = 0; i < kept.size(); i++) {
+         String trimmed = kept.get(i).trim();
+         if (trimmed.startsWith("#version") || trimmed.startsWith("#extension")
+            || trimmed.startsWith("#moj_import") || trimmed.startsWith("//") || trimmed.isEmpty()) {
+            headerEnd = i + 1;
+         } else {
+            break;
+         }
+      }
+      java.util.List<String> block = new java.util.ArrayList<>();
+      block.add("layout(std140) uniform EffectUniforms {");
+      block.addAll(declarations);
+      block.add("};");
+      block.add("");
+      kept.addAll(headerEnd, block);
+      return String.join("\n", kept);
    }
 
    public static Identifier shaderId(String resource) {

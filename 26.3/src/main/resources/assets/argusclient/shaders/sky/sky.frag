@@ -1,12 +1,16 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+    vec4 u_Color;
+    vec2 u_Resolution;
+    vec2 u_Mouse;
+    float u_Scale;
+    float u_Time;
+};
+
 out vec4 color;
 
-uniform vec4 u_Color; 		// SkyColor -> Color
-uniform vec2 u_Resolution; 	// Screen resolution
-uniform vec2 u_Mouse; 		// Yaw and pitch angles relative to Screen
-uniform float u_Scale; 		// Shader scale
-uniform float u_Time; 		// Current time in seconds
 
 #define TAU 6.28318530718
 #define MAX_ITER 5

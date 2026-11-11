@@ -1,14 +1,10 @@
 package dev.argus.client.render;
 
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.renderpearl.api.textures.GpuTexture;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.AmbienceModule;
 import dev.argus.client.settings.Setting;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 public class DepthOfFieldPipeline extends ShaderPipeline {
    private static final AmbienceModule ambience = ClientContext.getModule(AmbienceModule.class);
@@ -29,15 +25,13 @@ public class DepthOfFieldPipeline extends ShaderPipeline {
       @Override
       public void updateUniforms() {
          super.updateUniforms();
-         GL13.glActiveTexture(33998);
          AmbienceModule capturedAmbience = DepthOfFieldPipeline.ambience;
          RenderTarget depthTarget = capturedAmbience.getDepthRenderTarget();
-         GpuTexture depthTexture = depthTarget.getDepthTexture();
-         GlTexture glTexture = (GlTexture)depthTexture;
-         int depthTextureId = glTexture.glId();
-         GL11.glBindTexture(3553, depthTextureId);
-         ShaderUniforms capturedDepthUniforms = this.uniforms;
-         capturedDepthUniforms.set("DepthSampler", 14);
+         this.uniforms.set(
+            "DepthSampler",
+            depthTarget.getDepthTextureView(),
+            com.mojang.blaze3d.systems.RenderSystem.getSamplerCache()
+               .getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR));
          ShaderUniforms capturedFocusUniforms = this.uniforms;
          float focusDistance = 0.998F;
          capturedFocusUniforms.set("FocusDistance", focusDistance);
