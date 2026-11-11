@@ -916,6 +916,7 @@ SpeedMine	SneakExtend	Extends the extra break target while sneaking.
 SpeedMine	Rebreak	Selects how broken blocks are mined again.
 SpeedMine	Async	Sends instant rebreak actions asynchronously.
 SpeedMine	InstantDelay	Delay between instant rebreak actions.
+SpeedMine	Confirm	Strict waits for the server to confirm each instant rebreak; Strong never waits; Bypass is Strict until one rebreak is confirmed, then Strong.
 SpeedMine	HoldingBest	Keeps the best tool held during instant rebreaking.
 SpeedMine	AutoSwap	Selects normal or silent tool swapping.
 SpeedMine	SwapBack	Returns to your original slot after mining.

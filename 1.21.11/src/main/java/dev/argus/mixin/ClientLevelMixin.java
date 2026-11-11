@@ -5,6 +5,7 @@ import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.ClientLevelAddEntityEvent;
 import dev.argus.client.events.ClientLevelRemoveEntityEvent;
+import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.render.NoRenderModule;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -21,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientLevel.class)
 public abstract class ClientLevelMixin {
    private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
+   private static final SpeedMineModule speedMineModule = ClientContext.getModule(SpeedMineModule.class);
 
    @Inject(method = "removeEntity", at = @At(value = "JUMP", shift = Shift.BEFORE, ordinal = 0), cancellable = true)
    private void postRemoveEntityEvent(int entityId, RemovalReason reason, CallbackInfo callback, @Local Entity entity) {
@@ -51,6 +53,14 @@ public abstract class ClientLevelMixin {
    private void suppressDestroyBlockEffect(BlockPos blockPos, BlockState blockState, CallbackInfo callback) {
       if (noRenderModule.shouldHideBlockBreakingParticles()) {
          callback.cancel();
+      }
+   }
+
+   /** Lets SpeedMine see the server's block state (e.g. air confirming a break) before the client world applies it. */
+   @Inject(method = "setServerVerifiedBlockState", at = @At("HEAD"))
+   private void notifySpeedMineOfServerBlock(BlockPos blockPos, BlockState blockState, int flags, CallbackInfo callback) {
+      if (speedMineModule != null) {
+         speedMineModule.onServerBlockUpdate(blockPos, blockState);
       }
    }
 }

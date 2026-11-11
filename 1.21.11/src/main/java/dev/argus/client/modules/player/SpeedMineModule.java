@@ -18,7 +18,6 @@ import dev.argus.client.managers.RotationManager;
 import dev.argus.client.managers.ServerStateManager;
 import dev.argus.client.managers.SwingInteractionManager;
 import dev.argus.client.managers.TaskScheduler;
-import dev.argus.client.managers.TickRateController;
 import dev.argus.client.managers.WorldStateManager;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
@@ -40,6 +39,7 @@ import dev.argus.client.settings.options.BlockSampleMode;
 import dev.argus.client.settings.options.ListFilterMode;
 import dev.argus.client.settings.options.SpeedMineAutoSwapChoice;
 import dev.argus.client.settings.options.SpeedMineColorModeChoice;
+import dev.argus.client.settings.options.SpeedMineConfirmChoice;
 import dev.argus.client.settings.options.SpeedMineRebreakChoice;
 import dev.argus.client.settings.options.SpeedMineRenderModeChoice;
 import dev.argus.client.settings.options.SpeedMineValue121Choice;
@@ -81,7 +81,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -122,6 +121,9 @@ public class SpeedMineModule extends Module {
    protected final Setting<Float> instantDelaySetting = this.add(
       new NumberSetting<>("InstantDelay", 0.0F, 0.0F, 2.0F, this::isInstantRebreakPageExpanded).withUnit("s")
    );
+   public final Setting<SpeedMineConfirmChoice> confirmSetting = this.add(
+      new EnumSetting<>("Confirm", SpeedMineConfirmChoice.BYPASS, this::isInstantRebreakPageExpanded)
+   );
    private final Setting<Boolean> holdingBestSetting = this.add(new BooleanSetting("HoldingBest", false, this::isInstantRebreakPageExpanded));
    public final Setting<Boolean> autoSwapSetting = this.add(new BooleanSetting("AutoSwap", true).markAsGroup().markVisibilityDependency());
    final Setting<SpeedMineAutoSwapChoice> autoSwapModeSetting = this.add(
@@ -151,6 +153,7 @@ public class SpeedMineModule extends Module {
    public final Setting<Color> outlineSetting = this.add(new ColorSetting("Outline", new Color(-1044538881, true), this::isCustomColorVisible));
    private final Setting<Boolean> abortSetting = this.add(new BooleanSetting("Abort", false, ignored -> false));
    private final SpeedMineRebreakTracker rebreakTracker = new SpeedMineRebreakTracker(this);
+   private final SpeedMineConfirmation confirmation = new SpeedMineConfirmation();
    private final SpeedMineRenderQueue renderQueue = new SpeedMineRenderQueue();
    private final ExtraBreakTracker extraBreakTracker = new ExtraBreakTracker();
    private final ArrayDeque<Boolean> pendingBreakPositions = new ArrayDeque<>();
@@ -165,6 +168,9 @@ public class SpeedMineModule extends Module {
    private static final AtomicBoolean restartPending = new AtomicBoolean();
    protected float miningProgress;
    private boolean waitingForRebreak;
+   /** Block starts earned at the server's tick rate; see {@link SpeedMineTiming#replenishStartCredit}. */
+   private double startCredit = 1.0;
+   private long lastStartCreditMillis = System.currentTimeMillis();
    private float silentSwapProgress;
    private int bestToolSlot = -1;
    private int previousSelectedSlot;
@@ -405,31 +411,23 @@ public class SpeedMineModule extends Module {
    }
 
    public boolean isBreakDelayActive() {
-      if (this.noBreakDelaySetting.getValue()) {
-         return false;
-      }
-
-      ElapsedTimer timer = this.breakDelayTimer;
-      return !timer.hasElapsed(250L);
+      return SpeedMineTiming.isBreakDelayActive(
+         this.noBreakDelaySetting.getValue(), this.breakDelayTimer.hasElapsed(SpeedMineTiming.BREAK_DELAY_MILLIS)
+      );
    }
 
    private boolean isAlternativeAllowed() {
-      if (RotationManager.is2b2tMode()) {
-         MultiTaskModule multiTask = multiTaskModule;
-         if (!multiTask.isItemUseRestricted()) {
-            MultiTaskModule recentMultiTask = multiTaskModule;
-            if (!recentMultiTask.isItemUseActiveOrRecent(150L)) {
-               return false;
-            }
-         }
-      }
-
-      return this.alternativeSetting.getValue();
+      boolean is2b2tMode = RotationManager.is2b2tMode();
+      return SpeedMinePolicy.isAlternativeAllowed(
+         is2b2tMode,
+         is2b2tMode && multiTaskModule.isItemUseRestricted(),
+         is2b2tMode && multiTaskModule.isItemUseActiveOrRecent(150L),
+         this.alternativeSetting.getValue()
+      );
    }
 
    public float getRenderProgress() {
-      float damage = this.damageSetting.getValue();
-      return Mth.clamp(this.getMiningProgress() / damage, 0.0F, 1.0F);
+      return SpeedMineTiming.renderProgress(this.getMiningProgress(), this.damageSetting.getValue());
    }
 
    public static void reset(SpeedMineModule owner) {
@@ -452,6 +450,40 @@ public class SpeedMineModule extends Module {
       owner.pendingBreakPositions.clear();
       owner.retargetTimer.reset();
       owner.rebreakTracker.reset();
+      owner.confirmation.clear();
+   }
+
+   /**
+    * Server block updates, before they are applied to the client world (from {@code ClientLevelMixin}).
+    * Air on the block being rebroken confirms the last break.
+    */
+   public void onServerBlockUpdate(BlockPos blockPos, BlockState blockState) {
+      if (this.isToggled() && blockState.isAir()) {
+         this.confirmation.onServerAir(blockPos.asLong());
+      }
+   }
+
+   /**
+    * Whether an Instant rebreak may be sent at {@code blockPos} now. Breaks before the server has confirmed
+    * the block are retries and always allowed. Strict (and Bypass until confirmed) only rebreaks a real
+    * replacement block, waits for the previous rebreak's confirmation, and waits for TPS start credit.
+    */
+   private boolean mayInstantRebreak(BlockPos blockPos) {
+      long pos = blockPos.asLong();
+      SpeedMineConfirmChoice mode = this.confirmSetting.getValue();
+      if (!this.confirmation.isRebreak(pos) || this.confirmation.isStrong(mode)) {
+         return true;
+      }
+      return !WorldUtils.isAir(blockPos) && this.confirmation.canRebreak(mode, System.currentTimeMillis()) && this.canStartNewBlock();
+   }
+
+   /** Records an Instant break sent at {@code blockPos}; a confirmation-gated rebreak also spends TPS credit. */
+   private void recordInstantBreak(BlockPos blockPos) {
+      long pos = blockPos.asLong();
+      if (this.confirmation.isRebreak(pos) && !this.confirmation.isStrong(this.confirmSetting.getValue())) {
+         this.startCredit = SpeedMineTiming.spendStartCredit(this.tpsSyncSetting.getValue(), this.startCredit);
+      }
+      this.confirmation.onBreakSent(pos, System.currentTimeMillis());
    }
 
    @Override
@@ -473,6 +505,23 @@ public class SpeedMineModule extends Module {
       this.lastMiningPos = null;
       swapPending.set(false);
       this.renderQueue.clear();
+      this.resetStartCredit();
+   }
+
+   private void resetStartCredit() {
+      this.startCredit = 1.0;
+      this.lastStartCreditMillis = System.currentTimeMillis();
+   }
+
+   /** Measured server TPS, or 20 before the first time update has been measured. */
+   private float serverTps() {
+      float tps = ClientContext.serverStateManager.getTickRate();
+      return tps > 0.0F ? tps : 20.0F;
+   }
+
+   /** False while TPS sync is on, the server is lagging and no start has been earned yet. */
+   private boolean canStartNewBlock() {
+      return SpeedMineTiming.canStart(this.tpsSyncSetting.getValue(), this.serverTps(), this.startCredit);
    }
 
    private static Direction selectDestroyFace(BlockPos blockPos) {
@@ -482,18 +531,14 @@ public class SpeedMineModule extends Module {
 
    @EventHandler
    private void onLocalPlayerTickEvent(LocalPlayerTickEvent event) {
-      Boolean tpsSyncEnabled = this.tpsSyncSetting.getValue();
-      float tickScale;
-      if (tpsSyncEnabled) {
-         tickScale = ClientContext.serverStateManager.getTickRateScale();
-      } else {
-         tickScale = 1.0F;
-      }
-
-      float progressScale = tickScale;
-      float multiplier = 1.0F;
-      TickRateController tickRateController = ClientContext.tickRateController;
-      progressScale *= multiplier / tickRateController.getMultiplier();
+      float progressScale = SpeedMineTiming.progressScale(
+         this.tpsSyncSetting.getValue(),
+         ClientContext.serverStateManager.getTickRateScale(),
+         ClientContext.tickRateController.getMultiplier()
+      );
+      long now = System.currentTimeMillis();
+      this.startCredit = SpeedMineTiming.replenishStartCredit(this.startCredit, now - this.lastStartCreditMillis, this.serverTps());
+      this.lastStartCreditMillis = now;
       this.getExtraBreakTracker().pruneExpired();
       this.renderQueue.snapshotProgress();
       this.updateExtraBreakProgress(progressScale);
@@ -664,6 +709,7 @@ public class SpeedMineModule extends Module {
       reset(this);
       this.lastMiningPos = null;
       this.extraBreakTarget = null;
+      this.resetStartCredit();
    }
 
    @EventHandler
@@ -826,6 +872,15 @@ public class SpeedMineModule extends Module {
                      return;
                   }
 
+                  // A new block waits for TPS credit; vanilla re-requests the start next tick while attack is held.
+                  // Restarts of the current or last block (rebreaks) are left to the rebreak modes.
+                  boolean newBlock = !requestedPosition.equals(this.miningPos)
+                     && !requestedPosition.equals(this.lastMiningPos)
+                     && !automatedMiningStart;
+                  if (newBlock && !this.canStartNewBlock()) {
+                     return;
+                  }
+
                   timer = this.startDestroyRetryTimer;
                   timer.reset();
                   boolean changedTarget = false;
@@ -870,6 +925,9 @@ public class SpeedMineModule extends Module {
                   }
 
                   this.miningPos = this.lastMiningPos = requestedPosition;
+                  if (newBlock) {
+                     this.startCredit = SpeedMineTiming.spendStartCredit(this.tpsSyncSetting.getValue(), this.startCredit);
+                  }
                   BlockPos facePosition = this.miningPos;
                   Direction destroyFace = selectDestroyFace(facePosition);
                   SwingAction miningSwing = SwingAction.MINING;
@@ -940,6 +998,10 @@ public class SpeedMineModule extends Module {
                      worldState.destroyBlockPredicted(predictedPosition);
                      BlockPos attemptPosition = this.miningPos;
                      this.recordBreakAttempt(attemptPosition);
+                     if (this.rebreakSetting.getValue().isInstant()) {
+                        this.recordInstantBreak(attemptPosition);
+                     }
+
                      this.startDestroyRetryTimer.clear();
                      this.extraBreakTarget = null;
                      if (this.rebreakSetting.getValue().isInstant() && hardness == 0.0F) {
@@ -993,14 +1055,8 @@ public class SpeedMineModule extends Module {
          }
 
          float health = EntityUtils.getPlayerHealthWithAbsorption();
-         boolean canSwapTools = true;
-         if (!(health > 4.0F)) {
-            ItemStack heldStack = ClientAccess.argusclientMinecraft.player.getMainHandItem();
-            Item totem = Items.TOTEM_OF_UNDYING;
-            if (heldStack.is(totem)) {
-               canSwapTools = false;
-            }
-         }
+         boolean holdingTotem = ClientAccess.argusclientMinecraft.player.getMainHandItem().is(Items.TOTEM_OF_UNDYING);
+         boolean canSwapTools = SpeedMinePolicy.canSwapTools(health, holdingTotem);
 
          if (this.extraBreakTarget != null) {
             ExtraBreakTarget extraTarget = this.extraBreakTarget;
@@ -1100,22 +1156,14 @@ public class SpeedMineModule extends Module {
                if (!spectatorCheckPlayer.isSpectator()) {
                   LocalPlayer creativeCheckPlayer = ClientAccess.argusclientMinecraft.player;
                   if (!creativeCheckPlayer.isCreative() && canContinueMining) {
-                     boolean rotate = true;
-                     if (this.limitSetting.getValue() != 1.0F) {
-                        float progress = this.getMiningProgress();
-                        Float damage = this.damageSetting.getValue();
-                        float fraction = progress / damage;
-                        Float limit = this.limitSetting.getValue();
-                        if (!(fraction >= limit)) {
-                           rotate = false;
-                        } else if (this.autoSwapModeSetting.getValue() == SpeedMineAutoSwapChoice.NONE && this.holdingBestSetting.getValue()) {
-                           Inventory inventory = ClientAccess.argusclientMinecraft.player.getInventory();
-                           if (toolSlot != inventory.getSelectedSlot()) {
-                              rotate = false;
-                           }
-                        }
-                     }
-
+                     boolean rotate = SpeedMinePolicy.shouldRotate(
+                        this.limitSetting.getValue(),
+                        this.getMiningProgress(),
+                        this.damageSetting.getValue(),
+                        this.autoSwapModeSetting.getValue() == SpeedMineAutoSwapChoice.NONE,
+                        this.holdingBestSetting.getValue(),
+                        toolSlot == ClientAccess.argusclientMinecraft.player.getInventory().getSelectedSlot()
+                     );
                      if (rotate) {
                         BlockPos rotationTarget = this.miningPos;
                         this.rotateToBlock(rotationTarget);
@@ -1128,18 +1176,19 @@ public class SpeedMineModule extends Module {
                      }
 
                      boolean alternativeAllowed = this.isAlternativeAllowed();
-                     float instantDelay = this.instantDelaySetting.getValue();
-                     if (alternativeAllowed && RotationManager.is2b2tMode()) {
-                        float minimumInstantDelay = 0.1F;
-                        float configuredInstantDelay = instantDelay;
-                        instantDelay = Math.max(configuredInstantDelay, minimumInstantDelay);
-                     }
+                     float instantDelay = SpeedMineTiming.instantDelaySeconds(
+                        this.instantDelaySetting.getValue(), alternativeAllowed, RotationManager.is2b2tMode()
+                     );
 
                      if (this.rebreakSetting.getValue().isInstant()) {
                         double instantDelaySeconds = instantDelay;
                         TimeUnit instantDelayUnit = TimeUnit.SECONDS;
                         ElapsedTimer instantDelayTimer = this.breakDelayTimer;
                         if (!instantDelayTimer.hasElapsed(instantDelaySeconds, instantDelayUnit)) {
+                           return;
+                        }
+
+                        if (!this.mayInstantRebreak(this.miningPos)) {
                            return;
                         }
                      }
@@ -1238,6 +1287,10 @@ public class SpeedMineModule extends Module {
                      BlockPos stopPosition = this.miningPos;
                      Action stopAction = Action.STOP_DESTROY_BLOCK;
                      PacketSender.sendPlayerAction(stopAction, stopPosition, destroyFace);
+                     if (this.rebreakSetting.getValue().isInstant()) {
+                        this.recordInstantBreak(stopPosition);
+                     }
+
                      WorldStateManager unconfirmedWorldState = ClientContext.worldStateManager;
                      BlockPos unconfirmedPosition = this.miningPos;
                      unconfirmedWorldState.markUnconfirmedBreak(unconfirmedPosition);
