@@ -1,14 +1,19 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    vec2 u_Direction;
+    float u_Width;
+    float u_Sigma;
+};
+
 in vec2 v_TexCoord;
 in vec2 v_OneTexel;
 
 uniform sampler2D u_Texture;
 uniform sampler2D u_Mask;
 
-uniform vec2 u_Direction;
-uniform float u_Width;
-uniform float u_Sigma;
 
 out vec4 color;
 

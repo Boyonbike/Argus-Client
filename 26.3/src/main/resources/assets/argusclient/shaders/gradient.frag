@@ -1,35 +1,40 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    bool u_Image;
+    float u_OverlayAlpha;
+    int u_Width;
+    bool u_FastLines;
+    int u_ShapeMode;
+    bool u_GlowInner;
+    int u_GlowQuality;
+    float u_Time;
+    bool u_Smooth;
+    vec4 u_FillColor;
+    vec4 u_FillColor2;
+    vec4 u_FillColor3;
+    vec4 u_OutlineColor;
+    vec4 u_OutlineColor2;
+    vec4 u_OutlineColor3;
+    int u_Dots;
+    int u_DotsRadius;
+    float u_DotsAlpha;
+    float u_Step;
+    float u_Glow;
+    bool u_Fade;
+};
+
 in vec2 v_TexCoord;
 in vec2 v_OneTexel;
 
 uniform sampler2D u_Texture;
-uniform bool u_Image;
 uniform sampler2D u_Overlay;
-uniform float u_OverlayAlpha;
-uniform int u_Width;
-uniform bool u_FastLines;
-uniform int u_ShapeMode;
-uniform bool u_GlowInner;
-uniform int u_GlowQuality;
-uniform float u_Time;
-uniform bool u_Smooth;
 
-uniform vec4 u_FillColor;
-uniform vec4 u_FillColor2;
-uniform vec4 u_FillColor3;
 
-uniform vec4 u_OutlineColor;
-uniform vec4 u_OutlineColor2;
-uniform vec4 u_OutlineColor3;
 
-uniform int u_Dots;
-uniform int u_DotsRadius;
-uniform float u_DotsAlpha;
-uniform float u_Step;
-uniform float u_Glow;
 
-uniform bool u_Fade;
 
 out vec4 color;
 

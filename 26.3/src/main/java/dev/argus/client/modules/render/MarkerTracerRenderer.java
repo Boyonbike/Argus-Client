@@ -26,7 +26,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.lwjgl.opengl.GL11C;
 
 public final class MarkerTracerRenderer extends TracerRenderer {
    public MarkerTracerRenderer(TracersModule module) {
@@ -156,9 +155,7 @@ public final class MarkerTracerRenderer extends TracerRenderer {
             }
          }
 
-         GL11C.glEnable(2881);
          MeshDrawContext.getBuffer().draw(ClientRenderTypes.guiTriangles());
-         GL11C.glDisable(2881);
       }
    }
 

@@ -1,15 +1,20 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    int u_Pass;
+    int u_Width;
+    float u_Sigma;
+    float u_Bloom;
+    float u_Opacity;
+};
+
 in vec2 v_TexCoord;
 in vec2 v_OneTexel;
 
 uniform sampler2D u_Texture;
 
-uniform int u_Pass;
-uniform int u_Width;
-uniform float u_Sigma;
-uniform float u_Bloom;
-uniform float u_Opacity;
 
 out vec4 color;
 

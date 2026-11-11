@@ -1,43 +1,22 @@
 package dev.argus.client.managers;
 
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import dev.argus.client.render.RenderState;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.lwjgl.opengl.GL20C;
-import org.lwjgl.opengl.GL32C;
 
+/**
+ * Legacy global render-state hooks. 26.3 RenderPearl pipelines own depth,
+ * cull and polygon-offset state, so these hooks no longer touch the backend;
+ * blend/depth behaviour is expressed by the RenderPipeline used for the draw.
+ */
 public final class RenderStateManager {
    private static final List<RenderState> registeredStates = new ObjectArrayList();
    public static final RenderState BLENDED_SMOOTH_LINES = entering -> {
-      if (entering) {
-         GL32C.glEnable(2848);
-      } else {
-         GL32C.glDisable(2848);
-      }
    };
    public static final RenderState THROUGH_WALLS = entering -> {
-      if (entering) {
-         GlStateManager._depthMask(false);
-         GlStateManager._disableDepthTest();
-         GL20C.glDepthRange(0.0, 0.1);
-      } else {
-         GlStateManager._depthMask(true);
-         GlStateManager._enableDepthTest();
-         GL20C.glDepthRange(0.0, 1.0);
-      }
    };
    public static final RenderState POLYGON_OFFSET = entering -> {
-      if (entering) {
-         GlStateManager._enablePolygonOffset();
-         GlStateManager._polygonOffset(1.0F, -500000.0F);
-         GlStateManager._disableCull();
-      } else {
-         GlStateManager._polygonOffset(1.0F, 500000.0F);
-         GlStateManager._enableCull();
-         GlStateManager._disablePolygonOffset();
-      }
    };
    public static final RenderState POLYGON_OFFSET_THROUGH_WALLS = POLYGON_OFFSET.then(THROUGH_WALLS);
    private static boolean active;

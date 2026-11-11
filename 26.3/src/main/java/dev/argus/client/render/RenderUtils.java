@@ -31,7 +31,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL32C;
 
 public final class RenderUtils implements ClientAccess {
    public static final RenderUtils INSTANCE = new RenderUtils();
@@ -45,11 +44,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void setLineSmoothing(boolean enabled) {
-      if (enabled) {
-         GL32C.glEnable(2848);
-      } else {
-         GL32C.glDisable(2848);
-      }
+      // Line smoothing is a fixed-function GL state; 26.3 pipelines own line state.
    }
 
    public static void setPartialTick(float framePartialTick) {
@@ -64,7 +59,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public static void setLineWidth(float width) {
-      GL32C.glLineWidth(width);
+      // Line width travels in the vertex format / pipeline on modern backends.
    }
 
    public void renderEntity(Entity entity, float partialTick, PoseStack poses) {

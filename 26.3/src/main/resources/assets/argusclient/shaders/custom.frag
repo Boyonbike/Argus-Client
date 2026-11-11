@@ -1,25 +1,28 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+    bool u_Image;
+    float u_OverlayAlpha;
+    int u_Width;
+    bool u_FastLines;
+    bool u_GlowInner;
+    int u_GlowQuality;
+    vec4 u_FillColor;
+    vec4 u_OutlineColor;
+    int u_Dots;
+    int u_DotsRadius;
+    float u_DotsAlpha;
+    float u_Glow;
+    float u_Time;
+    bool u_Fade;
+};
+
 in vec2 v_TexCoord;
 in vec2 v_OneTexel;
 
-uniform vec2 u_Size;
 uniform sampler2D u_Texture;
 uniform sampler2D u_Overlay;
-uniform bool u_Image;
-uniform float u_OverlayAlpha;
-uniform int u_Width;
-uniform bool u_FastLines;
-uniform bool u_GlowInner;
-uniform int u_GlowQuality;
-uniform vec4 u_FillColor;
-uniform vec4 u_OutlineColor;
-uniform int u_Dots;
-uniform int u_DotsRadius;
-uniform float u_DotsAlpha;
-uniform float u_Glow;
-uniform float u_Time;
-uniform bool u_Fade;
 
 out vec4 color;
 

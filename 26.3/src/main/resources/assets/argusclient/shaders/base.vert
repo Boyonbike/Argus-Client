@@ -1,8 +1,11 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+};
+
 layout (location = 0) in vec4 pos;
 
-uniform vec2 u_Size;
 
 out vec2 v_TexCoord;
 out vec2 v_OneTexel;

@@ -1,9 +1,14 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    int u_Width;
+    int u_Step;
+};
+
 uniform sampler2D u_Texture;
 
-uniform int u_Width;
-uniform int u_Step;
 
 out vec4 color;
 

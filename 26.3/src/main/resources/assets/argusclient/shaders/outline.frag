@@ -1,12 +1,17 @@
 #version 330 core
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    int u_Width;
+    float u_GlowMultiplier;
+    float u_FillOpacity;
+};
+
 in vec2 v_TexCoord;
 in vec2 v_OneTexel;
 
 uniform sampler2D u_Texture;
-uniform int u_Width;
-uniform float u_GlowMultiplier;
-uniform float u_FillOpacity;
 
 out vec4 color;
 

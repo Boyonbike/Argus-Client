@@ -8,8 +8,6 @@ import dev.argus.client.utils.UncheckedExceptions;
 import java.awt.Color;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 public class CustomShaderPass extends PreprocessedShaderPass implements ReloadableShaderPass {
    private static final ShaderModule shaderModule = ClientContext.getModule(ShaderModule.class);
@@ -17,14 +15,11 @@ public class CustomShaderPass extends PreprocessedShaderPass implements Reloadab
    @Override
    public void updateUniforms() {
       super.updateUniforms();
-      GL13.glActiveTexture(33991);
-      int overlayTextureId = PostProcessShaderPass.overlayTextureId;
-      GL11.glBindTexture(3553, overlayTextureId);
       ShaderUniforms capturedProgramForImageEnabled = this.uniforms;
       boolean imageEnabled = shaderModule.imageSetting.getValue();
       capturedProgramForImageEnabled.set("u_Image", imageEnabled);
       ShaderUniforms capturedProgramForOverlaySampler = this.uniforms;
-      capturedProgramForOverlaySampler.set("u_Overlay", 7);
+      capturedProgramForOverlaySampler.set("u_Overlay", PostProcessShaderPass.overlayView(), PostProcessShaderPass.overlaySampler());
       ShaderUniforms capturedProgramForOverlayAlpha = this.uniforms;
       ShaderModule capturedShaderForOverlayAlpha = shaderModule;
       float overlayAlpha = capturedShaderForOverlayAlpha.getOverlayAlpha();

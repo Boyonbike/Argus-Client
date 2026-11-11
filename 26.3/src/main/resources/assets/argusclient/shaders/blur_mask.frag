@@ -1,15 +1,20 @@
 #version 330
 
+layout(std140) uniform EffectUniforms {
+    vec2 u_Size;
+
+    vec2 InSize;
+    vec2 BlurDir;
+    float Radius;
+};
+
 uniform sampler2D DiffuseSampler;
 uniform sampler2D MaskSampler;
 
 in vec2 texCoord;
 in vec2 oneTexel;
 
-uniform vec2 InSize;
 
-uniform vec2 BlurDir;
-uniform float Radius;
 
 out vec4 fragColor;
 

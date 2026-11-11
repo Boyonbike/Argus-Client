@@ -4,8 +4,6 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.ShaderModule;
 import dev.argus.client.settings.Setting;
 import java.awt.Color;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 public class BloomShaderPass extends PreprocessedShaderPass {
    private static final ShaderModule shaderModule = ClientContext.getModule(ShaderModule.class);
@@ -13,14 +11,11 @@ public class BloomShaderPass extends PreprocessedShaderPass {
    @Override
    public void updateUniforms() {
       super.updateUniforms();
-      GL13.glActiveTexture(33991);
-      int overlayTextureId = PostProcessShaderPass.overlayTextureId;
-      GL11.glBindTexture(3553, overlayTextureId);
       ShaderUniforms capturedProgramForImageEnabled = this.uniforms;
       boolean imageEnabled = shaderModule.imageSetting.getValue();
       capturedProgramForImageEnabled.set("u_Image", imageEnabled);
       ShaderUniforms capturedProgramForOverlaySampler = this.uniforms;
-      capturedProgramForOverlaySampler.set("u_Overlay", 7);
+      capturedProgramForOverlaySampler.set("u_Overlay", PostProcessShaderPass.overlayView(), PostProcessShaderPass.overlaySampler());
       ShaderUniforms capturedProgramForOverlayAlpha = this.uniforms;
       ShaderModule capturedShaderForOverlayAlpha = shaderModule;
       float overlayAlpha = capturedShaderForOverlayAlpha.getOverlayAlpha();
