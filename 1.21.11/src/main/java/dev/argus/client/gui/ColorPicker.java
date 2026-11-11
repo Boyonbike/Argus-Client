@@ -23,6 +23,8 @@ final class ColorPicker {
     private final UiInput hex;
     private float hue, sat, val, alpha;
     private float x, y, h;
+    /** The swatch the picker was opened from; it grows out of (and shrinks back into) this point. */
+    private float originX, originY;
     private String dragging;
     private boolean closing;
     private float fade;
@@ -34,6 +36,7 @@ final class ColorPicker {
     /** Opens beside the panel when there is room, otherwise just under the row. */
     static void show(ColorSetting setting, float rowX, float rowY, float rowW, float rowH, float panelLeft, float panelRight, int screenW, int screenH) {
         ColorPicker picker = new ColorPicker(setting);
+        picker.originX = rowX + rowW - 12; picker.originY = rowY + rowH / 2;
         if (screenW - panelRight - 12 >= W) picker.x = panelRight + 8;
         else if (panelLeft - 12 >= W) picker.x = panelLeft - 8 - W;
         else picker.x = Math.clamp(rowX + rowW - W, 6, screenW - W - 6);
@@ -107,6 +110,11 @@ final class ColorPicker {
         float yy = y + (1 - fade) * 4;
         float dy = yy - y;
         y = yy;
+        float scale = UiAnim.lerp(.9f, 1, UiAnim.easeOutCubic(fade));
+        g.pose().pushMatrix();
+        g.pose().translate(originX, originY);
+        g.pose().scale(scale, scale);
+        g.pose().translate(-originX, -originY);
         try {
             UiDraw.shadow(g, x, y + 3, W, h, 9, 12, UiDraw.alpha(0xff000000, .4f));
             UiDraw.rounded(g, x, y, W, h, 9, t.mantle());
@@ -183,6 +191,7 @@ final class ColorPicker {
                 }
             }
         } finally {
+            g.pose().popMatrix();
             y -= dy;
             UiRender.opacity = before;
         }

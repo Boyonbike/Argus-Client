@@ -24,6 +24,8 @@ final class SettingsList {
     private final Module module;
     private final String focusSetting;
     private final long createdAt = System.nanoTime();
+    /** Direction of the last click on a choice pill (-1 left, 1 right), so its value slides in from that side. */
+    private int cycleDir = 1;
     private int x, y, w, h;
     private int scroll;
     private float shownScroll;
@@ -204,6 +206,8 @@ final class SettingsList {
             if (resetHover) host.hostTooltip(key + ".rt", atDefault ? "Already at default" : "Reset to default", "Default: " + defaultText(setting));
             Object current = setting.getValue();
             float right = right();
+            // Switching between the control, the inline editor and "Unavailable" fades the new one in.
+            UiRender.opacity *= UiMotion.sinceChange(key + ".state", (setting.isVisible() ? 1 : 0) + (editing == setting ? 2 : 0));
             if (!setting.isVisible()) {
                 UiDraw.right(g, "Unavailable", right, cy, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
             } else if (editing == setting && editor != null) {
@@ -214,7 +218,7 @@ final class SettingsList {
             } else if (setting instanceof KeyBindSetting bind) {
                 boolean listening = capturing == bind;
                 String text = listening ? "Press a key…" : UiDraw.fit(bind.displayName(), half - 40);
-                float pulse = listening ? .5f + .5f * (float) Math.sin(System.nanoTime() / 1.5e8) : 0;
+                float pulse = listening ? UiAnim.pulse(1.5e8) : 0;
                 float pw = UiDraw.width(text, UiDraw.SMALL) + 23, px = right - pw;
                 UiDraw.rounded(g, px, cy - 7, pw, 14, 7, listening ? UiDraw.alpha(t.accent(), .18f + pulse * .12f) : UiDraw.mix(t.mantle(), t.overlay(), hv * .6f));
                 if (listening) UiDraw.outline(g, px, cy - 7, pw, 14, 7, .7f, UiDraw.alpha(t.accent(), .5f + pulse * .5f));
@@ -229,12 +233,15 @@ final class SettingsList {
                 UiDraw.slider(g, sliderX(), cy, SLIDER, shown, UiAnim.smooth(key + ".sh", over || sliding == setting ? 1 : 0, 18), t);
                 UiDraw.right(g, value(setting), right, cy, focus ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv));
             } else if (current instanceof Enum<?> || current instanceof NamedEntry) {
+                // The pill eases to the new value's width and the value slides in from the side that was clicked.
                 String text = UiDraw.fit(value(setting), half - 40);
-                float pw = UiDraw.width(text) + 30, px = right - pw;
+                float target = UiDraw.width(text) + 30, pw = UiAnim.smooth(key + ".pw", target, target, 20), px = right - pw;
                 UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(t.mantle(), t.overlay(), hv * .6f));
                 UiDraw.icon(g, "chevron_left", px + 3, cy - 3.5f, 7, UiDraw.alpha(t.muted(), .5f + hv * .5f));
                 UiDraw.icon(g, "chevron_right", px + pw - 10, cy - 3.5f, 7, UiDraw.alpha(t.muted(), .5f + hv * .5f));
-                UiDraw.center(g, text, px, cy, pw, t.text());
+                g.enableScissor((int) Math.floor(px + 10), (int) Math.floor(cy - 7), (int) Math.ceil(px + pw - 10), (int) Math.ceil(cy + 7));
+                try { UiMotion.crossfade(g, key + ".enum", text, cycleDir * 8, 0, v -> UiDraw.center(g, v, px, cy, pw, t.text())); }
+                finally { g.disableScissor(); }
             } else if (current instanceof Color colour) {
                 String text = value(setting);
                 float tw = UiDraw.width(text, UiDraw.SMALL);
@@ -265,11 +272,13 @@ final class SettingsList {
         if (pointed != hovered) { hovered = pointed; hoverSince = System.nanoTime(); }
         labelsRight = labelEdge; controlsLeft = controlEdge;
         hoveredY = pointedY;
-        if (shownScroll > 1) UiDraw.gradient(g, x - 4, y - 2, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < maxScroll() - 1) UiDraw.gradient(g, x - 4, y + h - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, y - 2, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, x - 4, y + h - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
         if (maxScroll() > 0) {
             float track = Math.max(14, h * (float) h / (visible.size() * ROW)), offset = (h - track) * shownScroll / maxScroll();
-            UiDraw.rounded(g, x + w + 2, y + offset, 2, track, 1, UiDraw.alpha(t.overlay(), .8f));
+            // The scrollbar rests faint and brightens while the list is hovered or scrolling.
+            boolean active = UiDraw.over(mx, my, x - 4, y, w + 10, h) || Math.abs(shownScroll - scroll) > .5f;
+            UiDraw.rounded(g, x + w + 2, y + offset, 2, track, 1, UiDraw.alpha(t.overlay(), UiAnim.smooth("sl.bar." + System.identityHashCode(this), active ? .8f : .3f, 10)));
         }
     }
 
@@ -527,6 +536,7 @@ final class SettingsList {
             Object[] choices = choice.getDeclaringClass().getEnumConstants();
             float pw = UiDraw.width(value(setting)) + 30, px = right() - pw;
             int direction = mx < px + pw / 2 && mx >= px ? -1 : 1;
+            cycleDir = direction;
             change(setting, choices[Math.floorMod(choice.ordinal() + direction, choices.length)]);
         }
         else if (setting instanceof ColorSetting colour) {
@@ -589,9 +599,7 @@ final class SettingsList {
     /** Draws the hint or the latest error message at the given footer line. */
     void footer(GuiGraphics g, float fx, float cy, float width, UiTheme t, String override) {
         String error = message();
-        if (!error.isEmpty()) {
-            float alpha = Math.clamp(1 - ((System.nanoTime() - messageAt) / 1e9f - 4) / .5f, 0f, 1f);
-            UiDraw.text(g, UiDraw.fit(error, width), fx, cy, UiDraw.SMALL, UiDraw.alpha(t.red(), alpha));
-        } else UiDraw.text(g, UiDraw.fit(override != null ? override : hint(), width), fx, cy, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+        var line = error.isEmpty() ? new UiMotion.Line(UiDraw.fit(override != null ? override : hint(), width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
+        UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
     }
 }

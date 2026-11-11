@@ -278,7 +278,7 @@ final class ChatTeleportCooldownTest {
         state.message("You have to wait 4m 30s to teleport again.", 20_000);
         assertEquals("TPA uriauria: cooldown 4m 30s", state.timers(20_000).getFirst().label(20_000));
         // The warmup ran out at 16s, which is when the teleport (and its cooldown) happened.
-        assertEquals(java.util.Map.of(ChatTeleportState.Kind.TPA, 274_000L), state.learned());
+        assertEquals(java.util.Map.of(ChatTeleportState.Kind.TPA, 275_000L), state.learned(), "274s rounds to the nearest 5s");
         var idle = state(30, 30);
         idle.transferred(1_000);
         assertTrue(idle.timers(1_000).isEmpty());
@@ -378,6 +378,53 @@ final class ChatTeleportCooldownTest {
         assertEquals("9m 35s", ChatTeleportState.remaining(575_000));
         assertEquals("1h", ChatTeleportState.remaining(3_600_000));
         assertEquals("1h 5m", ChatTeleportState.remaining(3_841_000));
+    }
+
+    @Test void votePerkLinesNeverCutARunningCooldownShort() {
+        var state = state(30, 30);
+        state.learned(java.util.Map.of(ChatTeleportState.Kind.Home, 89_000L));
+        state.sent("/home nethertravel", 0);
+        state.message("Teleporting to nethertravel in 15 seconds. [Cancel]", 200);
+        state.message("Teleporting to: nethertravel", 16_000);
+        state.message("+4 homes \u00b7 /skin \u00b7 /sit \u00b7 /home cooldown 15 seconds \u00b7 /tpa cooldown 30 seconds", 43_000);
+        state.message("6b6t Voting \u00bb You have 79 votes. At 210 votes, you gain: /home cooldown: 1 minute 30 seconds \u2192 15 seconds", 44_000);
+        var timer = state.timers(70_000).getFirst();
+        assertEquals(ChatTeleportState.Phase.Cooldown, timer.phase());
+        assertEquals("Home cooldown ~35s", timer.hud(70_000));
+        assertEquals(java.util.Map.of(ChatTeleportState.Kind.Home, 89_000L), state.learned(), "An advert never teaches a cooldown");
+    }
+
+    @Test void aRealCooldownNamingHomeAndTpaStillCounts() {
+        var state = state(30, 30);
+        state.sent("/home base", 0);
+        state.message("You must wait 10 seconds before using /home or /tpa again.", 100);
+        assertEquals("Home cooldown 10s", state.timers(100).getFirst().hud(100));
+    }
+
+    @Test void learnedLengthRunsFromTheTeleportToWhenYouCanTeleportAgainRoundedToFive() {
+        var state = new ChatTeleportState();
+        state.sent("/home MainStash", 0);
+        state.message("Teleporting to MainStash in 15 seconds. [Cancel]", 0);
+        state.message("Teleporting to: MainStash", 16_000);
+        assertTrue(state.timers(16_000).isEmpty(), "Auto with nothing learned yet makes no guess");
+        state.sent("/home MainStash", 65_000);
+        state.message("You have to wait 0m 39s to teleport again.", 65_000);
+        // Teleport at 15s (end of warmup), next teleport at 65s + 39s = 104s: 89s, rounded to 90s.
+        assertEquals(java.util.Map.of(ChatTeleportState.Kind.Home, 90_000L), state.learned());
+        assertEquals("Home cooldown 39s", state.timers(65_000).getFirst().hud(65_000), "The running countdown keeps the server's exact time");
+    }
+
+    @Test void aManualLengthBeatsTheLearnedOneAndEachKindKeepsItsOwn() {
+        var state = new ChatTeleportState();
+        state.learned(java.util.Map.of(ChatTeleportState.Kind.Home, 90_000L, ChatTeleportState.Kind.TPA, 120_000L));
+        state.manual(ChatTeleportState.Kind.Home, 60_000L, 0);
+        state.sent("/home base", 0);
+        state.message("Teleporting to: base", 1_000);
+        state.sent("/tpa Alice", 2_000);
+        state.message("Teleported to destination!", 3_000);
+        var timers = state.timers(3_000);
+        assertEquals("Home cooldown ~1m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.Home).findFirst().orElseThrow().hud(1_000));
+        assertEquals("TPA cooldown ~2m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.TPA).findFirst().orElseThrow().hud(3_000));
     }
 
     private static ChatTeleportState state(int home, int tp) {

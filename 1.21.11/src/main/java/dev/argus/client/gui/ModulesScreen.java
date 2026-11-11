@@ -278,7 +278,10 @@ public final class ModulesScreen extends UiScreen {
             List<Module> list = modules(window);
             long enabled = list.stream().filter(Module::isToggled).count();
             String count = enabled > 0 ? enabled + "/" + list.size() : Integer.toString(list.size());
-            UiDraw.right(g, count, x + w - 19, top + HEADER / 2f, UiDraw.SMALL, enabled > 0 ? UiDraw.alpha(theme.accent(), .85f) : UiDraw.alpha(theme.muted(), .7f));
+            // The count rolls to its new value and flashes the accent when a module in the window changes.
+            float flash = UiMotion.flash("cnt.flash." + window.name, count), countRight = x + w - 19, countY = top + HEADER / 2f;
+            int countColour = UiDraw.mix(enabled > 0 ? UiDraw.alpha(theme.accent(), .85f) : UiDraw.alpha(theme.muted(), .7f), theme.accent(), flash);
+            UiMotion.text(g, "cnt." + window.name, count, c -> UiDraw.right(g, c, countRight, countY, UiDraw.SMALL, countColour));
         }
         int chevron = UiDraw.mix(theme.muted(), theme.text(), hh);
         UiDraw.icon(g, "chevron_down", x + w - 15, top + (HEADER - 9) / 2f, 9, UiDraw.alpha(chevron, window.open));
@@ -293,8 +296,11 @@ public final class ModulesScreen extends UiScreen {
         Module hovered = null;
         for (int i = 0; i < modules.size(); i++) {
             Module module = modules.get(i);
-            float rowY = start + i * ROW - window.shownScroll;
+            // Rows glide when one is pinned or unpinned above them, and fade in when they first appear.
+            float rowY = start + UiMotion.rowY("mw." + window.name, module.getName(), i * ROW) - window.shownScroll;
             if (rowY + ROW < start || rowY > clipBottom) continue;
+            float rowBefore = UiRender.opacity;
+            UiRender.opacity = rowBefore * UiMotion.rowAppear("mw." + window.name, module.getName());
             boolean hover = over && my >= top + HEADER && my < clipBottom && UiDraw.over(mx, my, x + 3, rowY, w - 6, ROW);
             String key = "row." + window.name + "." + module.getName();
             float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20);
@@ -303,10 +309,16 @@ public final class ModulesScreen extends UiScreen {
             if (hv > 0) UiDraw.rounded(g, x + 4, rowY + 1, w - 8, ROW - 2, 4, UiDraw.alpha(theme.text(), .07f * hv));
             if (on > 0) UiDraw.rounded(g, x + 6, rowY + ROW / 2f - 3.5f * on, 2, 7 * on, 1, UiDraw.alpha(theme.accent(), on));
             boolean favourite = window.kind != Kind.FAVOURITES && GuiState.preferences().favourites.contains(module.getName());
-            float side = favourite ? 22 : 18;
+            // The star pops in with a small overshoot and the name makes room for it gradually.
+            float fav = UiAnim.smooth(key + ".fav", favourite ? 1 : 0, 14);
+            float side = 18 + 4 * fav;
             String name = UiDraw.fit(GuiState.title(module.getName()), w - side * 2);
             UiDraw.center(g, name, x, rowY + ROW / 2f, w, UiDraw.mix(UiDraw.mix(theme.text(), 0xffffffff, hv * .12f), theme.accent(), on));
-            if (favourite) UiDraw.icon(g, "star", x + w - 13, rowY + ROW / 2f - 3, 6, UiDraw.alpha(theme.yellow(), .75f));
+            if (fav > .01f) {
+                float size = 6 * (.4f + .6f * UiAnim.easeOutBack(fav));
+                UiDraw.icon(g, "star", x + w - 10 - size / 2, rowY + ROW / 2f - size / 2, size, UiDraw.alpha(theme.yellow(), .75f * Math.min(1, fav * 1.5f)));
+            }
+            UiRender.opacity = rowBefore;
             if (hover) hovered = module;
         }
         if (modules.isEmpty()) UiDraw.center(g, UiDraw.fit(window.kind == Kind.FAVOURITES ? "Middle-click a module to pin it" : "No modules", w - 12),
@@ -337,14 +349,14 @@ public final class ModulesScreen extends UiScreen {
         int view = viewHeight(window);
         if (start >= clipBottom) return;
         g.enableScissor((int) x + 2, (int) Math.max(TOP, start), (int) (x + w - 2), (int) clipBottom);
-        float since = (System.nanoTime() - resultsChanged) / 1e9f;
+        float since = UiAnim.elapsed(resultsChanged);
         for (int i = 0; i < results.size(); i++) {
             float rowY = start + i * SEARCH_ROW - window.shownScroll;
             if (rowY + SEARCH_ROW < start || rowY > clipBottom) continue;
             var hit = results.get(i);
             boolean hover = over && my >= start && my < clipBottom && UiDraw.over(mx, my, x + 4, rowY, w - 8, SEARCH_ROW);
             if (hover) selected = i;
-            float appear = UiAnim.easeOutCubic((since - Math.min(i, 10) * .022f) / .16f);
+            float appear = UiAnim.enabled() ? UiAnim.easeOutCubic((since - Math.min(i, 10) * .022f) / .16f) : 1;
             float before = UiRender.opacity;
             UiRender.opacity = before * appear;
             float sel = UiAnim.smooth("sr." + i + "." + hit.module() + hit.setting() + hit.alias(), i == selected ? 1 : 0, 22);
@@ -357,19 +369,26 @@ public final class ModulesScreen extends UiScreen {
             UiDraw.icon(g, icon, x + 10.5f, ry + 7.5f, 9, colour);
             String title = GuiState.title(hit.isSetting() ? hit.setting() : hit.alias() != null ? hit.alias() : hit.module());
             boolean toggled = !hit.isSetting() && module != null && module.isToggled();
-            UiDraw.text(g, UiDraw.fit(title, w - 44), x + 27, ry + 8.5f, toggled ? theme.accent() : theme.text());
+            float lit = UiAnim.smooth("sr.on." + hit.module() + hit.setting() + hit.alias(), toggled ? 1 : 0, 14);
+            UiDraw.text(g, UiDraw.fit(title, w - 44), x + 27, ry + 8.5f, UiDraw.mix(theme.text(), theme.accent(), lit));
             boolean client = module != null && module.getCategory() == ModuleCategory.CLIENT;
             String path = hit.isSetting() ? "Setting in " + GuiState.title(hit.module()) : hit.alias() != null ? "Alias of " + GuiState.title(hit.module()) : client ? "Settings tab" : GuiState.title(hit.category());
             UiDraw.text(g, UiDraw.fit(path, w - 44), x + 27, ry + 17, UiDraw.SMALL, theme.muted());
-            if (toggled) UiDraw.circle(g, x + w - 12, ry + SEARCH_ROW / 2f, 2, theme.accent());
+            if (lit > .01f) UiDraw.circle(g, x + w - 12, ry + SEARCH_ROW / 2f, 2 * (.5f + .5f * UiAnim.easeOutBack(lit)), UiDraw.alpha(theme.accent(), lit));
             UiRender.opacity = before;
         }
+        float emptyShown = UiAnim.smooth("search.empty", results.isEmpty() ? 1 : 0, 14);
         if (results.isEmpty()) {
-            float cy = start + view / 2f - 6;
+            // The empty state fades in, and switches between "Type to search" and "No matches" with a crossfade.
+            float cy = start + view / 2f - 6, before = UiRender.opacity;
+            UiRender.opacity = before * emptyShown;
             boolean blank = searchInput.getValue().isBlank();
-            UiDraw.icon(g, blank ? "search" : "close", x + w / 2 - 6, cy - 14, 12, UiDraw.alpha(theme.muted(), .55f));
-            UiDraw.center(g, blank ? "Type to search" : "No matches", x, cy + 6, w, theme.muted());
+            UiMotion.crossfade(g, "search.empty.state", blank, b -> {
+                UiDraw.icon(g, b ? "search" : "close", x + w / 2 - 6, cy - 14, 12, UiDraw.alpha(theme.muted(), .55f));
+                UiDraw.center(g, b ? "Type to search" : "No matches", x, cy + 6, w, theme.muted());
+            });
             UiDraw.center(g, "Modules · Aliases", x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.muted(), .7f));
+            UiRender.opacity = before;
         }
         g.disableScissor();
         scrollbar(g, window, start, view, contentHeight(window), over, theme);

@@ -905,13 +905,17 @@ ElytraFly	argusBoostKey	Key or mouse button that boosts. Follows your Sprint key
 ElytraFly	argusBoostJump	Instantly skips this many Volytra acceleration ticks when boost starts; 0 disables.
 ElytraFly	argusLandingSwapHeight	How close to the floor counts as landed for Smart Elytra's chestplate swap, measured under your hitbox. While still gliding it waits until you touch down.
 ElytraFly	argusLiquidTakeoff	Hold jump in water or lava to swim up, get thrown clear of the surface and start gliding. Needs wings on, or Smart Elytra to put them on.
-ElytraFly	argusLiquidMode	Which liquids Liquid Takeoff works in: Water, Lava or Both.
 ElytraFly	argusLiquidHoldJump	Only takes off while you hold jump. Turn off to launch whenever you are in the liquid.
+ElytraFly	argusLiquidWater	Takes off from water when you are upright, not sprint-swimming.
 ElytraFly	argusLiquidWaterRise	How fast you swim up through water towards the surface.
 ElytraFly	argusLiquidWaterLaunch	Upward speed you are thrown out of water with.
+ElytraFly	argusLiquidSwim	Takes off from water while sprint-swimming. Drops sprint first so you stand up, then rises and launches.
+ElytraFly	argusLiquidSwimRise	How fast you rise to the surface once you have stopped swimming.
+ElytraFly	argusLiquidSwimLaunch	Upward speed you are thrown out of the water with after swimming.
+ElytraFly	argusLiquidLava	Takes off from lava. The forward push is given once you are out, so lava's drag can't eat it.
 ElytraFly	argusLiquidLavaRise	How fast you swim up through lava towards the surface.
 ElytraFly	argusLiquidLavaLaunch	Upward speed you are thrown out of lava with.
-ElytraFly	argusLiquidPush	Forward speed added at launch, so you clear the edge of the pool.
+ElytraFly	argusLiquidPush	Forward speed added at launch, so you clear the edge of the pool. From lava it is added on your first tick in the air.
 ElytraFly	argusLiquidGlideDelay	Ticks in the air before the glide starts.
 ElytraFly	argusLiquidFirework	Uses a firework from your inventory as soon as the glide starts.
 SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
@@ -2147,8 +2151,10 @@ ChatTools	Message command	Command used to send private messages. {player} is rep
 ChatTools	Queue chat	Pressing Enter adds public chat to a queue that sends at the server's pace, so you can keep typing.
 ChatTools	Chat cooldown	Time between queued public messages. The queue gives unnamed server refusals five seconds to arrive. A longer server cooldown still wins.
 ChatTools	Message cooldown	Time between queued private messages. Without a matching server echo, the queue waits up to five seconds for a refusal. A longer server cooldown still wins.
-ChatTools	Home cooldown	Estimated cooldown after a home teleport, used until the server reports the real one. Learned and manual lengths in the window replace it. 0 turns the estimate off.
-ChatTools	Teleport cooldown	Estimated cooldown after a teleport to a player, used until the server reports the real one. Learned and manual lengths in the window replace it. 0 turns the estimate off.
+ChatTools	Manual home cooldown	On: the home cooldown always runs for the length you set. Off (Auto): it uses the length learned from the server's "wait" replies, rounded to 5 seconds.
+ChatTools	Home cooldown	How long the home cooldown runs after a home teleport while Manual home cooldown is on. 0 means no cooldown.
+ChatTools	Manual teleport cooldown	On: the teleport cooldown always runs for the length you set. Off (Auto): it uses the length learned from the server's "wait" replies, rounded to 5 seconds.
+ChatTools	Teleport cooldown	How long the teleport cooldown runs after a teleport to a player while Manual teleport cooldown is on. 0 means no cooldown.
 ChatTools	Accept automatically	Buffers incoming teleport requests and accepts the eligible ones automatically. Set up the whitelist first.
 ChatTools	Whitelist only	Only accepts whitelisted players, plus friends when Allow friends is on.
 ChatTools	Allow friends	Accepts Argus friends even when they're not on the whitelist. The blocklist still wins.

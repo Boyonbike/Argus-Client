@@ -407,8 +407,8 @@ final class MeteorInstanceImportScreen extends UiScreen {
             }
         }
         g.disableScissor();
-        if (shownScroll > 1) UiDraw.gradient(g, paneX, paneY, paneW, 8, 7, UiDraw.alpha(t.mantle(), .9f), UiDraw.alpha(t.mantle(), 0));
-        if (shownScroll < maxScroll() - 1) UiDraw.gradient(g, paneX, paneY + paneH - 8, paneW, 8, 7, UiDraw.alpha(t.mantle(), 0), UiDraw.alpha(t.mantle(), .9f));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, paneX, paneY, paneW, 8, 7, UiDraw.alpha(t.mantle(), .9f), UiDraw.alpha(t.mantle(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, paneX, paneY + paneH - 8, paneW, 8, 7, UiDraw.alpha(t.mantle(), 0), UiDraw.alpha(t.mantle(), .9f)));
     }
     /** Checkbox row: tick, icon, label and a right-aligned detail. Disabled rows say why in the detail. */
     private void item(GuiGraphics g, UiTheme t, float y, String icon, String label, String detail, boolean on, boolean enabled, boolean hover, int mx, int my, int index) {

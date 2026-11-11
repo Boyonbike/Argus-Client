@@ -22,7 +22,7 @@ final class UiIconButton extends Button {
     @Override protected void renderContents(GuiGraphics g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         hover = UiAnim.approach(hover, isHoveredOrFocused() && active ? 1 : 0, 18);
-        float press = 1 - Math.clamp((System.nanoTime() - pressedAt) / 180e6f, 0f, 1f);
+        float press = 1 - UiAnim.progress(pressedAt, .18f);
         float r = getWidth() / 2f, cx = getX() + r, cy = getY() + r;
         UiDraw.circle(g, cx, cy, r, UiDraw.mix(t.surface(), t.overlay(), hover * .8f));
         if (press > 0) UiDraw.circle(g, cx, cy, r, UiDraw.alpha(t.accent(), press * .22f));

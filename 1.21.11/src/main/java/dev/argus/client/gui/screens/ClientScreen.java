@@ -86,8 +86,13 @@ public class ClientScreen extends Screen implements ClientAccess {
       }
    }
 
+   /** How long the open and close fade lasts, in milliseconds. */
+   protected long transitionMillis() {
+      return 150L;
+   }
+
    public float getTransitionOpacity() {
-      float opacity = (float)(System.currentTimeMillis() - this.transitionStartedAt) / 150.0F;
+      float opacity = (float)(System.currentTimeMillis() - this.transitionStartedAt) / (float)this.transitionMillis();
       if (this.closing) {
          opacity = 1.0F - opacity;
       }
@@ -136,7 +141,7 @@ public class ClientScreen extends Screen implements ClientAccess {
 
    @Override
    public void tick() {
-      if (this.closing && System.currentTimeMillis() - this.transitionStartedAt >= 150L) {
+      if (this.closing && System.currentTimeMillis() - this.transitionStartedAt >= this.transitionMillis()) {
          for (Panel panel : this.panels) {
             panel.setDragging(false);
          }

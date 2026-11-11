@@ -85,7 +85,7 @@ final class PresetLoadConfirmationScreen extends UiScreen {
     }
     private boolean ready(){return !submitted && !closing() && System.nanoTime()>actionAfter;}
     private void finish(){
-        if(controller.state()==PresetLoadController.State.COMPLETE){submitted=true;completed.accept(controller.message());minecraft.setScreen(parent);}
+        if(controller.state()==PresetLoadController.State.COMPLETE){submitted=true;completed.accept(controller.message());beginClose(parent);}
         else {
             rebuildWidgets();
             if(controller.state()==PresetLoadController.State.INVALID){primary.active=false;without.active=false;}
@@ -116,5 +116,5 @@ final class PresetLoadConfirmationScreen extends UiScreen {
         }
         return super.keyPressed(event);
     }
-    @Override public void onClose(){if(submitted)return;controller.cancel();minecraft.setScreen(parent);}
+    @Override public void onClose(){if(submitted || closing())return;controller.cancel();beginClose(parent);}
 }

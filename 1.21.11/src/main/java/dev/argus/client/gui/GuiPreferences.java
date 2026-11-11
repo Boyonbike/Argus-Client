@@ -22,6 +22,11 @@ public final class GuiPreferences {
     public Mode mode = Mode.DARK;
     public Accent accent = Accent.LAVENDER;
     public boolean snap = true;
+    /** Menu motion: page fades, window entrances, hover easing and the like. Off makes every change instant. */
+    public boolean animations = true;
+    /** How fast menu motion plays: 1 is normal, 2 twice as fast, .5 half speed. */
+    public double animationSpeed = 1;
+    public static final double MIN_ANIMATION_SPEED = .5, MAX_ANIMATION_SPEED = 2;
     /** Whether the navigation bar was left open; the menu reopens it (with its animation) next time. */
     public boolean barOpen = false;
     /** Draw the snap grid behind windows while one is being dragged. */
@@ -69,6 +74,8 @@ public final class GuiPreferences {
         try { result.hudTab = HudTab.valueOf(values.getProperty("hudTab", "EDITOR")); } catch (IllegalArgumentException ignored) {}
         try { result.socialTab = SocialTab.valueOf(values.getProperty("socialTab", "MENU")); } catch (IllegalArgumentException ignored) {}
         result.snap = Boolean.parseBoolean(values.getProperty("snap", "true"));
+        result.animations = Boolean.parseBoolean(values.getProperty("animations", "true"));
+        try { double speed = Double.parseDouble(values.getProperty("animationSpeed", "1")); if (Double.isFinite(speed)) result.animationSpeed = Math.clamp(speed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED); } catch (IllegalArgumentException ignored) {}
         result.barOpen = Boolean.parseBoolean(values.getProperty("barOpen", "false"));
         result.showGrid = Boolean.parseBoolean(values.getProperty("showGrid", "true"));
         for (String hex : values.getProperty("savedColours", "").split(",")) {
@@ -117,6 +124,8 @@ public final class GuiPreferences {
         values.setProperty("uiScale",Double.toString(uiScale));
         values.setProperty("mode", mode.name()); values.setProperty("accent", accent.name()); values.setProperty("snap", Boolean.toString(snap)); values.setProperty("barOpen", Boolean.toString(barOpen));
         values.setProperty("showGrid", Boolean.toString(showGrid));
+        values.setProperty("animations", Boolean.toString(animations));
+        values.setProperty("animationSpeed", Double.toString(animationSpeed));
         values.setProperty("savedColours", String.join(",", savedColours.stream().map(c -> String.format("%08X", c)).toList())); values.setProperty("gap", Integer.toString(gap)); values.setProperty("hudGap", Integer.toString(hudGap)); values.setProperty("hudFitGrid", Boolean.toString(hudFitGrid));
         for (String module : favourites) values.setProperty("favourite." + module, "true");
         values.setProperty("barTabs", String.join(",", barTabs));

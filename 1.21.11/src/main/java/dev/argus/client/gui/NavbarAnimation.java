@@ -30,6 +30,9 @@ final class NavbarAnimation {
         hold = value ? OPEN_HOLD : 0;
     }
 
+    /** Jumps straight to where the bar is heading, for when animations are off. */
+    void settle() { hold = 0; progress = open ? 1 : 0; }
+
     /** Advances the motion; fixed durations keep the reveal visible at any frame rate. */
     void advance(float seconds) {
         if (seconds <= 0) return;

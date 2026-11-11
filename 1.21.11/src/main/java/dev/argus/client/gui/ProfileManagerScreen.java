@@ -47,6 +47,8 @@ abstract class ProfileManagerScreen extends UiScreen {
     protected abstract void buildToolbar(int x, int y, int w);
     protected abstract int rowCount();
     protected abstract void renderRow(GuiGraphics g, int index, float x, float y, float w, int mx, int my, boolean hover);
+    /** A stable id for a row, so rows fade in when added and glide when others are removed. */
+    protected Object rowId(int index) { return index; }
     /** Icon, title and hint shown when the list is empty. */
     protected abstract String[] empty();
     /** A form card replaces the toolbar and list while it is open. */
@@ -88,9 +90,11 @@ abstract class ProfileManagerScreen extends UiScreen {
         b.active = always || (!busy && profiles != null); addRenderableWidget(b); return b;
     }
     /** Evenly spaced row of toolbar buttons across {@code w}. */
-    protected void toolbar(int x, int y, int w, String[] labels, String[] icons, Runnable[] actions) {
+    protected UiButton[] toolbar(int x, int y, int w, String[] labels, String[] icons, Runnable[] actions) {
         int gap = 6, bw = (w - gap * (labels.length - 1)) / labels.length;
-        for (int i = 0; i < labels.length; i++) button(x + i * (bw + gap), y, i == labels.length - 1 ? w - i * (bw + gap) : bw, labels[i], icons[i], actions[i], false, false);
+        UiButton[] buttons = new UiButton[labels.length];
+        for (int i = 0; i < labels.length; i++) buttons[i] = button(x + i * (bw + gap), y, i == labels.length - 1 ? w - i * (bw + gap) : bw, labels[i], icons[i], actions[i], false, false);
+        return buttons;
     }
     protected void field(UiInput input, int x, int y, int w) { input.place(x, y, w); input.active = !busy; addRenderableWidget(input); }
 
@@ -108,6 +112,29 @@ abstract class ProfileManagerScreen extends UiScreen {
         if (enabled) hits.add(new Hit(px, cy - 7, pw, 14, drawingList, action));
         return pw;
     }
+    /**
+     * A two-click pill: it widens, fills with {@code tint} and swaps to {@code armedLabel} while
+     * armed, with a line under it that drains as the confirm window runs out.
+     */
+    protected float confirmPill(GuiGraphics g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
+                                float right, float cy, int mx, int my, int tint, boolean enabled, Runnable action) {
+        UiTheme t = GuiState.theme();
+        String shown = armed ? armedLabel : label;
+        float target = UiDraw.width(shown, UiDraw.SMALL) + 14;
+        float pw = UiAnim.smooth(key + ".w", target, target, 20), px = right - pw;
+        boolean hover = enabled && UiDraw.over(mx, my, px, cy - 7, pw, 14) && (!drawingList || my >= listTop() && my < listTop() + listHeight());
+        float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".arm", armed ? 1 : 0, 18);
+        float before = UiRender.opacity;
+        if (!enabled) UiRender.opacity = before * .45f;
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
+        int colour = UiDraw.mix(UiDraw.mix(t.text(), tint, hv), tint, on);
+        UiMotion.crossfade(g, key + ".label", shown, l -> UiDraw.center(g, l, px, cy, pw, UiDraw.SMALL, colour));
+        if (armed) UiMotion.drain(g, px + 5, cy + 4.6f, pw - 10, armedAt, window, UiDraw.alpha(tint, .8f));
+        UiRender.opacity = before;
+        if (enabled) hits.add(new Hit(px, cy - 7, pw, 14, drawingList, action));
+        return pw;
+    }
+
     /** Registers a clickable area for this frame (e.g. a toggle). */
     protected void hit(float x, float y, float w, float h, Runnable action) { hits.add(new Hit(x, y, w, h, drawingList, action)); }
 
@@ -193,8 +220,16 @@ abstract class ProfileManagerScreen extends UiScreen {
             footer(g, mx, my, t);
             return;
         }
-        if (formOpen()) renderForm(g, left + 12, top + TOOLBAR_Y, panelWidth - 24, mx, my);
-        else { renderAboveList(g, mx, my); renderList(g, mx, my, t); }
+        // Opening the add/edit form slides it in from the right; going back slides the list in from the left.
+        boolean form = formOpen();
+        float swap = UiMotion.sinceChange("pm.form." + getClass().getSimpleName(), form), swapBefore = UiRender.opacity;
+        UiRender.opacity = swapBefore * swap;
+        g.pose().pushMatrix();
+        g.pose().translate((form ? 1 : -1) * (1 - swap) * 10, 0);
+        try {
+            if (form) renderForm(g, left + 12, top + TOOLBAR_Y, panelWidth - 24, mx, my);
+            else { renderAboveList(g, mx, my); renderList(g, mx, my, t); }
+        } finally { g.pose().popMatrix(); UiRender.opacity = swapBefore; }
         footer(g, mx, my, t);
     }
 
@@ -206,11 +241,18 @@ abstract class ProfileManagerScreen extends UiScreen {
         g.enableScissor(left + 4, start, left + panelWidth - 4, start + view);
         drawingList = true;
         try {
+            String listKey = "pm.row." + getClass().getSimpleName();
             for (int i = 0; i < n; i++) {
-                float y = start + i * ROW - shownScroll;
+                Object id = rowId(i);
+                float y = start + UiMotion.rowY(listKey, id, i * ROW) - shownScroll;
                 if (y + ROW < start || y > start + view) continue;
                 boolean hover = UiDraw.over(mx, my, left + 8, y, panelWidth - 16, ROW) && my >= start && my < start + view;
-                renderRow(g, i, left + 8, y + 1, panelWidth - 16, mx, my, hover);
+                float rowBefore = UiRender.opacity, appear = UiMotion.rowAppear(listKey, id);
+                UiRender.opacity = rowBefore * appear;
+                g.pose().pushMatrix();
+                g.pose().translate(0, (1 - appear) * 4);
+                try { renderRow(g, i, left + 8, y + 1, panelWidth - 16, mx, my, hover); }
+                finally { g.pose().popMatrix(); UiRender.opacity = rowBefore; }
             }
         } finally { drawingList = false; }
         if (n == 0) {
@@ -220,8 +262,8 @@ abstract class ProfileManagerScreen extends UiScreen {
             UiDraw.center(g, UiDraw.fit(e[2], panelWidth - 40, UiDraw.SMALL), left, start + 52, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
         }
         g.disableScissor();
-        if (shownScroll > 1) UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < maxScroll() - 1) UiDraw.gradient(g, left + 4, start + view - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + view - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
     }
 
     /** Row card background, shared by both lists; {@code highlight} outlines it in the accent. */
@@ -235,16 +277,21 @@ abstract class ProfileManagerScreen extends UiScreen {
     private void footer(GuiGraphics g, int mx, int my, UiTheme t) {
         float cy = top + panelHeight - 12, right = left + panelWidth - 12;
         if (busy) right -= pill(g, "Cancel", right, cy, mx, my, t.red(), false, true, this::cancelTask) + 6;
-        float x = left + 14;
-        int colour;
-        if (busy) {
-            float pulse = .45f + .55f * (float) (0.5 + 0.5 * Math.sin(System.nanoTime() / 1.6e8));
-            UiDraw.circle(g, x + 2, cy, 2.2f, UiDraw.alpha(t.accent(), pulse));
-            x += 9; colour = t.text();
-        } else colour = message.isEmpty() ? UiDraw.alpha(t.muted(), .8f) : switch (tone) { case OK -> t.green(); case ERROR -> t.red(); case INFO -> t.muted(); };
-        String text = message.isEmpty() ? hint() : message, shown = UiDraw.fit(text, right - x, UiDraw.SMALL);
-        UiDraw.text(g, shown, x, cy, UiDraw.SMALL, colour);
+        // The busy dot fades in and nudges the text over; messages crossfade instead of swapping.
+        float busyShown = UiAnim.smooth("pm.busy", busy ? 1 : 0, 16);
+        if (busyShown > .01f) {
+            float pulse = .45f + .55f * UiAnim.pulse(1.6e8);
+            UiDraw.circle(g, left + 16, cy, 2.2f * (.6f + .4f * busyShown), UiDraw.alpha(t.accent(), pulse * busyShown));
+        }
+        float x = left + 14 + 9 * busyShown;
+        int kind = busy ? 3 : message.isEmpty() ? 4 : tone.ordinal();
+        String text = message.isEmpty() ? hint() : message, shown = UiDraw.fit(text, right - (left + 14 + (busy ? 9 : 0)), UiDraw.SMALL);
+        UiMotion.crossfade(g, "pm.footer", new UiMotion.Line(shown, kind), line -> UiDraw.text(g, line.text(), x, cy, UiDraw.SMALL, footerColour(line.kind(), t)));
         if (!shown.equals(text) && UiDraw.over(mx, my, left, cy - 8, panelWidth, 16)) tooltip("pm.message", text);
+    }
+
+    private static int footerColour(int kind, UiTheme t) {
+        return switch (kind) { case 1 -> t.green(); case 2 -> t.red(); case 3 -> t.text(); case 4 -> UiDraw.alpha(t.muted(), .8f); default -> t.muted(); };
     }
 
     // ---- input ----------------------------------------------------------------------------------

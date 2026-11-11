@@ -128,6 +128,23 @@ final class PresetsPanel {
         return pw;
     }
 
+    /** Delete pill: eases wider and red while armed, crossfades its label and drains a timer line. */
+    private float confirmPill(GuiGraphics g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
+                              float right, float cy, int mx, int my, int tint, Runnable action) {
+        UiTheme t = GuiState.theme();
+        String shown = armed ? armedLabel : label;
+        float target = UiDraw.width(shown, UiDraw.SMALL) + 14;
+        float pw = UiAnim.smooth(key + ".w", target, target, 20), px = right - pw;
+        boolean hover = UiDraw.over(mx, my, px, cy - 7, pw, 14);
+        float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".arm", armed ? 1 : 0, 18);
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
+        int colour = UiDraw.mix(UiDraw.mix(t.text(), tint, hv), tint, on);
+        UiMotion.crossfade(g, key + ".label", shown, l -> UiDraw.center(g, l, px, cy, pw, UiDraw.SMALL, colour));
+        if (armed) UiMotion.drain(g, px + 5, cy + 4.6f, pw - 10, armedAt, window, UiDraw.alpha(tint, .8f));
+        hits.add(new Hit(px, cy - 7, pw, 14, action));
+        return pw;
+    }
+
     void render(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         UiDraw.icon(g, "star", x, y + 13.5f, 9, t.accent());
@@ -185,19 +202,25 @@ final class PresetsPanel {
         scroll = Math.clamp(scroll, 0, Math.max(0, total - view));
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
         g.enableScissor(x - 4, top, x + w + 4, top + view);
-        float rowY = top - shownScroll;
+        // Layout position of each row; the drawn position glides to it, so rows slide up when one is deleted.
+        float flowY = 0;
         boolean addressShown = false;
         for (String name : names) {
             boolean open = name.equals(selected);
             String key = "pp.row." + category.name() + "." + name;
             float expand = UiAnim.smooth(key + ".x", open ? 1 : 0, 16);
             float rowH = ROW + EXPANDED * expand;
+            float rowY = top - shownScroll + UiMotion.rowY("pp." + category.name(), name, flowY);
+            float rowBefore = UiRender.opacity;
+            UiRender.opacity = rowBefore * UiMotion.rowAppear("pp." + category.name(), name);
             if (rowY + rowH >= top && rowY <= top + view) {
                 boolean hover = UiDraw.over(mx, my, x - 4, rowY, w + 8, rowH) && my >= top && my < top + view;
                 float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20);
                 UiDraw.rounded(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), Math.max(hv * .7f, expand)));
                 if (expand > 0) UiDraw.outline(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, .6f, UiDraw.alpha(t.accent(), .35f * expand));
-                UiDraw.icon(g, open ? "chevron_down" : "chevron_right", x + 1, rowY + 7, 8, UiDraw.alpha(t.muted(), .7f));
+                // The chevron turns with the row's expansion instead of swapping.
+                if (expand < .99f) UiDraw.icon(g, "chevron_right", x + 1 + expand * 1.5f, rowY + 7, 8, UiDraw.alpha(t.muted(), .7f * (1 - expand)));
+                if (expand > .01f) UiDraw.icon(g, "chevron_down", x + 1, rowY + 7 - (1 - expand) * 1.5f, 8, UiDraw.alpha(t.muted(), .7f * expand));
                 String shownName = UiDraw.fit(name, w * .34f);
                 UiDraw.bold(g, shownName, x + 13, rowY + 11, UiDraw.TEXT, t.text());
                 if (Presets.hasLayout(category, name)) {
@@ -217,21 +240,25 @@ final class PresetsPanel {
                     String label = Presets.label(bound);
                     float cw = UiDraw.width(label, 6f) + 22;
                     if (chipX + cw > x + w * .55f) { UiDraw.text(g, "+" + (targets.size() - targets.indexOf(bound)) + " more", chipX, chipY, 6f, t.muted()); break; }
-                    boolean chipHover = UiDraw.over(mx, my, chipX + cw - 11, chipY - 5, 10, 10);
+                    // Chips fade in when bound and slide along when a neighbour is unbound.
+                    float chipDrawX = UiAnim.smooth(key + ".chipDrawX." + bound, chipX, chipX, 18), chipBefore = UiRender.opacity;
+                    UiRender.opacity = chipBefore * UiMotion.rowAppear(key + ".chip", bound);
+                    boolean chipHover = UiDraw.over(mx, my, chipDrawX + cw - 11, chipY - 5, 10, 10);
                     int chipColour = Presets.isWorld(bound) ? t.green() : t.blue();
-                    UiDraw.rounded(g, chipX, chipY - 5, cw, 10, 5, UiDraw.alpha(chipColour, .16f));
-                    UiDraw.icon(g, Presets.isWorld(bound) ? "player" : "people", chipX + 3, chipY - 3, 6, chipColour);
-                    UiDraw.text(g, label, chipX + 11, chipY, 6f, chipColour);
-                    UiDraw.icon(g, "close", chipX + cw - 9, chipY - 3, 6, chipHover ? t.red() : UiDraw.alpha(chipColour, .7f));
+                    UiDraw.rounded(g, chipDrawX, chipY - 5, cw, 10, 5, UiDraw.alpha(chipColour, .16f));
+                    UiDraw.icon(g, Presets.isWorld(bound) ? "player" : "people", chipDrawX + 3, chipY - 3, 6, chipColour);
+                    UiDraw.text(g, label, chipDrawX + 11, chipY, 6f, chipColour);
+                    UiDraw.icon(g, "close", chipDrawX + cw - 9, chipY - 3, 6, UiDraw.mix(UiDraw.alpha(chipColour, .7f), t.red(), UiAnim.smooth(key + ".cxh." + bound, chipHover ? 1 : 0, 20)));
+                    UiRender.opacity = chipBefore;
                     String unbindTarget = bound;
-                    hits.add(new Hit(chipX + cw - 11, chipY - 5, 10, 10, () -> { Presets.unbind(unbindTarget, category); status("Unbound " + Presets.label(unbindTarget) + ".", false); }));
+                    hits.add(new Hit(chipDrawX + cw - 11, chipY - 5, 10, 10, () -> { Presets.unbind(unbindTarget, category); status("Unbound " + Presets.label(unbindTarget) + ".", false); }));
                     if (chipHover) host.hostTooltip("pp.unbind." + bound, "Stop loading " + name + " on " + Presets.label(bound));
                     chipX += cw + 4;
                 }
                 // Actions, right to left.
                 float right = x + w, cy = rowY + 16;
                 boolean confirming = name.equals(confirmDelete) && System.nanoTime() - confirmAt < 3e9;
-                right -= pill(g, confirming ? "Really delete?" : "Delete", right, cy, mx, my, t.red(), confirming, () -> delete(selectedName)) + 4;
+                right -= confirmPill(g, "pp.del." + name, "Delete", "Really delete?", confirming, confirmAt, 3_000_000_000L, right, cy, mx, my, t.red(), () -> delete(selectedName)) + 4;
                 right -= pill(g, "Save over", right, cy, mx, my, t.accent(), false, () -> overwrite(selectedName)) + 4;
                 if (target != null) {
                     boolean boundHere = name.equalsIgnoreCase(bindings.getOrDefault(target, ""));
@@ -254,7 +281,8 @@ final class PresetsPanel {
                     UiRender.opacity = before;
                 }
             }
-            rowY += rowH;
+            UiRender.opacity = rowBefore;
+            flowY += rowH;
         }
         if (selected != null) addressInput.visible = addressShown;
         if (names.isEmpty()) {
@@ -263,12 +291,14 @@ final class PresetsPanel {
             UiDraw.center(g, "Name your current config above and press Save current.", x, top + 52, w, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
         }
         g.disableScissor();
-        if (shownScroll > 1) UiDraw.gradient(g, x - 4, top, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, x - 4, top + view - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, top, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, x - 4, top + view - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
         // Footer.
-        float alpha = status.isEmpty() ? 0 : Math.clamp(1 - ((System.nanoTime() - statusAt) / 1e9f - 4) / .5f, 0f, 1f);
-        String footer = alpha > 0 ? status : "Each server or world loads one preset per type · Click a name to bind it to more servers";
-        UiDraw.text(g, UiDraw.fit(footer, w), x, y + h - 11, UiDraw.SMALL, alpha > 0 ? UiDraw.alpha(statusError ? t.red() : t.green(), alpha) : UiDraw.alpha(t.muted(), .8f));
+        boolean showStatus = !status.isEmpty() && (System.nanoTime() - statusAt) / 1e9f < 4.25f;
+        var line = showStatus ? new UiMotion.Line(UiDraw.fit(status, w), statusError ? 1 : 2)
+                : new UiMotion.Line(UiDraw.fit("Each server or world loads one preset per type · Click a name to bind it to more servers", w), 0);
+        float fy = y + h - 11;
+        UiMotion.crossfade(g, "presets.footer", line, l -> UiDraw.text(g, l.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
     }
 
     // ---- input ------------------------------------------------------------------------------

@@ -20,9 +20,34 @@ final class UiAnim {
 
     static float delta() { return delta; }
 
-    /** Exponential approach: {@code speed} ≈ how many e-folds per second. */
+    /** Whether menu motion is on (Settings → Appearance → Theme → Animations). Off, every change lands at once. */
+    static boolean enabled() { return GuiState.preferences().animations; }
+
+    /** The Appearance speed multiplier: above 1 plays motion faster, below 1 slower. */
+    static float speed() { return (float) GuiState.preferences().animationSpeed; }
+
+    /** Seconds since {@code startNanos} on the animation clock, i.e. scaled by {@link #speed()}. */
+    static float elapsed(long startNanos) { return (System.nanoTime() - startNanos) / 1e9f * speed(); }
+
+    /** This frame's delta on the animation clock. */
+    static float animDelta() { return delta * speed(); }
+
+    /** Linear 0…1 progress of a timed transition that started at {@code startNanos}; 1 at once when animations are off. */
+    static float progress(long startNanos, float seconds) {
+        if (!enabled()) return 1;
+        return Math.clamp(elapsed(startNanos) / seconds, 0f, 1f);
+    }
+
+    /** {@link #progress} eased out, for entrances and content swaps. */
+    static float eased(long startNanos, float seconds) { return easeOutCubic(progress(startNanos, seconds)); }
+
+    /** A soft 0…1 pulse for "waiting for input" states; holds steady at the middle when animations are off. */
+    static float pulse(double periodNanos) { return enabled() ? .5f + .5f * (float) Math.sin(System.nanoTime() / periodNanos) : .5f; }
+
+    /** Exponential approach: {@code speed} ≈ how many e-folds per second. Snaps when animations are off. */
     static float approach(float current, float target, float speed) {
-        float next = current + (target - current) * (1 - (float) Math.exp(-speed * delta));
+        if (!enabled()) return target;
+        float next = current + (target - current) * (1 - (float) Math.exp(-speed * animDelta()));
         return Math.abs(target - next) < .0005f ? target : next;
     }
 
@@ -43,6 +68,9 @@ final class UiAnim {
     static void set(String key, float value) { values.computeIfAbsent(key, k -> new float[1])[0] = value; }
 
     static void forget(String prefix) { values.keySet().removeIf(key -> key.startsWith(prefix)); }
+
+    /** Smooth start and end, used for exits so they read as clearly as entrances. */
+    static float easeInOutSine(float t) { t = Math.clamp(t, 0f, 1f); return .5f - .5f * (float) Math.cos(Math.PI * t); }
 
     static float easeOutCubic(float t) { t = Math.clamp(t, 0f, 1f); float u = 1 - t; return 1 - u * u * u; }
 

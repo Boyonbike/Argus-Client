@@ -27,7 +27,8 @@
     "ChatScreenPlayerClickMixin",
     "BetterChatClanHighlightMixin",
     "TabListClanHighlightMixin",
-    "BetterChatDmSoundMixin"
+    "BetterChatDmSoundMixin",
+    "MenuBlurFadeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -17,7 +17,10 @@ public abstract class UiScreen extends Screen {
     static final String PAGE_PREFIX = "tab:";
     /** Bar geometry: the collapsed bar is a circle of {@code BAR} units holding the player's face. */
     private static final float BAR_Y = 7, BAR = 28, FACE = 22, TAB_HEIGHT = 21, GEAR = 13;
-    private static final long OPEN_NANOS = 220_000_000L, CLOSE_NANOS = 130_000_000L;
+    private static final long OPEN_NANOS = 220_000_000L, CLOSE_NANOS = 190_000_000L;
+    /** Gap between staggered elements leaving, and the most elements that add to the wait. */
+    private static final float CLOSE_STAGGER = .018f;
+    private static final int CLOSE_STAGGER_CAP = 10;
     private static float indicatorX = Float.NaN, indicatorWidth;
     /** Bar reveal state; kept for the session so moving between pages doesn't replay it. */
     private static final NavbarAnimation bar = new NavbarAnimation();
@@ -28,6 +31,8 @@ public abstract class UiScreen extends Screen {
     private long openedAt, closingAt;
     private final boolean fromMenu;
     private Screen closeTarget;
+    /** Highest staggered index drawn while closing, so the page waits for its last element to leave. */
+    private int closeStaggered;
     /** Per tab: its saved entry, display name, icon, and the Settings section it opens (null for pages). */
     private String[] tabEntries = new String[0], tabLabels = new String[0], tabIcons = new String[0], tabSections = new String[0];
     /** Whether tabs show icons (chosen, or because names don't fit the screen). */
@@ -42,8 +47,19 @@ public abstract class UiScreen extends Screen {
     private String[] tooltipLines;
     private long tooltipSince;
     private int mouseX, mouseY;
+    /** How strongly the backdrop (and so the world blur behind it) shows this frame, 0…1. */
+    private float backdropShown;
 
-    protected UiScreen(String title, Screen parent, String activeTab) { super(Component.literal(title)); this.parent = parent; this.activeTab = activeTab; this.fromMenu = Minecraft.getInstance().screen instanceof UiScreen; }
+    protected UiScreen(String title, Screen parent, String activeTab) { super(Component.literal(title)); this.parent = parent; this.activeTab = activeTab; this.fromMenu = Minecraft.getInstance().screen instanceof UiScreen; this.backdropShown = fromMenu ? 1 : 0; }
+
+    /**
+     * Scale for Minecraft's menu blur while an Argus page is showing, so the blur fades in and
+     * out with the backdrop instead of staying at full strength until the screen is gone.
+     * A dialog keeps its parent's blur as it is.
+     */
+    public static float blurScale() {
+        return Minecraft.getInstance().screen instanceof UiScreen screen && !screen.modal() ? screen.backdropShown : 1;
+    }
     protected Screen rootParent() { return parent instanceof UiScreen screen ? screen.rootParent() : parent; }
 
     @Override protected final void init() {
@@ -117,7 +133,8 @@ public abstract class UiScreen extends Screen {
         GuiState.save();
     }
     private static boolean barOpen() { return bar.open(); }
-    private static float barProgress() { return bar.progress(); }
+    /** The bar's reveal; leaving the menu folds it back into the face, mirroring how it opened. */
+    private float barProgress() { return leavingMenu() ? bar.progress() * leave(0) : bar.progress(); }
 
     /** The Settings section this page is showing, so a bar tab for it can light up. */
     protected String activeSection() { return null; }
@@ -151,17 +168,24 @@ public abstract class UiScreen extends Screen {
 
     /** Eased 0…1 progress of this page's entrance (and exit while closing). */
     protected float appear() {
-        float open = UiAnim.easeOutCubic((System.nanoTime() - openedAt) / (float) OPEN_NANOS);
-        if (closingAt != 0) open *= 1 - Math.clamp((System.nanoTime() - closingAt) / (float) CLOSE_NANOS, 0f, 1f);
-        return open;
+        return UiAnim.eased(openedAt, OPEN_NANOS / 1e9f) * leave(0);
     }
-    /** Staggered entrance for the n-th element of a page. */
+    /** Staggered entrance for the n-th element of a page; elements leave in the same order they arrived. */
     protected float appear(int index) {
-        float t = ((System.nanoTime() - openedAt) / 1e9f - index * .028f) / .26f;
-        float value = UiAnim.easeOutCubic(t);
-        if (closingAt != 0) value *= 1 - Math.clamp((System.nanoTime() - closingAt) / (float) CLOSE_NANOS, 0f, 1f);
-        return value;
+        float value = UiAnim.enabled() ? UiAnim.easeOutCubic((UiAnim.elapsed(openedAt) - index * .028f) / .26f) : 1;
+        if (closingAt != 0) closeStaggered = Math.max(closeStaggered, Math.min(index, CLOSE_STAGGER_CAP));
+        return value * leave(Math.min(index, CLOSE_STAGGER_CAP) * CLOSE_STAGGER);
     }
+    /** 1 → 0 exit for something that starts leaving {@code delay} seconds after the close began; mirrors the entrance. */
+    private float leave(float delay) {
+        if (closingAt == 0) return 1;
+        float t = (UiAnim.elapsed(closingAt) - delay) / (CLOSE_NANOS / 1e9f);
+        return 1 - UiAnim.easeInOutSine(t);
+    }
+    /** Whether the page (backdrop and bar included) is leaving the menu entirely rather than moving to another menu page. */
+    private boolean leavingMenu() { return closingAt != 0 && !(closeTarget instanceof UiScreen); }
+    /** Real time the close takes, so a slower or faster animation speed still lets the last element finish leaving. */
+    private long closeNanos() { return (long) ((CLOSE_NANOS + closeStaggered * CLOSE_STAGGER * 1e9f) / UiAnim.speed()); }
 
     @Override public final void render(GuiGraphics g, int rawX, int rawY, float delta) {
         if (modal() && parent != null) parent.render(g, -1000, -1000, delta);
@@ -169,16 +193,25 @@ public abstract class UiScreen extends Screen {
         int mx = (int) viewport.toLogical(rawX), my = (int) viewport.toLogical(rawY);
         mouseX = mx; mouseY = my;
         float appear = appear();
-        boolean keepBackdrop = closingAt != 0 ? closeTarget instanceof UiScreen : fromMenu;
+        // A dialog's dim layer always comes and goes with it; a page keeps the backdrop when moving between menu pages.
+        boolean keepBackdrop = !modal() && (closingAt != 0 ? closeTarget instanceof UiScreen : fromMenu);
         g.pose().pushMatrix();
         g.pose().scale(viewport.renderScale(), viewport.renderScale());
         try {
-            UiRender.opacity = keepBackdrop ? 1 : appear;
+            backdropShown = keepBackdrop ? 1 : appear;
+            UiRender.opacity = backdropShown;
             backdrop(g);
             UiRender.opacity = appear;
             tooltipOwner = null;
             g.pose().pushMatrix();
             g.pose().translate(0, (1 - appear) * 6);
+            if (modal()) {
+                // Dialogs also grow in from, and shrink back to, slightly smaller than full size.
+                float scale = UiAnim.lerp(.96f, 1, appear);
+                g.pose().translate(width / 2f, height / 2f);
+                g.pose().scale(scale, scale);
+                g.pose().translate(-width / 2f, -height / 2f);
+            }
             try {
                 renderUi(g, mx, my, delta);
                 super.render(g, mx, my, delta);
@@ -192,14 +225,20 @@ public abstract class UiScreen extends Screen {
             UiRender.opacity = 1;
             g.pose().popMatrix();
         }
-        if (closingAt != 0 && System.nanoTime() - closingAt >= CLOSE_NANOS) { closingAt = 0; minecraft.setScreen(closeTarget); }
+        if (closingAt != 0 && System.nanoTime() - closingAt >= closeNanos()) {
+            closingAt = 0;
+            // Going back to an earlier page replays its entrance, like opening a page from the bar does;
+            // a dialog's parent stayed visible underneath, so it just carries on.
+            if (!modal() && closeTarget instanceof UiScreen previous) previous.openedAt = System.nanoTime();
+            minecraft.setScreen(closeTarget);
+        }
     }
 
     // ---- navigation bar: a face that springs open into a pill of tabs ---------------------
 
     private float fullBarWidth() { return BAR + 4 + tabsWidth + 4 + BAR; }
     /** Eased width progress; overshoots slightly while opening for a springy feel. */
-    private float barShape() { return barOpen() ? UiAnim.easeOutBack(barProgress()) : UiAnim.easeOutCubic(barProgress()); }
+    private float barShape() { return barOpen() && closingAt == 0 ? UiAnim.easeOutBack(barProgress()) : UiAnim.easeOutCubic(barProgress()); }
     private float barWidthNow() { return UiAnim.lerp(BAR, fullBarWidth(), barShape()); }
     private float barLeft() { return width / 2f - barWidthNow() / 2; }
     private float tabX(int i) { return barLeft() + BAR + 4 + tabOffset[i]; }
@@ -226,7 +265,7 @@ public abstract class UiScreen extends Screen {
 
     private void tabs(GuiGraphics g, int mx, int my) {
         UiTheme t = GuiState.theme();
-        bar.advance(UiAnim.delta());
+        if (UiAnim.enabled()) bar.advance(UiAnim.animDelta()); else bar.settle();
         float w = barWidthNow(), x = barLeft(), y = BAR_Y;
         boolean faceHover = closingAt == 0 && overFace(mx, my);
         float fh = UiAnim.smooth("bar.face", faceHover ? 1 : 0, 18);
@@ -298,7 +337,8 @@ public abstract class UiScreen extends Screen {
     private void drawTooltip(GuiGraphics g) {
         if (tooltipOwner == null || !tooltipOwner.equals(shownTooltipOwner)) { shownTooltipOwner = tooltipOwner; tooltipSince = System.nanoTime(); }
         if (tooltipOwner == null || tooltipLines == null) return;
-        float shown = UiAnim.easeOutCubic(((System.nanoTime() - tooltipSince) / 1e9f - .35f) / .14f);
+        float rested = (System.nanoTime() - tooltipSince) / 1e9f - .35f;
+        float shown = UiAnim.enabled() ? UiAnim.easeOutCubic(rested * UiAnim.speed() / .14f) : rested >= 0 ? 1 : 0;
         if (shown <= 0) return;
         UiTheme t = GuiState.theme();
         float w = 0;
@@ -331,8 +371,10 @@ public abstract class UiScreen extends Screen {
     /** Fades the page out, then shows {@code target}. Moving to another menu page keeps the backdrop. */
     public void beginClose(Screen target) {
         if (closingAt != 0) return;
+        if (!UiAnim.enabled()) { setFocused(null); minecraft.setScreen(target); return; }
         closeTarget = target;
         closingAt = System.nanoTime();
+        closeStaggered = 0;
         setFocused(null);
     }
 

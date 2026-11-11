@@ -195,7 +195,7 @@ final class ModulePage {
         float kwShown = UiAnim.smooth(key + "kw", kw, 18);
         boolean kHover = UiDraw.over(mx, my, cx, cy, kwShown, CHIP);
         float kh = UiAnim.smooth(key + "kh", kHover || binding ? 1 : 0, 18);
-        float pulse = binding ? .5f + .5f * (float) Math.sin(System.nanoTime() / 1.5e8) : 0;
+        float pulse = binding ? UiAnim.pulse(1.5e8) : 0;
         UiDraw.rounded(g, cx, cy, kwShown, CHIP, 8, binding ? UiDraw.alpha(t.accent(), .16f + pulse * .12f) : UiDraw.mix(t.surface(), t.overlay(), kh * .7f));
         UiDraw.outline(g, cx, cy, kwShown, CHIP, 8, .6f, binding ? UiDraw.alpha(t.accent(), .5f + pulse * .5f) : UiDraw.alpha(t.overlay(), .5f + kh * .3f));
         UiDraw.icon(g, "keyboard", cx + 7, cy + 4, 8, binding ? t.accent() : UiDraw.mix(t.muted(), t.text(), kh));
@@ -258,7 +258,9 @@ final class ModulePage {
         if (ra > .01f) UiDraw.outline(g, rx, cy, rwShown, CHIP, 8, .6f, UiDraw.alpha(t.red(), .6f * ra));
         int rColour = UiDraw.mix(UiDraw.alpha(UiDraw.mix(t.muted(), t.text(), rh), usable), t.red(), ra);
         UiDraw.icon(g, "reset", rx + 7, cy + 4, 8, rColour);
-        UiDraw.text(g, UiDraw.fit(rl, rwShown - 22, UiDraw.SMALL), rx + 19, cy + CHIP / 2, UiDraw.SMALL, rColour);
+        final float labelX = rx + 19, labelRoom = rwShown - 22;
+        UiMotion.crossfade(g, key + "rl", rl, l -> UiDraw.text(g, UiDraw.fit(l, labelRoom, UiDraw.SMALL), labelX, cy + CHIP / 2, UiDraw.SMALL, rColour));
+        if (armed) UiMotion.drain(g, rx + 8, cy + CHIP - 2.5f, rwShown - 16, resetArmedAt, 3_000_000_000L, UiDraw.alpha(t.red(), .8f));
         hits.add(new Hit(rx, cy, rwShown, CHIP, 0, () -> {
             if (cards.changed() == 0) { notice("Everything is already at its default"); return; }
             if (!resetArmed()) { resetArmedAt = System.nanoTime(); return; }
@@ -310,8 +312,8 @@ final class ModulePage {
         if (cards.isEmpty()) empty(g, cx, top, cw, t);
         else cards.render(g, mx, my, delta, t, cx, top - shownScroll, cw, top, bottom);
         g.disableScissor();
-        if (shownScroll > 1) UiDraw.gradient(g, cx - 3, top, cw + 6, 12, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, cx - 3, bottom - 12, cw + 6, 12, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, cx - 3, top, cw + 6, 12, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, cx - 3, bottom - 12, cw + 6, 12, 0, UiDraw.alpha(t.base(), 0), t.base()));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownScroll / Math.max(1, total - view);
             float shown = UiAnim.smooth(key + "bar", UiDraw.over(mx, my, cx, top, cw + 8, view) ? 1 : .5f, 10);
@@ -331,14 +333,16 @@ final class ModulePage {
     private void footer(GuiGraphics g, UiTheme t) {
         String error = cards.message();
         boolean fresh = !notice.isEmpty() && System.nanoTime() - noticeAt < 3_500_000_000L;
-        String text; int colour;
-        if (!error.isEmpty()) { text = error; colour = t.red(); }
-        else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; colour = t.accent(); }
-        else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); colour = t.green(); }
-        else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; colour = t.red(); }
-        else if (fresh) { text = notice; colour = noticeError ? t.red() : t.green(); }
-        else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; colour = UiDraw.alpha(t.muted(), .8f); }
-        UiDraw.text(g, UiDraw.fit(text, w), x, y + h - 9, UiDraw.SMALL, colour);
+        String text; int kind;
+        if (!error.isEmpty()) { text = error; kind = 1; }
+        else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; kind = 3; }
+        else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); kind = 2; }
+        else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; kind = 1; }
+        else if (fresh) { text = notice; kind = noticeError ? 1 : 2; }
+        else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; kind = 0; }
+        // Each change of message crossfades, including the notice ending and the hint coming back.
+        float fy = y + h - 9;
+        UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.fit(text, w), kind), line -> UiDraw.text(g, line.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(line.kind(), t)));
     }
 
     // ---- input -------------------------------------------------------------------------------

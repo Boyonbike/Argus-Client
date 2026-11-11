@@ -97,6 +97,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
     // ---- list ---------------------------------------------------------------------------------
 
     @Override protected int rowCount() { return profiles.accounts().size(); }
+    @Override protected Object rowId(int index) { return profiles.accounts().get(index).id(); }
 
     private static String typeName(AccountEntry.Type type) {
         return switch (type) { case MICROSOFT -> "Microsoft"; case OFFLINE -> "Cracked"; case SESSION -> "Session"; case ALTENING -> "Altening"; };
@@ -116,7 +117,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         // Actions, right to left.
         float right = x + w - 8;
         boolean confirm = account.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS;
-        right -= pill(g, confirm ? "Really delete?" : "Delete", right, cy, mx, my, t.red(), confirm, !busy, () -> {
+        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.red(), !busy, () -> {
             if (account.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS) { deleting = null; change(() -> profiles.removeAccount(account.id()), "Removed " + account.username() + "."); }
             else { deleting = account.id(); deleteAt = System.nanoTime(); }
         }) + 4;

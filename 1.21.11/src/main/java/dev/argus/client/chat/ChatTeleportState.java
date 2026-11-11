@@ -77,6 +77,11 @@ public final class ChatTeleportState {
     private static final Pattern COOLDOWN_FINISHED = Pattern.compile("\\bcooldown\\b.*\\b(?:expired|ended|finished|over)\\b|\\b(?:can|may)\\s+(?:now\\s+)?(?:use|teleport)\\b.*\\bagain\\b", Pattern.DOTALL);
     private static final Pattern NEGATED = Pattern.compile("\\b(?:not|never|cannot|can't|hasn't|isn't|haven't|wasn't|won't)\\b");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+    /**
+     * Vote and rank adverts list cooldowns as perks ("/home cooldown: 1 minute 30 seconds → 15 seconds", "+4 homes ·
+     * /home cooldown 15 seconds · /tpa cooldown 30 seconds"). They describe no running cooldown and must never cut one short.
+     */
+    private static final Pattern PERK = Pattern.compile("→|->|\\bvot(?:e|es|ing)\\b|\\branks?\\b");
     private final EnumMap<Kind, Timer> timers = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Operation> operations = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Completed> completed = new EnumMap<>(Kind.class);
@@ -141,6 +146,7 @@ public final class ChatTeleportState {
         boolean tpa = TPA_WORD.matcher(text).find();
         boolean hotspot = HOTSPOT_WORD.matcher(text).find();
         boolean cooldownText = COOLDOWN_CUE.matcher(text).find();
+        if (cooldownText && (PERK.matcher(text).find() || home && tpa && durations(text).size() > 1)) return;
         boolean genericCooldown = text.contains("cooldown") || text.contains("wait") && (text.contains("command") || text.contains("again") || text.contains("before"));
         if (!home && !tpa && !hotspot && !text.contains("teleport") && !(genericCooldown && now - lastContextAt < 5_000)) return;
         Kind kind = home ? Kind.Home : tpa ? Kind.TPA : hotspot ? Kind.Hotspot : lastKind;
@@ -240,7 +246,7 @@ public final class ChatTeleportState {
         lastKind = kind; lastContextAt = now;
         Long announced = announcedCooldowns.remove(kind);
         long millis = cooldown != null ? cooldown.millis() : announced != null ? announced : estimate(kind);
-        if (cooldown != null || announced != null) learnedCooldowns.put(kind, millis);
+        if (cooldown != null || announced != null) learn(kind, millis);
         if (millis > 0) startCooldown(kind, operation.target(), millis, now, cooldown == null && announced == null);
         else timers.remove(kind);
     }
@@ -282,13 +288,20 @@ public final class ChatTeleportState {
         Completed success = completed.get(kind);
         String target = previous != null ? previous.target() : success != null ? success.target() : operation != null ? operation.target() : "";
         if (success != null && now >= success.at() && now - success.at() <= 86_400_000) {
-            // The server often reports remaining time after a retry; include elapsed time since confirmed success.
-            learnedCooldowns.put(kind, Math.min(86_400_000L, millis + now - success.at()));
+            // "Wait 39s" after a retry: you can teleport again at now + 39s, so the full cooldown runs from this kind's
+            // last teleport to then.
+            learn(kind, millis + now - success.at());
         }
         if (millis > 0) startCooldown(kind, target, millis, now, false);
         else if (previous != null && previous.phase() == Phase.Cooldown) timers.remove(kind);
         operations.remove(kind);
         announcedCooldowns.remove(kind);
+    }
+
+    /** Keeps a learned length rounded to the nearest 5 seconds, since replies arrive a moment after the real times. */
+    private void learn(Kind kind, long millis) {
+        long rounded = Math.min(86_400_000L, Math.round(millis / 5_000.0) * 5_000L);
+        if (rounded > 0) learnedCooldowns.put(kind, rounded);
     }
 
     private void startCooldown(Kind kind, String target, long millis, long now, boolean estimated) {

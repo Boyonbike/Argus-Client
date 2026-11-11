@@ -129,12 +129,16 @@ final class TargetsCard extends InlineCard {
         return list == null ? 0 : list.contentHeight() + 10;
     }
 
+    /** Each rule's dropdown height as last drawn, eased toward {@link #dropdownHeight}, so it opens and folds smoothly. */
+    private final Map<String, Float> shownDrop = new HashMap<>();
+    private float shownDropdownHeight(SpecificRules.Rule rule) { return shownDrop.getOrDefault(rule.id, dropdownHeight(rule)); }
+
     @Override float bodyHeight() {
         List<SpecificRules.Rule> all = targets.rules().all();
         open.keySet().removeIf(id -> targets.rules().find(id) == null);
         float height = TOP + panelHeight() + 4;
         if (all.isEmpty()) return height + ROW;
-        for (SpecificRules.Rule rule : all) height += ROW + dropdownHeight(rule);
+        for (SpecificRules.Rule rule : all) height += ROW + shownDropdownHeight(rule);
         return height + 4;
     }
 
@@ -256,18 +260,35 @@ final class TargetsCard extends InlineCard {
             UiDraw.text(g, "Nothing added yet. Search above, tick what you want, then press Add.", x + 4, top + ROW / 2, UiDraw.SMALL, t.muted());
             return;
         }
+        // Rows fade in when added and glide when one above is removed; dropdowns ease open and shut.
+        String rowsKey = "tc." + module.getName() + ".rule";
+        float base = top;
+        shownDrop.keySet().retainAll(all.stream().map(r -> r.id).toList());
         for (SpecificRules.Rule rule : all) {
-            top = drawRow(g, mx, my, t, x, top, w, rule);
-            SettingsList list = listFor(rule);
-            if (list != null) {
-                float h = list.contentHeight() + 10;
-                UiDraw.rounded(g, x + 10, top, w - 10, h - 4, 6, UiDraw.alpha(t.crust(), .7f));
-                UiDraw.rect(g, x + 4, top - 2, 1.2f, h - 4, UiDraw.alpha(t.accent(), .5f));
-                list.panelEdges(x - 12, x + w + 12);
-                list.embed(x + 14, top + 3, w - 18, Math.max(clipTop(), top), Math.min(clipBottom(), top + h - 4));
-                list.render(g, mx, my, 0, t);
-                top += h;
-            }
+            float shown = base + UiMotion.rowY(rowsKey, rule.id, top - base), shift = shown - top;
+            float before = UiRender.opacity;
+            UiRender.opacity = before * UiMotion.rowAppear(rowsKey, rule.id);
+            try {
+                float below = drawRow(g, mx, my, t, x, shown, w, rule);
+                SettingsList list = listFor(rule);
+                float target = dropdownHeight(rule);
+                float h = UiAnim.approach(shownDrop.getOrDefault(rule.id, 0f), target, 16);
+                shownDrop.put(rule.id, h);
+                if (h > 4.5f) {
+                    float open = target > 0 ? Math.min(1, h / target) : 0;
+                    UiDraw.rounded(g, x + 10, below, w - 10, h - 4, 6, UiDraw.alpha(t.crust(), .7f * Math.max(open, .4f)));
+                    UiDraw.rect(g, x + 4, below - 2, 1.2f, h - 4, UiDraw.alpha(t.accent(), .5f));
+                    if (list != null) {
+                        float listBefore = UiRender.opacity;
+                        UiRender.opacity = listBefore * open;
+                        list.panelEdges(x - 12, x + w + 12);
+                        list.embed(x + 14, below + 3, w - 18, Math.max(clipTop(), below), Math.min(clipBottom(), below + h - 4));
+                        list.render(g, mx, my, 0, t);
+                        UiRender.opacity = listBefore;
+                    }
+                }
+                top = below - shift + h;
+            } finally { UiRender.opacity = before; }
         }
     }
 
@@ -354,15 +375,16 @@ final class TargetsCard extends InlineCard {
 
         // Row body: left click toggles, right click opens settings.
         boolean hover = hovering(mx, my, x, y + 1, right - x, ROW - 2);
-        float hv = UiAnim.smooth("tc." + module.getName() + ".r." + rule.id, hover ? 1 : 0, 18);
-        int base = dropped ? UiDraw.alpha(t.accent(), .1f) : UiDraw.alpha(t.surface(), .35f);
+        String rowKey = "tc." + module.getName() + ".r." + rule.id;
+        float hv = UiAnim.smooth(rowKey, hover ? 1 : 0, 18), drop = UiAnim.smooth(rowKey + ".drop", dropped ? 1 : 0, 16), lit = UiAnim.smooth(rowKey + ".on", on ? 1 : 0, 16);
+        int base = UiDraw.mix(UiDraw.alpha(t.surface(), .35f), UiDraw.alpha(t.accent(), .1f), drop);
         UiDraw.rounded(g, x, y + 1, right - x, ROW - 2, 6, UiDraw.mix(base, UiDraw.alpha(t.surface(), .9f), hv * .6f));
 
         // Type tag at the far left, in the group's colour while on.
         int swatch = settings.swatch() | 0xFF000000;
-        UiDraw.rounded(g, x + 4, cy - 8, TYPE_W, 16, 8, on ? UiDraw.alpha(swatch, .28f) : UiDraw.alpha(t.overlay(), .35f));
-        UiDraw.outline(g, x + 4, cy - 8, TYPE_W, 16, 8, .6f, on ? UiDraw.alpha(swatch, .8f) : UiDraw.alpha(t.overlay(), .6f));
-        UiDraw.center(g, rule.category().title(), x + 4, cy, TYPE_W, UiDraw.SMALL, on ? t.text() : t.muted());
+        UiDraw.rounded(g, x + 4, cy - 8, TYPE_W, 16, 8, UiDraw.mix(UiDraw.alpha(t.overlay(), .35f), UiDraw.alpha(swatch, .28f), lit));
+        UiDraw.outline(g, x + 4, cy - 8, TYPE_W, 16, 8, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f), UiDraw.alpha(swatch, .8f), lit));
+        UiDraw.center(g, rule.category().title(), x + 4, cy, TYPE_W, UiDraw.SMALL, UiDraw.mix(t.muted(), t.text(), lit));
 
         float tx = x + TYPE_W + 10;
         SpecificRules.Member first = rule.members().get(0);
@@ -378,9 +400,12 @@ final class TargetsCard extends InlineCard {
                 + (capped ? "too many to show all, nearest shown · " : "")
                 + (linked ? "linked with " + other : inOther ? "also on in " + other : "this page only");
         String hint = hover ? (on ? "Click: turn off · Right-click: settings" : "Click: turn on · Right-click: settings") : state;
-        UiDraw.text(g, UiDraw.fit(label, right - tx - 18), tx, cy - 5, on ? t.text() : t.muted());
-        UiDraw.text(g, UiDraw.fit(hint, right - tx - 18, UiDraw.SMALL), tx, cy + 6, UiDraw.SMALL, t.muted());
-        UiDraw.icon(g, dropped ? "chevron_down" : "chevron_right", right - 14, cy - 4, 8, UiDraw.alpha(t.muted(), .8f));
+        UiDraw.text(g, UiDraw.fit(label, right - tx - 18), tx, cy - 5, UiDraw.mix(t.muted(), t.text(), lit));
+        float hintX = tx, hintRoom = right - tx - 18;
+        UiMotion.text(g, rowKey + ".hint", UiDraw.fit(hint, hintRoom, UiDraw.SMALL), l -> UiDraw.text(g, l, hintX, cy + 6, UiDraw.SMALL, t.muted()));
+        // The chevron turns with the dropdown instead of swapping.
+        if (drop < .99f) UiDraw.icon(g, "chevron_right", right - 14 + drop * 1.5f, cy - 4, 8, UiDraw.alpha(t.muted(), .8f * (1 - drop)));
+        if (drop > .01f) UiDraw.icon(g, "chevron_down", right - 14, cy - 4 - (1 - drop) * 1.5f, 8, UiDraw.alpha(t.muted(), .8f * drop));
         hit(x, y + 1, right - x, ROW - 2, () -> toggle(rule));
         rows.add(new Row(rule, y));
         return y + ROW;
@@ -391,11 +416,14 @@ final class TargetsCard extends InlineCard {
                          boolean lit, int tint, String tip, Runnable run) {
         float r = CIRCLE / 2, cx = right - r;
         boolean hover = hovering(mx, my, cx - r, cy - r, CIRCLE, CIRCLE);
-        float hv = UiAnim.smooth("tc." + module.getName() + "." + key, hover ? 1 : 0, 18);
-        int colour = tint != 0 ? tint : t.accent();
-        UiDraw.circle(g, cx, cy, r, lit ? UiDraw.alpha(colour, .22f + hv * .1f) : UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
-        UiDraw.outline(g, cx - r, cy - r, CIRCLE, CIRCLE, r, .6f, lit ? UiDraw.alpha(colour, .6f) : UiDraw.alpha(t.overlay(), .6f + hv * .3f));
-        UiDraw.icon(g, icon, cx - 4, cy - 4, 8, lit ? colour : UiDraw.mix(t.muted(), t.text(), hv));
+        String base = "tc." + module.getName() + "." + key;
+        float hv = UiAnim.smooth(base, hover ? 1 : 0, 18), on = UiAnim.smooth(base + ".lit", lit ? 1 : 0, 16), warn = UiAnim.smooth(base + ".tint", tint != 0 ? 1 : 0, 16);
+        int colour = tint != 0 ? UiDraw.mix(t.accent(), tint, warn) : UiDraw.mix(t.accent(), t.red(), warn);
+        // An armed (tinted) circle pulses its ring while it waits for the second click.
+        float pulse = tint != 0 ? .3f * UiAnim.pulse(1.5e8) : 0;
+        UiDraw.circle(g, cx, cy, r, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .7f), UiDraw.alpha(colour, .22f + hv * .1f), on));
+        UiDraw.outline(g, cx - r, cy - r, CIRCLE, CIRCLE, r, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f + hv * .3f), UiDraw.alpha(colour, .6f + pulse), on));
+        UiDraw.icon(g, icon, cx - 4, cy - 4, 8, UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), colour, on));
         hit(cx - r, cy - r, CIRCLE, CIRCLE, run);
         if (hover) host.tooltip("tc." + key, icon.equals("link") ? "Link" : "Remove", tip);
         return right - CIRCLE - 4;

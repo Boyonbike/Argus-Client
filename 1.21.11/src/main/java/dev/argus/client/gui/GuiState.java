@@ -31,7 +31,7 @@ final class GuiState {
         return blendedTheme();
     }
     private static UiTheme blendedTheme() {
-        float t = UiAnim.easeOutCubic((System.nanoTime() - themeChanged) / 2.5e8f);
+        float t = UiAnim.eased(themeChanged, .25f);
         return t >= 1 ? targetTheme : UiTheme.blend(shownTheme, targetTheme, t);
     }
     static void save() {

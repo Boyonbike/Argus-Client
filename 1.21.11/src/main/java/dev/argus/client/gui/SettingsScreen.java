@@ -46,6 +46,8 @@ final class SettingsScreen extends UiScreen {
     private PresetsPanel presets;
     private int left, top, panelWidth, panelHeight;
     private long sectionChanged;
+    /** 1 when the last section switch moved down the sidebar, -1 when it moved up; the content slides in from that side. */
+    private int sectionDir = 1;
 
     /** @param section a section name or client module name; null reopens the last section. */
     SettingsScreen(Screen parent, String section, String focusSetting) {
@@ -157,6 +159,7 @@ final class SettingsScreen extends UiScreen {
         if (page != null) page.stopEditing();
         for (SettingsList card : appearanceLists) card.stopEditing();
         if (presets != null) presets.detach();
+        if (section != null) sectionDir = sectionIndex(name) >= sectionIndex(section) ? 1 : -1;
         section = name; remembered = name;
         page = null; appearanceLists.clear(); discordCards = false;
         Module selected = modules.stream().filter(m -> m.getName().equals(name)).findFirst().orElse(null);
@@ -196,6 +199,7 @@ final class SettingsScreen extends UiScreen {
     private float contentWidth() { return panelWidth - SIDE - 34; }
     private float itemY(int index) { return top + 32 + index * ITEM; }
     private int sections() { return modules.size() + FIXED; }
+    private int sectionIndex(String name) { for (int i = 0; i < sections(); i++) if (sectionName(i).equals(name)) return i; return 0; }
     private String sectionName(int index) { return index == 0 ? APPEARANCE : index == 1 ? PRESETS : index == 2 ? SOCIAL : modules.get(index - FIXED).getName(); }
 
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
@@ -223,11 +227,11 @@ final class SettingsScreen extends UiScreen {
                 UiDraw.circle(g, left + SIDE - 4, iy + ITEM / 2f, 2, UiDraw.alpha(t.accent(), active ? 1 : .7f));
         }
         // ---- content, which fades and slides when the section changes
-        float change = UiAnim.easeOutCubic((System.nanoTime() - sectionChanged) / 2.2e8f);
+        float change = UiAnim.eased(sectionChanged, .22f);
         float before = UiRender.opacity;
         UiRender.opacity = before * change;
         g.pose().pushMatrix();
-        g.pose().translate((1 - change) * 8, 0);
+        g.pose().translate(0, sectionDir * (1 - change) * 8);
         try {
             switch (section) {
                 case PRESETS -> presets.render(g, mx, my, delta, t);
@@ -278,8 +282,8 @@ final class SettingsScreen extends UiScreen {
             y += h + CARD_GAP;
         }
         g.disableScissor();
-        if (shownPageScroll > 1) UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownPageScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base()));
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
         if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.red());
@@ -394,7 +398,7 @@ final class SettingsScreen extends UiScreen {
         float cw = UiDraw.width(label, UiDraw.SMALL) + 26, cx = right - cw, ch = 18;
         boolean hover = UiDraw.over(mx, my, cx, y, cw, ch);
         float hv = UiAnim.smooth("app.menukey.h", hover || bindingMenuKey ? 1 : 0, 18);
-        float pulse = bindingMenuKey ? .5f + .5f * (float) Math.sin(System.nanoTime() / 1.5e8) : 0;
+        float pulse = bindingMenuKey ? UiAnim.pulse(1.5e8) : 0;
         UiDraw.rounded(g, cx, y, cw, ch, 8, bindingMenuKey ? UiDraw.alpha(t.accent(), .16f + pulse * .12f) : UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
         UiDraw.outline(g, cx, y, cw, ch, 8, .6f, bindingMenuKey ? UiDraw.alpha(t.accent(), .5f + pulse * .5f) : UiDraw.alpha(t.overlay(), .5f + hv * .3f));
         UiDraw.icon(g, "keyboard", cx + 7, y + 5, 8, bindingMenuKey ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv));
@@ -420,6 +424,9 @@ final class SettingsScreen extends UiScreen {
         }
     }
 
+    /** "1x", "1.25x", "0.5x": the animation speed without trailing zeros. */
+    static String speedLabel(double speed) { return java.math.BigDecimal.valueOf(speed).stripTrailingZeros().toPlainString() + "x"; }
+
     /** A label with a switch at the end of a row. */
     private void toggleRow(GuiGraphics g, String label, String hint, boolean on, String key, float x, float y, float w, int mx, int my, UiTheme t, Runnable flip) {
         boolean hover = UiDraw.over(mx, my, x - 4, y, w + 8, 18);
@@ -442,7 +449,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
 
         // Card heights, so the page knows how far it can scroll.
-        float themeH = CARD_HEAD + 52, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68;
+        float themeH = CARD_HEAD + 74, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68;
         List<Float> listHeights = new ArrayList<>();
         for (SettingsList card : appearanceLists) listHeights.add(CARD_HEAD + card.contentHeight() + 6f);
         float total = themeH + barH + windowsH + CARD_GAP * 3;
@@ -464,7 +471,7 @@ final class SettingsScreen extends UiScreen {
         float y = pageTop() - shownPageScroll;
 
         // Theme: mode, scale and accent.
-        card(g, x, y, w, themeH, "palette", "Theme", "Dark or light, accent colour and how large the menu is drawn", null, mx, my, t);
+        card(g, x, y, w, themeH, "palette", "Theme", "Dark or light, accent colour, how large the menu is drawn and its motion", null, mx, my, t);
         float row = y + CARD_HEAD + 4;
         UiDraw.text(g, "Mode", ix, row + 9, UiDraw.SMALL, t.muted());
         segmented(g, "app.mode", new String[]{"Dark", "Light"}, light ? 1 : 0, ix + 34, row, half - 34, mx, my, t,
@@ -494,6 +501,22 @@ final class SettingsScreen extends UiScreen {
             if (hover) tooltip("app.acc." + i, GuiState.title(accent.name().toLowerCase(Locale.ROOT)));
             hits.add(new Hit(ix + 34 + i * cell, row - 2, cell, 22, () -> { p.accent = accent; GuiState.save(); }));
         }
+        row += 22;
+        toggleRow(g, "Animations", "Page fades, window entrances, hover easing and the top bar's reveal. Off makes every change instant",
+                p.animations, "app.anim", ix, row, half, mx, my, t, () -> { p.animations = !p.animations; GuiState.save(); });
+        // Speed sits beside the switch, dimmed while animations are off.
+        float speedX = ix + half + 16, speedTrackX = speedX + 34, speedTrackW = ix + iw - 32 - speedTrackX;
+        float speedValue = (float) ((p.animationSpeed - GuiPreferences.MIN_ANIMATION_SPEED) / (GuiPreferences.MAX_ANIMATION_SPEED - GuiPreferences.MIN_ANIMATION_SPEED));
+        boolean overSpeed = p.animations && UiDraw.over(mx, my, speedTrackX - 4, row + 1, speedTrackW + 8, 16);
+        float speedBefore = UiRender.opacity;
+        UiRender.opacity = speedBefore * UiAnim.smooth("app.speed.on", p.animations ? 1 : .4f, 16);
+        UiDraw.text(g, "Speed", speedX, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.slider(g, speedTrackX, row + 9, speedTrackW, "speed".equals(sliding) ? speedValue : UiAnim.smooth("app.speed", speedValue, 18),
+                UiAnim.smooth("app.speed.h", overSpeed || "speed".equals(sliding) ? 1 : 0, 18), t);
+        UiDraw.right(g, speedLabel(p.animationSpeed), ix + iw, row + 9, UiDraw.SMALL, "speed".equals(sliding) ? t.accent() : t.text());
+        UiRender.opacity = speedBefore;
+        if (overSpeed) tooltip("app.speed", "Animation speed", "How fast menu motion plays · 1x is normal, higher is snappier");
+        if (p.animations) hits.add(new Hit(speedTrackX - 4, row + 1, speedTrackW + 8, 16, () -> startSlider("speed", speedTrackX, speedTrackW)));
         y += themeH + CARD_GAP;
 
         // Top bar: which tabs sit between the face and the settings circle, and their style.
@@ -594,8 +617,8 @@ final class SettingsScreen extends UiScreen {
         }
         g.disableScissor();
         // Edge fades and a slim scrollbar hint that the page scrolls.
-        if (shownPageScroll > 1) UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownPageScroll < Math.max(0, total - view) - 1) UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base()));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownPageScroll / Math.max(1, total - view);
             UiDraw.rounded(g, x + w + 3, pageTop() + offset, 2, track, 1, UiDraw.alpha(t.overlay(), .8f));
@@ -617,6 +640,7 @@ final class SettingsScreen extends UiScreen {
     private void slideTo(double mx) {
         double f = Math.clamp((mx - sliderX) / sliderW, 0, 1);
         if ("scale".equals(sliding)) pendingScale = Math.round((MIN_SCALE + (MAX_SCALE - MIN_SCALE) * f) * 20) / 20.0;
+        else if ("speed".equals(sliding)) GuiState.preferences().animationSpeed = Math.round((GuiPreferences.MIN_ANIMATION_SPEED + (GuiPreferences.MAX_ANIMATION_SPEED - GuiPreferences.MIN_ANIMATION_SPEED) * f) * 4) / 4.0;
         else if ("gap".equals(sliding)) GuiState.preferences().gap = (int) Math.round(f * GuiPreferences.MAX_GAP / 2) * 2;
         else if ("hudGap".equals(sliding)) GuiState.preferences().hudGap = (int) Math.round(f * GuiPreferences.MAX_GAP / GuiPreferences.HUD_GAP_STEP) * GuiPreferences.HUD_GAP_STEP;
     }

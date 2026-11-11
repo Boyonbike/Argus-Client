@@ -7,7 +7,6 @@ import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.PacketEvent;
 import dev.argus.client.modules.movement.ElytraFlyModule;
 import dev.argus.client.settings.BooleanSetting;
-import dev.argus.client.settings.EnumSetting;
 import dev.argus.client.settings.KeyBindSetting;
 import dev.argus.client.settings.SettingLabelCondition;
 import dev.argus.client.settings.NumberSetting;
@@ -167,10 +166,14 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private final Setting<Double> argusMotionBraking;
    private final Setting<Double> argusMotionTurnRate;
    private final Setting<Boolean> liquidTakeoff;
-   private final Setting<LiquidTakeoff.Liquid> liquidMode;
    private final Setting<Boolean> liquidHoldJump;
+   private final Setting<Boolean> liquidWater;
    private final Setting<Double> liquidWaterRise;
    private final Setting<Double> liquidWaterLaunch;
+   private final Setting<Boolean> liquidSwim;
+   private final Setting<Double> liquidSwimRise;
+   private final Setting<Double> liquidSwimLaunch;
+   private final Setting<Boolean> liquidLava;
    private final Setting<Double> liquidLavaRise;
    private final Setting<Double> liquidLavaLaunch;
    private final Setting<Double> liquidPush;
@@ -315,19 +318,18 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.argusMotionAcceleration = this.addDouble("Argus Motion Acceleration", "argusMotionAcceleration", 0.15, 0.01, 2.0, this.visibleWith(this.argusMotion));
       this.argusMotionBraking = this.addDouble("Argus Motion Braking", "argusMotionBraking", 0.3, 0.01, 2.0, this.visibleWith(this.argusMotion));
       this.argusMotionTurnRate = this.addDouble("Argus Motion Turn Rate", "argusMotionTurnRate", 15.0, 0.0, 45.0, this.visibleWith(this.argusMotion, this.adaptiveTurning));
-      // Liquid takeoff: hold jump in water or lava to rise, launch clear of the surface and start gliding.
+      // Liquid takeoff (water, swimming, lava): hold jump to rise, launch clear of the surface and start gliding.
       this.liquidTakeoff = this.addBool("Argus Liquid Takeoff", "argusLiquidTakeoff", false, this.modeOnly());
-      this.liquidMode = this.module.add(new EnumSetting<>("Argus Liquid Mode", LiquidTakeoff.Liquid.BOTH, this.visibleWith(this.liquidTakeoff)));
-      this.liquidMode.setConfigName("argusLiquidMode");
       this.liquidHoldJump = this.addBool("Argus Liquid Hold Jump", "argusLiquidHoldJump", true, this.visibleWith(this.liquidTakeoff));
-      this.liquidWaterRise = this.addDouble("Argus Water Rise", "argusLiquidWaterRise", 0.35, 0.05, 1.0,
-         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.LAVA);
-      this.liquidWaterLaunch = this.addDouble("Argus Water Launch", "argusLiquidWaterLaunch", 0.7, 0.2, 2.0,
-         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.LAVA);
-      this.liquidLavaRise = this.addDouble("Argus Lava Rise", "argusLiquidLavaRise", 0.3, 0.05, 1.0,
-         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.WATER);
-      this.liquidLavaLaunch = this.addDouble("Argus Lava Launch", "argusLiquidLavaLaunch", 0.9, 0.2, 2.0,
-         value -> this.active() && this.liquidTakeoff.getValue() && this.liquidMode.getValue() != LiquidTakeoff.Liquid.WATER);
+      this.liquidWater = this.addBool("Argus Liquid Water", "argusLiquidWater", true, this.visibleWith(this.liquidTakeoff));
+      this.liquidWaterRise = this.addDouble("Argus Water Rise", "argusLiquidWaterRise", 0.35, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidWater));
+      this.liquidWaterLaunch = this.addDouble("Argus Water Launch", "argusLiquidWaterLaunch", 0.7, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidWater));
+      this.liquidSwim = this.addBool("Argus Liquid Swim", "argusLiquidSwim", true, this.visibleWith(this.liquidTakeoff));
+      this.liquidSwimRise = this.addDouble("Argus Swim Rise", "argusLiquidSwimRise", 0.35, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidSwim));
+      this.liquidSwimLaunch = this.addDouble("Argus Swim Launch", "argusLiquidSwimLaunch", 0.7, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidSwim));
+      this.liquidLava = this.addBool("Argus Liquid Lava", "argusLiquidLava", true, this.visibleWith(this.liquidTakeoff));
+      this.liquidLavaRise = this.addDouble("Argus Lava Rise", "argusLiquidLavaRise", 0.3, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidLava));
+      this.liquidLavaLaunch = this.addDouble("Argus Lava Launch", "argusLiquidLavaLaunch", 0.9, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidLava));
       this.liquidPush = this.addDouble("Argus Liquid Push", "argusLiquidPush", 0.2, 0.0, 1.0, this.visibleWith(this.liquidTakeoff));
       this.liquidGlideDelay = this.addInt("Argus Liquid Glide Delay", "argusLiquidGlideDelay", 2, 0, 10, this.visibleWith(this.liquidTakeoff));
       ((NumberSetting<Integer>) this.liquidGlideDelay).withUnit(" ticks");
@@ -730,9 +732,12 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          this.liquidTakeoffAssist.reset();
          return;
       }
-      this.liquidTakeoffAssist.tick(player, new LiquidTakeoff.Options(this.liquidMode.getValue(), this.liquidHoldJump.getValue(),
-         this.liquidWaterRise.getValue(), this.liquidWaterLaunch.getValue(), this.liquidLavaRise.getValue(), this.liquidLavaLaunch.getValue(),
-         this.liquidPush.getValue(), this.liquidGlideDelay.getValue(), this.liquidFirework.getValue()), () -> this.equipGliderForTakeoff(player));
+      this.liquidTakeoffAssist.tick(player, new LiquidTakeoff.Options(
+         new LiquidTakeoff.Phase(this.liquidWater.getValue(), this.liquidWaterRise.getValue(), this.liquidWaterLaunch.getValue()),
+         new LiquidTakeoff.Phase(this.liquidSwim.getValue(), this.liquidSwimRise.getValue(), this.liquidSwimLaunch.getValue()),
+         new LiquidTakeoff.Phase(this.liquidLava.getValue(), this.liquidLavaRise.getValue(), this.liquidLavaLaunch.getValue()),
+         this.liquidHoldJump.getValue(), this.liquidPush.getValue(), this.liquidGlideDelay.getValue(), this.liquidFirework.getValue()),
+         () -> this.equipGliderForTakeoff(player));
    }
 
    /** Wings on for a liquid takeoff: already worn, or swapped on by Smart Elytra. */

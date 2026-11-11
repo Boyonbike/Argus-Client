@@ -26,8 +26,10 @@ public final class ProxiesScreen extends ProfileManagerScreen {
     @Override protected String[] empty() { return new String[]{"shield", "No proxies yet", "Add a SOCKS proxy, import a text list, or paste one from the clipboard."}; }
 
     @Override protected void buildToolbar(int x, int y, int w) {
-        toolbar(x, y, w, new String[]{"New", "Find free", "Import file", "Paste", "Check all", "Clean up"}, new String[]{"plus", null, null, null, "reset", null},
+        var buttons = toolbar(x, y, w, new String[]{"New", "Find free", "Import file", "Paste", "Check all", "Clean up"}, new String[]{"plus", null, null, null, "reset", null},
                 new Runnable[]{() -> edit(null), this::findFree, this::importFile, () -> importText(minecraft.keyboardHandler.getClipboard()), this::checkAll, this::cleanup});
+        // Clean up arms on the first click and shows it on the button itself, not only in the footer.
+        buttons[5].confirm(() -> "cleanup".equals(deleting) ? deleteAt : 0, CONFIRM_NANOS * 4 / 3, "Confirm?");
     }
 
     /** Downloads ranked free SOCKS proxies, saves them, then checks the list. Free proxies are never switched on automatically. */
@@ -114,6 +116,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
     // ---- list ---------------------------------------------------------------------------------
 
     @Override protected int rowCount() { return profiles.proxies().size(); }
+    @Override protected Object rowId(int index) { return profiles.proxies().get(index).id(); }
 
     @Override protected void renderRow(GuiGraphics g, int index, float x, float y, float w, int mx, int my, boolean hover) {
         var t = GuiState.theme();
@@ -131,7 +134,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         // Actions, right to left.
         float right = x + w - 8;
         boolean confirm = p.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS;
-        right -= pill(g, confirm ? "Really delete?" : "Delete", right, cy, mx, my, t.red(), confirm, !busy, () -> {
+        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.red(), !busy, () -> {
             if (p.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS) { deleting = null; change(() -> profiles.removeProxy(p.id()), "Proxy removed."); }
             else { deleting = p.id(); deleteAt = System.nanoTime(); }
         }) + 4;

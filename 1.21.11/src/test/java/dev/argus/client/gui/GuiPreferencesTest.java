@@ -33,6 +33,26 @@ final class GuiPreferencesTest {
         // Friends and the Chat page are both the Social tab now, and Discord Sync shares the Discord page.
         assertEquals(java.util.List.of("tab:Social","Discord","tab:HUD"),GuiPreferences.load(path).barTabs);
     }
+    @Test void animationsDefaultOnAndPersist() throws Exception {
+        var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
+        assertTrue(p.animations,"Animations are on by default");
+        p.animations=false;p.save(path);
+        assertFalse(GuiPreferences.load(path).animations);
+    }
+    @Test void animationSpeedPersistsAndIsClamped() throws Exception {
+        var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
+        assertEquals(1,p.animationSpeed,1e-9,"Normal speed by default");
+        p.animationSpeed=1.5;p.save(path);
+        assertEquals(1.5,GuiPreferences.load(path).animationSpeed,1e-9);
+        Files.writeString(path,"animationSpeed=9\n");
+        assertEquals(GuiPreferences.MAX_ANIMATION_SPEED,GuiPreferences.load(path).animationSpeed,1e-9);
+        Files.writeString(path,"animationSpeed=NaN\n");
+        assertEquals(1,GuiPreferences.load(path).animationSpeed,1e-9);
+    }
+    @Test void speedLabelDropsTrailingZeros() {
+        assertEquals("1x",SettingsScreen.speedLabel(1.0));assertEquals("1.25x",SettingsScreen.speedLabel(1.25));
+        assertEquals("0.5x",SettingsScreen.speedLabel(.5));assertEquals("2x",SettingsScreen.speedLabel(2.0));
+    }
     @Test void socialTabChoicePersists() throws Exception {
         var path=temp.resolve("gui.properties"); var p=GuiPreferences.load(path);
         assertEquals(GuiPreferences.SocialTab.MENU,p.socialTab,"The Social tab opens the menu by default");

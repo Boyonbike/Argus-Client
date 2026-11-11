@@ -78,6 +78,12 @@ public final class ChatToolsScreen extends UiScreen {
     private final UiInput dialogField = new UiInput(0, 0, 100, 12, "");
     private ModulePage settingsPage;
     private Dialog dialog;
+    /** The dialog being drawn: the open one, or the one fading out after it closed; and how far it is shown (0…1). */
+    private Dialog shownDialog;
+    private float dialogShown;
+    /** Server page submenu depth, the direction of the last move (1 in, -1 back) and when it happened. */
+    private int serverDepth, serverDir;
+    private long serverDepthChanged;
     private boolean dialogTouched;
 
     private int left, top, panelWidth, panelHeight;
@@ -94,6 +100,8 @@ public final class ChatToolsScreen extends UiScreen {
     private boolean noticeError;
     private long noticeAt;
     private long pageChanged;
+    /** Which way the last page switch went in the sidebar: 1 down, -1 up; the new page slides in from that side. */
+    private int pageDir = 1;
     private int mouseX, mouseY;
 
     // Per-frame snapshots, so a frame never asks the module the same thing twice.
@@ -204,6 +212,7 @@ public final class ChatToolsScreen extends UiScreen {
         saveDraft();
         clearSelection(); transcriptPressed = false; transcriptArea = null;
         if (next != Page.MESSAGES) recipient = null;
+        pageDir = page == null || next.ordinal() >= page.ordinal() ? 1 : -1;
         page = next; remembered = next;
         scroll = shownScroll = 0;
         serverPath.clear();
@@ -223,6 +232,7 @@ public final class ChatToolsScreen extends UiScreen {
     void openConversation(String player) {
         if (!ChatMessages.validName(player)) return;
         saveDraft();
+        pageDir = page == null || Page.MESSAGES.ordinal() >= page.ordinal() ? 1 : -1;
         page = Page.MESSAGES; remembered = Page.MESSAGES;
         recipient = player;
         conversationScroll = 0;
@@ -273,6 +283,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     private void ask(Dialog next, String value) {
         saveDraft();
+        if (dialog == null) { dialogShown = 0; UiAnim.forget("ct.dialog.h"); }
         dialog = next; dialogTouched = false;
         dialogField.setValue(value == null ? "" : value);
         dialogField.moveCursorToEnd(false);
@@ -356,10 +367,10 @@ public final class ChatToolsScreen extends UiScreen {
         requests = tools.requests();
         timers = tools.timers();
         if (page == Page.SERVER && !serverAvailable()) select(Page.OVERVIEW);
-        float change = UiAnim.easeOutCubic((System.nanoTime() - pageChanged) / 2.2e8f), before = UiRender.opacity;
+        float change = UiAnim.eased(pageChanged, .22f), before = UiRender.opacity;
         UiRender.opacity = before * change;
         g.pose().pushMatrix();
-        g.pose().translate((1 - change) * 8, 0);
+        g.pose().translate(0, pageDir * (1 - change) * 8);
         try {
             if (page == Page.SETTINGS) { if (settingsPage != null) settingsPage.render(g, mx, my, delta, t); }
             else {
@@ -375,7 +386,11 @@ public final class ChatToolsScreen extends UiScreen {
             }
             footer(g, t);
         } finally { g.pose().popMatrix(); UiRender.opacity = before; }
-        if (dialog != null) dialogBox(g, mx, my, delta, t);
+        // Dialogs fade and grow in, and fade back out after they close.
+        if (dialog != null) shownDialog = dialog;
+        dialogShown = UiAnim.approach(dialogShown, dialog != null ? 1 : 0, dialog != null ? 16 : 22);
+        if (shownDialog != null && dialogShown > .01f) dialogBox(g, mx, my, delta, t);
+        else if (dialog == null) shownDialog = null;
     }
 
     private void body(GuiGraphics g, UiTheme t) {
@@ -464,8 +479,8 @@ public final class ChatToolsScreen extends UiScreen {
         contentHeight = cursor - start + 4;
         g.disableScissor();
         clipTop = -Float.MAX_VALUE; clipBottom = Float.MAX_VALUE;
-        if (shownScroll > 1) UiDraw.gradient(g, x - 4, bodyTop(), w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < contentHeight - view - 1) UiDraw.gradient(g, x - 4, bodyBottom() - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, bodyTop(), w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge((contentHeight - view) - shownScroll), () -> UiDraw.gradient(g, x - 4, bodyBottom() - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
         if (contentHeight > view) {
             float track = Math.max(16, view * view / contentHeight), offset = (view - track) * shownScroll / Math.max(1, contentHeight - view);
             UiDraw.rounded(g, x + w + 3, bodyTop() + offset, 2, track, 1, UiDraw.alpha(t.overlay(), .8f));
@@ -474,8 +489,10 @@ public final class ChatToolsScreen extends UiScreen {
 
     private void footer(GuiGraphics g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = top + panelHeight - 9;
-        float alpha = notice.isEmpty() ? 0 : Math.clamp(1 - ((System.nanoTime() - noticeAt) - NOTICE_NANOS) / 5e8f, 0f, 1f);
-        if (alpha > 0) { UiDraw.text(g, UiDraw.fit(notice, w), x, y, UiDraw.SMALL, UiDraw.alpha(noticeError ? t.red() : t.green(), alpha)); return; }
+        if (!notice.isEmpty() && System.nanoTime() - noticeAt < NOTICE_NANOS + 250_000_000L) {
+            UiMotion.crossfade(g, "chat.footer", new UiMotion.Line(UiDraw.fit(notice, w), noticeError ? 1 : 2), l -> UiDraw.text(g, l.text(), x, y, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
+            return;
+        }
         int picked = selectedLines().size();
         String hint = picked > 0 ? "Ctrl+C copies " + picked + (picked == 1 ? " line" : " lines") + " · right-click a line to copy it · Esc clears" : switch (page) {
             case CHAT -> "Drag over lines to select them · scroll to read older lines · Enter sends, / runs a command";
@@ -484,7 +501,7 @@ public final class ChatToolsScreen extends UiScreen {
             case SETTINGS -> "Changes apply instantly and are saved automatically";
             default -> "Click a player's name in chat to open them here";
         };
-        UiDraw.text(g, UiDraw.fit(hint, w), x, y, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+        UiMotion.crossfade(g, "chat.footer", new UiMotion.Line(UiDraw.fit(hint, w), 0), l -> UiDraw.text(g, l.text(), x, y, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
     }
 
     // ---- composer and send tray -----------------------------------------------------------------------------------
@@ -726,9 +743,23 @@ public final class ChatToolsScreen extends UiScreen {
         if (!timers.isEmpty()) cursor += PAD;
     }
 
-    private void playerList(GuiGraphics g, UiTheme t, List<String> names, boolean clanPage) {
-        for (String name : names) playerRow(g, t, name, clanPage);
+    private void playerList(GuiGraphics g, UiTheme t, List<String> names, boolean clanPage, String key) {
+        float base = cursor;
+        for (String name : names) glide(g, "ct.pl." + key, name, base, () -> playerRow(g, t, name, clanPage));
         cursor += PAD;
+    }
+
+    /**
+     * Draws one row of a list so it fades in when it first appears and glides when rows above it
+     * are added or removed. The row lays out at its real place; it is only drawn (and clicked) at
+     * the eased one, measured from the list's {@code base} so scrolling never lags.
+     */
+    private void glide(GuiGraphics g, String key, Object id, float base, Runnable row) {
+        float shown = base + UiMotion.rowY(key, id, cursor - base), shift = shown - cursor;
+        float before = UiRender.opacity;
+        UiRender.opacity = before * UiMotion.rowAppear(key, id);
+        cursor = shown;
+        try { row.run(); } finally { cursor -= shift; UiRender.opacity = before; }
     }
 
     private void playerRow(GuiGraphics g, UiTheme t, String name, boolean clanPage) {
@@ -789,7 +820,7 @@ public final class ChatToolsScreen extends UiScreen {
         List<String> recent = new ArrayList<>(tools.recentPlayers());
         for (var request : requests) if (recent.stream().noneMatch(n -> n.equalsIgnoreCase(request.player()))) recent.add(request.player());
         if (recent.isEmpty()) emptyRow(g, t, "No recent players yet", "People you message or teleport to appear here.");
-        else playerList(g, t, recent.subList(0, Math.min(8, recent.size())), false);
+        else playerList(g, t, recent.subList(0, Math.min(8, recent.size())), false, "home");
     }
 
     /** Everything that needs the player, pinned to the top of Overview until it's dealt with. */
@@ -1003,7 +1034,7 @@ public final class ChatToolsScreen extends UiScreen {
             return;
         }
         dockScroll = transcript(g, t, lines, x + 2, w - 4, top, bottom, dockScroll, false);
-        if (dockScroll > 1) UiDraw.gradient(g, x - 3, top, w + 6, 6, 0, UiDraw.alpha(t.mantle(), .8f), UiDraw.alpha(t.mantle(), 0));
+        UiMotion.faded(UiMotion.edge(dockScroll), () -> UiDraw.gradient(g, x - 3, top, w + 6, 6, 0, UiDraw.alpha(t.mantle(), .8f), UiDraw.alpha(t.mantle(), 0)));
     }
 
     private void openChatPage() { clearSelection(); chatScroll = 0; select(Page.CHAT); }
@@ -1160,16 +1191,16 @@ public final class ChatToolsScreen extends UiScreen {
         var friends = ChatPlayerSearch.matching(lower, tools.friends());
         caption(g, t, "Recent", String.valueOf(recent.size()), null, null);
         if (recent.isEmpty()) emptyRow(g, t, query.isEmpty() ? "Nothing here yet" : "No matching recent players", "Search for a player to start a conversation.");
-        else playerList(g, t, recent, false);
+        else playerList(g, t, recent, false, "recent");
         caption(g, t, "Friends", String.valueOf(friends.size()), null, null);
         if (friends.isEmpty()) emptyRow(g, t, query.isEmpty() ? "No friends yet" : "No matching friends", "Add a friend from their player actions.");
-        else playerList(g, t, friends, false);
+        else playerList(g, t, friends, false, "friends");
         if (!query.isEmpty()) {
             var online = ChatPlayerSearch.matching(lower, tools.onlinePlayers()).stream()
                 .filter(name -> recent.stream().noneMatch(name::equalsIgnoreCase) && friends.stream().noneMatch(name::equalsIgnoreCase)).toList();
             caption(g, t, "Online", String.valueOf(online.size()), null, null);
             if (online.isEmpty()) emptyRow(g, t, "Nobody online matches", ChatMessages.validName(query) ? "Press Enter to open actions for " + query + "." : "Try another name.");
-            else playerList(g, t, online.subList(0, Math.min(30, online.size())), false);
+            else playerList(g, t, online.subList(0, Math.min(30, online.size())), false, "online");
         } else {
             float hy = cursor;
             cursor += 12;
@@ -1228,8 +1259,8 @@ public final class ChatToolsScreen extends UiScreen {
             emptyRow(g, t, "No clan members yet", "Add members by hand, import a CSV, or set up Discord sync.");
             return;
         }
-        if (!groups.friends().isEmpty()) { caption(g, t, "Friends", String.valueOf(groups.friends().size()), null, null); playerList(g, t, groups.friends(), true); }
-        if (!groups.others().isEmpty()) { caption(g, t, "Members by role", String.valueOf(groups.others().size()), null, null); playerList(g, t, groups.others(), true); }
+        if (!groups.friends().isEmpty()) { caption(g, t, "Friends", String.valueOf(groups.friends().size()), null, null); playerList(g, t, groups.friends(), true, "clan.friends"); }
+        if (!groups.others().isEmpty()) { caption(g, t, "Members by role", String.valueOf(groups.others().size()), null, null); playerList(g, t, groups.others(), true, "clan.others"); }
     }
 
     private void openDiscordSettings() { openSection(SettingsScreen.sectionFor("DiscordSync")); }
@@ -1341,7 +1372,7 @@ public final class ChatToolsScreen extends UiScreen {
         cursor += PAD;
     }
 
-    /** Auto follows what the server reports for this account (or the fallback until it does); Manual pins your own. */
+    /** Manual pins your own length (the same setting as in the module's settings); Auto uses the one learned from the server. */
     private void cooldownRow(GuiGraphics g, UiTheme t, String label, ChatTeleportState.Kind kind) {
         float x = contentX(), w = contentWidth(), y = cursor, h = ROW + 4;
         cursor += h;
@@ -1352,16 +1383,17 @@ public final class ChatToolsScreen extends UiScreen {
         long seconds = length.effective() / 1_000;
         float by = y + (h - CONTROL) / 2;
         var actions = new Actions(g, t, x + w, by)
-            .add("+", null, Tone.SECONDARY, seconds < 86_400, () -> tools.manualCooldown(kind, ChatSavedCooldowns.step(seconds, true) * 1_000));
-        String value = seconds == 0 ? "Off" : ChatTeleportState.remaining(length.effective());
+            .add("+", null, Tone.SECONDARY, seconds < 3_600, () -> tools.manualCooldown(kind, ChatSavedCooldowns.step(seconds, true) * 1_000));
+        String value = manual ? seconds == 0 ? "Off" : ChatTeleportState.remaining(length.effective())
+            : length.learned() == null ? "—" : ChatTeleportState.remaining(length.learned());
         float valueRight = actions.left();
         UiDraw.center(g, value, valueRight - 40, by + CONTROL / 2, 40, manual ? t.text() : t.muted());
         actions = new Actions(g, t, valueRight - 40 - GAP, by)
             .add("−", null, Tone.SECONDARY, seconds > 0, () -> tools.manualCooldown(kind, ChatSavedCooldowns.step(seconds, false) * 1_000))
             .add(manual ? "Manual" : "Auto", null, manual ? Tone.PRIMARY : Tone.GHOST, true, () -> tools.manualCooldown(kind, manual ? null : length.effective()));
-        String source = manual ? "Your setting" + (length.learned() == null ? "" : " · learned " + ChatTeleportState.remaining(length.learned()))
-            : length.learned() != null ? "Learned from the server"
-            : length.fallback() > 0 ? "Fallback until the server reports one" : "Off until the server reports one";
+        String source = manual ? "Manual · always used" + (length.learned() == null ? "" : " (server: " + ChatTeleportState.remaining(length.learned()) + ")")
+            : length.learned() != null ? "Auto · learned from the server"
+            : "Auto · learned from the server's next \"wait\" reply";
         float tw = actions.left() - GAP - x - 4;
         UiDraw.text(g, UiDraw.fit(label, tw), x + 4, y + 10, t.text());
         UiDraw.text(g, UiDraw.fit(source, tw), x + 4, y + 21, UiDraw.SMALL, t.muted());
@@ -1462,11 +1494,12 @@ public final class ChatToolsScreen extends UiScreen {
         var names = blocklistEditing ? tools.autoTpyBlocklist() : tools.autoTpyWhitelist();
         var matches = names.stream().filter(n -> n.toLowerCase(Locale.ROOT).contains(typed)).limit(100).toList();
         if (matches.isEmpty()) emptyRow(g, t, names.isEmpty() ? "This list is empty" : "No matching names", "Type usernames to add. Click a name to remove it. Dropping a .csv file also imports.");
-        for (String name : matches) menuRow(g, t, name, "Remove", false, () -> {
+        float listBase = cursor;
+        for (String name : matches) glide(g, "ct.wl." + blocklistEditing, name, listBase, () -> menuRow(g, t, name, "Remove", false, () -> {
             if (blocklistEditing) tools.setAutoTpyBlocklist(ChatClan.remove(tools.autoTpyBlocklist(), name));
             else tools.setAutoTpyWhitelist(ChatClan.remove(tools.autoTpyWhitelist(), name));
             importRevision++;
-        });
+        }));
         if (names.size() > 100) emptyRow(g, t, names.size() + " names saved", "Search to find names beyond the first 100.");
         cursor += PAD;
     }
@@ -1518,6 +1551,13 @@ public final class ChatToolsScreen extends UiScreen {
                 }
             }
         }
+        // Going into a submenu slides the list in from the right; going back slides it in from the left.
+        if (serverPath.size() != serverDepth) { serverDir = serverPath.size() > serverDepth ? 1 : -1; serverDepth = serverPath.size(); serverDepthChanged = System.nanoTime(); }
+        float slide = serverDepthChanged == 0 ? 1 : UiAnim.eased(serverDepthChanged, .22f), slideBefore = UiRender.opacity;
+        UiRender.opacity = slideBefore * slide;
+        g.pose().pushMatrix();
+        g.pose().translate(serverDir * (1 - slide) * 14, 0);
+        try {
         List<ChatServerSettings.Entry> entries = serverPath.isEmpty()
             ? ChatServerSettings.available(ChatServerSettings.groups(), this::commandAvailable) : serverPath.getLast().children();
         if (!serverPath.isEmpty()) {
@@ -1540,21 +1580,32 @@ public final class ChatToolsScreen extends UiScreen {
             else if (entry.command().equals("/homecancel")) tools.cancelHome();
             else command(entry.command());
         });
+        } finally { g.pose().popMatrix(); UiRender.opacity = slideBefore; }
         cursor += PAD;
     }
 
     // ---- dialog ---------------------------------------------------------------------------------------------------
 
     private void dialogBox(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+        Dialog dialog = shownDialog;
+        boolean live = this.dialog != null;
         dialogDrawing = true;
+        float before = UiRender.opacity, shown = UiAnim.easeOutCubic(dialogShown);
+        g.pose().pushMatrix();
         try {
-            UiDraw.rect(g, 0, 0, width, height, UiDraw.alpha(0xff000000, .35f));
+            UiDraw.rect(g, 0, 0, width, height, UiDraw.alpha(0xff000000, .35f * shown));
+            UiRender.opacity = before * shown;
             float w = Math.min(300, panelWidth - 40), x = (width - w) / 2;
             List<String> description = dialog.description() == null ? List.of() : UiDraw.wrap(dialog.description(), w - 28, UiDraw.SMALL);
             String preview = dialog.preview() == null ? null : dialog.preview().apply(dialogField.getValue().strip());
             String problem = dialogTouched ? dialogProblem() : null;
-            float h = 34 + description.size() * 9 + (dialog.field() != null ? 34 : 0) + (preview != null ? 14 : 0) + (problem != null ? 12 : 0) + 34;
+            // The box eases to a new height when a preview or problem line appears.
+            float h = UiAnim.smooth("ct.dialog.h", 34 + description.size() * 9 + (dialog.field() != null ? 34 : 0) + (preview != null ? 14 : 0) + (problem != null ? 12 : 0) + 34, 18);
             float y = (height - h) / 2;
+            float scale = UiAnim.lerp(.96f, 1, shown);
+            g.pose().translate(width / 2f, height / 2f);
+            g.pose().scale(scale, scale);
+            g.pose().translate(-width / 2f, -height / 2f);
             UiDraw.shadow(g, x, y, w, h, 10, 14, UiDraw.alpha(0xff000000, .4f));
             UiDraw.rounded(g, x, y, w, h, 10, t.base());
             UiDraw.outline(g, x, y, w, h, 10, .7f, UiDraw.alpha(t.overlay(), .7f));
@@ -1566,17 +1617,17 @@ public final class ChatToolsScreen extends UiScreen {
                 cy += 4;
                 UiDraw.text(g, dialog.field(), x + 14, cy, UiDraw.SMALL, t.muted());
                 dialogField.place(Math.round(x + 14), Math.round(cy + 10), Math.round(w - 28));
-                dialogField.render(g, mx, my, delta);
+                if (live) dialogField.render(g, mx, my, delta);
                 cy += 30;
             }
             if (preview != null) { UiDraw.text(g, UiDraw.fit(preview, w - 28), x + 14, cy + 4, UiDraw.SMALL, UiDraw.alpha(t.accent(), .9f)); cy += 14; }
             if (problem != null) { UiDraw.text(g, UiDraw.fit(problem, w - 28), x + 14, cy + 3, UiDraw.SMALL, t.red()); cy += 12; }
             float by = y + h - CONTROL - 10;
             float cw = buttonWidth(dialog.confirm(), null);
-            button(g, t, dialog.confirm(), null, x + w - 14 - cw, by, cw, dialog.danger() ? Tone.DANGER : Tone.PRIMARY, true, this::confirmDialog);
+            button(g, t, dialog.confirm(), null, x + w - 14 - cw, by, cw, dialog.danger() ? Tone.DANGER : Tone.PRIMARY, live, this::confirmDialog);
             float cancel = buttonWidth("Cancel", null);
-            button(g, t, "Cancel", null, x + w - 14 - cw - GAP - cancel, by, cancel, Tone.GHOST, true, this::closeDialog);
-        } finally { dialogDrawing = false; }
+            button(g, t, "Cancel", null, x + w - 14 - cw - GAP - cancel, by, cancel, Tone.GHOST, live, this::closeDialog);
+        } finally { dialogDrawing = false; g.pose().popMatrix(); UiRender.opacity = before; }
     }
 
     // ---- input ----------------------------------------------------------------------------------------------------

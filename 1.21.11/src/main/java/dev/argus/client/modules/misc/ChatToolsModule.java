@@ -117,8 +117,11 @@ public final class ChatToolsModule extends Module {
     private final NumberSetting<Integer> whisperCooldown = add(new NumberSetting<>("Message cooldown", 2500, 0, 30000).withUnit("ms"));
 
     private final Setting<Boolean> teleportsGroup = group("Teleports");
-    private final NumberSetting<Integer> homeCooldown = add(new NumberSetting<>("Home cooldown", 30, 0, 3600).withUnit("s"));
-    private final NumberSetting<Integer> tpaCooldown = add(new NumberSetting<>("Teleport cooldown", 30, 0, 3600).withUnit("s"));
+    // Each kind has its own length. Manual pins yours; otherwise it's learned from the server's "wait" replies.
+    private final BooleanSetting homeManual = add(new BooleanSetting("Manual home cooldown", false));
+    private final NumberSetting<Integer> homeCooldown = add(new NumberSetting<>("Home cooldown", 30, 0, 3600, value -> homeManual.getValue()).withUnit("s"));
+    private final BooleanSetting tpaManual = add(new BooleanSetting("Manual teleport cooldown", false));
+    private final NumberSetting<Integer> tpaCooldown = add(new NumberSetting<>("Teleport cooldown", 30, 0, 3600, value -> tpaManual.getValue()).withUnit("s"));
 
     private final Setting<Boolean> autoTpyGroup = group("Auto TPY");
     private final BooleanSetting autoTpyEnabled = add(new BooleanSetting("Accept automatically", false));
@@ -247,8 +250,7 @@ public final class ChatToolsModule extends Module {
             setting.setChangeCallback(this::syncAutoTpy);
         autoMinimum.setChangeCallback(() -> { autoBounds(true); syncAutoTpy(); });
         autoMaximum.setChangeCallback(() -> { autoBounds(false); syncAutoTpy(); });
-        homeCooldown.setChangeCallback(this::refreshCooldowns);
-        tpaCooldown.setChangeCallback(this::refreshCooldowns);
+        for (var setting : List.of(homeManual, tpaManual, homeCooldown, tpaCooldown)) setting.setChangeCallback(this::refreshCooldowns);
     }
 
     private static Path dataFile() { return FabricLoader.getInstance().getGameDir().resolve("argusclient/chat.json"); }
@@ -288,6 +290,18 @@ public final class ChatToolsModule extends Module {
         if (json != null && json.isJsonObject() && json.getAsJsonObject().has(MERGED_KEY)
             && json.getAsJsonObject().get(MERGED_KEY).getAsBoolean()) mergedBetterChat = true;
         super.fromJson(json);
+        migrateCooldowns(json);
+    }
+
+    /**
+     * Before the Manual toggles existed, these lengths were only a fallback. A length someone changed from the old
+     * default of 30s was a deliberate choice, so it carries over as their manual length.
+     */
+    private void migrateCooldowns(JsonElement json) {
+        if (json == null || !json.isJsonObject() || !(json.getAsJsonObject().get("settings") instanceof com.google.gson.JsonObject settings)) return;
+        if (settings.has(homeManual.getConfigName()) || settings.has(tpaManual.getConfigName())) return;
+        if (settings.has(homeCooldown.getConfigName()) && homeCooldown.getValue() != 30) homeManual.setValue(true);
+        if (settings.has(tpaCooldown.getConfigName()) && tpaCooldown.getValue() != 30) tpaManual.setValue(true);
     }
 
     /** Runs every client tick, whether or not either module is on, so both always switch together. */
@@ -415,6 +429,7 @@ public final class ChatToolsModule extends Module {
         discoveredHomes.clear();
         suggestedHomes.clear();
         teleports.clear();
+        refreshCooldowns();
         savedKey = null;
         incomingRequests.clear();
         autoTpy.reset();
@@ -448,7 +463,11 @@ public final class ChatToolsModule extends Module {
     private void refreshMessagePatterns() {
         messages.patterns(store.get(ChatToolsStore.Lists.INCOMING_PATTERNS), store.get(ChatToolsStore.Lists.OUTGOING_PATTERNS));
     }
-    private void refreshCooldowns() { teleports.cooldowns(homeCooldown.getValue(), tpaCooldown.getValue()); }
+    /** Hands the manual lengths to the tracker; a kind left on Auto uses only what it learned from the server. */
+    private void refreshCooldowns() {
+        teleports.manual(ChatTeleportState.Kind.Home, homeManual.getValue() ? homeCooldown.getValue() * 1_000L : null, now());
+        teleports.manual(ChatTeleportState.Kind.TPA, tpaManual.getValue() ? tpaCooldown.getValue() * 1_000L : null, now());
+    }
     private void autoBounds(boolean minimumChanged) {
         if (autoMinimum.getValue() > autoMaximum.getValue()) {
             if (minimumChanged) autoMaximum.setValue(autoMinimum.getValue()); else autoMinimum.setValue(autoMaximum.getValue());
@@ -821,29 +840,31 @@ public final class ChatToolsModule extends Module {
         return "/tpacancel";
     }
 
-    /** The length used after a confirmed teleport on this server/account, and where each candidate comes from. */
-    public record CooldownLength(Long manual, Long learned, long fallback) {
-        public long effective() { return manual != null ? manual : learned != null ? learned : fallback; }
+    /** The length a cooldown runs after a teleport: your manual length when set, else the one learned from the server. */
+    public record CooldownLength(Long manual, Long learned) {
+        public long effective() { return manual != null ? manual : learned != null ? learned : 0; }
     }
     public CooldownLength cooldownLength(ChatTeleportState.Kind kind) {
         checkSession();
         syncSavedCooldowns();
-        return new CooldownLength(teleports.manual().get(kind), teleports.learned().get(kind),
-            switch (kind) {
-                case Home -> homeCooldown.getValue() * 1_000L;
-                case TPA -> tpaCooldown.getValue() * 1_000L;
-                case Hotspot -> 0L;
-            });
+        Long manual = switch (kind) {
+            case Home -> homeManual.getValue() ? homeCooldown.getValue() * 1_000L : null;
+            case TPA -> tpaManual.getValue() ? tpaCooldown.getValue() * 1_000L : null;
+            case Hotspot -> null;
+        };
+        return new CooldownLength(manual, teleports.learned().get(kind));
     }
-    /** Pins a cooldown length for this server and account, or with null goes back to the learned one. */
+    /** Sets a manual length (the same setting as in the module's settings), or with null goes back to Auto. */
     public void manualCooldown(ChatTeleportState.Kind kind, Long millis) {
-        checkSession();
-        syncSavedCooldowns();
-        teleports.manual(kind, millis, now());
-        syncSavedCooldowns();
+        BooleanSetting manual = kind == ChatTeleportState.Kind.Home ? homeManual : kind == ChatTeleportState.Kind.TPA ? tpaManual : null;
+        NumberSetting<Integer> length = kind == ChatTeleportState.Kind.Home ? homeCooldown : tpaCooldown;
+        if (manual == null) return;
+        if (millis != null) length.setValue((int) Math.clamp(millis / 1_000, 0, 3_600));
+        manual.setValue(millis != null);
+        refreshCooldowns();
     }
     /**
-     * Loads this server/account's learned and manual cooldowns into a fresh session and saves changes, so the first
+     * Loads this server/account's learned cooldowns into a fresh session and saves changes, so the first
      * teleport of a session already uses the real cooldown instead of the fallback estimate.
      */
     private void syncSavedCooldowns() {
@@ -853,9 +874,9 @@ public final class ChatToolsModule extends Module {
             savedKey = key;
             saved = ChatSavedCooldowns.read(store.get(ChatToolsStore.Lists.SAVED_COOLDOWNS), key);
             teleports.learned(saved.learned());
-            teleports.manual(saved.manual());
         }
-        var current = new ChatSavedCooldowns.Saved(teleports.learned(), teleports.manual());
+        // Only learned lengths are kept per server; manual lengths live in the module's settings.
+        var current = new ChatSavedCooldowns.Saved(teleports.learned(), java.util.Map.of());
         if (current.equals(saved)) return;
         saved = current;
         store.set(ChatToolsStore.Lists.SAVED_COOLDOWNS, ChatSavedCooldowns.write(store.get(ChatToolsStore.Lists.SAVED_COOLDOWNS), key, current));

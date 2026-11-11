@@ -105,7 +105,7 @@ final class ConfigImportScreen extends UiScreen {
     private static Throwable cause(Throwable e) { while (e.getCause() != null) e = e.getCause(); return e; }
     private void save() {
         if (preview == null || busy || savedAlready) return;
-        try { ImportedPresetStore.save(name.trim(), preview); savedAlready = true; saved.accept(name.trim()); minecraft.setScreen(parent); }
+        try { ImportedPresetStore.save(name.trim(), preview); savedAlready = true; saved.accept(name.trim()); beginClose(parent); }
         catch (Exception e) { fail("Couldn’t save preset: " + e.getMessage()); updateButtons(); }
     }
 
@@ -169,8 +169,8 @@ final class ConfigImportScreen extends UiScreen {
             UiDraw.center(g, busy ? "This only reads the file." : "Choose a source above, then press Preview.", left, cy + 30, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
         }
         g.disableScissor();
-        if (shownScroll > 1) UiDraw.gradient(g, left + 4, listTop, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0));
-        if (shownScroll < maxScroll() - 1) UiDraw.gradient(g, left + 4, listTop + listHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, listTop, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, listTop + listHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
         // Footer: status on the left, actions on the right.
         float fy = top + panelHeight - 21, room = panelWidth - 28 - 180;
         String shown = UiDraw.fit(message, room, UiDraw.SMALL);

@@ -18,6 +18,8 @@ import dev.argus.client.settings.options.HudAnchor;
 import dev.argus.client.utils.math.FloatBounds;
 import dev.argus.client.gui.HudSafeZones.Side;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -236,6 +238,16 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     // ---- rendering ----------------------------------------------------------------------------
 
+    /** Follows the Appearance animation speed; with animations off the editor closes on the next tick. */
+    @Override protected long transitionMillis() { return UiAnim.enabled() ? Math.round(150 / UiAnim.speed()) : 0; }
+
+    /** The editor's fade, eased like the menu pages' open and close (and instant when animations are off). */
+    @Override public float getTransitionOpacity() {
+        if (!UiAnim.enabled()) return isClosing() ? 0 : 1;
+        float t = Math.clamp((System.currentTimeMillis() - transitionStartedAt) / (float) transitionMillis(), 0f, 1f);
+        return isClosing() ? 1 - UiAnim.easeInOutSine(t) : UiAnim.easeOutCubic(t);
+    }
+
     @Override public void render(GuiGraphics g, int rawX, int rawY, float delta) {
         settle();
         syncSelection();
@@ -249,17 +261,25 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         g.pose().scale(viewport.renderScale(), viewport.renderScale());
         float before = UiRender.opacity;
         try {
-            UiRender.opacity = getTransitionOpacity();
+            float appear = getTransitionOpacity();
+            UiRender.opacity = appear;
             drawGrid(g, t);
             drawZones(g, t);
             elementFrames(g, rawX, rawY, t);
+            // The selection box fades in as it starts.
+            boxShown = boxing ? UiAnim.approach(boxShown, 1, 22) : 0;
             if (boxing) {
                 float bx = Math.min(boxX0, boxX1), by = Math.min(boxY0, boxY1), bw = Math.abs(boxX1 - boxX0), bh = Math.abs(boxY1 - boxY0);
-                UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(t.accent(), .08f));
-                UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(t.accent(), .7f));
+                UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(t.accent(), .08f * boxShown));
+                UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(t.accent(), .7f * boxShown));
             }
-            toolbar(g, mouseX, mouseY, t);
-            panel(g, mouseX, mouseY, t);
+            // The toolbar and Elements panel rise in and sink out like the menu pages do.
+            g.pose().pushMatrix();
+            g.pose().translate(0, (1 - appear) * 6);
+            try {
+                toolbar(g, mouseX, mouseY, t);
+                panel(g, mouseX, mouseY, t);
+            } finally { g.pose().popMatrix(); }
             hints(g, t);
             drawTooltip(g, t);
         } finally {
@@ -338,13 +358,28 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     /** Accent frame on the hovered element (or line), the picked ones, and the landing spot of the one being dragged. */
+    /** Fade of each selection and hover frame, so frames ease in and out instead of popping. */
+    private final Map<HudWidgetRenderer, Float> pickFade = new HashMap<>(), hoverFade = new HashMap<>();
+    private float boxShown, ghostX, ghostY, ghostShown;
+    private boolean ghostPlaced;
+
+    private static void fade(Map<HudWidgetRenderer, Float> fades, Collection<HudWidgetRenderer> on) {
+        for (HudWidgetRenderer widget : on) fades.putIfAbsent(widget, 0f);
+        fades.replaceAll((widget, a) -> UiAnim.approach(a, on.contains(widget) ? 1 : 0, on.contains(widget) ? 22 : 14));
+        fades.values().removeIf(a -> a <= .01f);
+    }
+
     private void elementFrames(GuiGraphics g, int rawX, int rawY, UiTheme t) {
-        for (HudWidgetRenderer widget : picked) {
-            if (widget == dragged) continue;
+        List<HudWidgetRenderer> selection = new ArrayList<>(picked);
+        selection.remove(dragged);
+        fade(pickFade, selection);
+        pickFade.forEach((widget, a) -> {
             float[] b = bounds(widget);
-            UiDraw.rounded(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, UiDraw.alpha(t.accent(), .1f));
-            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, t.accent());
-        }
+            UiDraw.rounded(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, UiDraw.alpha(t.accent(), .1f * a));
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), a));
+        });
+        if (dragged == null) { ghostPlaced = false; ghostShown = 0; }
+        if (lineOwner != null || !groupStart.isEmpty() || boxing || dragged != null) hoverFade.clear();
         if (lineOwner != null) {
             for (var drawn : lineOwner.lines()) if (drawn.row() == line) {
                 UiDraw.outline(g, logical(drawn.x()) - 2, logical(drawn.y()) - 2, logical(drawn.w()) + 4, logical(drawn.h()) + 4, 3, 1, t.accent());
@@ -356,27 +391,38 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (!groupStart.isEmpty() || boxing) return;
         if (dragged != null) {
             float[] b = bounds(dragged);
-            if (Math.abs(targetX - b[0]) > .5f || Math.abs(targetY - b[1]) > .5f) {
-                UiDraw.rounded(g, targetX - 1, targetY - 1, b[2] + 2, b[3] + 2, 3, UiDraw.alpha(t.accent(), .12f));
-                UiDraw.outline(g, targetX - 1, targetY - 1, b[2] + 2, b[3] + 2, 3, .8f, UiDraw.alpha(t.accent(), .55f));
+            // The drop preview glides between snap spots and fades in once the element is off its spot.
+            if (!ghostPlaced) { ghostX = targetX; ghostY = targetY; ghostPlaced = true; }
+            ghostX = UiAnim.approach(ghostX, targetX, 26); ghostY = UiAnim.approach(ghostY, targetY, 26);
+            ghostShown = UiAnim.approach(ghostShown, Math.abs(targetX - b[0]) > .5f || Math.abs(targetY - b[1]) > .5f ? 1 : 0, 18);
+            if (ghostShown > .01f) {
+                UiDraw.rounded(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, UiDraw.alpha(t.accent(), .12f * ghostShown));
+                UiDraw.outline(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, .8f, UiDraw.alpha(t.accent(), .55f * ghostShown));
             }
             UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, t.accent());
             return;
         }
         edgeHover = null;
-        if (overUi(mouseX, mouseY) || base().argus$isDraggingWidget() || edgeDrag != null) return;
-        HudWidgetRenderer hovered = widgetAt(rawX, rawY);
-        if (hovered == null) { edgeHover = edgeAt(mouseX, mouseY); return; }
-        if (!picked.contains(hovered) && hovered instanceof HudTextListRenderer list && list.isSplittable()) {
-            // An unpicked multi-line element moves line by line: frame just the line under the pointer.
-            var under = list.lineAt(rawX, rawY);
-            if (under != null) {
-                UiDraw.outline(g, logical(under.x()) - 2, logical(under.y()) - 2, logical(under.w()) + 4, logical(under.h()) + 4, 3, 1, UiDraw.alpha(t.accent(), .7f));
-                return;
+        HudWidgetRenderer hovered = null;
+        if (!overUi(mouseX, mouseY) && !base().argus$isDraggingWidget() && edgeDrag == null) {
+            hovered = widgetAt(rawX, rawY);
+            if (hovered == null) edgeHover = edgeAt(mouseX, mouseY);
+            else if (!picked.contains(hovered) && hovered instanceof HudTextListRenderer list && list.isSplittable()) {
+                // An unpicked multi-line element moves line by line: frame just the line under the pointer.
+                var under = list.lineAt(rawX, rawY);
+                if (under != null) {
+                    float a = UiAnim.smooth("hud.line." + under.x() + "." + under.y(), 0, 1, 22);
+                    UiDraw.outline(g, logical(under.x()) - 2, logical(under.y()) - 2, logical(under.w()) + 4, logical(under.h()) + 4, 3, 1, UiDraw.alpha(t.accent(), .7f * a));
+                    hovered = null;
+                }
             }
         }
-        float[] b = bounds(hovered);
-        UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), .7f));
+        // Hover frames ease in and fade out when the pointer moves on.
+        fade(hoverFade, hovered == null ? List.of() : List.of(hovered));
+        hoverFade.forEach((widget, a) -> {
+            float[] b = bounds(widget);
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), .7f * a));
+        });
     }
 
     /** A pill like the navigation bar: title, live count, then the editor's buttons. */
@@ -555,10 +601,11 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                 : !picked.isEmpty() ? picked.size() + " selected · drag to move together · Del removes · Arrows nudge · Esc clears"
                 : "Drag to move · Drag empty space to select · Lines move on their own · R restacks · Right-click for settings · Drag an edge for its safe zone";
         text = UiDraw.fit(text, lw() - 40, UiDraw.SMALL);
-        float w = UiDraw.width(text, UiDraw.SMALL) + 20, h = 16, x = (lw() - w) / 2, y = lh() - h - 8;
+        // The pill eases to the new text's width and the text crossfades.
+        float target = UiDraw.width(text, UiDraw.SMALL) + 20, w = UiAnim.smooth("hud.hints.w", target, target, 18), h = 16, x = (lw() - w) / 2, y = lh() - h - 8;
         UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(t.mantle(), .78f));
         UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.alpha(t.overlay(), .4f));
-        UiDraw.text(g, text, x + 10, y + h / 2, UiDraw.SMALL, t.muted());
+        UiMotion.text(g, "hud.hints", text, l -> UiDraw.center(g, l, x, y + h / 2, w, UiDraw.SMALL, t.muted()));
     }
 
     private void tooltip(Object owner, String... lines) { tooltipOwner = owner; tooltipLines = lines; }
@@ -567,7 +614,8 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     private void drawTooltip(GuiGraphics g, UiTheme t) {
         if (tooltipOwner == null || !tooltipOwner.equals(shownTooltipOwner)) { shownTooltipOwner = tooltipOwner; tooltipSince = System.nanoTime(); }
         if (tooltipOwner == null || tooltipLines == null) return;
-        float shownT = UiAnim.easeOutCubic(((System.nanoTime() - tooltipSince) / 1e9f - .35f) / .14f);
+        float rested = (System.nanoTime() - tooltipSince) / 1e9f - .35f;
+        float shownT = UiAnim.enabled() ? UiAnim.easeOutCubic(rested * UiAnim.speed() / .14f) : rested >= 0 ? 1 : 0;
         if (shownT <= 0) return;
         float w = 0;
         for (int i = 0; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));

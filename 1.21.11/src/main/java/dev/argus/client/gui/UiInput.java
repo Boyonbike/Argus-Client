@@ -21,7 +21,7 @@ final class UiInput extends EditBox {
     UiInput placeholder(String hint) { placeholder = hint; return this; }
     private String displayValue() { return secret ? "•".repeat(getValue().length()) : getValue(); }
     private int displayStart;
-    private float focus, caret;
+    private float focus, caret, placeholderShown = 1;
     private long lastEdit;
 
     UiInput(int x, int y, int width, int height, String hint) {
@@ -79,8 +79,10 @@ final class UiInput extends EditBox {
         if (icon != null) UiDraw.icon(g, icon, x + PAD - 1, getY() + (getHeight() - 9) / 2f, 9, UiDraw.mix(t.muted(), t.accent(), focus));
         float cy = getY() + getHeight() / 2f;
         g.enableScissor(getX() - 1, getY() - 2, getX() + getWidth() + 2, getY() + getHeight() + 2);
-        if (text.isEmpty()) UiDraw.text(g, UiDraw.fit(placeholder, getWidth()), getX(), cy, UiDraw.alpha(t.muted(), .85f));
-        else {
+        // The placeholder fades and drifts aside as typing starts, and back when the box is cleared.
+        placeholderShown = UiAnim.approach(placeholderShown, text.isEmpty() ? 1 : 0, text.isEmpty() ? 14 : 24);
+        if (placeholderShown > .01f) UiDraw.text(g, UiDraw.fit(placeholder, getWidth()), getX() + (1 - placeholderShown) * 6, cy, UiDraw.alpha(t.muted(), .85f * placeholderShown));
+        if (!text.isEmpty()) {
             int highlight = ((EditBoxAccessor) (Object) this).argusclient$getHighlightPosition();
             int first = Math.max(displayStart, Math.min(getCursorPosition(), highlight)), last = Math.min(end, Math.max(getCursorPosition(), highlight));
             if (isFocused() && first < last) {
