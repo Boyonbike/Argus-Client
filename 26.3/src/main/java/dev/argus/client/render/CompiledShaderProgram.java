@@ -1,93 +1,41 @@
 package dev.argus.client.render;
 
-import org.lwjgl.opengl.GL20;
+import dev.argus.client.render.effect.EffectPipeline;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public record CompiledShaderProgram(int programId) {
-   public void delete() {
-      int programId = this.programId;
-      GL20.glDeleteProgram(programId);
+/** A compiled RenderPearl effect program, keeping the pass APIs stable. */
+public final class CompiledShaderProgram {
+   private static final AtomicInteger SEQUENCE = new AtomicInteger();
+   private final EffectPipeline pipeline;
+   private final ShaderUniforms uniforms;
+
+   private CompiledShaderProgram(EffectPipeline pipeline) {
+      this.pipeline = pipeline;
+      this.uniforms = new ShaderUniforms(pipeline.uniforms());
    }
 
    public static CompiledShaderProgram fromResources(String vertexResource, String fragmentResource) {
-      String vertexSource = RenderTargetUtils.readShaderSource(vertexResource);
-      String fragmentSource = RenderTargetUtils.readShaderSource(fragmentResource);
-      return compile(vertexSource, fragmentSource);
-   }
-
-   private static int compileShader(String source, int shaderType) {
-      int shaderId = GL20.glCreateShader(shaderType);
-      StringBuilder sourceBuilder = new StringBuilder(source);
-      if (shaderType == 35632) {
-         int main = sourceBuilder.indexOf("void main(");
-         if (main < 0) {
-            main = sourceBuilder.indexOf("void main (");
-         }
-
-         if (main >= 0) {
-            String utilitySource = RenderTargetUtils.readShaderSource("util/util.frag");
-            if (source.contains("u_Overlay")) {
-               utilitySource = utilitySource + RenderTargetUtils.readShaderSource("util/blur_util.frag");
-            }
-
-            sourceBuilder.insert(main, utilitySource + "\n");
-         }
-      }
-
-      GL20.glShaderSource(shaderId, sourceBuilder);
-      GL20.glCompileShader(shaderId);
-      if (GL20.glGetShaderi(shaderId, 35713) == 0) {
-         String message = formatCompileFailure(sourceBuilder, shaderId);
-         GL20.glDeleteShader(shaderId);
-         throw new ShaderCompilationException(message);
-      } else {
-         return shaderId;
-      }
-   }
-
-   private static String formatCompileFailure(StringBuilder sourceBuilder, int shaderId) {
-      String diagnosticSource = sourceBuilder.toString();
-      String diagnostic = ShaderDiagnostics.formatCompileLog(diagnosticSource, shaderId);
-      return "Failed to compile shader:\n" + diagnostic;
-   }
-
-   private static void linkProgram(int programId, int vertexShader, int fragmentShader) {
-      GL20.glAttachShader(programId, vertexShader);
-      GL20.glAttachShader(programId, fragmentShader);
-      GL20.glLinkProgram(programId);
-      if (GL20.glGetProgrami(programId, 35714) == 0) {
-         throw new ShaderCompilationException("Failed to link shader program:\n" + GL20.glGetProgramInfoLog(programId));
-      }
-
-      GL20.glDeleteShader(vertexShader);
-      GL20.glDeleteShader(fragmentShader);
+      return new CompiledShaderProgram(EffectPipeline.fromResources(vertexResource, fragmentResource));
    }
 
    public static CompiledShaderProgram compile(String vertexSource, String fragmentSource) {
-      int programId = GL20.glCreateProgram();
-      if (programId == 0) {
-         throw new RuntimeException("Failed to create program.");
-      }
+      return new CompiledShaderProgram(
+         EffectPipeline.fromSources("inline_" + SEQUENCE.incrementAndGet(), vertexSource, fragmentSource));
+   }
 
-      int vertexShader = -1;
-      int fragmentShader = -1;
+   public EffectPipeline pipeline() {
+      return this.pipeline;
+   }
 
-      try {
-         vertexShader = compileShader(vertexSource, 35633);
-         fragmentShader = compileShader(fragmentSource, 35632);
-         linkProgram(programId, vertexShader, fragmentShader);
-      } catch (RuntimeException | Error failure) {
-         if (vertexShader != -1) {
-            GL20.glDeleteShader(vertexShader);
-         }
+   public ShaderUniforms uniforms() {
+      return this.uniforms;
+   }
 
-         if (fragmentShader != -1) {
-            GL20.glDeleteShader(fragmentShader);
-         }
+   /** Retained for the reload path; 26.3 owns pipeline lifetime. */
+   public int programId() {
+      return 0;
+   }
 
-         GL20.glDeleteProgram(programId);
-         throw failure;
-      }
-
-      return new CompiledShaderProgram(programId);
+   public void delete() {
    }
 }

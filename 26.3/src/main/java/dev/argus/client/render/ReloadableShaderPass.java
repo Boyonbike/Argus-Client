@@ -34,6 +34,6 @@ public interface ReloadableShaderPass {
          pass.program = CompiledShaderProgram.compile(fallbackVertexRead, fallbackFragmentRead);
       }
 
-      pass.uniforms = new ShaderUniforms(pass.program.programId());
+      pass.uniforms = pass.program.uniforms();
    }
 }

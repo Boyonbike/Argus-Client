@@ -1,7 +1,5 @@
 package dev.argus.client.render;
 
-import org.lwjgl.opengl.GL20;
-
 public class BaseShaderPass implements ShaderPass {
    protected final String vertexResource;
    protected final String fragmentResource;
@@ -18,10 +16,8 @@ public class BaseShaderPass implements ShaderPass {
    }
 
    protected void initializeProgram() {
-      String vertexSource = RenderTargetUtils.readShaderSource(this.vertexResource);
-      String fragmentSource = RenderTargetUtils.readShaderSource(this.fragmentResource);
-      this.program = CompiledShaderProgram.compile(vertexSource, fragmentSource);
-      this.uniforms = new ShaderUniforms(this.program.programId());
+      this.program = CompiledShaderProgram.fromResources(this.vertexResource, this.fragmentResource);
+      this.uniforms = this.program.uniforms();
    }
 
    public BaseShaderPass(String vertexResource, String fragmentResource) {
@@ -31,9 +27,6 @@ public class BaseShaderPass implements ShaderPass {
 
    @Override
    public void render(Runnable draw) {
-      CompiledShaderProgram capturedProgram = this.program;
-      int programId = capturedProgram.programId();
-      GL20.glUseProgram(programId);
       draw.run();
    }
 }

@@ -1,85 +1,63 @@
 package dev.argus.client.render;
 
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import it.unimi.dsi.fastutil.objects.Object2IntFunction;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import dev.argus.client.render.effect.EffectUniforms;
 import java.awt.Color;
-import java.nio.FloatBuffer;
 import org.joml.Matrix4f;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
 
-public class ShaderUniforms {
-   private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
-   private final Object2IntMap<String> locations = new Object2IntOpenHashMap();
-   private final int programId;
+/** Name-based setters over the backend-neutral std140 effect uniforms. */
+public final class ShaderUniforms {
+   private final EffectUniforms uniforms;
 
-   public ShaderUniforms(int programId) {
-      this.programId = programId;
+   public ShaderUniforms(EffectUniforms uniforms) {
+      this.uniforms = uniforms;
    }
 
    public void set(String name, int textureUnit, RenderTarget target) {
-      int activeTexture = 33984 + textureUnit;
-      GL13.glActiveTexture(activeTexture);
-      GlTexture colorTexture = (GlTexture)target.getColorTexture();
-      int textureId = colorTexture.glId();
-      GL11.glBindTexture(3553, textureId);
-      GL11.glTexParameteri(3553, 10241, 9729);
-      GL11.glTexParameteri(3553, 10240, 9729);
-      this.set(name, textureUnit);
+      this.uniforms.setTexture(
+         name,
+         target.getColorTextureView(),
+         RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+   }
+
+   public void set(String name, com.mojang.renderpearl.api.textures.GpuTextureView texture,
+                   com.mojang.renderpearl.api.textures.GpuSampler sampler) {
+      this.uniforms.setTexture(name, texture, sampler);
    }
 
    public void set(String name, Matrix4f matrix) {
-      FloatBuffer matrixBuffer = MATRIX_BUFFER;
-      matrix.get(matrixBuffer);
-      int location = this.getLocation(name);
-      FloatBuffer uploadBuffer = MATRIX_BUFFER;
-      GL20.glUniformMatrix4fv(location, false, uploadBuffer);
+      this.uniforms.set(name, matrix);
    }
 
    public void set(String name, float value) {
-      int location = this.getLocation(name);
-      GL20.glUniform1f(location, value);
+      this.uniforms.set(name, value);
    }
 
    public void set(String name, float x, float y) {
-      int location = this.getLocation(name);
-      GL20.glUniform2f(location, x, y);
+      this.uniforms.set(name, x, y);
    }
 
    public void set(String name, int value) {
-      int location = this.getLocation(name);
-      GL20.glUniform1i(location, value);
+      this.uniforms.set(name, value);
    }
 
    public void set(String name, boolean enabled) {
-      int location = this.getLocation(name);
-      int booleanValue = enabled ? 1 : 0;
-      GL20.glUniform1i(location, booleanValue);
+      this.uniforms.set(name, enabled);
    }
 
    public void set(String name, Color color) {
-      int location = this.getLocation(name);
-      float normalizedRed = color.getRed();
-      normalizedRed /= 255.0F;
-      float normalizedGreen = color.getGreen() / 255.0F;
-      float normalizedBlue = color.getBlue() / 255.0F;
-      float alpha = color.getAlpha() / 255.0F;
-      GL20.glUniform4f(location, normalizedRed, normalizedGreen, normalizedBlue, alpha);
+      this.uniforms.set(name, color);
    }
 
-   private int getLocation(String name) {
-      Object2IntMap<String> locationsForCache = this.locations;
-      Object2IntFunction<String> resolveLocation = ignored -> {
-         int program = this.programId;
-         return GL20.glGetUniformLocation(program, name);
-      };
-      locationsForCache.computeIfAbsent(name, resolveLocation);
-      Object2IntMap<String> locationsForRead = this.locations;
-      return locationsForRead.getInt(name);
+   public void bind(RenderPass pass, CommandEncoder encoder) {
+      this.uniforms.bind(pass, encoder);
+   }
+
+   public EffectUniforms effectUniforms() {
+      return this.uniforms;
    }
 }

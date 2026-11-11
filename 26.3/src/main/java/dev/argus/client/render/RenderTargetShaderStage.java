@@ -1,20 +1,11 @@
 package dev.argus.client.render;
 
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import dev.argus.client.render.ArgusTesselator;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import dev.argus.client.ClientAccess;
-import dev.argus.client.managers.RenderStateManager;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
 import org.joml.Matrix4fStack;
 
-public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
+public class RenderTargetShaderStage implements ShaderStage {
    protected final CompiledShaderProgram program;
    protected final ShaderUniforms uniforms;
    protected final RenderTarget outputTarget;
@@ -27,12 +18,9 @@ public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
    @Override
    public void updateUniforms() {
       this.uniforms.set("u_Proj", RenderUtils.WORLD_PROJECTION_MATRIX);
-      ShaderUniforms modelViewUniforms = this.uniforms;
       Matrix4fStack modelViewMatrix = RenderSystem.getModelViewStack();
-      modelViewUniforms.set("u_ModelView", modelViewMatrix);
-      ShaderUniforms sizeUniforms = this.uniforms;
-      sizeUniforms.set("u_Size", this.outputTarget.width, this.outputTarget.height);
-      this.uniforms.set("u_Texture", 15);
+      this.uniforms.set("u_ModelView", modelViewMatrix);
+      this.uniforms.set("u_Size", this.outputTarget.width, this.outputTarget.height);
       this.uniforms.set("u_Time", (float)(System.nanoTime() / 1.0e9));
    }
 
@@ -41,42 +29,26 @@ public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
       return this.outputTarget;
    }
 
-   protected void drawFullscreenQuad() {
-      ArgusTesselator capturedTesselator = ArgusTesselator.getInstance();
-      VertexFormat vertexFormat = DefaultVertexFormat.POSITION;
-      PrimitiveTopology quadMode = PrimitiveTopology.QUADS;
-      BufferBuilder vertices = capturedTesselator.begin(quadMode, vertexFormat);
-      vertices.addVertex(-1.0F, -1.0F, 0.0F);
-      vertices.addVertex(-1.0F, 1.0F, 0.0F);
-      vertices.addVertex(1.0F, 1.0F, 0.0F);
-      vertices.addVertex(1.0F, -1.0F, 0.0F);
-      RenderType renderType = ClientRenderTypes.entityShader();
-      MeshData mesh = vertices.buildOrThrow();
-      MeshRenderer.draw(renderType, mesh);
-         mesh.close();
-   }
-
    public RenderTargetShaderStage(String vertexResource, String fragmentResource, RenderTarget outputTarget) {
-      this(
-         CompiledShaderProgram.compile(RenderTargetUtils.readShaderSource(vertexResource), RenderTargetUtils.readShaderSource(fragmentResource)), outputTarget
-      );
+      this(CompiledShaderProgram.fromResources(vertexResource, fragmentResource), outputTarget);
    }
 
    public RenderTargetShaderStage(CompiledShaderProgram program, RenderTarget outputTarget) {
       this.program = program;
-      this.uniforms = new ShaderUniforms(this.program.programId());
+      this.uniforms = program.uniforms();
       this.outputTarget = outputTarget;
    }
 
    @Override
    public void apply(RenderTarget inputTarget) {
-      RenderUtils.clearColor(this.outputTarget);
-      RenderUtils.clearDepth(this.outputTarget);
-      RenderTargetUtils.overrideRenderTargets(this.outputTarget);
-      int inputTextureId = ((GlTexture)inputTarget.getColorTexture()).glId();
-      ShaderStageRenderState state = ShaderStageRenderState.INSTANCE;
-      state.configure(this, inputTextureId);
-      RenderStateManager.runWithStates(this::drawFullscreenQuad, ShaderStageRenderState.INSTANCE);
-      RenderTargetUtils.restoreRenderTargets();
+      this.updateUniforms();
+      this.uniforms.set("u_Texture", inputTarget.getColorTextureView(), outputSampler());
+      CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+      this.program.pipeline().draw(encoder, this.outputTarget);
+      encoder.submit();
+   }
+
+   private static com.mojang.renderpearl.api.textures.GpuSampler outputSampler() {
+      return RenderSystem.getSamplerCache().getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR);
    }
 }

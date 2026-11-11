@@ -1,24 +1,18 @@
 package dev.argus.client.render;
 
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import dev.argus.client.render.ArgusTesselator;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
-import dev.argus.client.managers.RenderStateManager;
 import dev.argus.client.managers.RenderTargetRegistry;
 import dev.argus.client.managers.ShaderRegistry;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
-import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
 public class PostProcessShaderPass extends BaseShaderPass {
@@ -28,18 +22,15 @@ public class PostProcessShaderPass extends BaseShaderPass {
 
    @Override
    public void updateUniforms() {
-      ShaderUniforms projectionUniforms = this.uniforms;
-      Matrix4f projectionMatrix = RenderUtils.WORLD_PROJECTION_MATRIX;
-      projectionUniforms.set("u_Proj", projectionMatrix);
-      ShaderUniforms modelViewUniforms = this.uniforms;
+      this.uniforms.set("u_Proj", RenderUtils.WORLD_PROJECTION_MATRIX);
       Matrix4fStack modelViewMatrix = RenderSystem.getModelViewStack();
-      modelViewUniforms.set("u_ModelView", modelViewMatrix);
-      ShaderUniforms sizeUniforms = this.uniforms;
+      this.uniforms.set("u_ModelView", modelViewMatrix);
       float capturedWidth = ClientAccess.argusclientMinecraft.getWindow().getWidth();
       float height = ClientAccess.argusclientMinecraft.getWindow().getHeight();
-      sizeUniforms.set("u_Size", capturedWidth, height);
-      this.uniforms.set("u_Texture", 15);
+      this.uniforms.set("u_Size", capturedWidth, height);
       this.uniforms.set("u_Time", (float)(System.nanoTime() / 1.0e9));
+      this.uniforms.set("u_Texture", POST_TARGET.getColorTextureView(),
+         RenderSystem.getSamplerCache().getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR));
    }
 
    public PostProcessShaderPass(String vertexResource, String fragmentResource) {
@@ -48,11 +39,6 @@ public class PostProcessShaderPass extends BaseShaderPass {
 
    @Override
    public void render(Runnable draw) {
-      TextureManager capturedTextureManager = ClientAccess.argusclientMinecraft.getTextureManager();
-      Identifier overlayResource = OVERLAY_TEXTURE;
-      AbstractTexture overlayTexture = capturedTextureManager.getTexture(overlayResource);
-      GlTexture overlayGlTexture = (GlTexture)overlayTexture.getTexture();
-      overlayTextureId = overlayGlTexture.glId();
       ColorOutlineBufferSource buffers = ShaderRegistry.getBufferSource();
       RenderUtils.clearColor(POST_TARGET);
       RenderUtils.clearDepth(POST_TARGET);
@@ -60,14 +46,10 @@ public class PostProcessShaderPass extends BaseShaderPass {
       if (buffers.hasColor()) {
          buffers.reset();
          this.prepareOutput();
-         GlTexture postGlTexture = (GlTexture)POST_TARGET.getColorTexture();
-         int postTextureId = postGlTexture.glId();
-         ShaderPassRenderState renderState = ShaderPassRenderState.INSTANCE;
-         renderState.configure(this, postTextureId);
-         RenderStateManager.addStates(ShaderPassRenderState.INSTANCE);
-         PostProcessShaderPass passForQuad = this;
-         passForQuad.drawFullscreenQuad();
-         RenderStateManager.reset();
+         this.updateUniforms();
+         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+         this.program.pipeline().draw(encoder, ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
+         encoder.submit();
       }
    }
 
@@ -84,19 +66,17 @@ public class PostProcessShaderPass extends BaseShaderPass {
       RenderTargetUtils.restoreRenderTargets();
    }
 
-   private void drawFullscreenQuad() {
-      ArgusTesselator capturedTesselator = ArgusTesselator.getInstance();
-      VertexFormat vertexFormat = DefaultVertexFormat.POSITION;
-      PrimitiveTopology quadMode = PrimitiveTopology.QUADS;
-      BufferBuilder vertices = capturedTesselator.begin(quadMode, vertexFormat);
-      vertices.addVertex(-1.0F, -1.0F, 0.0F);
-      vertices.addVertex(-1.0F, 1.0F, 0.0F);
-      vertices.addVertex(1.0F, 1.0F, 0.0F);
-      vertices.addVertex(1.0F, -1.0F, 0.0F);
-      RenderType renderType = ClientRenderTypes.entityShader();
-      MeshData mesh = vertices.buildOrThrow();
-      MeshRenderer.draw(renderType, mesh);
-         mesh.close();
+   public static GpuTextureView overlayView() {
+      return overlayTexture().getTextureView();
+   }
+
+   public static GpuSampler overlaySampler() {
+      return overlayTexture().getSampler();
+   }
+
+   private static AbstractTexture overlayTexture() {
+      TextureManager textureManager = ClientAccess.argusclientMinecraft.getTextureManager();
+      return textureManager.getTexture(OVERLAY_TEXTURE);
    }
 
    static {
