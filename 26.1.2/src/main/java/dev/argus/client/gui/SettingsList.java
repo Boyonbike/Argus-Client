@@ -214,7 +214,7 @@ final class SettingsList {
                 editor.place(Math.round(x + w / 2f), Math.round(cy - 6), Math.round(right - (x + w / 2f)));
                 editor.visible = rowY >= clipTop() - 2 && rowY + ROW <= clipBottom() + 2;
                 editorShown = editor.visible;
-                editor.render(g, mx, my, delta);
+                editor.extractRenderState(g, mx, my, delta);
             } else if (setting instanceof KeyBindSetting bind) {
                 boolean listening = capturing == bind;
                 String text = listening ? "Press a key…" : UiDraw.fit(bind.displayName(), half - 40);

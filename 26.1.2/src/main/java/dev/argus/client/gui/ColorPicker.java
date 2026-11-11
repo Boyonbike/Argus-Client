@@ -157,7 +157,7 @@ final class ColorPicker {
             float ty = hexY();
             UiDraw.text(g, "Hex", sx, ty + 6, UiDraw.SMALL, t.muted());
             hex.place(Math.round(sx + 22), Math.round(ty), Math.round(sw - 22 - 46));
-            hex.render(g, mx, my, 0);
+            hex.extractRenderState(g, mx, my, 0);
             float rx = sx + sw - 40;
             boolean revertHover = UiDraw.over(mx, my, rx, ty - 4, 40, 20);
             UiDraw.rounded(g, rx, ty - 4, 40, 20, 7, UiDraw.mix(t.surface(), t.overlay(), revertHover ? .8f : 0));

@@ -23,6 +23,7 @@ final class UiInput extends EditBox {
     private int displayStart;
     private float focus, caret, placeholderShown = 1;
     private long lastEdit;
+    private java.util.function.Predicate<String> filter;
 
     UiInput(int x, int y, int width, int height, String hint) {
         super(Minecraft.getInstance().font, x + PAD, y, width - PAD * 2, height, Component.literal(hint));
@@ -45,6 +46,15 @@ final class UiInput extends EditBox {
 
     @Override public void setResponder(java.util.function.Consumer<String> responder) {
         super.setResponder(value -> { lastEdit = System.nanoTime(); responder.accept(value); });
+    }
+
+    /** Restricts typed values the way EditBox's removed setFilter used to. */
+    void setFilter(java.util.function.Predicate<String> filter) {
+        this.filter = filter;
+    }
+
+    @Override public void setValue(String value) {
+        if (filter == null || filter.test(value)) super.setValue(value);
     }
 
     private float w(String text) { return UiDraw.width(text); }

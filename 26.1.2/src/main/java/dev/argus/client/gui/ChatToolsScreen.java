@@ -529,7 +529,7 @@ public final class ChatToolsScreen extends UiScreen {
     private void composerBar(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         if (!hasComposer()) return;
         float x = contentX(), w = contentWidth(), y = composerY();
-        composer.render(g, mx, my, delta);
+        composer.extractRenderState(g, mx, my, delta);
         boolean ready = !composer.getValue().isBlank();
         button(g, t, page == Page.MESSAGES && recipient != null ? "Send" : "Send", "chevron_right", x + w - 52, y, 52, ready ? Tone.PRIMARY : Tone.SECONDARY, ready, this::sendComposer);
     }
@@ -1178,7 +1178,7 @@ public final class ChatToolsScreen extends UiScreen {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += 20 + PAD;
         search.place(Math.round(x), Math.round(y) + 4, Math.round(w));
-        if (visible(y, 20)) search.render(g, mouseX, mouseY, 0);
+        if (visible(y, 20)) search.extractRenderState(g, mouseX, mouseY, 0);
         String query = search.getValue().strip();
         String lower = query.toLowerCase(Locale.ROOT);
         if (selectedPlayer == null && ChatMessages.validName(query)) {
@@ -1489,7 +1489,7 @@ public final class ChatToolsScreen extends UiScreen {
         actions.add("Add", "plus", Tone.PRIMARY, !ChatClan.typed(listField.getValue()).names().isEmpty(), this::addListNames);
         if (!blocklistEditing) actions.add(importBusy ? "Importing…" : "Import CSV", null, Tone.SECONDARY, !importBusy, () -> importNames(null, true));
         listField.place(Math.round(x), Math.round(y) + 4, Math.round(actions.left() - GAP - x));
-        if (visible(y, 20)) listField.render(g, mouseX, mouseY, 0);
+        if (visible(y, 20)) listField.extractRenderState(g, mouseX, mouseY, 0);
         String typed = listField.getValue().strip().toLowerCase(Locale.ROOT);
         var names = blocklistEditing ? tools.autoTpyBlocklist() : tools.autoTpyWhitelist();
         var matches = names.stream().filter(n -> n.toLowerCase(Locale.ROOT).contains(typed)).limit(100).toList();
@@ -1617,7 +1617,7 @@ public final class ChatToolsScreen extends UiScreen {
                 cy += 4;
                 UiDraw.text(g, dialog.field(), x + 14, cy, UiDraw.SMALL, t.muted());
                 dialogField.place(Math.round(x + 14), Math.round(cy + 10), Math.round(w - 28));
-                if (live) dialogField.render(g, mx, my, delta);
+                if (live) dialogField.extractRenderState(g, mx, my, delta);
                 cy += 30;
             }
             if (preview != null) { UiDraw.text(g, UiDraw.fit(preview, w - 28), x + 14, cy + 4, UiDraw.SMALL, UiDraw.alpha(t.accent(), .9f)); cy += 14; }

@@ -126,9 +126,9 @@ class RegistryEntryComponent<E> extends ButtonComponent {
             return Items.STICK.getDefaultInstance();
          }
 
-         SpawnEggItem spawnEgg = SpawnEggItem.byId(entityType);
-         if (spawnEgg != null) {
-            return spawnEgg.getDefaultInstance();
+         var spawnEgg = SpawnEggItem.byId(entityType);
+         if (spawnEgg.isPresent()) {
+            return spawnEgg.get().value().getDefaultInstance();
          }
       }
 

@@ -279,7 +279,7 @@ abstract class InlineCard {
                     float fieldW = Math.max(40, right - bw - 6 - x);
                     field.place(Math.round(x), Math.round(cy - 8), Math.round(fieldW));
                     field.visible = inView(cy - 8, 16);
-                    if (field.visible) field.render(g, mx, my, 0); else field.setFocused(false);
+                    if (field.visible) field.extractRenderState(g, mx, my, 0); else field.setFocused(false);
                 } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.muted());
                 top = 26;
             }

@@ -191,7 +191,7 @@ final class PresetsPanel {
         UiDraw.icon(g, target == null ? "misc" : Presets.isWorld(target) ? "player" : "people", x, y + 98, 8, target == null ? t.muted() : t.green());
         UiDraw.text(g, UiDraw.fit(where, w - 14), x + 12, y + 102, UiDraw.SMALL, target == null ? t.muted() : t.text());
         // Save the current config.
-        nameInput.render(g, mx, my, delta);
+        nameInput.extractRenderState(g, mx, my, delta);
         pill(g, "Save current", x + w, y + 128, mx, my, t.accent(), true, this::saveCurrent);
         // Preset list.
         List<String> names = Presets.names(category);
@@ -276,7 +276,7 @@ final class PresetsPanel {
                     addressInput.place(x + 13, Math.round(rowY + 40), Math.round(w - 13 - 70));
                     addressInput.visible = rowY + 34 >= top && rowY + 54 <= top + view;
                     addressShown = addressInput.visible;
-                    addressInput.render(g, mx, my, delta);
+                    addressInput.extractRenderState(g, mx, my, delta);
                     pill(g, "Add server", x + w, rowY + 46, mx, my, t.blue(), true, () -> bindTyped(selectedName));
                     UiRender.opacity = before;
                 }

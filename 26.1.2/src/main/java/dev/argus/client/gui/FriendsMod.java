@@ -4,7 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import dev.argus.client.modules.misc.ChatToolsModule;
 import dev.argus.client.modules.player.AutoRekitModule;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -26,19 +26,19 @@ public final class FriendsMod implements ClientModInitializer {
         ScreenEvents.AFTER_INIT.register(MultiplayerProfiles::install);
         ScreenEvents.AFTER_INIT.register(AutoRekitModule::addContainerButton);
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("argus").executes(ctx -> {
+            dispatcher.register(ClientCommands.literal("argus").executes(ctx -> {
                 request = Request.MODULES;
                 return 1;
             }));
-            dispatcher.register(ClientCommandManager.literal("social").executes(ctx -> {
+            dispatcher.register(ClientCommands.literal("social").executes(ctx -> {
                 request = Request.CHAT;
                 return 1;
             }));
-            dispatcher.register(ClientCommandManager.literal("chattools").executes(ctx -> {
+            dispatcher.register(ClientCommands.literal("chattools").executes(ctx -> {
                 request = Request.CHAT;
                 return 1;
             }));
-            dispatcher.register(ClientCommandManager.literal("friends").executes(ctx -> {
+            dispatcher.register(ClientCommands.literal("friends").executes(ctx -> {
                 request = Request.FRIENDS;
                 return 1;
             }));

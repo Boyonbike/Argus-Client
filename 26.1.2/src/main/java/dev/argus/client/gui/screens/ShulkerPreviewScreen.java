@@ -21,7 +21,7 @@ public class ShulkerPreviewScreen extends ShulkerBoxScreen implements ClientAcce
    @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       renderingPreview = true;
-      super.render(graphics, mouseX, mouseY, partialTick);
+      super.extractRenderState(graphics, mouseX, mouseY, partialTick);
       renderingPreview = false;
    }
 

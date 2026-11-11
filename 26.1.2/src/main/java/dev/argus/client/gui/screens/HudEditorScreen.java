@@ -367,7 +367,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
             );
       }
 
-      super.render(graphics, mouseX, mouseY, partialTick);
+      super.extractRenderState(graphics, mouseX, mouseY, partialTick);
       if (this.centerPanelPending) {
          this.centerModulePanel();
          this.centerPanelPending = false;

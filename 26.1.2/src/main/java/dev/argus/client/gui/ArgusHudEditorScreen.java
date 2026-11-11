@@ -251,7 +251,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     @Override public void extractRenderState(GuiGraphicsExtractor g, int rawX, int rawY, float delta) {
         settle();
         syncSelection();
-        super.render(g, rawX, rawY, delta);
+        super.extractRenderState(g, rawX, rawY, delta);
         UiAnim.frame();
         UiDraw.density = (float) (viewport.renderScale() * minecraft.getWindow().getGuiScale());
         mouseX = (int) logical(rawX); mouseY = (int) logical(rawY);

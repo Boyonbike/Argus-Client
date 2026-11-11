@@ -249,7 +249,7 @@ final class TargetsCard extends InlineCard {
                 () -> filter = (filter + 1) % FILTERS.length);
         field.place(Math.round(x), Math.round(cy - 8), Math.round(filterX - 6 - x));
         field.visible = inView(cy - 8, 16);
-        if (field.visible) field.render(g, mx, my, 0); else field.setFocused(false);
+        if (field.visible) field.extractRenderState(g, mx, my, 0); else field.setFocused(false);
         float top = y + TOP;
 
         if (panelShown()) top = drawMatches(g, mx, my, t, x, top, w) + 4;

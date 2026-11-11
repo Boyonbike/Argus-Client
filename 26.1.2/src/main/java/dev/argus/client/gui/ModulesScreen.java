@@ -342,7 +342,7 @@ public final class ModulesScreen extends UiScreen {
         if (window.open > .3f) {
             float before = UiRender.opacity;
             UiRender.opacity = before * Math.clamp((window.open - .3f) / .7f, 0f, 1f);
-            searchInput.render(g, mx, my, 0);
+            searchInput.extractRenderState(g, mx, my, 0);
             UiRender.opacity = before;
         }
         float start = top + HEADER + SEARCH_INPUT;

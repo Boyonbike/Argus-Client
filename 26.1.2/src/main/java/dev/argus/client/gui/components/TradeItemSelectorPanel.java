@@ -7,7 +7,7 @@ import net.minecraft.world.item.Items;
 
 public class TradeItemSelectorPanel extends TradeSelectorPanel<Item> implements ClientAccess {
    private final ItemListComponent itemList = new ItemListComponent(
-      this, item -> TextUtils.containsIgnoreCase(item.getName().getString(), this.searchInput.getText())
+      this, item -> TextUtils.containsIgnoreCase(item.getName(item.getDefaultInstance()).getString(), this.searchInput.getText())
    );
 
    public TradeItemSelectorPanel(TradeItemsComponent tradeItems, boolean fromSide) {

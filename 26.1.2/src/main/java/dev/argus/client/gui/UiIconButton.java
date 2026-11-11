@@ -19,7 +19,7 @@ final class UiIconButton extends Button {
 
     @Override public void onPress(net.minecraft.client.input.InputWithModifiers input) { pressedAt = System.nanoTime(); super.onPress(input); }
 
-    @Override protected void renderContents(GuiGraphicsExtractor g, int mx, int my, float delta) {
+    @Override protected void extractContents(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         hover = UiAnim.approach(hover, isHoveredOrFocused() && active ? 1 : 0, 18);
         float press = 1 - UiAnim.progress(pressedAt, .18f);

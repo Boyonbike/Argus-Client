@@ -192,7 +192,8 @@ final class ShulkerPixelEditorScreen extends UiScreen {
         var model = new ItemStackRenderState();
         minecraft.getItemModelResolver().updateForTopItem(
             model, item.getDefaultInstance(), ItemDisplayContext.GUI, minecraft.level, minecraft.player, 0);
-        var sprite = model.pickParticleIcon(RandomSource.create(0));
+        var material = model.pickParticleMaterial(RandomSource.create(0));
+        var sprite = material == null ? null : material.sprite();
         if (sprite != null && !MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name())
             && loadTexture(sprite.contents().name())) return;
 

@@ -26,19 +26,19 @@ public final class MultiplayerProfiles {
         // Catch an expired launcher token as soon as the game reaches its menus, not only once you open Multiplayer.
         if (screen instanceof TitleScreen) { SessionRecovery.checkSoon(client); return; }
         if (!(screen instanceof JoinMultiplayerScreen)) return;
-        var renderEvent = ScreenEvents.afterRender(screen);
+        var renderEvent = ScreenEvents.afterExtract(screen);
         if (INSTALLED.get(screen) == renderEvent) return;
         INSTALLED.put(screen, renderEvent);
         SessionRecovery.checkSoon(client);
-        var buttons=Screens.getButtons(screen);
+        var buttons=Screens.getWidgets(screen);
         // The base client's "Vanilla" checkbox lives in the Accounts menu as "Appear as vanilla" now.
         buttons.removeIf(b -> b instanceof Checkbox && "Vanilla".equals(b.getMessage().getString()));
         buttons.add(new UiIconButton(PAD,PAD,SIZE,"shield","Proxies",()->client.setScreen(new ProxiesScreen(screen))));
         buttons.add(new UiIconButton(width-PAD-SIZE,PAD,SIZE,"player","Accounts",()->client.setScreen(new AccountsScreen(screen))));
-        ScreenEvents.beforeRender(screen).register((s,g,mx,my,delta)-> {
+        ScreenEvents.beforeExtract(screen).register((s,g,mx,my,delta)-> {
             UiAnim.frame(); UiRender.opacity=1; UiDraw.density=(float)client.getWindow().getGuiScale();
         });
-        ScreenEvents.afterRender(screen).register((s,g,mx,my,delta)-> {
+        ScreenEvents.afterExtract(screen).register((s,g,mx,my,delta)-> {
             var theme=GuiState.theme();
             int textX=PAD+SIZE+5, available=Math.max(40,width-textX*2);
             UiDraw.text(g,UiDraw.fit("Logged in as " + client.getUser().getName(),available,UiDraw.SMALL),textX,PAD+5,UiDraw.SMALL,theme.text());

@@ -188,7 +188,7 @@ public abstract class UiScreen extends Screen {
     private long closeNanos() { return (long) ((CLOSE_NANOS + closeStaggered * CLOSE_STAGGER * 1e9f) / UiAnim.speed()); }
 
     @Override public final void extractRenderState(GuiGraphicsExtractor g, int rawX, int rawY, float delta) {
-        if (modal() && parent != null) parent.render(g, -1000, -1000, delta);
+        if (modal() && parent != null) parent.extractRenderState(g, -1000, -1000, delta);
         UiAnim.frame();
         int mx = (int) viewport.toLogical(rawX), my = (int) viewport.toLogical(rawY);
         mouseX = mx; mouseY = my;

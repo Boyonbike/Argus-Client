@@ -18,7 +18,7 @@ public class ItemListComponent extends AbstractItemListComponent<Item> {
    }
 
    public String getEntryLabel(Item item) {
-      return item.getName().getString();
+      return item.getName(item.getDefaultInstance()).getString();
    }
 
    public ItemStack getEntryIcon(Item item) {

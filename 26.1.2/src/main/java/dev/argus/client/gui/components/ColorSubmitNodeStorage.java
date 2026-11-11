@@ -131,10 +131,6 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
       }
 
       @Override
-      public void submitBlock(PoseStack poseStack, BlockState blockState, int packedLight, int packedOverlay, int outlineColor) {
-      }
-
-      @Override
       public void submitMovingBlock(PoseStack poseStack, MovingBlockRenderState movingBlockState) {
       }
 
@@ -142,18 +138,15 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
       public void submitBlockModel(
          PoseStack poseStack,
          RenderType renderType,
-         BlockStateModel model,
-         float red,
-         float green,
-         float blue,
+         List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> parts,
+         int[] tintColors,
          int packedLight,
          int packedOverlay,
          int outlineColor
       ) {
-         red = ARGB.red(ColorSubmitNodeStorage.this.colorArgb) / 255.0F;
-         green = ARGB.green(ColorSubmitNodeStorage.this.colorArgb) / 255.0F;
-         blue = ARGB.blue(ColorSubmitNodeStorage.this.colorArgb) / 255.0F;
-         super.submitBlockModel(poseStack, renderType, model, red, green, blue, packedLight, packedOverlay, outlineColor);
+         int[] colors = tintColors == null ? new int[1] : java.util.Arrays.copyOf(tintColors, tintColors.length);
+         for (int i = 0; i < colors.length; i++) colors[i] = ColorSubmitNodeStorage.this.colorArgb;
+         super.submitBlockModel(poseStack, renderType, parts, colors, packedLight, packedOverlay, outlineColor);
       }
 
       @Override
@@ -164,8 +157,7 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
          int packedOverlay,
          int outlineColor,
          int[] tintColors,
-         List quads,
-         RenderType renderType,
+         List<net.minecraft.client.resources.model.geometry.BakedQuad> quads,
          FoilType foilType
       ) {
          if (ColorSubmitNodeStorage.this.itemTintColors == null || ColorSubmitNodeStorage.this.itemTintColors[0] != ColorSubmitNodeStorage.this.colorArgb) {
@@ -178,7 +170,7 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
          }
 
          super.submitItem(
-            poseStack, displayContext, packedLight, packedOverlay, outlineColor, ColorSubmitNodeStorage.this.itemTintColors, quads, renderType, foilType
+            poseStack, displayContext, packedLight, packedOverlay, outlineColor, ColorSubmitNodeStorage.this.itemTintColors, quads, foilType
          );
       }
 
