@@ -22,6 +22,13 @@ public class MultiPlayerGameModeMixin {
    @Final
    private Minecraft minecraft;
 
+   @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+   private void skipTickWithoutPlayer(CallbackInfo callback) {
+      if (this.minecraft.player == null) {
+         callback.cancel();
+      }
+   }
+
    @Inject(method = "handleContainerInput", at = @At("HEAD"), cancellable = true)
    private void onInventoryMouseClickHead(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (this.minecraft.player == actingPlayer) {

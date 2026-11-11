@@ -36,6 +36,16 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin {
+   @ModifyReturnValue(method = "calculateHudFov", at = @At("RETURN"))
+   private float applyViewModelHudFov(float original) {
+      var viewmodel = ClientContext.getModule(dev.argus.client.modules.render.ViewModelModule.class);
+      if (viewmodel.isToggled() && viewmodel.viewModelFovSetting.getValue()) {
+         float zoomScale = 1.0F - ClientContext.getModule(dev.argus.client.modules.render.ZoomModule.class).getZoomBlend();
+         return viewmodel.fovAmountSetting.getValue().floatValue() * zoomScale;
+      }
+      return original;
+   }
+
    private static ViewClipModule viewClip = ClientContext.getModule(ViewClipModule.class);
    private static NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
    private static ElytraFlyModule elytrafly = ClientContext.getModule(ElytraFlyModule.class);

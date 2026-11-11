@@ -3,7 +3,7 @@ package dev.argus.mixin;
 import dev.argus.client.access.ChatLineAccess;
 import dev.argus.client.modules.misc.BetterChatModule;
 import dev.argus.client.utils.ClampedInterpolatedFloat;
-import net.minecraft.client.multiplayer.chat.GuiMessageTag;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.client.multiplayer.chat.GuiMessage.Line;
 import net.minecraft.network.chat.MessageSignature;
 import net.minecraft.util.FormattedCharSequence;
@@ -30,7 +30,7 @@ public class GuiMessageLineMixin implements ChatLineAccess {
    private long addTimeMillis;
 
    @Inject(method = "<init>", at = @At("RETURN"))
-   private void initializeChatLineAnimation(int addedAtTick, FormattedCharSequence text, GuiMessageTag tag, boolean endOfEntry, CallbackInfo callback) {
+   private void initializeChatLineAnimation(GuiMessage message, FormattedCharSequence text, boolean endOfEntry, CallbackInfo callback) {
       this.getProgress().setValue(false);
       this.addTimeMillis = System.currentTimeMillis();
    }

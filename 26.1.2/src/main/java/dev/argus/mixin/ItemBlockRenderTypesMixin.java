@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
 import dev.argus.client.modules.render.XrayModule;
+import dev.argus.client.render.MeshBlockContext;
 import dev.argus.client.render.RenderUtils;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -26,7 +27,7 @@ public class ItemBlockRenderTypesMixin {
 
    @ModifyReturnValue(method = "layer", at = @At("RETURN"))
    private static ChunkSectionLayer applyXrayTranslucentChunkLayer(ChunkSectionLayer original) {
-      BlockState blockState = SectionCompilerMixin.currentBlock();
+      BlockState blockState = MeshBlockContext.get();
       if (blockState == null) return original;
       return xrayModule.isToggled()
             && !xrayModule.alphaSetting.isAtMinimum()

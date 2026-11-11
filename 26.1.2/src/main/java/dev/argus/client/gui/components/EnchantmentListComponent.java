@@ -19,7 +19,10 @@ public class EnchantmentListComponent extends AbstractItemListComponent<Enchantm
    private static ItemStack enchantedBookIcon;
 
    private static ItemStack enchantedBookIcon() {
-      if (enchantedBookIcon == null) enchantedBookIcon = Items.ENCHANTED_BOOK.getDefaultInstance();
+      if (enchantedBookIcon == null) {
+         enchantedBookIcon = Items.ENCHANTED_BOOK.getDefaultInstance();
+         enchantedBookIcon.enchant(EnchantmentUtils.getHolder(Enchantments.FORTUNE), 1337);
+      }
       return enchantedBookIcon;
    }
 
@@ -53,9 +56,5 @@ public class EnchantmentListComponent extends AbstractItemListComponent<Enchantm
 
    public ItemStack getEntryIcon(EnchantmentListEntry unusedEntry) {
       return enchantedBookIcon();
-   }
-
-   static {
-      enchantedBookIcon().enchant(EnchantmentUtils.getHolder(Enchantments.FORTUNE), 1337);
    }
 }

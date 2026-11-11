@@ -73,6 +73,14 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin implements ClientAccess, LevelRendererFramebufferAccess {
+   @org.spongepowered.asm.mixin.injection.Redirect(
+      method = "update",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z")
+   )
+   private boolean safeIsSpectator(net.minecraft.client.player.LocalPlayer player) {
+      return player != null && player.isSpectator();
+   }
+
    private static final ViewClipModule viewClip = ClientContext.getModule(ViewClipModule.class);
    private static final AmbienceModule ambienceModule = ClientContext.getModule(AmbienceModule.class);
    private static final NoRenderModule noRenderModule = ClientContext.getModule(NoRenderModule.class);
@@ -223,12 +231,6 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       return !event.isCancelled();
    }
 
-   @Inject(method = "addSkyPass", at = @At("HEAD"), cancellable = true)
-   private void suppressSkyBlindness(com.mojang.blaze3d.framegraph.FrameGraphBuilder frameGraph, CameraRenderState cameraState, GpuBufferSlice buffer, CallbackInfo callback) {
-      if (noRenderModule.isToggled() && noRenderModule.blindnessSetting.getValue()) {
-         callback.cancel();
-      }
-   }
 
    @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z"))
    private boolean applyCameraSpectatorOverride(boolean originalSpectator) {

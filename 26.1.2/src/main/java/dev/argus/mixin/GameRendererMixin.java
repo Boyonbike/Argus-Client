@@ -97,6 +97,13 @@ public abstract class GameRendererMixin {
       ClientContext.shaderRegistry = new ShaderRegistry();
    }
 
+   @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+   private void skipGameRendererTickWithoutPlayer(CallbackInfo callback) {
+      if (ClientAccess.argusclientMinecraft.player == null) {
+         callback.cancel();
+      }
+   }
+
    @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
    private void suppressHurtCamera(CameraRenderState cameraState, PoseStack poses, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.hurtCamSetting.getValue()) {

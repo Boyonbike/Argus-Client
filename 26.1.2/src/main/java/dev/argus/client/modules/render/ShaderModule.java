@@ -144,7 +144,13 @@ public class ShaderModule extends Module {
       Projection projection = ClientAccess.argusclientMinecraft.gameRenderer.hudProjection;
       int width = ClientAccess.argusclientMinecraft.getWindow().getWidth();
       int height = ClientAccess.argusclientMinecraft.getWindow().getHeight();
-      projection.setupPerspective(0.05F, 100.0F, camera.getFov(), width, height);
+      float handFov = camera.getFov();
+      var viewmodel = ClientContext.getModule(dev.argus.client.modules.render.ViewModelModule.class);
+      if (viewmodel.isToggled() && viewmodel.viewModelFovSetting.getValue()) {
+         handFov = viewmodel.fovAmountSetting.getValue().floatValue()
+            * (1.0F - ClientContext.getModule(dev.argus.client.modules.render.ZoomModule.class).getZoomBlend());
+      }
+      projection.setupPerspective(0.05F, 100.0F, handFov, width, height);
       return ClientAccess.argusclientMinecraft.gameRenderer.hud3dProjectionMatrixBuffer.getBuffer(projection);
    }
 

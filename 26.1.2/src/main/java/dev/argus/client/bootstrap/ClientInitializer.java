@@ -137,7 +137,7 @@ public final class ClientInitializer {
    }
 
    private void finishClientInitialization(net.minecraft.client.Minecraft client) {
-      if (!this.deferredInitialized && client.level != null) {
+      if (!this.deferredInitialized && client.level != null && client.player != null) {
          this.deferredInitialized = true;
          CustomItemRegistries.initialize();
          ClientContext.configurationManager.load();
