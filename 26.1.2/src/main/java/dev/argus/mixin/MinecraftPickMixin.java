@@ -16,8 +16,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftPickMixin {
-   private static final FreecamModule freecam = ClientContext.getModule(FreecamModule.class);
-   private static final FreeLookModule freelook = ClientContext.getModule(FreeLookModule.class);
+   private static FreecamModule freecam() {
+      return ClientContext.getModule(FreecamModule.class);
+   }
+
+   private static FreeLookModule freelook() {
+      return ClientContext.getModule(FreeLookModule.class);
+   }
    @Unique
    private boolean argusclient$pickingFromFreecam;
 
@@ -27,7 +32,7 @@ public abstract class MinecraftPickMixin {
    @Inject(method = "pick", at = @At("HEAD"), cancellable = true)
    private void applyCameraPicking(float partialTick, CallbackInfo callback) {
       Minecraft client = (Minecraft)(Object)this;
-      if (freecam.isToggled() && client.getCameraEntity() != null && !this.argusclient$pickingFromFreecam) {
+      if (freecam().isToggled() && client.getCameraEntity() != null && !this.argusclient$pickingFromFreecam) {
          callback.cancel();
          Entity cameraEntity = client.getCameraEntity();
          double savedX = cameraEntity.getX();
@@ -41,17 +46,17 @@ public abstract class MinecraftPickMixin {
          float savedPreviousYaw = cameraEntity.yRotO;
          float savedPreviousPitch = cameraEntity.xRotO;
          float savedHeadYaw = cameraEntity.getYHeadRot();
-         cameraEntity.xo = freecam.previousCameraPosition.x;
-         cameraEntity.yo = freecam.previousCameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose());
-         cameraEntity.zo = freecam.previousCameraPosition.z;
-         cameraEntity.setYRot(freecam.cameraYaw);
-         cameraEntity.setYHeadRot(freecam.cameraYaw);
-         cameraEntity.setXRot(freecam.cameraPitch);
-         cameraEntity.yRotO = freecam.previousCameraYaw;
-         cameraEntity.xRotO = freecam.previousCameraPitch;
+         cameraEntity.xo = freecam().previousCameraPosition.x;
+         cameraEntity.yo = freecam().previousCameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose());
+         cameraEntity.zo = freecam().previousCameraPosition.z;
+         cameraEntity.setYRot(freecam().cameraYaw);
+         cameraEntity.setYHeadRot(freecam().cameraYaw);
+         cameraEntity.setXRot(freecam().cameraPitch);
+         cameraEntity.yRotO = freecam().previousCameraYaw;
+         cameraEntity.xRotO = freecam().previousCameraPitch;
          this.argusclient$pickingFromFreecam = true;
          LockUtils.runWithSharedLock(() -> {
-            Vec3Utils.setComponents(cameraEntity.position(), freecam.cameraPosition.x, freecam.cameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose()), freecam.cameraPosition.z);
+            Vec3Utils.setComponents(cameraEntity.position(), freecam().cameraPosition.x, freecam().cameraPosition.y - cameraEntity.getEyeHeight(cameraEntity.getPose()), freecam().cameraPosition.z);
             this.pick(partialTick);
             Vec3Utils.setComponents(cameraEntity.position(), savedX, savedY, savedZ);
          });
@@ -66,7 +71,7 @@ public abstract class MinecraftPickMixin {
          cameraEntity.xRotO = savedPreviousPitch;
       }
 
-      if (freelook.isToggled() && !freecam.isToggled()) {
+      if (freelook().isToggled() && !freecam().isToggled()) {
          callback.cancel();
       }
    }

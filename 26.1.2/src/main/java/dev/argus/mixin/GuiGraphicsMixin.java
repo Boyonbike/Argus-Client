@@ -34,7 +34,7 @@ public abstract class GuiGraphicsMixin {
    private boolean renderingPreviewItemCount;
 
    @Shadow
-   public abstract void renderItemCount(Font var1, ItemStack var2, int var3, int var4, @Nullable String var5);
+   public abstract void itemCount(Font var1, ItemStack var2, int var3, int var4, @Nullable String var5);
 
    @Shadow
    protected abstract Parameters createDefaultTextParameters(float var1);
@@ -43,7 +43,7 @@ public abstract class GuiGraphicsMixin {
    private void renderEmptyPreviewItemCount(Font font, ItemStack stack, int x, int y, String countText, CallbackInfo callback) {
       if (!this.renderingPreviewItemCount && ShulkerPreviewScreen.isRenderingPreview() && stack.getCount() == 0) {
          this.renderingPreviewItemCount = true;
-         this.renderItemCount(font, stack, x, y, ChatFormatting.RED + "0");
+         this.itemCount(font, stack, x, y, ChatFormatting.RED + "0");
          callback.cancel();
          this.renderingPreviewItemCount = false;
       }

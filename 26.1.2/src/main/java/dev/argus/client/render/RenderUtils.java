@@ -140,7 +140,7 @@ public final class RenderUtils implements ClientAccess {
    public static void applyInverseViewBobbing(PoseStack poses, float partialTick) {
       inverseViewBobbing = true;
       if (ClientAccess.argusclientMinecraft.options.bobView().get()) {
-         ((GameRendererAccessor)ClientAccess.argusclientMinecraft.gameRenderer).argusclient$bobView(poses, partialTick);
+         ((GameRendererAccessor)ClientAccess.argusclientMinecraft.gameRenderer).argusclient$bobView(ClientAccess.argusclientMinecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState, poses);
       }
 
       inverseViewBobbing = false;

@@ -14,6 +14,7 @@ import dev.argus.client.managers.BlockColorRegistry;
 import dev.argus.client.managers.ChatFilterRegistry;
 import dev.argus.client.managers.CommandRegistry;
 import dev.argus.client.managers.ConfigurationManager;
+import dev.argus.client.render.BundledResourceInstaller;
 import dev.argus.client.managers.CrystalInteractionManager;
 import dev.argus.client.managers.GlintRegistry;
 import dev.argus.client.managers.HoleManager;
@@ -49,15 +50,28 @@ import dev.argus.client.utils.world.MapDataCache;
 import java.util.Locale;
 import java.util.Locale.Category;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import java.io.IOException;
 import net.fabricmc.loader.api.ModContainer;
 
 public final class ClientInitializer {
    private boolean managersInitialized;
    private boolean clientInitialized;
+   private boolean deferredInitialized;
 
    public void initialize() {
       requireEnvironment();
+      try {
+         for (java.nio.file.Path directory : java.util.List.of(
+            ConfigurationManager.ROOT_DIRECTORY, ConfigurationManager.PRESETS_DIRECTORY, ConfigurationManager.SPAMMER_DIRECTORY,
+            ConfigurationManager.KILLSAY_DIRECTORY, ConfigurationManager.TEXTURES_DIRECTORY, ConfigurationManager.MAPS_DIRECTORY,
+            ConfigurationManager.CHUNKS_DIRECTORY, ConfigurationManager.SOUNDS_DIRECTORY, ConfigurationManager.SHADERS_DIRECTORY)) {
+            java.nio.file.Files.createDirectories(directory);
+         }
+      } catch (IOException ignored) {
+      }
+      new BundledResourceInstaller().installMissingResources();
       if (!this.managersInitialized) {
          // Generate the animated loading screen's atlas while the rest of startup runs.
          LoadingOverlayRenderer.prewarm();
@@ -118,8 +132,15 @@ public final class ClientInitializer {
          ClientContext.soundManager.reload();
          ClientContext.configurationManager = new ConfigurationManager();
          ConfigurationManager configuration = ClientContext.configurationManager;
+         ClientTickEvents.END_CLIENT_TICK.register(this::finishClientInitialization);
+      }
+   }
+
+   private void finishClientInitialization(net.minecraft.client.Minecraft client) {
+      if (!this.deferredInitialized && client.level != null) {
+         this.deferredInitialized = true;
          CustomItemRegistries.initialize();
-         configuration.load();
+         ClientContext.configurationManager.load();
          this.clientInitialized = true;
          ArgusClient.LOGGER.info("Argus Client client initialization completed.");
       }
@@ -127,17 +148,17 @@ public final class ClientInitializer {
 
    private static void requireEnvironment() {
       FabricLoader fabric = FabricLoader.getInstance();
-      if (fabric.getEnvironmentType() == EnvType.CLIENT && Runtime.version().feature() >= 21) {
+      if (fabric.getEnvironmentType() == EnvType.CLIENT && Runtime.version().feature() >= 25) {
          String minecraft = ((ModContainer)fabric.getModContainer("minecraft")
                .orElseThrow(() -> new IllegalStateException("Minecraft mod container is missing.")))
             .getMetadata()
             .getVersion()
             .getFriendlyString();
-         if (!"1.21.11".equals(minecraft)) {
-            throw new IllegalStateException("Argus Client requires Minecraft 1.21.11; found " + minecraft);
+         if (!"26.1.2".equals(minecraft)) {
+            throw new IllegalStateException("Argus Client requires Minecraft 26.1.2; found " + minecraft);
          }
       } else {
-         throw new IllegalStateException("Argus Client requires the Fabric client environment and Java 21 or newer.");
+         throw new IllegalStateException("Argus Client requires the Fabric client environment and Java 25 or newer.");
       }
    }
 }

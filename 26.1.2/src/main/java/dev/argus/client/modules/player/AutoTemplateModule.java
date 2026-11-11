@@ -29,7 +29,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Repairable;
 
 public final class AutoTemplateModule extends Module {
-   private static final ItemStack DIAMOND_REPAIR_ITEM = new ItemStack(Items.DIAMOND);
    private static final Comparator<ItemStack> MATERIAL_ORDER = Comparator.comparing(stack -> stack.is(Items.NETHERITE_INGOT));
    private final Setting<Set<Item>> templatesSetting;
    private final Setting<Set<Item>> materialsSetting;
@@ -166,7 +165,7 @@ public final class AutoTemplateModule extends Module {
    }
 
    private boolean isEligibleItem(ItemStack stack) {
-      if (stack.get(DataComponents.REPAIRABLE) instanceof Repairable repairable && repairable.isValidRepairItem(DIAMOND_REPAIR_ITEM)) {
+      if (stack.get(DataComponents.REPAIRABLE) instanceof Repairable repairable && repairable.isValidRepairItem(Items.DIAMOND.getDefaultInstance())) {
          AutoTemplateModule.ItemsChoice choice = this.itemsSetting.getValue();
          return choice != AutoTemplateModule.ItemsChoice.TOOLS && stack.has(DataComponents.EQUIPPABLE)
             || choice != AutoTemplateModule.ItemsChoice.ARMOR && stack.has(DataComponents.TOOL);

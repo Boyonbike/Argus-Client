@@ -30,20 +30,10 @@ public abstract class FogRendererMixin {
    @Unique
    private SkyboxModule.FogDistances capturedFogDistances;
 
-   @Inject(method = "updateBuffer", at = @At("HEAD"))
-   private void captureFogDistances(
-      ByteBuffer buffer,
-      int bufferOffset,
-      Vector4f fogColor,
-      float environmentalStart,
-      float environmentalEnd,
-      float renderDistanceStart,
-      float renderDistanceEnd,
-      float skyEnd,
-      float cloudsEnd,
-      CallbackInfo callback
-   ) {
-      this.capturedFogDistances = new SkyboxModule.FogDistances(environmentalStart, environmentalEnd, renderDistanceStart, renderDistanceEnd, skyEnd, cloudsEnd);
+   @Inject(method = "updateBuffer(Lnet/minecraft/client/renderer/fog/FogData;)V", at = @At("HEAD"))
+   private void captureFogDistances(FogData fogData, CallbackInfo callback) {
+      this.capturedFogDistances = new SkyboxModule.FogDistances(
+         fogData.environmentalStart, fogData.environmentalEnd, fogData.renderDistanceStart, fogData.renderDistanceEnd, fogData.skyEnd, fogData.cloudEnd);
    }
 
    @Inject(
@@ -61,8 +51,7 @@ public abstract class FogRendererMixin {
       DeltaTracker deltaTracker,
       float ignoredSetupFloat,
       ClientLevel level,
-      CallbackInfoReturnable<Vector4f> callback,
-      @Local Vector4f fogColor,
+      CallbackInfoReturnable<FogData> callback,
       @Local FogData fogData
    ) {
       if (noRenderModule.isToggled() && noRenderModule.fogSetting.getValue()) {
@@ -75,13 +64,13 @@ public abstract class FogRendererMixin {
          float green = configuredColor.getGreen() / 255.0F;
          float blue = configuredColor.getBlue() / 255.0F;
          float alpha = configuredColor.getAlpha() / 255.0F;
-         fogColor.set(red, green, blue, alpha);
+         fogData.color.set(red, green, blue, alpha);
       }
    }
 
    @Inject(method = "setupFog", at = @At("TAIL"))
    private void updateSplitSkyFogBuffer(
-      Camera camera, int renderDistance, DeltaTracker deltaTracker, float ignoredSetupFloat, ClientLevel level, CallbackInfoReturnable<Vector4f> callback
+      Camera camera, int renderDistance, DeltaTracker deltaTracker, float ignoredSetupFloat, ClientLevel level, CallbackInfoReturnable<FogData> callback
    ) {
       if (skyboxModule.isToggled() && skyboxModule.splitFogSetting.getValue() && this.capturedFogDistances != null) {
          Color backgroundColor = skyboxModule.backgroundSetting.getValue();

@@ -81,7 +81,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    private int destroyDelay;
 
    @Shadow
-   public abstract void handleInventoryMouseClick(int var1, int var2, int var3, ContainerInput var4, Player var5);
+   public abstract void handleContainerInput(int var1, int var2, int var3, ContainerInput var4, Player var5);
 
    @Shadow
    protected abstract void startPrediction(ClientLevel var1, PredictiveAction var2);
@@ -129,8 +129,8 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
             for (int craftingSlotIndex = 0; craftingSlotIndex < 4; craftingSlotIndex++) {
                ItemStack craftingStack = ClientAccess.argusclientMinecraft.player.inventoryMenu.getCraftSlots().getItems().get(craftingSlotIndex);
                if (craftingStack.isEmpty()) {
-                  this.handleInventoryMouseClick(containerId, slotId, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
-                  this.handleInventoryMouseClick(containerId, craftingSlotIndex + 1, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
+                  this.handleContainerInput(containerId, slotId, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
+                  this.handleContainerInput(containerId, craftingSlotIndex + 1, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
                   callback.cancel();
                   return;
                }

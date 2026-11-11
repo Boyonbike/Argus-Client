@@ -25,7 +25,7 @@ public abstract class ScreenMixin {
    protected Minecraft minecraft;
 
    @Shadow
-   protected abstract void renderMenuBackground(GuiGraphicsExtractor var1);
+   protected abstract void extractMenuBackground(GuiGraphicsExtractor var1);
 
    @Inject(method = "clickCommandAction", at = @At("HEAD"), cancellable = true)
    private static void dispatchClientCommandAction(LocalPlayer localPlayer, String command, Screen screen, CallbackInfo callback) {
@@ -46,14 +46,14 @@ public abstract class ScreenMixin {
       method = "extractBackground",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/Screen;renderBlurredBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
+         target = "Lnet/minecraft/client/gui/screens/Screen;extractBlurredBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
          shift = Shift.BEFORE
       ),
       cancellable = true
    )
    private void replaceBlurredScreenBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
       if (blurModule.isToggled() && this.minecraft.level != null && this.minecraft.player != null) {
-         this.renderMenuBackground(graphics);
+         this.extractMenuBackground(graphics);
          callback.cancel();
       }
    }

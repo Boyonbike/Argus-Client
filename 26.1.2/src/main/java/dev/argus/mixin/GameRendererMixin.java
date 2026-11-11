@@ -38,6 +38,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.ScreenEffectRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer.FogMode;
@@ -97,7 +98,7 @@ public abstract class GameRendererMixin {
    }
 
    @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-   private void suppressHurtCamera(PoseStack poses, float partialTick, CallbackInfo callback) {
+   private void suppressHurtCamera(CameraRenderState cameraState, PoseStack poses, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.hurtCamSetting.getValue()) {
          callback.cancel();
       }
@@ -134,7 +135,7 @@ public abstract class GameRendererMixin {
       method = "renderLevel",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(Lnet/minecraft/client/renderer/state/level/CameraRenderState;FLorg/joml/Matrix4fc;)V")
    )
-   private boolean shouldRenderHands(GameRenderer renderer, float partialTick, boolean ignoredHandFlag, Matrix4f projectionMatrix) {
+   private boolean shouldRenderHands(GameRenderer renderer, CameraRenderState cameraState, float partialTick, Matrix4fc projectionMatrix) {
       return !shader.isToggled() || !shader.handsSetting.getValue();
    }
 

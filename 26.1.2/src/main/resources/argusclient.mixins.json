@@ -85,7 +85,6 @@
         "ScreenAccessor",
         "Vec3Accessor",
         "ServerboundMoveVehiclePacketAccessor",
-        "ClientboundSetTimePacketAccessor",
         "ChunkAwareBlockCollisionSweeperVoxelShapeMixin",
         "ProtocolTranslatorMixin",
         "ProtocolVersionMixin",
@@ -233,7 +232,6 @@
         "TridentItemModuleBindings",
         "TextureTransformModuleBindings",
         "RenderTypeColorModuleBindings",
-        "MaterialModuleBindings",
         "MobModuleBindings",
         "PlayerModuleBindings"
     ],

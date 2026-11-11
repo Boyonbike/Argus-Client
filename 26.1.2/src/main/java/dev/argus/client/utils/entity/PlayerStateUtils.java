@@ -40,7 +40,6 @@ import net.minecraft.world.phys.Vec3;
 
 public final class PlayerStateUtils implements ClientAccess {
    private static final float[] BODY_SAMPLE_HEIGHTS;
-   private static final ItemStack ENDER_PEARL_STACK = new ItemStack(Items.ENDER_PEARL);
 
    public static Direction getMovementDirection() {
       ClientInput inputSnapshot = ClientAccess.argusclientMinecraft.player.input;
@@ -184,7 +183,7 @@ public final class PlayerStateUtils implements ClientAccess {
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       ItemCooldowns cooldownsSnapshot = player.getCooldowns();
       float partialTick = partialTickCount;
-      ItemStack pearlStack = ENDER_PEARL_STACK;
+      ItemStack pearlStack = Items.ENDER_PEARL.getDefaultInstance();
       return cooldownsSnapshot.getCooldownPercent(pearlStack, partialTick) > 0.0;
    }
 

@@ -17,8 +17,8 @@ public interface GameRendererAccessor {
    GlobalSettingsUniform getGlobalSettings();
 
    @Invoker("bobView")
-   void argusclient$bobView(PoseStack var1, float var2);
+   void argusclient$bobView(net.minecraft.client.renderer.state.level.CameraRenderState var1, PoseStack var2);
 
    @Invoker("bobHurt")
-   void argusclient$bobViewHurt(PoseStack var1, float var2);
+   void argusclient$bobViewHurt(net.minecraft.client.renderer.state.level.CameraRenderState var1, PoseStack var2);
 }

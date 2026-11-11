@@ -16,7 +16,12 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 
 public class EnchantmentListComponent extends AbstractItemListComponent<EnchantmentListEntry> {
-   static final ItemStack ENCHANTED_BOOK_ICON = Items.ENCHANTED_BOOK.getDefaultInstance();
+   private static ItemStack enchantedBookIcon;
+
+   private static ItemStack enchantedBookIcon() {
+      if (enchantedBookIcon == null) enchantedBookIcon = Items.ENCHANTED_BOOK.getDefaultInstance();
+      return enchantedBookIcon;
+   }
 
    public EnchantmentListComponent(Panel panel, Predicate<EnchantmentListEntry> filter) {
       super(panel, filter, 256);
@@ -47,10 +52,10 @@ public class EnchantmentListComponent extends AbstractItemListComponent<Enchantm
    }
 
    public ItemStack getEntryIcon(EnchantmentListEntry unusedEntry) {
-      return ENCHANTED_BOOK_ICON;
+      return enchantedBookIcon();
    }
 
    static {
-      ENCHANTED_BOOK_ICON.enchant(EnchantmentUtils.getHolder(Enchantments.FORTUNE), 1337);
+      enchantedBookIcon().enchant(EnchantmentUtils.getHolder(Enchantments.FORTUNE), 1337);
    }
 }

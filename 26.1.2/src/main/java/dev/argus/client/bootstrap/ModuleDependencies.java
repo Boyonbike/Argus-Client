@@ -86,7 +86,6 @@ import dev.argus.mixin.HoneyBlockModuleBindings;
 import dev.argus.mixin.LevelModuleBindings;
 import dev.argus.mixin.LiquidBlockModuleBindings;
 import dev.argus.mixin.LivingEntityModuleBindings;
-import dev.argus.mixin.MaterialModuleBindings;
 import dev.argus.mixin.MinecraftModuleBindings;
 import dev.argus.mixin.MobModuleBindings;
 import dev.argus.mixin.PlayerModuleBindings;
@@ -203,7 +202,6 @@ public final class ModuleDependencies {
       TridentItemModuleBindings.bind(registry);
       TextureTransformModuleBindings.bind(registry);
       RenderTypeColorModuleBindings.bind(registry);
-      MaterialModuleBindings.bind(registry);
       MobModuleBindings.bind(registry);
       PlayerModuleBindings.bind(registry);
    }

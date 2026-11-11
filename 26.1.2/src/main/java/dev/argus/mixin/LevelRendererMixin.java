@@ -120,6 +120,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback
    ) {
       PoseStack poses = new PoseStack();
@@ -184,6 +185,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback,
       @Local FrameGraphBuilder frameGraph
    ) {
@@ -243,6 +245,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback
    ) {
       RenderUtils.setPartialTick(deltaTracker.getGameTimeDeltaPartialTick(false));
@@ -342,6 +345,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback
    ) {
       if (freecam.shouldHideHands() && IrisShaderBridge.isHandRendererAvailable()) {
@@ -361,6 +365,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback
    ) {
       if (freecam.shouldHideHands() && this.savedHideGui != null) {
@@ -385,6 +390,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       GpuBufferSlice inputBuffer,
       Vector4f inputColor,
       boolean renderFlag2,
+      net.minecraft.client.renderer.chunk.ChunkSectionsToRender sections,
       CallbackInfo callback,
       @Local Frustum frustum
    ) {
