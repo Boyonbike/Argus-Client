@@ -12,6 +12,22 @@ class PortConfigCompatibilityTest {
    @TempDir
    Path temp;
 
+   @Test void loadsTwentySixOneTwoConfigFixture() throws Exception {
+      Path file = temp.resolve("config-26.1.2.json");
+      Files.writeString(file, """
+         {"client":"argusclient","category":"all",
+          "AutoCrystal":{"enabled":true,"settings":{"Place":"NCP","Rotate":true}},
+          "HUD":{"enabled":true,"settings":{"Watermark":true}}}
+         """);
+
+      var source = ExternalConfigReader.read(file);
+
+      assertEquals(2, source.modules().size());
+      assertTrue(source.modules().get(0).enabled());
+      assertEquals("NCP", source.modules().get(0).settings().get("Place").getAsString());
+      assertTrue(source.modules().get(0).settings().get("Rotate").getAsBoolean());
+   }
+
    @Test void loadsArgusOneTwentyOneElevenConfigFixture() throws Exception {
       Path file = temp.resolve("config.json");
       Files.writeString(file, """
