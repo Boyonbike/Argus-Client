@@ -58,6 +58,7 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -183,8 +184,10 @@ public class ESPModule extends Module {
       this.healthColorSetting.setConfigName("HealthColor");
 
       this.targets = new TargetSettings(this, TargetSettings.Kind.BLOCKS);
+      this.targets.specific.forEsp();
+      this.targets.extraMigration = this::migrateExtras;
 
-      this.labelsSetting = this.add(new BooleanSetting("ItemLabels", true).markAsGroup());
+      this.labelsSetting = this.add(new BooleanSetting("ItemLabels", true, ignored -> false).markAsGroup());
       this.modeSetting = this.add(new EnumSetting<>("Mode", ESPModeChoice.PLAIN).dependsOn(this.labelsSetting));
       this.modeSetting.setConfigName("ItemsMode");
       this.groupSetting = this.add(new BooleanSetting("Group", false, ignored -> this.showsItemText()).dependsOn(this.labelsSetting));
@@ -197,7 +200,7 @@ public class ESPModule extends Module {
          new NumberSetting<>("Scale", 1.0F, 0.5F, 2.0F, ignored -> this.modeSetting.getValue() == ESPModeChoice.TEXT).dependsOn(this.labelsSetting)
       );
 
-      this.othersSetting = this.add(new BooleanSetting("Others", false).markAsGroup());
+      this.othersSetting = this.add(new BooleanSetting("Others", false, ignored -> false).markAsGroup());
       this.pearlsSetting = this.add(new BooleanSetting("Pearls", false, ignored -> !this.isEntity2D()).markVisibilityDependency().dependsOn(this.othersSetting));
       this.pearlFillSetting = this.add(new ColorSetting("Fill", new Color(364747263, true)).dependsOn(this.othersSetting, this.pearlsSetting));
       this.pearlFillSetting.setConfigName("PearlsFill");
@@ -288,7 +291,7 @@ public class ESPModule extends Module {
 
       // Light-level spots only change when blocks or light change, so scan them every few ticks
       // instead of re-checking ~7,000 blocks on every rendered frame.
-      if (this.lightSetting.getValue()) {
+      if (this.lightRule() != null) {
          if (this.pruneTicks % 4 == 0 || this.lightSpots.isEmpty() && this.lightSpotsStale) {
             this.rebuildLightSpots();
          }
@@ -351,19 +354,19 @@ public class ESPModule extends Module {
          this.renderEntityBoxes(event);
       }
 
-      List<ESPItemGroup> itemGroups = new ArrayList<>();
+      // Stacked labels are gathered per target group, since each group has its own label style.
+      Map<RuleSettings, List<ESPItemGroup>> itemGroups = new IdentityHashMap<>();
       Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
-      boolean labels = this.modeSetting.getValue() != ESPModeChoice.PLAIN;
       for (Entity entity : this.renderEntities) {
+         RuleSettings settings = this.settingsFor(entity);
          if (entity instanceof ItemEntity item && TargetMatcher.kindOf(this.targets, item, camera) == TargetSettings.Kind.ITEMS) {
             TargetMatcher.alertItem(this.targets, item);
-
-            if (labels) {
-               this.addItemLabel(event, item, itemGroups);
+            if (settings != null && settings.itemLook() != RuleSettings.ItemLook.BOX) {
+               this.addItemLabel(event, item, settings, itemGroups);
             }
          }
 
-         if (this.mobOwnerSetting.getValue()) {
+         if (settings != null && settings.showOwner() && TargetMatcher.kindOf(this.targets, entity, camera) != null) {
             String owner = this.renderHelper.getOwnerName(entity);
             if (owner != null) {
                Vec3 position = entity.getPosition(event.getPartialTick()).add(0.0, 0.2, 0.0);
@@ -376,14 +379,18 @@ public class ESPModule extends Module {
          }
       }
 
-      if (this.groupSetting.getValue()) {
-         this.renderGroupedItemLabels(event, itemGroups);
+      for (Entry<RuleSettings, List<ESPItemGroup>> entry : itemGroups.entrySet()) {
+         this.renderGroupedItemLabels(event, entry.getValue(), entry.getKey());
       }
 
-      if (this.chorusSetting.getValue()) {
+      SpecificRules.Rule chorus = this.targets.specific.extra(SpecificRules.CHORUS_TELEPORTS);
+      if (chorus != null) {
+         RuleSettings settings = this.targets.specific.settings(chorus);
          synchronized (this.chorusPositions) {
             for (Entry<Vec3, Long> entry : this.chorusPositions.entrySet()) {
-               this.renderHelper.drawLabel(event, "Player teleport", entry.getKey(), 1.0F, this.chorusTextSetting.getValue(), null);
+               if (settings.inRange(entry.getKey().distanceToSqr(camera))) {
+                  this.renderHelper.drawLabel(event, "Player teleport", entry.getKey(), 1.0F, settings.color.getValue(), null);
+               }
             }
          }
       }
@@ -409,40 +416,31 @@ public class ESPModule extends Module {
       }
    }
 
-   /** Whether dropped items get boxes (not just text labels). */
-   boolean drawsItemBoxes() {
-      return this.modeSetting.getValue() != ESPModeChoice.TEXT;
+   /** The target group settings an entity falls under, or null. */
+   private RuleSettings settingsFor(Entity entity) {
+      SpecificRules.Rule rule = this.targets.specific.forEntity(entity);
+      return rule == null ? null : this.targets.specific.settings(rule);
    }
 
-   boolean drawsPearls() {
-      return this.pearlsSetting.getValue() && !this.isEntity2D();
+   /** Whether a dropped item gets a box (its group may show only a label). */
+   boolean drawsItemBox(Entity entity) {
+      RuleSettings settings = this.settingsFor(entity);
+      return settings == null || settings.itemLook() != RuleSettings.ItemLook.LABEL;
    }
 
-   boolean drawsExperience() {
-      return this.experienceSetting.getValue();
-   }
-
-   Color pearlColor(boolean fill) {
-      return (fill ? this.pearlFillSetting : this.pearlOutlineSetting).getValue();
-   }
-
-   Color experienceColor() {
-      return this.experienceColorSetting.getValue();
-   }
-
-   private void addItemLabel(WorldRenderEvent event, ItemEntity item, List<ESPItemGroup> groups) {
-      if (!this.groupSetting.getValue()) {
+   private void addItemLabel(WorldRenderEvent event, ItemEntity item, RuleSettings settings, Map<RuleSettings, List<ESPItemGroup>> stacks) {
+      if (!settings.stackLabels()) {
          String text = item.getItem().getHoverName().getString();
          if (item.getItem().getCount() > 1) {
             text = text + " x" + item.getItem().getCount();
          }
 
          Vec3 position = item.getPosition(event.getPartialTick()).add(0.0, 0.6F, 0.0);
-         Color background = this.modeSetting.getValue() == ESPModeChoice.TEXT ? this.backgroundSetting.getValue() : null;
-         this.renderHelper.drawLabel(event, text, position, this.scaleSetting.getValue(), this.itemsTextSetting.getValue(), background);
+         this.renderHelper.drawLabel(event, text, position, settings.labelScale(), settings.labelColor(), settings.labelBackground());
          return;
       }
 
+      List<ESPItemGroup> groups = stacks.computeIfAbsent(settings, ignored -> new ArrayList<>());
       for (ESPItemGroup group : groups) {
          if (group.tryAddItem(item)) {
             return;
@@ -452,23 +450,22 @@ public class ESPModule extends Module {
       groups.add(new ESPItemGroup(item));
    }
 
-   private void renderGroupBackground(PoseStack poses, ESPItemGroup group, double scale, float height) {
+   private void renderGroupBackground(PoseStack poses, ESPItemGroup group, double scale, float height, Color background) {
       Vec3 position = group.getRenderBounds().getCenter().add(0.0, 0.5, 0.0);
-      RenderUtils.INSTANCE.drawWorldRect(poses, position, 0.0F, 0.0F, group.getMaximumTextWidth() + 1.0F, height, scale, this.backgroundSetting.getValue());
+      RenderUtils.INSTANCE.drawWorldRect(poses, position, 0.0F, 0.0F, group.getMaximumTextWidth() + 1.0F, height, scale, background);
    }
 
-   private void renderGroupedItemLabels(WorldRenderEvent event, List<ESPItemGroup> groups) {
+   private void renderGroupedItemLabels(WorldRenderEvent event, List<ESPItemGroup> groups, RuleSettings settings) {
+      Color background = settings.labelBackground();
       Vec3 camera = argusclientMinecraft.gameRenderer.getMainCamera().position();
       for (ESPItemGroup group : groups) {
          Vec3 labelPosition = group.getRenderBounds().getCenter().add(0.0, 0.5, 0.0);
-         double labelScale = MathUtils.getDistanceScale(camera, labelPosition, this.scaleSetting.getValue().floatValue());
+         double labelScale = MathUtils.getDistanceScale(camera, labelPosition, settings.labelScale());
          float lineHeight = FontRenderer.INSTANCE.getHeight();
-         if (this.modeSetting.getValue() == ESPModeChoice.TEXT) {
-            if (group.getItemCounts().size() == 1) {
-               this.renderGroupBackground(event.getPoseStack(), group, labelScale, lineHeight);
-            } else {
-               this.renderGroupBackground(event.getPoseStack(), group, labelScale, lineHeight);
-               this.renderGroupBackground(event.getPoseStack(), group, labelScale, (group.getItemCounts().size() - 1) * -lineHeight - 2.0F);
+         if (background != null) {
+            this.renderGroupBackground(event.getPoseStack(), group, labelScale, lineHeight, background);
+            if (group.getItemCounts().size() > 1) {
+               this.renderGroupBackground(event.getPoseStack(), group, labelScale, (group.getItemCounts().size() - 1) * -lineHeight - 2.0F, background);
             }
          }
 
@@ -476,7 +473,7 @@ public class ESPModule extends Module {
          for (Entry<String, Integer> itemEntry : group.getItemCounts().entrySet()) {
             String text = ESPItemGroup.formatItemCount(itemEntry.getKey(), itemEntry.getValue());
             float textX = -FontRenderer.INSTANCE.getWidth(text) / 2.0F;
-            RenderUtils.INSTANCE.drawWorldText(event.getPoseStack(), text, labelPosition, 0.0F, 0.0F, textX, lineY, labelScale, this.itemsTextSetting.getValue(), true);
+            RenderUtils.INSTANCE.drawWorldText(event.getPoseStack(), text, labelPosition, 0.0F, 0.0F, textX, lineY, labelScale, settings.labelColor(), true);
             lineY -= lineHeight;
          }
       }
@@ -486,9 +483,15 @@ public class ESPModule extends Module {
 
    @EventHandler
    private void onLightRender(WorldRenderEvent.BeforeBufferSource event) {
-      if (this.lightSetting.getValue() && !this.isWorldUnavailable()) {
+      if (this.lightRule() != null && !this.isWorldUnavailable()) {
          this.renderLightLevels(event);
       }
+   }
+
+   /** The settings of the group holding Light levels, or null when it isn't on. */
+   private RuleSettings lightRule() {
+      SpecificRules.Rule rule = this.targets.specific.extra(SpecificRules.LIGHT_LEVELS);
+      return rule == null ? null : this.targets.specific.settings(rule);
    }
 
    private void rebuildLightSpots() {
@@ -504,7 +507,8 @@ public class ESPModule extends Module {
       BlockPos center = BlockPos.containing(argusclientMinecraft.player.getEyePosition());
       MutableBlockPos position = new MutableBlockPos();
       MutableBlockPos above = new MutableBlockPos();
-      int radius = LIGHT_RADIUS;
+      RuleSettings light = this.lightRule();
+      int radius = light == null || light.unlimited() ? LIGHT_RADIUS : Math.min(LIGHT_RADIUS, Math.round(light.range.getValue()));
       double radiusSquared = (double)radius * radius;
       for (int dx = -radius; dx <= radius; dx++) {
          for (int dy = -radius; dy <= radius; dy++) {
@@ -541,7 +545,9 @@ public class ESPModule extends Module {
       Vec3 camera = argusclientMinecraft.getEntityRenderDispatcher().camera.position();
       PoseStack poses = event.getPoseStack();
       BufferBuilder lines = Tesselator.getInstance().begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
-      int red = Color.red.hashCode();
+      RuleSettings light = this.lightRule();
+      Color mark = light == null ? Color.red : light.color.getValue();
+      int red = mark.getRGB();
       for (int i = 0; i < this.lightSpots.size(); i++) {
          long packed = this.lightSpots.getLong(i);
          int x = BlockPos.getX(packed);
@@ -550,7 +556,7 @@ public class ESPModule extends Module {
          double distance = Math.sqrt(camera.distanceToSqr(x + 0.5, y + 0.5, z + 0.5));
          int color = red;
          if (distance >= 8.0) {
-            color = ColorUtils.toArgb(Color.red, 1.0F - (float)Mth.clamp((distance - 8.0) / 2.0, 0.0, 1.0));
+            color = ColorUtils.toArgb(mark, 1.0F - (float)Mth.clamp((distance - 8.0) / 2.0, 0.0, 1.0));
          }
 
          poses.pushPose();
@@ -673,6 +679,65 @@ public class ESPModule extends Module {
       }
 
       this.ruleMeshes.clear();
+   }
+
+   /**
+    * Moves ESP's old Item labels and Others options into the target list, once: pearls and XP bottles become entity
+    * groups, light levels and chorus teleports become extras, and the label and owner options go onto every group they
+    * apply to.
+    */
+   private void migrateExtras() {
+      SpecificTargets specific = this.targets.specific;
+      SpecificRules rules = specific.rules();
+      java.util.Map<SpecificRules.Rule, Color> colours = new java.util.IdentityHashMap<>();
+      if (this.pearlsSetting.getValue()) {
+         this.addMigrated(rules, colours, SpecificRules.Type.ENTITY, "minecraft:ender_pearl", SpecificRules.Category.ENTITIES, this.pearlOutlineSetting.getValue());
+      }
+
+      if (this.experienceSetting.getValue()) {
+         this.addMigrated(rules, colours, SpecificRules.Type.ENTITY, "minecraft:experience_bottle", SpecificRules.Category.ENTITIES, this.experienceColorSetting.getValue());
+      }
+
+      if (this.lightSetting.getValue()) {
+         this.addMigrated(rules, colours, SpecificRules.Type.EXTRA, SpecificRules.LIGHT_LEVELS, SpecificRules.Category.EXTRAS, Color.red);
+      }
+
+      if (this.chorusSetting.getValue()) {
+         this.addMigrated(rules, colours, SpecificRules.Type.EXTRA, SpecificRules.CHORUS_TELEPORTS, SpecificRules.Category.EXTRAS, this.chorusTextSetting.getValue());
+      }
+
+      specific.changed();
+      RuleSettings.ItemLook look = switch (this.modeSetting.getValue()) {
+         case TEXT -> RuleSettings.ItemLook.LABEL;
+         case BOTH -> RuleSettings.ItemLook.BOTH;
+         default -> RuleSettings.ItemLook.BOX;
+      };
+      for (SpecificRules.Rule rule : rules.all()) {
+         RuleSettings settings = specific.settings(rule);
+         Color colour = colours.get(rule);
+         if (colour != null) {
+            settings.color.setValue(colour);
+         }
+
+         if (settings instanceof RuleSettings.EntityRule entities) {
+            entities.look.setValue(look);
+            entities.stack.setValue(this.groupSetting.getValue());
+            entities.textColor.setValue(this.itemsTextSetting.getValue());
+            entities.background.setValue(this.backgroundSetting.getValue());
+            entities.scale.setValue(this.scaleSetting.getValue());
+            entities.owner.setValue(this.mobOwnerSetting.getValue());
+         }
+      }
+
+      specific.changed();
+   }
+
+   private void addMigrated(SpecificRules rules, java.util.Map<SpecificRules.Rule, Color> colours, SpecificRules.Type type, String id,
+                            SpecificRules.Category category, Color colour) {
+      SpecificRules.Rule rule = rules.add(List.of(new SpecificRules.Member(type, id, category)));
+      if (rule != null) {
+         colours.put(rule, colour);
+      }
    }
 
    // ---- config migration ------------------------------------------------------------------------------------------

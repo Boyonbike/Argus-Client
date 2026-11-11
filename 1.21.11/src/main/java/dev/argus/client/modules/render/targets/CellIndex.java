@@ -140,6 +140,16 @@ public final class CellIndex<T> {
       }
    }
 
+   /** Marks the cell holding a position for a rebuild, if it exists (e.g. a neighbour across its border changed). */
+   public void touch(long packed) {
+      CellKey key = keyOf(packed);
+      Cell<T> cell = this.cells.get(key);
+      if (cell != null) {
+         cell.revision++;
+         this.enqueue(key);
+      }
+   }
+
    public T get(long packed) {
       Cell<T> cell = this.cells.get(keyOf(packed));
       return cell == null ? null : cell.entries.get(packed);

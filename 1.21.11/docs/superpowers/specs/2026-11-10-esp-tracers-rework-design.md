@@ -208,3 +208,30 @@ ESP and Tracers now show one **Targets** card at the top of the page. The Player
   chosen only by hostile/neutral/passive have no single thing to carry over. The cards are then switched off.
 - **Drawing:** unchanged from before. Blocks in groups are scanned by the block index and drawn in ESP's retained
   meshes (one cache per range in use). Tracers draws them in its per-tick block pass.
+
+### ESP's labels and extras moved into the groups (2026-11-11)
+
+- **Pearls and XP bottles** are ordinary entity types now (search "ender pearl", "bottle o' enchanting"); their
+  special toggles and fill/outline colours are gone. Tracers gets them too.
+- **Item labels** are per group, on ESP's page only: Item display (Box / Label / Both), Stack labels, Label text,
+  Label background and Label scale. They appear in Entities groups that hold dropped items.
+- **Show owner** (owner names above tamed mobs and thrown pearls) is a Mobs/Entities group setting, ESP only.
+- **Extras:** Light levels and Chorus teleports are searchable (filter "Extras"; words like "light", "spawn",
+  "chorus"). Their group's colour colours the marks/labels, and its range limits them (light levels scan at most 12
+  blocks). Tracers draws lines to chorus teleport spots; light levels are ESP only, and its row says so on Tracers' page.
+- **Migration:** once, after the card migration, ESP's old Pearls, Exp, Light and Chorus toggles become groups with
+  their colours, and the old label mode, stacking, colours, scale and mob owner options are copied onto every
+  Mobs/Entities group. The Item labels and Others sections are then hidden.
+
+### Generic search terms and very common blocks (2026-11-11)
+
+- **Generic terms:** words like "storage", "shulker", "ores", "beds", "spawner", "weapons", "armour", "tools",
+  "valuables", "hostile", "passive" and "vehicles" show a tick-all row for the whole set above the matches. Enter with
+  nothing ticked adds the first set.
+- **Very common blocks (netherrack, stone):** the block index still holds at most 300,000 positions, but it now
+  scans chunks nearest first. When full, a nearer chunk pushes out the farthest stored ones, and left-out chunks are
+  rescanned once a second when they become nearer. Rows of block groups say "too many to show all, nearest shown"
+  while that happens.
+- **Meshes:** faces shared by two drawn full blocks of the same colour are left out, so solid areas cost little.
+  Removing a block rebuilds neighbouring cells across the border. Only real models (chests, shulkers…) count
+  against the 128-models-per-frame limit; plain boxes are bounded by the time budget only.

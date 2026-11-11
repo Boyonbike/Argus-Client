@@ -102,6 +102,10 @@ public final class TargetSettings {
    public final SpecificTargets specific;
    /** Set once the cards' choices have moved into the target list (see {@link TargetLinks#migrate}). */
    public final Setting<Boolean> migrated;
+   /** Set once a module's own extra options have moved into the list too (see {@link #extraMigration}). */
+   public final Setting<Boolean> migratedExtras;
+   /** Moves a module's own options into the list once, after the cards (ESP: pearls, XP, labels, owners, extras). */
+   public Runnable extraMigration;
    private final List<Group> groups;
 
    /** Adds the four cards to the module, in order, at the current end of its settings. */
@@ -114,6 +118,8 @@ public final class TargetSettings {
       this.specific = new SpecificTargets(module);
       this.migrated = module.add(new BooleanSetting("TargetsMigrated", false, ignored -> false));
       this.migrated.setConfigName("TargetsMigrated");
+      this.migratedExtras = module.add(new BooleanSetting("TargetsMigratedExtras", false, ignored -> false));
+      this.migratedExtras.setConfigName("TargetsMigratedExtras");
    }
 
    public TargetSettings(Module module, Kind... enabledByDefault) {

@@ -235,6 +235,13 @@ public final class TargetLinks implements ClientAccess {
     */
    static void migrate(TargetSettings targets) {
       if (targets.migrated.getValue()) {
+         if (!targets.migratedExtras.getValue()) {
+            targets.migratedExtras.setValue(true);
+            if (targets.extraMigration != null) {
+               targets.extraMigration.run();
+            }
+         }
+
          return;
       }
 

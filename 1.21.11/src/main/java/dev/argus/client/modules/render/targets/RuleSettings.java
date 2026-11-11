@@ -36,8 +36,11 @@ import net.minecraft.world.phys.Vec3;
  *   <li><b>Entities:</b> colour, ignore vehicles, sound alert, and for dropped items enchants (gear only), distance
  *       colour and chat alert; range;</li>
  *   <li><b>Blocks:</b> colour (custom or auto), opened containers and natural structures (containers only), height,
- *       ominous vaults (vaults only), sound alert, range.</li>
+ *       ominous vaults (vaults only), sound alert, range;</li>
+ *   <li><b>Extras</b> (light levels, chorus teleports): colour, range.</li>
  * </ul>
+ * On ESP's page, Mobs and Entities groups also get ESP's label settings: how dropped items show (box, label or both),
+ * label style, and owner names above tamed mobs and pearls. Tracers never draws those, so its page leaves them out.
  * They are real settings (so the page draws them like any card), saved inside the rule as JSON.
  */
 public abstract class RuleSettings implements SpecificRules.Body {
@@ -55,15 +58,63 @@ public abstract class RuleSettings implements SpecificRules.Body {
       this.range.setDescription("How far away this target is shown. Outside it, it's hidden even if a card below would show it.");
    }
 
-   /** Settings for a group of this category; {@code targets} are its resolved blocks, entity types and items. */
-   static RuleSettings of(SpecificRules.Category category, List<Object> targets, int defaultColor) {
+   /**
+    * Settings for a group of this category; {@code targets} are its resolved blocks, entity types and items, and
+    * {@code esp} adds ESP's label settings.
+    */
+   static RuleSettings of(SpecificRules.Category category, List<Object> targets, int defaultColor, boolean esp) {
       return switch (category) {
-         case ALL -> new AllRule(defaultColor);
+         case ALL, EXTRAS -> new AllRule(defaultColor);
          case PLAYERS -> new PlayerRule(defaultColor);
-         case MOBS -> new EntityRule(defaultColor, List.of());
-         case ENTITIES -> new EntityRule(defaultColor, targets);
+         case MOBS -> new EntityRule(defaultColor, List.of(), esp);
+         case ENTITIES -> new EntityRule(defaultColor, targets, esp);
          case BLOCKS -> new BlockRule(defaultColor, targets);
       };
+   }
+
+   /** How a group's dropped items show in ESP. */
+   public enum ItemLook implements dev.argus.client.settings.NamedEntry {
+      BOX("Box"),
+      LABEL("Label"),
+      BOTH("Both");
+
+      private final String name;
+
+      ItemLook(String name) {
+         this.name = name;
+      }
+
+      @Override
+      public String getName() {
+         return this.name;
+      }
+   }
+
+   // ESP's label options; groups without them draw a box and no label.
+
+   public ItemLook itemLook() {
+      return ItemLook.BOX;
+   }
+
+   public boolean stackLabels() {
+      return false;
+   }
+
+   public Color labelColor() {
+      return Color.WHITE;
+   }
+
+   /** The label's background, or null for none. */
+   public Color labelBackground() {
+      return null;
+   }
+
+   public float labelScale() {
+      return 1.0F;
+   }
+
+   public boolean showOwner() {
+      return false;
    }
 
    protected final <S extends Setting<?>> S add(S setting, String description) {
@@ -222,8 +273,14 @@ public abstract class RuleSettings implements SpecificRules.Body {
       public final Setting<Float> farDistance;
       public final Setting<Boolean> chatAlert;
       public final Setting<Boolean> coords;
+      public final Setting<ItemLook> look;
+      public final Setting<Boolean> stack;
+      public final Setting<Color> textColor;
+      public final Setting<Color> background;
+      public final Setting<Float> scale;
+      public final Setting<Boolean> owner;
 
-      EntityRule(int defaultColor, List<Object> targets) {
+      EntityRule(int defaultColor, List<Object> targets, boolean esp) {
          super(defaultColor);
          boolean items = targets.stream().anyMatch(target -> target instanceof Item);
          boolean gear = targets.stream().anyMatch(target -> target instanceof Item item && ItemRules.categoryOf(item.getDefaultInstance()) != ItemRules.Category.OTHER);
@@ -245,6 +302,18 @@ public abstract class RuleSettings implements SpecificRules.Body {
          );
          this.chatAlert = this.add(new BooleanSetting("ChatAlert", false, ignored -> items), "Say in chat when a dropped one is found.");
          this.coords = this.add(new BooleanSetting("Coords", true, ignored -> items && this.chatAlert.getValue()), "Include where it is in the chat alert.");
+         this.look = this.add(new EnumSetting<>("ItemDisplay", ItemLook.BOX, ignored -> esp && items),
+            "Box: outline the item. Label: show its name and count. Both: box and label.");
+         this.stack = this.add(new BooleanSetting("StackLabels", false, ignored -> esp && items && this.look.getValue() != ItemLook.BOX),
+            "Put nearby dropped items' names in one label.");
+         this.textColor = this.add(new ColorSetting("LabelText", new Color(-1, true), ignored -> esp && items && this.look.getValue() != ItemLook.BOX),
+            "The label's text colour.");
+         this.background = this.add(new ColorSetting("LabelBackground", new Color(657930, true), ignored -> esp && items && this.look.getValue() == ItemLook.LABEL),
+            "The label's background.");
+         this.scale = this.add(new NumberSetting<>("LabelScale", 1.0F, 0.5F, 2.0F, ignored -> esp && items && this.look.getValue() == ItemLook.LABEL),
+            "The label's size.");
+         this.owner = this.add(new BooleanSetting("ShowOwner", false, ignored -> esp && others),
+            "Show the owner's name above tamed mobs and thrown pearls.");
          this.ignoreVehicles = this.add(new BooleanSetting("IgnoreVehicles", false, ignored -> others), "Skip ones something is riding.");
          this.sound = this.add(new BooleanSetting("Sound", false, ignored -> others), "Play an alert when one appears.");
          this.addRange();
@@ -277,6 +346,36 @@ public abstract class RuleSettings implements SpecificRules.Body {
       @Override
       public boolean sound() {
          return this.sound.getValue();
+      }
+
+      @Override
+      public ItemLook itemLook() {
+         return this.look.getValue();
+      }
+
+      @Override
+      public boolean stackLabels() {
+         return this.stack.getValue();
+      }
+
+      @Override
+      public Color labelColor() {
+         return this.textColor.getValue();
+      }
+
+      @Override
+      public Color labelBackground() {
+         return this.look.getValue() == ItemLook.LABEL ? this.background.getValue() : null;
+      }
+
+      @Override
+      public float labelScale() {
+         return this.look.getValue() == ItemLook.LABEL ? this.scale.getValue() : 1.0F;
+      }
+
+      @Override
+      public boolean showOwner() {
+         return this.owner.getValue();
       }
 
       @Override

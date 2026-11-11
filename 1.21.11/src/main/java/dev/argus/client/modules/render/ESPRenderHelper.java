@@ -121,48 +121,28 @@ public class ESPRenderHelper implements ClientAccess {
       }
    }
 
-   /** Whether an entity is drawn: a target in one of the cards, or an ESP extra (pearls, XP bottles), in view. */
+   /** Whether an entity is drawn: in one of the target groups (dropped items only if their group draws a box), and in view. */
    protected boolean shouldRenderEntity(Entity entity) {
       if (entity == null || entity.getBoundingBox() == null || !RotationManager.isVisible(entity.getBoundingBox().inflate(0.1))) {
          return false;
       }
 
-      if (entity instanceof ThrownEnderpearl) {
-         return this.module.drawsPearls();
-      }
-
-      if (entity instanceof ThrownExperienceBottle) {
-         return this.module.drawsExperience();
-      }
-
       Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
       TargetSettings.Kind kind = TargetMatcher.kindOf(this.module.targets, entity, camera);
       if (kind == TargetSettings.Kind.ITEMS) {
-         return this.module.drawsItemBoxes();
+         return this.module.drawsItemBox(entity);
       }
 
       return kind != null;
    }
 
    protected Color getBaseEntityColor(Entity entity) {
-      if (entity instanceof ThrownExperienceBottle) {
-         return this.module.experienceColor();
-      }
-
-      if (entity instanceof ThrownEnderpearl) {
-         return this.module.pearlColor(false);
-      }
-
       Vec3 camera = ClientAccess.argusclientMinecraft.gameRenderer.getMainCamera().position();
       TargetSettings.Kind kind = TargetMatcher.kindOf(this.module.targets, entity, camera);
       return kind == null ? Color.white : TargetMatcher.entityColor(this.module.targets, kind, entity, camera);
    }
 
    protected Color getEntityColor(Entity entity, boolean fill) {
-      if (entity instanceof ThrownEnderpearl) {
-         return this.module.pearlColor(fill);
-      }
-
       int color = ARGB.color((fill ? this.module.entityFillSetting : this.module.entityOutlineSetting).getValue(), this.getBaseEntityColor(entity).getRGB());
       float age = Mth.clamp((entity.tickCount + RenderUtils.getPartialTick()) / 12.0F, 0.0F, 1.0F);
       float opacity = age * age * (3.0F - 2.0F * age);

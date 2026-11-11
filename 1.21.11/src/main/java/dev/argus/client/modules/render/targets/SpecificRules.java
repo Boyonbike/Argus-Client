@@ -27,7 +27,9 @@ public final class SpecificRules {
       ITEM("Item"),
       PLAYER("Player"),
       /** All players, friends or enemies (ids {@link #ALL_PLAYERS}, {@link #FRIENDS}, {@link #ENEMIES}). */
-      GROUP("Players");
+      GROUP("Players"),
+      /** Something that isn't a block or entity: {@link #LIGHT_LEVELS} or {@link #CHORUS_TELEPORTS}. */
+      EXTRA("Extra");
 
       private final String title;
 
@@ -43,6 +45,10 @@ public final class SpecificRules {
    public static final String ALL_PLAYERS = "players";
    public static final String FRIENDS = "friends";
    public static final String ENEMIES = "enemies";
+   /** Marks where mobs can spawn (ESP only). */
+   public static final String LIGHT_LEVELS = "light_levels";
+   /** Where players just teleported with chorus fruit. */
+   public static final String CHORUS_TELEPORTS = "chorus_teleports";
 
    /** A group's category, which picks its settings. A group mixing categories is {@link #ALL}. */
    public enum Category {
@@ -50,7 +56,8 @@ public final class SpecificRules {
       BLOCKS("Blocks"),
       PLAYERS("Players"),
       MOBS("Mobs"),
-      ENTITIES("Entities");
+      ENTITIES("Entities"),
+      EXTRAS("Extras");
 
       private final String title;
 

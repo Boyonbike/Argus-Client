@@ -61,6 +61,7 @@ public final class SpecificTargets implements ClientAccess {
             case ENTITY -> this.category == SpecificRules.Category.MOBS ? "Mob" : "Entity";
             case ITEM -> "Dropped item";
             case GROUP -> "Players";
+            case EXTRA -> "Extra";
             default -> this.type.title();
          };
       }
@@ -79,11 +80,19 @@ public final class SpecificTargets implements ClientAccess {
    private SpecificRules.Rule allPlayers;
    private SpecificRules.Rule friends;
    private SpecificRules.Rule enemies;
+   private final Map<String, SpecificRules.Rule> extras = new HashMap<>();
+   /** Whether this is ESP's list (its groups get ESP's label settings). */
+   private boolean esp;
    private final Map<String, Candidate> described = new HashMap<>();
 
    SpecificTargets(Module module) {
       this.store = module.add(new StringSetting("SpecificTargets", "[]", ignored -> false));
       this.store.setConfigName("SpecificTargets");
+   }
+
+   /** Marks this as ESP's list, so its groups get ESP's label settings. Call before the list is first used. */
+   public void forEsp() {
+      this.esp = true;
    }
 
    /** The groups, re-read if the saved setting changed (config load, reset). Edit them, then call {@link #changed()}. */
@@ -181,7 +190,7 @@ public final class SpecificTargets implements ClientAccess {
             }
          }
 
-         RuleSettings settings = RuleSettings.of(rule.category(), targets, PALETTE[i % PALETTE.length]);
+         RuleSettings settings = RuleSettings.of(rule.category(), targets, PALETTE[i % PALETTE.length], this.esp);
          settings.write(json);
          settings.builtFor = signature;
          rule.body = settings;
@@ -197,6 +206,7 @@ public final class SpecificTargets implements ClientAccess {
       this.items.clear();
       this.players.clear();
       this.allPlayers = this.friends = this.enemies = null;
+      this.extras.clear();
       for (SpecificRules.Rule rule : this.rules.all()) {
          if (!rule.enabled) {
             continue;
@@ -215,6 +225,7 @@ public final class SpecificTargets implements ClientAccess {
                   if (target instanceof Item item) this.items.put(item, rule);
                }
                case PLAYER -> this.players.put(member.id().toLowerCase(Locale.ROOT), rule);
+               case EXTRA -> this.extras.put(member.id(), rule);
                case GROUP -> {
                   switch (member.id()) {
                      case SpecificRules.ALL_PLAYERS -> this.allPlayers = rule;
@@ -265,6 +276,12 @@ public final class SpecificTargets implements ClientAccess {
       }
 
       return this.entities.isEmpty() ? null : this.entities.get(entity.getType());
+   }
+
+   /** The enabled group holding an extra ({@link SpecificRules#LIGHT_LEVELS}, {@link SpecificRules#CHORUS_TELEPORTS}), or null. */
+   public SpecificRules.Rule extra(String id) {
+      this.refresh();
+      return this.extras.get(id);
    }
 
    /** The enabled group for a block, or null. */
@@ -383,6 +400,100 @@ public final class SpecificTargets implements ClientAccess {
       return result;
    }
 
+   // ---- generic terms -------------------------------------------------------------------------------------------------
+
+   /** A generic term's matches, e.g. "Storage blocks" with every chest, barrel and shulker box. */
+   public record TagMatch(String name, SpecificRules.Category category, List<Candidate> members) {
+   }
+
+   private record Tag(String name, SpecificRules.Category category, String words, java.util.function.Predicate<Object> test) {
+   }
+
+   private static boolean itemIs(Object target, ItemRules.Category category) {
+      return target instanceof Item item && ItemRules.categoryOf(item.getDefaultInstance()) == category;
+   }
+
+   private static String path(Object target) {
+      String id = target instanceof Block block ? idOf(block) : target instanceof Item item ? idOf(item)
+         : target instanceof EntityType<?> type ? idOf(type) : "";
+      return id.substring(id.indexOf(':') + 1);
+   }
+
+   private static final List<Tag> TAGS = List.of(
+      new Tag("Storage blocks", SpecificRules.Category.BLOCKS, "storage storages container containers chest chests stash stashes loot inventory",
+         target -> target instanceof net.minecraft.world.level.block.ChestBlock || target instanceof net.minecraft.world.level.block.BarrelBlock
+            || target instanceof net.minecraft.world.level.block.EnderChestBlock || target instanceof net.minecraft.world.level.block.ShulkerBoxBlock
+            || target instanceof net.minecraft.world.level.block.HopperBlock || target instanceof net.minecraft.world.level.block.DispenserBlock
+            || target instanceof net.minecraft.world.level.block.AbstractFurnaceBlock || target instanceof net.minecraft.world.level.block.BrewingStandBlock
+            || target instanceof net.minecraft.world.level.block.DecoratedPotBlock || target instanceof net.minecraft.world.level.block.CrafterBlock
+            || target instanceof net.minecraft.world.level.block.ChiseledBookShelfBlock),
+      new Tag("Shulker boxes", SpecificRules.Category.BLOCKS, "shulker shulkers box boxes",
+         target -> target instanceof net.minecraft.world.level.block.ShulkerBoxBlock),
+      new Tag("Dropped shulker boxes", SpecificRules.Category.ENTITIES, "shulker shulkers box boxes dropped",
+         target -> target instanceof Item && path(target).endsWith("shulker_box")),
+      new Tag("Ores", SpecificRules.Category.BLOCKS, "ore ores mining minerals mineral debris",
+         target -> target instanceof Block && (path(target).endsWith("_ore") || path(target).equals("ancient_debris"))),
+      new Tag("Beds", SpecificRules.Category.BLOCKS, "bed beds spawn",
+         target -> target instanceof net.minecraft.world.level.block.BedBlock),
+      new Tag("Spawners", SpecificRules.Category.BLOCKS, "spawner spawners dungeon dungeons trial",
+         target -> target instanceof Block && (path(target).equals("spawner") || path(target).equals("trial_spawner") || path(target).equals("vault"))),
+      new Tag("Weapons", SpecificRules.Category.ENTITIES, "weapon weapons sword swords pvp combat",
+         target -> itemIs(target, ItemRules.Category.SWORD) || itemIs(target, ItemRules.Category.MACE) || itemIs(target, ItemRules.Category.TRIDENT)
+            || target == Items.BOW || target == Items.CROSSBOW || target instanceof Item && path(target).endsWith("_spear")),
+      new Tag("Armour", SpecificRules.Category.ENTITIES, "armour armor gear helmet helmets chestplate chestplates leggings boots",
+         target -> itemIs(target, ItemRules.Category.ARMOR)),
+      new Tag("Tools", SpecificRules.Category.ENTITIES, "tool tools pickaxe pickaxes axe axes shovel shovels hoe hoes",
+         target -> itemIs(target, ItemRules.Category.TOOL)),
+      new Tag("Valuables", SpecificRules.Category.ENTITIES, "valuable valuables loot gear rare",
+         target -> target instanceof Item item && java.util.Arrays.asList(TargetSettings.Items.valuableItems()).contains(item)),
+      new Tag("Hostile mobs", SpecificRules.Category.MOBS, "hostile hostiles monster monsters mob mobs enemy",
+         target -> target instanceof EntityType<?> type && type.getCategory() == MobCategory.MONSTER),
+      new Tag("Passive mobs", SpecificRules.Category.MOBS, "passive animal animals mob mobs friendly",
+         target -> target instanceof EntityType<?> type && type.getCategory() != MobCategory.MONSTER && type.getCategory() != MobCategory.MISC),
+      new Tag("Vehicles", SpecificRules.Category.ENTITIES, "vehicle vehicles boat boats raft rafts minecart minecarts cart carts",
+         target -> target instanceof EntityType<?> && (path(target).contains("boat") || path(target).contains("raft") || path(target).contains("minecart")))
+   );
+
+   /**
+    * Generic terms matching what was typed (at least three letters), each with every thing it covers, e.g. "storage"
+    * gives Storage blocks. {@code only} keeps to one category (null for all).
+    */
+   public static List<TagMatch> searchTags(String input, SpecificRules.Category only) {
+      String query = input == null ? "" : input.trim().toLowerCase(Locale.ROOT);
+      if (query.length() < 3 || query.contains(":")) {
+         return List.of();
+      }
+
+      List<TagMatch> found = new ArrayList<>();
+      for (Tag tag : TAGS) {
+         if (only != null && tag.category() != only) {
+            continue;
+         }
+
+         boolean hit = tag.name().toLowerCase(Locale.ROOT).contains(query);
+         for (String word : tag.words().split(" ")) {
+            hit |= word.startsWith(query);
+         }
+
+         if (!hit) {
+            continue;
+         }
+
+         List<Candidate> members = new ArrayList<>();
+         for (Candidate candidate : catalogue()) {
+            if (candidate.category() == tag.category() && tag.test().test(target(candidate.type(), candidate.id()))) {
+               members.add(candidate);
+            }
+         }
+
+         if (!members.isEmpty()) {
+            found.add(new TagMatch(tag.name(), tag.category(), members));
+         }
+      }
+
+      return found;
+   }
+
    /** Lower is better; -1 means no match. */
    private static int score(Candidate candidate, String query) {
       String name = candidate.name().toLowerCase(Locale.ROOT);
@@ -409,6 +520,8 @@ public final class SpecificTargets implements ClientAccess {
          list.add(groupCandidate(SpecificRules.ALL_PLAYERS));
          list.add(groupCandidate(SpecificRules.FRIENDS));
          list.add(groupCandidate(SpecificRules.ENEMIES));
+         list.add(extraCandidate(SpecificRules.LIGHT_LEVELS));
+         list.add(extraCandidate(SpecificRules.CHORUS_TELEPORTS));
          for (Block block : BuiltInRegistries.BLOCK) {
             if (!block.defaultBlockState().isAir()) {
                list.add(candidate(SpecificRules.Type.BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString()));
@@ -466,6 +579,14 @@ public final class SpecificTargets implements ClientAccess {
       };
    }
 
+   private static Candidate extraCandidate(String id) {
+      return id.equals(SpecificRules.LIGHT_LEVELS)
+         ? new Candidate(SpecificRules.Type.EXTRA, id, "Light levels", SpecificRules.Category.EXTRAS, Items.TORCH.getDefaultInstance(),
+            "light level levels spawn spawnable dark mob spawning")
+         : new Candidate(SpecificRules.Type.EXTRA, SpecificRules.CHORUS_TELEPORTS, "Chorus teleports", SpecificRules.Category.EXTRAS,
+            Items.CHORUS_FRUIT.getDefaultInstance(), "chorus teleport teleports fruit");
+   }
+
    private static Candidate candidate(SpecificRules.Type type, String id) {
       Object target = target(type, id);
       return switch (type) {
@@ -488,6 +609,7 @@ public final class SpecificTargets implements ClientAccess {
          }
          case PLAYER -> playerCandidate(id);
          case GROUP -> groupCandidate(id);
+         case EXTRA -> extraCandidate(id);
       };
    }
 
@@ -519,7 +641,7 @@ public final class SpecificTargets implements ClientAccess {
          case BLOCK -> lookup(BuiltInRegistries.BLOCK, id).orElse(null);
          case ENTITY -> lookup(BuiltInRegistries.ENTITY_TYPE, id).orElse(null);
          case ITEM -> lookup(BuiltInRegistries.ITEM, id).orElse(null);
-         case PLAYER, GROUP -> null;
+         case PLAYER, GROUP, EXTRA -> null;
       };
    }
 

@@ -79,4 +79,20 @@ class CellIndexTest {
       assertEquals(0, index.cell(key).size());
       assertEquals(0, index.size());
    }
+
+   @Test
+   void touchQueuesAnExistingCellOnly() {
+      CellIndex<String> index = new CellIndex<>();
+      long pos = CellIndex.pack(8, 64, 8);
+      index.put(pos, "netherrack");
+      CellIndex.CellKey key = index.pollDirty();
+      long revision = index.cell(key).revision();
+
+      index.touch(CellIndex.pack(9, 65, 9));
+      assertEquals(key, index.pollDirty());
+      assertTrue(index.cell(key).revision() > revision);
+
+      index.touch(CellIndex.pack(100, 64, 100));
+      assertNull(index.pollDirty());
+   }
 }

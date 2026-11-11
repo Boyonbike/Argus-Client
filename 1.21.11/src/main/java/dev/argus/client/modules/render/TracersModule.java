@@ -85,6 +85,8 @@ public class TracersModule extends Module {
    private long tickCounter;
    private long blockTargetsTick = -1L;
    private long alertMark;
+   /** Recent chorus fruit teleports and when they happened, for the Chorus teleports extra. */
+   private final java.util.Map<Vec3, Long> chorusPositions = java.util.Collections.synchronizedMap(new java.util.HashMap<>());
 
    /**
     * One line's worth of target: where the line aims, the stem drawn along it (null for none), the bounds the marker
@@ -142,7 +144,36 @@ public class TracersModule extends Module {
       }
 
       this.collectBlocks(camera, minimumSquared);
+      this.collectChorus(camera, minimumSquared);
       return this.collected;
+   }
+
+   /** Lines to where players just teleported, while the Chorus teleports extra is in the list. */
+   private void collectChorus(Vec3 camera, double minimumSquared) {
+      SpecificRules.Rule rule = this.targets.specific.extra(SpecificRules.CHORUS_TELEPORTS);
+      if (rule == null) {
+         return;
+      }
+
+      RuleSettings settings = this.targets.specific.settings(rule);
+      synchronized (this.chorusPositions) {
+         this.chorusPositions.entrySet().removeIf(entry -> System.currentTimeMillis() - entry.getValue() > 3500L);
+         for (Vec3 position : this.chorusPositions.keySet()) {
+            double distanceSquared = position.distanceToSqr(camera);
+            if (distanceSquared >= minimumSquared && settings.inRange(distanceSquared)) {
+               AABB bounds = new AABB(position.x - 0.3, position.y, position.z - 0.3, position.x + 0.3, position.y + 1.8, position.z + 0.3);
+               this.collected.add(new Target(position, null, null, bounds, this.colorFor(settings.color.getValue(), position), null));
+            }
+         }
+      }
+   }
+
+   @EventHandler
+   private void onPacketReceive(dev.argus.client.events.PacketEvent.Receive event) {
+      if (event.getPacket() instanceof net.minecraft.network.protocol.game.ClientboundSoundPacket sound
+         && sound.getSound().value().equals(net.minecraft.sounds.SoundEvents.CHORUS_FRUIT_TELEPORT)) {
+         this.chorusPositions.put(new Vec3(sound.getX(), sound.getY(), sound.getZ()), System.currentTimeMillis());
+      }
    }
 
    private void collectBlocks(Vec3 camera, double minimumSquared) {

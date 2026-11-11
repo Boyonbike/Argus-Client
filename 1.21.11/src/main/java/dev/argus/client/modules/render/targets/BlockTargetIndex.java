@@ -91,6 +91,10 @@ public final class BlockTargetIndex implements ClientAccess {
    private int ticks;
    private long version;
    private long addedEnd;
+   /** Entries stored per chunk column, so the farthest chunks can make way when the index is full. */
+   private final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap chunkCounts = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+   /** Loaded chunks left out (or cut short) because the index was full; rescanned when they become nearer. */
+   private final LongOpenHashSet skipped = new LongOpenHashSet();
 
    private BlockTargetIndex() {
    }
@@ -117,6 +121,11 @@ public final class BlockTargetIndex implements ClientAccess {
 
    public CellIndex<Entry> index() {
       return this.index;
+   }
+
+   /** Whether some loaded chunks are left out because there are too many matches; the nearest ones are kept. */
+   public boolean capped() {
+      return !this.skipped.isEmpty();
    }
 
    /** Bumps whenever any entry changes, so caches can tell nothing happened. */
@@ -171,6 +180,10 @@ public final class BlockTargetIndex implements ClientAccess {
       }
 
       this.drain();
+      if (this.ticks % 20 == 0) {
+         this.rescanNearerSkipped();
+      }
+
       if (++this.ticks % 4 == 0) {
          this.reconcileBlockEntities();
       }
@@ -220,9 +233,115 @@ public final class BlockTargetIndex implements ClientAccess {
       this.blockEntities.clear();
       this.version++;
       this.scanning = Set.copyOf(wanted);
+      this.chunkCounts.clear();
+      this.skipped.clear();
       this.scanner.start();
       this.running = true;
-      this.scanner.scanLoadedChunks();
+      this.scanNearestFirst();
+   }
+
+   /**
+    * Scans every loaded chunk, nearest first, so when there are more matches than the index holds (netherrack in the
+    * Nether) it fills with the ones around the player.
+    */
+   private void scanNearestFirst() {
+      if (argusclientMinecraft.player == null || argusclientMinecraft.level == null) {
+         this.scanner.scanLoadedChunks();
+         return;
+      }
+
+      List<LevelChunk> chunks = new ArrayList<>(WorldUtils.getLoadedChunks());
+      ChunkPos center = argusclientMinecraft.player.chunkPosition();
+      chunks.sort(java.util.Comparator.comparingInt(chunk -> chunkDistance(chunk.getPos().x, chunk.getPos().z, center)));
+      java.util.concurrent.ExecutorService executor = this.scanner.getExecutor();
+      for (LevelChunk chunk : chunks) {
+         executor.submit(() -> this.scanChunk(chunk.getPos(), chunk));
+      }
+   }
+
+   private static int chunkDistance(int chunkX, int chunkZ, ChunkPos center) {
+      int dx = chunkX - center.x;
+      int dz = chunkZ - center.z;
+      return dx * dx + dz * dz;
+   }
+
+   private ChunkPos playerChunk() {
+      return argusclientMinecraft.player == null ? new ChunkPos(0, 0) : argusclientMinecraft.player.chunkPosition();
+   }
+
+   /** Frees room for a chunk by dropping stored chunks farther away than it. Returns whether there's room now. */
+   private boolean makeRoom(int chunkX, int chunkZ, int needed) {
+      if (this.index.size() + needed <= MAX_ENTRIES) {
+         return true;
+      }
+
+      ChunkPos center = this.playerChunk();
+      int distance = chunkDistance(chunkX, chunkZ, center);
+      long[] stored = this.chunkCounts.keySet().toLongArray();
+      Long[] order = new Long[stored.length];
+      for (int i = 0; i < stored.length; i++) {
+         order[i] = stored[i];
+      }
+
+      java.util.Arrays.sort(order, java.util.Comparator.comparingInt(
+         (Long key) -> chunkDistance(ChunkPos.getX(key), ChunkPos.getZ(key), center)).reversed());
+      for (Long key : order) {
+         if (this.index.size() + needed <= MAX_ENTRIES) {
+            break;
+         }
+
+         int x = ChunkPos.getX(key);
+         int z = ChunkPos.getZ(key);
+         if (chunkDistance(x, z, center) <= distance) {
+            break;
+         }
+
+         this.removeChunk(x, z);
+         this.skipped.add(ChunkPos.asLong(x, z));
+      }
+
+      return this.index.size() + needed <= MAX_ENTRIES;
+   }
+
+   /** Every second: rescans left-out chunks that are now nearer than the farthest stored one (or fit outright). */
+   private void rescanNearerSkipped() {
+      if (this.skipped.isEmpty() || argusclientMinecraft.level == null || !this.running) {
+         return;
+      }
+
+      ChunkPos center = this.playerChunk();
+      int farthest = 0;
+      for (long key : this.chunkCounts.keySet()) {
+         farthest = Math.max(farthest, chunkDistance(ChunkPos.getX(key), ChunkPos.getZ(key), center));
+      }
+
+      long[] candidates = this.skipped.toLongArray();
+      Long[] order = new Long[candidates.length];
+      for (int i = 0; i < candidates.length; i++) {
+         order[i] = candidates[i];
+      }
+
+      java.util.Arrays.sort(order, java.util.Comparator.comparingInt((Long key) -> chunkDistance(ChunkPos.getX(key), ChunkPos.getZ(key), center)));
+      boolean room = this.index.size() < MAX_ENTRIES;
+      int sent = 0;
+      for (Long key : order) {
+         if (sent >= 8) {
+            break;
+         }
+
+         int x = ChunkPos.getX(key);
+         int z = ChunkPos.getZ(key);
+         if (!room && chunkDistance(x, z, center) >= farthest) {
+            break;
+         }
+
+         LevelChunk chunk = argusclientMinecraft.level.getChunkSource().getChunkNow(x, z);
+         this.skipped.remove(key.longValue());
+         if (chunk != null) {
+            this.scanner.getExecutor().submit(() -> this.scanChunk(chunk.getPos(), chunk));
+            sent++;
+         }
+      }
    }
 
    private void stop() {
@@ -233,6 +352,8 @@ public final class BlockTargetIndex implements ClientAccess {
          this.results.clear();
          this.index.clear();
          this.blockEntities.clear();
+         this.chunkCounts.clear();
+         this.skipped.clear();
          this.scanning = Set.of();
          this.version++;
       }
@@ -250,8 +371,14 @@ public final class BlockTargetIndex implements ClientAccess {
             continue;
          }
 
+         long chunkKey = ChunkPos.asLong(result.chunkX(), result.chunkZ());
          if (result.wholeChunk()) {
             this.removeChunk(result.chunkX(), result.chunkZ());
+            this.skipped.remove(chunkKey);
+            if (result.positions().length > 0 && !this.makeRoom(result.chunkX(), result.chunkZ(), result.positions().length)) {
+               // Still too full: keep what fits (nearest chunks were stored first) and try again when it's nearer.
+               this.skipped.add(chunkKey);
+            }
          }
 
          for (int i = 0; i < result.positions().length; i++) {
@@ -260,6 +387,8 @@ public final class BlockTargetIndex implements ClientAccess {
             if (entry == null) {
                if (this.index.remove(packed)) {
                   this.blockEntities.remove(packed);
+                  this.chunkCounts.addTo(chunkKey, -1);
+                  this.touchNeighbours(packed);
                   this.version++;
                }
             } else if (this.index.size() < MAX_ENTRIES || this.index.get(packed) != null) {
@@ -271,6 +400,7 @@ public final class BlockTargetIndex implements ClientAccess {
                }
 
                if (this.index.put(packed, entry)) {
+                  this.chunkCounts.addTo(chunkKey, 1);
                   this.added.add(packed);
                   this.addedEnd++;
                   if (this.added.size() > 4096) {
@@ -294,6 +424,7 @@ public final class BlockTargetIndex implements ClientAccess {
       // Block-entity marks for this chunk are pruned by reconcileBlockEntities() once their index entry is gone,
       // so there's no need to walk every tracked block entity on each chunk unload.
       this.index.removeChunk(chunkX, chunkZ);
+      this.chunkCounts.remove(ChunkPos.asLong(chunkX, chunkZ));
       this.version++;
    }
 
@@ -380,6 +511,22 @@ public final class BlockTargetIndex implements ClientAccess {
       }
 
       this.results.add(new Result(scanGeneration, chunkPosition.x, chunkPosition.z, true, positions.toLongArray(), entries.toArray(Entry[]::new)));
+   }
+
+   /**
+    * A removed block may have hidden a face of its neighbours (meshes skip faces between drawn blocks), so neighbouring
+    * cells across a cell border rebuild too.
+    */
+   private void touchNeighbours(long packed) {
+      int x = CellIndex.unpackX(packed);
+      int y = CellIndex.unpackY(packed);
+      int z = CellIndex.unpackZ(packed);
+      if ((x & 7) == 0) this.index.touch(CellIndex.pack(x - 1, y, z));
+      if ((x & 7) == 7) this.index.touch(CellIndex.pack(x + 1, y, z));
+      if ((y & 7) == 0) this.index.touch(CellIndex.pack(x, y - 1, z));
+      if ((y & 7) == 7) this.index.touch(CellIndex.pack(x, y + 1, z));
+      if ((z & 7) == 0) this.index.touch(CellIndex.pack(x, y, z - 1));
+      if ((z & 7) == 7) this.index.touch(CellIndex.pack(x, y, z + 1));
    }
 
    private void unloadChunk(ChunkPos chunkPosition, LevelChunk chunk) {

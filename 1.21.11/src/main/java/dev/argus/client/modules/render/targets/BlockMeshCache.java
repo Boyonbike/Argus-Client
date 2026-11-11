@@ -80,6 +80,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
    private final List<Visible> visible = new ArrayList<>();
    private final List<Visible> stale = new ArrayList<>();
    private final QuadSink sink = new QuadSink();
+   private final BlockPos.MutableBlockPos neighbourPosition = new BlockPos.MutableBlockPos();
    private final Matrix4f transform = new Matrix4f();
    private ClientLevel level;
    private int drawn;
@@ -175,7 +176,13 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
                break;
             }
 
-            models += item.cell().size();
+            // Only real models (chests, shulkers...) count against the per-frame model limit; plain boxes are cheap.
+            for (BlockTargetIndex.Entry entry : item.cell().values()) {
+               if (entry.hasBlockEntity()) {
+                  models++;
+               }
+            }
+
             this.sink.reset();
             buffers.beginCapture(this.sink);
             try {
@@ -242,13 +249,32 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
          }
 
          if (this.sink.vertexCount() == before) {
-            this.box(entry.state(), position, localX, localY, localZ, color);
+            this.box(entry.state(), position, packed, localX, localY, localZ, color, paint);
          }
       }
    }
 
-   private void box(BlockState state, BlockPos position, float x, float y, float z, int color) {
+   private void box(BlockState state, BlockPos position, long packed, float x, float y, float z, int color, Paint paint) {
       VoxelShape shape = state.getShape(this.level, position);
+      if (shape == net.minecraft.world.phys.shapes.Shapes.block()) {
+         // A face shared with another drawn full block of the same colour is never seen: leave it out. For netherrack
+         // or stone this drops most faces, so huge areas stay cheap to build and draw.
+         int px = CellIndex.unpackX(packed), py = CellIndex.unpackY(packed), pz = CellIndex.unpackZ(packed);
+         int skip = 0;
+         if (this.hides(px, py - 1, pz, color, paint)) skip |= QuadSink.DOWN;
+         if (this.hides(px, py + 1, pz, color, paint)) skip |= QuadSink.UP;
+         if (this.hides(px, py, pz - 1, color, paint)) skip |= QuadSink.NORTH;
+         if (this.hides(px, py, pz + 1, color, paint)) skip |= QuadSink.SOUTH;
+         if (this.hides(px - 1, py, pz, color, paint)) skip |= QuadSink.WEST;
+         if (this.hides(px + 1, py, pz, color, paint)) skip |= QuadSink.EAST;
+         this.sink.box(x, y, z, x + 1, y + 1, z + 1, color, skip);
+         if (skip == 63) {
+            this.drawn--;
+         }
+
+         return;
+      }
+
       if (shape.isEmpty() || state.getBlock() instanceof net.minecraft.world.level.block.ShulkerBoxBlock) {
          this.sink.box(x, y, z, x + 1, y + 1, z + 1, color);
          return;
@@ -258,6 +284,23 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
       this.sink.box(
          x + (float)bounds.minX, y + (float)bounds.minY, z + (float)bounds.minZ, x + (float)bounds.maxX, y + (float)bounds.maxY, z + (float)bounds.maxZ, color
       );
+   }
+
+   /** Whether the block at a position is a drawn full block of this colour (so the face against it is hidden). */
+   private boolean hides(int x, int y, int z, int color, Paint paint) {
+      long packed = CellIndex.pack(x, y, z);
+      BlockTargetIndex.Entry neighbour = BlockTargetIndex.get().index().get(packed);
+      if (neighbour == null || neighbour.hasBlockEntity()) {
+         return false;
+      }
+
+      this.neighbourPosition.set(x, y, z);
+      if (neighbour.state().getShape(this.level, this.neighbourPosition) != net.minecraft.world.phys.shapes.Shapes.block()) {
+         return false;
+      }
+
+      int other = paint.color(packed, neighbour);
+      return other != 0 && (other | 0xFF000000) == color;
    }
 
    private boolean draw(PoseStack poses, RenderTarget target, Vec3 camera) {
