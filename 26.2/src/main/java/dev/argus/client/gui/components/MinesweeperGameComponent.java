@@ -2,7 +2,7 @@ package dev.argus.client.gui.components;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.gui.panels.GamePanel;
 import dev.argus.client.gui.panels.Panel;
 import dev.argus.client.managers.RenderStateManager;
@@ -132,7 +132,7 @@ public class MinesweeperGameComponent extends GridGameComponent {
 
    private void renderBoard(PoseStack poseStack, double mouseX, double mouseY) {
       RenderStateManager.addStates(RenderStateManager.THROUGH_WALLS);
-      SPRITE_BUFFER.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+      SPRITE_BUFFER.begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
       this.drawCellSprite(poseStack, MinesweeperSprite.FLAG_NO_BG, this.gridColumns - 1, 0);
 
       for (int column = 0; column < this.gridColumns; column++) {

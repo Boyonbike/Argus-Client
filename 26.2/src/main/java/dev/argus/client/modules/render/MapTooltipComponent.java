@@ -46,7 +46,6 @@ public record MapTooltipComponent(int mapId, MapItemSavedData mapData) implement
          MapRenderer renderer = argusclientMinecraft.getMapRenderer();
          renderer.extractRenderState(new MapId(this.mapId), this.mapData, MAP_RENDER_STATE);
          graphics.map(MAP_RENDER_STATE);
-         argusclientMinecraft.gameRenderer.renderBuffers().bufferSource().endBatch();
       } finally {
          poses.popMatrix();
       }

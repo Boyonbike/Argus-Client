@@ -2,7 +2,7 @@ package dev.argus.client.modules.hud;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.LocalPlayerTickEvent;
@@ -49,7 +49,7 @@ public class GraphModule extends HudWidgetModule {
    public void renderContent(PoseStack poses) {
       if (this.speedSamples.size() >= 2) {
          MeshBuffer buffer = MeshDrawContext.getBuffer();
-         buffer.begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+         buffer.begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
 
          for (int sampleIndex = 1; sampleIndex < this.speedSamples.size(); sampleIndex++) {
             float previousY = this.getSampleY(this.speedSamples.get(sampleIndex - 1));

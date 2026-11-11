@@ -480,7 +480,6 @@ public class ClientScreen extends Screen implements ClientAccess {
          poseStack.translate(panelX, panelY, 0.0F);
          ScissorStack.push(panelX, panelY, (int)panelWidth, (int)Math.floor(panel.getHeaderHeight() + contentHeight + outlinePadding));
          GuiDrawUtils.drawTexture(poseStack, AERO_TEXTURE, (int)(-300.0F + panelX / 3.0F), 0, 0.0F, 0.0F, 600, 450, 600, 450, textureColor);
-         RenderUtils.getEntityBuffers().endBatch();
          ScissorStack.pop();
          poseStack.popPose();
       }

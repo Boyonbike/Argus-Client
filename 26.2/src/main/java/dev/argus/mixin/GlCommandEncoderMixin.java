@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
-import com.mojang.blaze3d.vertex.VertexFormat.IndexType;
+import com.mojang.blaze3d.IndexType;
 import dev.argus.client.managers.RenderStateManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

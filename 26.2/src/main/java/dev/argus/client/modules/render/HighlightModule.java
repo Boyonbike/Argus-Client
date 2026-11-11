@@ -3,7 +3,7 @@ package dev.argus.client.modules.render;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.BlockOutlineRenderEvent;
@@ -52,7 +52,7 @@ public class HighlightModule extends Module {
    private static final MeshBuffer FILL_BUFFER = MeshBuffer.create(8192);
    private static final MeshBuffer OUTLINE_BUFFER = MeshBuffer.create(8192);
    private static ReachModule reach = ClientContext.getModule(ReachModule.class);
-   private final Setting<HighlightModule.HighlightMode> modeSetting = this.add(new EnumSetting<>("Mode", HighlightModule.HighlightMode.SIMPLE));
+   private final Setting<HighlightModule.HighlightMode> modeSetting = this.add(new EnumSetting<>("PrimitiveTopology", HighlightModule.HighlightMode.SIMPLE));
    private final Setting<Boolean> depthSetting = this.add(new BooleanSetting("Depth", false));
    private final Setting<Boolean> unreachableSetting = this.add(new BooleanSetting("Unreachable", false));
    private final Setting<Float> lineWidthSetting = this.add(new NumberSetting<>("LineWidth", 1.0F, 0.1F, 3.0F));
@@ -207,8 +207,8 @@ public class HighlightModule extends Module {
       Setting<Boolean> depthSetting = this.depthSetting;
       Boolean depthEnabled = depthSetting.getValue();
       if (depthEnabled) {
-         FILL_BUFFER.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-         OUTLINE_BUFFER.begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+         FILL_BUFFER.begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+         OUTLINE_BUFFER.begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
          PoseStack highlightPoseStack = event.getPoseStack();
          HighlightModule.BoxRenderer renderer = (poseStack, box, blockPos) -> {
             float inflation = 0.002F;

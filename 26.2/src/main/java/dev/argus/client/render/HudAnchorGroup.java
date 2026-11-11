@@ -85,9 +85,6 @@ public class HudAnchorGroup implements ClientAccess, GuiElement {
             widget.render(poseStack, mouseX, mouseY);
             poseStack.popPose();
             this.prepareWidgetRender(enabledProgress);
-            if (!HudWidgetRenderer.renderingHud) {
-               RenderUtils.getEntityBuffers().endBatch(ClientRenderTypes.guiTriangles());
-            }
 
             RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
          }

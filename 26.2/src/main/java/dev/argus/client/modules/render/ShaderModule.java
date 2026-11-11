@@ -266,7 +266,7 @@ public class ShaderModule extends Module {
          NameTagsModule nameTagsForBlit = nameTagsModule;
          if (nameTagsForBlit.isToggled()) {
             GpuTextureView mainColorTexture = ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView();
-            nameTagTarget.blitAndBlendToTexture(mainColorTexture);
+            nameTagTarget.blitAndBlendToTexture(ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getColorTextureView(), ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget().getDepthTextureView());
          }
       }
 

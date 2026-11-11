@@ -1,26 +1,27 @@
 package dev.argus.client.render;
 
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.argus.client.utils.inventory.NoOpVertexConsumer;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
-public class ColorOutlineBufferSource implements MultiBufferSource {
-   private final BufferSource buffers = MultiBufferSource.immediate(new ByteBufferBuilder(1536));
+public class ColorOutlineBufferSource {
+   private final Map<RenderType, MeshBuffer> buffers = new LinkedHashMap<>();
    private int colorArgb;
    private boolean colorSet;
+   private QuadSink capture;
 
    public int getColorArgb() {
       return this.colorArgb;
    }
 
    public void endBatchAndClean() {
-      this.buffers.endBatch();
-      BufferSourceUtils.cleanup(this.buffers);
+      for (Map.Entry<RenderType, MeshBuffer> entry : this.buffers.entrySet()) {
+         entry.getValue().draw(entry.getKey());
+      }
+      this.buffers.clear();
    }
 
    public void reset() {
@@ -32,8 +33,6 @@ public class ColorOutlineBufferSource implements MultiBufferSource {
    }
 
    /** While set, outline geometry is recorded into this sink instead of drawn (see ESP's cached block meshes). */
-   private QuadSink capture;
-
    public void beginCapture(QuadSink sink) {
       this.capture = sink;
    }
@@ -46,23 +45,26 @@ public class ColorOutlineBufferSource implements MultiBufferSource {
       this.capture = null;
    }
 
-   @Override
    public VertexConsumer getBuffer(RenderType renderType) {
       if (this.capture != null) {
          boolean outlined = renderType.isOutline() || renderType.outline().isPresent();
-         return outlined && renderType.mode() == com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS
+         return outlined && renderType.primitiveTopology() == com.mojang.blaze3d.PrimitiveTopology.QUADS
             ? new ColorOutlineBufferSource.CaptureVertexConsumer(this, this.capture)
             : NoOpVertexConsumer.INSTANCE;
       }
 
       if (renderType.isOutline()) {
-         return new ColorOutlineBufferSource.OutlineVertexConsumer(this, this.buffers.getBuffer(renderType));
+         return new ColorOutlineBufferSource.OutlineVertexConsumer(this, this.buffer(renderType));
       }
 
       Optional<RenderType> outlineType = renderType.outline();
       return outlineType.isPresent()
-         ? new ColorOutlineBufferSource.OutlineVertexConsumer(this, this.buffers.getBuffer(outlineType.get()))
+         ? new ColorOutlineBufferSource.OutlineVertexConsumer(this, this.buffer(outlineType.get()))
          : NoOpVertexConsumer.INSTANCE;
+   }
+
+   private MeshBuffer buffer(RenderType renderType) {
+      return this.buffers.computeIfAbsent(renderType, type -> MeshBuffer.create().setFormat(type.primitiveTopology(), type.format()));
    }
 
    public void setColorArgb(int argb) {
@@ -154,28 +156,6 @@ public class ColorOutlineBufferSource implements MultiBufferSource {
       @Override
       public VertexConsumer setLineWidth(float width) {
          return this;
-      }
-   }
-
-   public static class SuppliedBufferSource extends BufferSource {
-      private final Supplier<? extends MultiBufferSource> sourceSupplier;
-
-      public SuppliedBufferSource(Supplier<? extends MultiBufferSource> sourceSupplier) {
-         super(null, null);
-         this.sourceSupplier = sourceSupplier;
-      }
-
-      @Override
-      public VertexConsumer getBuffer(RenderType renderType) {
-         return this.sourceSupplier.get().getBuffer(renderType);
-      }
-
-      @Override
-      public void endBatch() {
-      }
-
-      @Override
-      public void endBatch(RenderType renderType) {
       }
    }
 }

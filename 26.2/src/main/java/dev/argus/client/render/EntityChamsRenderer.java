@@ -2,7 +2,7 @@ package dev.argus.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.EventStage;
@@ -20,7 +20,6 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.util.Mth;
@@ -29,19 +28,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 public final class EntityChamsRenderer implements ClientAccess {
-   public static final MeshBuffer fillMesh = MeshBuffer.create().setFormat(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-   public static final MeshBuffer outlineMesh = MeshBuffer.create().setFormat(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+   public static final MeshBuffer fillMesh = MeshBuffer.create().setFormat(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+   public static final MeshBuffer outlineMesh = MeshBuffer.create().setFormat(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
    private static final SubmitNodeStorage submitNodes = new SubmitNodeStorage();
-   private static final FeatureRenderDispatcher featureDispatcher = new FeatureRenderDispatcher(
-      submitNodes,
-      ClientAccess.argusclientMinecraft.getModelManager(),
-      ChamsBufferSource.INSTANCE,
-      ClientAccess.argusclientMinecraft.getAtlasManager(),
-      NoOpOutlineBufferSource.INSTANCE,
-      DiscardingBufferSource.INSTANCE,
-      ClientAccess.argusclientMinecraft.font,
-      ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState()
-   );
    static Color fillColor;
    static Color outlineColor;
    private static float lineWidth;
@@ -133,8 +122,8 @@ public final class EntityChamsRenderer implements ClientAccess {
       poses.translate(renderX, renderY, renderZ);
       renderer.submit(renderState, poses, submitNodes, cameraState);
       poses.popPose();
-      featureDispatcher.renderAllFeatures();
-      submitNodes.endFrame();
+      ImmediateSubmitRenderer.flush(submitNodes);
+      submitNodes.getSubmitsPerOrder().clear();
       renderingEntity = false;
    }
 

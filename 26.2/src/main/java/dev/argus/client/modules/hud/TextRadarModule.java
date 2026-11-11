@@ -44,7 +44,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.core.ClientAsset.Texture;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -365,8 +364,6 @@ public class TextRadarModule extends HudWidgetModule {
          rowY += (FontRenderer.INSTANCE.getHeight() + 1) * this.renderer.getVerticalDirection();
       }
 
-      BufferSource bufferSource = RenderUtils.getEntityBuffers();
-      bufferSource.endBatch();
    }
 
    private void renderPlayerHead(PoseStack poses, Player player, float y, float hudScale, float headWidth, float rowWidth) {

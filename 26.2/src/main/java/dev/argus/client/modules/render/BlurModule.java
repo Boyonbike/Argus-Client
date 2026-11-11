@@ -63,7 +63,6 @@ public class BlurModule extends Module {
    public void renderBackgroundBlur(PoseStack poseStack) {
       Screen currentScreen = ClientAccess.argusclientMinecraft.gui.screen();
       if (!isBlurExcluded(currentScreen)) {
-         RenderUtils.getEntityBuffers().endBatch();
          Runnable drawFullscreenMask = () -> {
             RenderUtils renderer = RenderUtils.INSTANCE;
             float width = ClientAccess.argusclientMinecraft.getWindow().getGuiScaledWidth();

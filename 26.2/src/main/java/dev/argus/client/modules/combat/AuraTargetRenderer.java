@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.WorldRenderEvent;
@@ -161,11 +161,11 @@ final class AuraTargetRenderer implements ClientAccess {
 
    private void drawWireBox(WorldRenderEvent event, AABB bounds, int fillColor, int outlineColor) {
       MeshBuffer buffer = MeshDrawContext.getBuffer();
-      buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+      buffer.begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
       PoseStack poseStack = event.getPoseStack();
       this.drawTargetVertices(poseStack, buffer, true, bounds, 32, fillColor, 1.0F);
       buffer.draw(ClientRenderTypes.worldFill());
-      buffer.begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+      buffer.begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
       poseStack = event.getPoseStack();
       this.drawTargetVertices(poseStack, buffer, false, bounds, 32, outlineColor, this.aura.lineWidthSetting.getValue());
       buffer.draw(ClientRenderTypes.worldLines());

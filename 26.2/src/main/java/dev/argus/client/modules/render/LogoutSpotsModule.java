@@ -359,8 +359,7 @@ public class LogoutSpotsModule extends Module {
                         Float alpha = this.alphaSetting.getValue();
                         RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, alpha);
                         RenderUtils modelRenderer = RenderUtils.INSTANCE;
-                        RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
-                        modelRenderer.renderEntity(playerModel, 1.0F, poses, renderBuffers.bufferSource());
+                        modelRenderer.renderEntity(playerModel, 1.0F, poses);
                         RenderUtils.INSTANCE.flushEntities();
                         RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
                         renderingTexturedModel = false;

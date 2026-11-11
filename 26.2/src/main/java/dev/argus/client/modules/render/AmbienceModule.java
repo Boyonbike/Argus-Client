@@ -72,7 +72,7 @@ public class AmbienceModule extends Module {
          Setting<AmbienceModule.BrightnessChoice> brightnessOption = this.brightnessSetting;
          if (brightnessOption.getValue() == AmbienceModule.BrightnessChoice.SCREEN) {
             LevelRenderer levelRenderer = ClientAccess.argusclientMinecraft.levelRenderer;
-            levelRenderer.allChanged();
+            ClientAccess.argusclientMinecraft.levelExtractor.allChanged();
          }
       }
    }

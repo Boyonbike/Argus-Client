@@ -1,11 +1,12 @@
 package dev.argus.client.gui;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.blaze3d.GpuFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -28,38 +29,37 @@ final class UiRender {
     static Identifier id(String path) { return Identifier.fromNamespaceAndPath("argusclient", path); }
 
     /** Position, offset-from-centre (UV0), colour, half size (UV1) and radius/mode (UV2). */
-    static final VertexFormat SHAPE_FORMAT = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV1", VertexFormatElement.UV1)
-            .add("UV2", VertexFormatElement.UV2)
+    static final VertexFormat SHAPE_FORMAT = VertexFormat.builder(0)
+            .addAttribute("Position", GpuFormat.RGB32_FLOAT)
+            .addAttribute("UV0", GpuFormat.RG32_FLOAT)
+            .addAttribute("Color", GpuFormat.RGBA8_UNORM)
+            .addAttribute("UV1", GpuFormat.RG16_SINT)
+            .addAttribute("UV2", GpuFormat.RG16_SINT)
             .build();
 
     static final RenderPipeline SHAPE = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
             .withLocation(id("pipeline/ui_shape"))
             .withVertexShader(id("core/ui_shape"))
             .withFragmentShader(id("core/ui_shape"))
-            .withVertexFormat(SHAPE_FORMAT, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, SHAPE_FORMAT).withPrimitiveTopology(PrimitiveTopology.QUADS)
             .build();
 
     /** Shape format plus a texture coordinate; Normal carries the quad corner (±1, ±1). */
-    static final VertexFormat IMAGE_FORMAT = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV1", VertexFormatElement.UV1)
-            .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .padding(1)
+    static final VertexFormat IMAGE_FORMAT = VertexFormat.builder(0)
+            .addAttribute("Position", GpuFormat.RGB32_FLOAT)
+            .addAttribute("UV0", GpuFormat.RG32_FLOAT)
+            .addAttribute("Color", GpuFormat.RGBA8_UNORM)
+            .addAttribute("UV1", GpuFormat.RG16_SINT)
+            .addAttribute("UV2", GpuFormat.RG16_SINT)
+            .addAttribute("Normal", GpuFormat.RGBA8_SNORM)
             .build();
 
     static final RenderPipeline IMAGE = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
             .withLocation(id("pipeline/ui_image"))
             .withVertexShader(id("core/ui_image"))
             .withFragmentShader(id("core/ui_image"))
-            .withSampler("Sampler0")
-            .withVertexFormat(IMAGE_FORMAT, VertexFormat.Mode.QUADS)
+            .withBindGroupLayout(net.minecraft.client.renderer.BindGroupLayouts.SAMPLER0)
+            .withVertexBinding(0, IMAGE_FORMAT).withPrimitiveTopology(PrimitiveTopology.QUADS)
             .build();
 
     private static final Matrix3x2f IDENTITY = new Matrix3x2f();

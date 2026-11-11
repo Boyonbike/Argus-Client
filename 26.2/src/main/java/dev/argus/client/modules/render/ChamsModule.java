@@ -159,7 +159,7 @@ public class ChamsModule extends Module {
       } else {
          RenderTarget maskTarget = MaskShaderRenderer.MASK_TARGET;
          GpuTextureView mainColorView = mainTarget.getColorTextureView();
-         maskTarget.blitAndBlendToTexture(mainColorView);
+         maskTarget.blitAndBlendToTexture(mainTarget.getColorTextureView(), mainTarget.getDepthTextureView());
       }
 
       float bloomRadius = this.radiusSetting.getValue();
@@ -177,7 +177,7 @@ public class ChamsModule extends Module {
       } else {
          RenderTarget finalMaskTarget = MaskShaderRenderer.MASK_TARGET;
          GpuTextureView finalColorView = mainTarget.getColorTextureView();
-         finalMaskTarget.blitAndBlendToTexture(finalColorView);
+         finalMaskTarget.blitAndBlendToTexture(mainTarget.getColorTextureView(), mainTarget.getDepthTextureView());
       }
    }
 
@@ -209,8 +209,7 @@ public class ChamsModule extends Module {
                            RenderUtils renderer = RenderUtils.INSTANCE;
                            float partialTick = event.getPartialTick();
                            PoseStack poseStackSnapshot = event.getPoseStack();
-                           RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
-                           renderer.renderEntity(entity, partialTick, poseStackSnapshot, renderBuffers.bufferSource());
+                           renderer.renderEntity(entity, partialTick, poseStackSnapshot);
                            this.renderingBaseModel = false;
                         }
                      }

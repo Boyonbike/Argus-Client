@@ -36,22 +36,29 @@ public final class ClientRenderTypes {
             ? original
             : RenderType.create(
                "argusclient_nametag_item",
-               new RenderSetup(
-                  pipeline,
-                  state.textures,
-                  state.useLightmap,
-                  state.useOverlay,
-                  state.layeringTransform,
-                  OutputTarget.MAIN_TARGET,
-                  state.textureTransform,
-                  OutlineProperty.NONE,
-                  false,
-                  state.sortOnUpload,
-                  state.bufferSize
-               )
+               nametagSetup(pipeline, state)
             );
       }
    );
+   private static RenderSetup nametagSetup(RenderPipeline pipeline, RenderSetup state) {
+      RenderSetup.RenderSetupBuilder builder = RenderSetup.builder(pipeline)
+         .setLayeringTransform(state.layeringTransform)
+         .setOutputTarget(OutputTarget.MAIN_TARGET)
+         .setTextureTransform(state.textureTransform)
+         .setOutline(OutlineProperty.NONE);
+      if (state.sortOnUpload) {
+         builder.sortOnUpload();
+      }
+      if (state.useLightmap) {
+         builder.useLightmap();
+      }
+      if (state.useOverlay) {
+         builder.useOverlay();
+      }
+      state.textures.forEach((name, binding) -> builder.withTexture(name, binding.location(), binding.sampler()));
+      return builder.createRenderSetup();
+   }
+
    private static final Function<Identifier, RenderType> ARMOR_CUTOUT_NO_CULL = Util.memoize(
       texture -> createArmorCutoutNoCull("armor_cutout_no_cull", texture)
    );

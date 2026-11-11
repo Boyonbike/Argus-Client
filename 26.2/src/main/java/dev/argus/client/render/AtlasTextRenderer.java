@@ -1,11 +1,10 @@
 package dev.argus.client.render;
 
 import dev.argus.client.utils.chat.LegacyFormatting;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.client.FontsModule;
 import dev.argus.client.settings.options.FontsStyleChoice;
@@ -16,8 +15,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -26,10 +23,6 @@ public final class AtlasTextRenderer {
    private static final Map<Character, ChatFormatting> FORMATTING_CODES = new Char2ObjectOpenHashMap();
    private static final FontsModule FONTS = ClientContext.getModule(FontsModule.class);
    protected static final MeshBuffer glyphMesh = MeshBuffer.create();
-   private static final ByteBufferBuilder byteBuffer = new ByteBufferBuilder(2048);
-   private static final BufferSource immediateBuffers = MultiBufferSource.immediate(byteBuffer);
-   private static final MultiBufferSource bufferSource = AtlasTextRenderer::getBuffer;
-   private static RenderType lastRenderType;
    private final AtlasStringSplitter splitter = new AtlasStringSplitter(this);
    private final FontAtlas atlas;
    private float cursorX;
@@ -46,11 +39,6 @@ public final class AtlasTextRenderer {
          MeshBuffer.draw(glyphMesh);
       }
 
-      finishBuffers();
-   }
-
-   public MultiBufferSource getBufferSource() {
-      return bufferSource;
    }
 
    public AtlasStringSplitter getSplitter() {
@@ -63,11 +51,6 @@ public final class AtlasTextRenderer {
 
    public int getHeight() {
       return (int)(this.atlas.getHeight() * 0.25F);
-   }
-
-   public static void finishBuffers() {
-      immediateBuffers.endBatch();
-      lastRenderType = null;
    }
 
    public int draw(PoseStack poses, String text, float x, float y, int argb) {
@@ -126,7 +109,7 @@ public final class AtlasTextRenderer {
          poses.translate(FontRenderer.getTranslate(), FontRenderer.getShift(), 0.0F);
          poses.scale(0.25F, 0.25F, 1.0F);
          if (!glyphMesh.isBuilding()) {
-            glyphMesh.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            glyphMesh.begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
          }
 
          boolean formattingCode = false;
@@ -219,15 +202,6 @@ public final class AtlasTextRenderer {
 
    public int drawCenteredWithoutShadow(PoseStack poses, String text, double x, double y, int argb) {
       return this.draw(poses, text, (float)x - this.getWidth(text) / 2.0F, (float)y, argb, false);
-   }
-
-   private static VertexConsumer getBuffer(RenderType renderType) {
-      if (lastRenderType != null && lastRenderType != renderType) {
-         GuiDrawUtils.flush();
-      }
-
-      lastRenderType = renderType;
-      return immediateBuffers.getBuffer(renderType);
    }
 
    static {

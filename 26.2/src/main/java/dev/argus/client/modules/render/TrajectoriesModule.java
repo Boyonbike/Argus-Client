@@ -3,8 +3,8 @@ package dev.argus.client.modules.render;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import dev.argus.client.render.ArgusTesselator;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.ConnectScreenConnectEvent;
 import dev.argus.client.events.EventHandler;
@@ -159,7 +159,7 @@ public class TrajectoriesModule extends Module {
          if (!paths.isEmpty()) {
             Color color = this.colorSetting.getValue();
             float lineWidth = this.lineWidthSetting.getValue();
-            BufferBuilder buffer = Tesselator.getInstance().begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+            BufferBuilder buffer = ArgusTesselator.getInstance().begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
             RenderType previousRenderType = MeshDrawContext.getRenderType();
 
             try {

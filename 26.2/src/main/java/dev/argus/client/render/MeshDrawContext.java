@@ -15,7 +15,7 @@ public final class MeshDrawContext {
 
    public static void draw(MeshData mesh) {
       RenderSystem.assertOnRenderThread();
-      getRenderType().draw(mesh);
+      MeshRenderer.draw(getRenderType(), mesh);
    }
 
    public static void setRenderType(RenderType renderType) {
@@ -23,7 +23,9 @@ public final class MeshDrawContext {
    }
 
    public static void draw(BufferBuilder builder) {
-      draw(builder.buildOrThrow());
+      MeshData mesh = builder.buildOrThrow();
+      draw(mesh);
+      mesh.close();
    }
 
    public static MeshBuffer getBuffer() {

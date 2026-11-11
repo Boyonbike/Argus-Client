@@ -2,7 +2,7 @@ package dev.argus.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.ARGB;
@@ -50,7 +50,7 @@ public final class FormattedTextRenderer implements FormattedCharSink {
          this.poses.translate(FontRenderer.getTranslate(), FontRenderer.getShift(), 0.0F);
          this.poses.scale(0.25F, 0.25F, 1.0F);
          if (!AtlasTextRenderer.glyphMesh.isBuilding()) {
-            AtlasTextRenderer.glyphMesh.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            AtlasTextRenderer.glyphMesh.begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
          }
 
          sequence.accept(this);

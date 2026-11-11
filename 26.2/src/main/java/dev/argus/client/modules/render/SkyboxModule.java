@@ -1,13 +1,14 @@
 package dev.argus.client.modules.render;
 
+import dev.argus.client.render.MeshRenderer;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
+import dev.argus.client.render.ArgusTesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.LocalPlayerTickEvent;
@@ -95,9 +96,9 @@ public class SkyboxModule extends Module {
    }
 
    public void drawShaderQuad() {
-      Tesselator tesselatorCapture = Tesselator.getInstance();
+      ArgusTesselator tesselatorCapture = ArgusTesselator.getInstance();
       VertexFormat positionFormat = DefaultVertexFormat.POSITION;
-      Mode quadMode = Mode.QUADS;
+      PrimitiveTopology quadMode = PrimitiveTopology.QUADS;
       BufferBuilder buffer = tesselatorCapture.begin(quadMode, positionFormat);
       buffer.addVertex(-1.0F, -1.0F, 0.0F);
       buffer.addVertex(-1.0F, 1.0F, 0.0F);
@@ -105,7 +106,8 @@ public class SkyboxModule extends Module {
       buffer.addVertex(1.0F, -1.0F, 0.0F);
       RenderType renderTypeCapture = ClientRenderTypes.entityShader();
       MeshData mesh = buffer.buildOrThrow();
-      renderTypeCapture.draw(mesh);
+      MeshRenderer.draw(renderTypeCapture, mesh);
+         mesh.close();
    }
 
    public boolean isCurrentDimensionEnabled() {

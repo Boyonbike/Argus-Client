@@ -1,6 +1,6 @@
 package dev.argus.mixin;
 
-import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
+import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslationImpl;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import dev.argus.client.integrations.ProtocolCompatibility;
 import dev.argus.client.integrations.ProtocolVersionAccess;
@@ -12,18 +12,18 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
-@Mixin(ProtocolTranslator.class)
-public class ProtocolTranslatorMixin {
+@Mixin(ProtocolTranslationImpl.class)
+public abstract class ProtocolTranslatorMixin {
    @Shadow(remap = false)
-   private static ProtocolVersion targetVersion;
+   private ProtocolVersion targetVersion;
 
    @Inject(method = "setTargetVersion(Lcom/viaversion/viaversion/api/protocol/version/ProtocolVersion;Z)V", at = @At("HEAD"), remap = false)
-   private static void syncTargetProtocolVersion(ProtocolVersion version, boolean ignoredProtocolFlag, CallbackInfo callback) {
+   private void syncTargetProtocolVersion(ProtocolVersion version, boolean ignoredProtocolFlag, CallbackInfo callback) {
       ProtocolCompatibility.setTargetVersion((ProtocolVersionAccess)version);
    }
 
-   @Inject(method = "<clinit>", at = @At("TAIL"))
-   private static void initializeTargetProtocolVersion(CallbackInfo callback) {
-      ProtocolCompatibility.setTargetVersion((ProtocolVersionAccess)targetVersion);
+   @Inject(method = "<init>", at = @At("TAIL"), remap = false)
+   private void initializeTargetProtocolVersion(CallbackInfo callback) {
+      ProtocolCompatibility.setTargetVersion((ProtocolVersionAccess)this.targetVersion);
    }
 }

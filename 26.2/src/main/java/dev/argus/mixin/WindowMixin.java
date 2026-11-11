@@ -1,7 +1,6 @@
 package dev.argus.mixin;
 
 import com.mojang.blaze3d.platform.DisplayData;
-import com.mojang.blaze3d.platform.ScreenManager;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.platform.WindowEventHandler;
 import org.lwjgl.glfw.GLFW;

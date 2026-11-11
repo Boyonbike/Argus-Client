@@ -1,5 +1,6 @@
 package dev.argus.client.modules.render;
 
+import dev.argus.client.render.MeshRenderer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -8,9 +9,9 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
+import dev.argus.client.render.ArgusTesselator;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.ClientLevelAddEntityEvent;
@@ -158,7 +159,7 @@ public class ESPModule extends Module {
 
    public ESPModule() {
       super("ESP", "Highlights players, mobs, items and chosen blocks through walls.", ModuleCategory.RENDER);
-      this.entityModeSetting = this.add(new EnumSetting<>("Mode", ESPModule.EntityMode.BOX));
+      this.entityModeSetting = this.add(new EnumSetting<>("PrimitiveTopology", ESPModule.EntityMode.BOX));
       this.entityModeSetting.setConfigName("EntityMode");
       this.entityShadowSetting = this.add(new EnumSetting<>("Shadow", ESPModule.ShadowMode.BLACK, ignored -> this.isEntity2D()));
       this.entityLengthSetting = this.add(new NumberSetting<>("Length", 1.0F, 0.1F, 1.0F, ignored -> this.isEntity2D()));
@@ -190,7 +191,7 @@ public class ESPModule extends Module {
       this.targets.extraMigration = this::migrateExtras;
 
       this.labelsSetting = this.add(new BooleanSetting("ItemLabels", true, ignored -> false).markAsGroup());
-      this.modeSetting = this.add(new EnumSetting<>("Mode", ESPModeChoice.PLAIN).dependsOn(this.labelsSetting));
+      this.modeSetting = this.add(new EnumSetting<>("PrimitiveTopology", ESPModeChoice.PLAIN).dependsOn(this.labelsSetting));
       this.modeSetting.setConfigName("ItemsMode");
       this.groupSetting = this.add(new BooleanSetting("Group", false, ignored -> this.showsItemText()).dependsOn(this.labelsSetting));
       this.itemsTextSetting = this.add(new ColorSetting("Text", new Color(-1, true), ignored -> this.showsItemText()).dependsOn(this.labelsSetting));
@@ -549,7 +550,7 @@ public class ESPModule extends Module {
 
       Vec3 camera = argusclientMinecraft.getEntityRenderDispatcher().camera.position();
       PoseStack poses = event.getPoseStack();
-      BufferBuilder lines = Tesselator.getInstance().begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+      BufferBuilder lines = ArgusTesselator.getInstance().begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
       RuleSettings light = this.lightRule();
       Color mark = light == null ? Color.red : light.color.getValue();
       int red = mark.getRGB();
@@ -575,7 +576,8 @@ public class ESPModule extends Module {
       MeshData mesh = lines.build();
       if (mesh != null) {
          RenderType type = ClientRenderTypes.worldLinesDepth();
-         type.draw(mesh);
+         MeshRenderer.draw(type, mesh);
+         mesh.close();
       }
    }
 

@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.math.Axis;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.managers.RotationManager;
@@ -100,7 +100,7 @@ public final class MarkerTracerRenderer extends TracerRenderer {
       Entity cameraEntity = ClientAccess.argusclientMinecraft.getCameraEntity();
       Vec3 localPosition = ClientAccess.argusclientMinecraft.player.getPosition(tickDelta);
       if (cameraEntity != null) {
-         MeshDrawContext.getBuffer().begin(Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+         MeshDrawContext.getBuffer().begin(PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
          for (TracersModule.Target target : this.module.collect(tickDelta)) {
             Vec3 cameraPosition = cameraEntity.getPosition(tickDelta);
             float targetYaw = RotationManager.calculateRotations(cameraPosition, target.aim())[0];

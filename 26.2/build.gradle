@@ -71,7 +71,7 @@ dependencies {
     })
     compileOnly files(providers.provider {
         zipTree(configurations.viaDistribution.singleFile).matching {
-            include 'META-INF/jars/viaversion-common-*.jar', 'META-INF/jars/Reflect-*.jar'
+            include 'META-INF/jars/viaversion-common-*.jar', 'META-INF/jars/viafabricplus-api-*.jar', 'META-INF/jars/Reflect-*.jar'
         }.files
     })
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'

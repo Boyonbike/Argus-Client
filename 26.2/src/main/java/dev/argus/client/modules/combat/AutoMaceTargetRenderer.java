@@ -3,7 +3,7 @@ package dev.argus.client.modules.combat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.WorldRenderEvent;
@@ -84,7 +84,7 @@ public final class AutoMaceTargetRenderer implements ClientAccess {
    public void renderMarkers(WorldRenderEvent.Main event) {
       this.markers.removeIf(expiredMarker -> System.currentTimeMillis() >= expiredMarker.expiresAtMillis());
       if (!this.markers.isEmpty()) {
-         MeshDrawContext.getBuffer().begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+         MeshDrawContext.getBuffer().begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
 
          for (AutoMaceTargetRenderer.TargetMarker marker : this.markers) {
             PoseStack poseStack = event.getPoseStack();

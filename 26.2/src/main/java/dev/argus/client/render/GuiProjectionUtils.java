@@ -23,7 +23,7 @@ public final class GuiProjectionUtils implements ClientAccess {
    public static void restoreProjection() {
       if (savedModelView != null) {
          RenderSystem.setProjectionMatrix(savedProjectionBuffer, savedProjectionType);
-         RenderSystem.getModelViewMatrix().set(savedModelView);
+         RenderSystem.getModelViewMatrixCopy().set(savedModelView);
          savedProjectionBuffer = null;
          savedProjectionType = null;
          savedModelView = null;
@@ -37,7 +37,7 @@ public final class GuiProjectionUtils implements ClientAccess {
          float guiHeight = (float)window.getHeight() / window.getGuiScale();
          savedProjectionBuffer = RenderSystem.getProjectionMatrixBuffer();
          savedProjectionType = RenderSystem.getProjectionType();
-         Matrix4f modelView = RenderSystem.getModelViewMatrix();
+         Matrix4f modelView = RenderSystem.getModelViewMatrixCopy();
          savedModelView = new Matrix4f(modelView);
          GUI_PROJECTION.setupOrtho(1000.0F, 11000.0F, guiWidth, guiHeight, true);
          RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(GUI_PROJECTION), ProjectionType.ORTHOGRAPHIC);

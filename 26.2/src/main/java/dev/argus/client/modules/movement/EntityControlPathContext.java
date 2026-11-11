@@ -49,7 +49,7 @@ final class EntityControlPathContext {
 
       long created;
       try {
-         created = NetherPathfinder.newContext(0L);
+         created = NetherPathfinder.newContext(0L, null, this.minY, this.height, false);
       } catch (Throwable failure) {
          created = 0L;
       }
@@ -125,7 +125,7 @@ final class EntityControlPathContext {
             () -> {
                PathSegment path;
                try {
-                  path = NetherPathfinder.pathFind(this.pointer, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ(), true, false, 10000, true);
+                  path = NetherPathfinder.pathFind(this.pointer, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ(), true, false, 10000, true, 8.0);
                } catch (Throwable failure) {
                   return null;
                }
@@ -187,7 +187,7 @@ final class EntityControlPathContext {
       int y = position.getY() - this.minY;
       if (y >= 0 && y < 128) {
          try {
-            long chunk = NetherPathfinder.getChunkPointer(this.pointer, position.getX() >> 4, position.getZ() >> 4);
+            long chunk = NetherPathfinder.getChunk(this.pointer, position.getX() >> 4, position.getZ() >> 4);
             if (chunk != 0L) {
                Octree.setBlock(chunk, position.getX() & 15, y, position.getZ() & 15, solid);
             }
@@ -198,7 +198,7 @@ final class EntityControlPathContext {
 
    private void packChunk(LevelChunk chunk) {
       try {
-         long nativeChunk = NetherPathfinder.getOrCreateChunk(this.pointer, chunk.getPos().x(), chunk.getPos().z());
+         long nativeChunk = NetherPathfinder.allocateAndInsertChunk(this.pointer, chunk.getPos().x(), chunk.getPos().z());
          if (nativeChunk == 0L) {
             return;
          }

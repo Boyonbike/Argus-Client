@@ -4,9 +4,11 @@ import com.mojang.blaze3d.platform.Lighting.Entry;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;
 import net.minecraft.client.gui.Font.DisplayMode;
@@ -25,7 +27,15 @@ import org.joml.Matrix4f;
 public final class GuiDrawUtils implements ClientAccess {
    static final MeshBuffer quadBuffer = MeshBuffer.create();
    static final MeshBuffer lineBuffer = MeshBuffer.create();
+   private static final List<SubmitNodeStorage> pendingItems = new ArrayList<>();
    static float lineWidth = 1.0F;
+
+   public static void flushPendingItems() {
+      for (SubmitNodeStorage storage : pendingItems) {
+         ImmediateSubmitRenderer.flush(storage);
+      }
+      pendingItems.clear();
+   }
 
    public static void flush() {
       flush(true);
@@ -46,12 +56,13 @@ public final class GuiDrawUtils implements ClientAccess {
       PoseStack poseStack, Identifier texture, int left, int right, int top, int bottom, float minU, float maxU, float minV, float maxV, int color
    ) {
       RenderType renderType = ClientRenderTypes.image(texture, false);
+      MeshBuffer vertices = MeshBuffer.create().setFormat(renderType.primitiveTopology(), renderType.format());
       Matrix4f matrix = poseStack.last().pose();
-      VertexConsumer vertices = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource().getBuffer(renderType);
       vertices.addVertex(matrix, left, top, 0.0F).setUv(minU, minV).setColor(color);
       vertices.addVertex(matrix, left, bottom, 0.0F).setUv(minU, maxV).setColor(color);
       vertices.addVertex(matrix, right, bottom, 0.0F).setUv(maxU, maxV).setColor(color);
       vertices.addVertex(matrix, right, top, 0.0F).setUv(maxU, minV).setColor(color);
+      vertices.draw(renderType);
    }
 
    public static void drawItem(PoseStack poseStack, ItemStack stack, float x, float y, float z) {
@@ -97,7 +108,7 @@ public final class GuiDrawUtils implements ClientAccess {
    public static void drawItem(PoseStack poseStack, ItemStack stack, float x, float y, float z, boolean flushItemBuffers) {
       if (!stack.isEmpty()) {
          ItemStackRenderState renderState = new ItemStackRenderState();
-         SubmitNodeStorage submitNodes = ClientAccess.argusclientMinecraft.gameRenderer.getSubmitNodeStorage();
+         SubmitNodeStorage submitNodes = new SubmitNodeStorage();
          ClientAccess.argusclientMinecraft
             .getItemModelResolver()
             .updateForTopItem(renderState, stack, ItemDisplayContext.GUI, ClientAccess.argusclientMinecraft.level, null, 0);
@@ -116,7 +127,9 @@ public final class GuiDrawUtils implements ClientAccess {
             poseStack.scale(16.0F, -16.0F, depthScale);
             renderState.submit(poseStack, submitNodes, 15728880, OverlayTexture.NO_OVERLAY, 0);
             if (flushItemBuffers) {
-               RenderUtils.INSTANCE.flushEntities();
+               ImmediateSubmitRenderer.flush(submitNodes);
+            } else {
+               pendingItems.add(submitNodes);
             }
          } catch (Throwable failure) {
             throw new ReportedException(CrashReport.forThrowable(failure, "Rendering item"));
@@ -167,11 +180,9 @@ public final class GuiDrawUtils implements ClientAccess {
          FontRenderer var6 = FontRenderer.INSTANCE;
       }
 
-      ClientAccess.argusclientMinecraft
-         .font
-         .drawInBatch(
-            text, x, y, color, shadow, poseStack.last().pose(), FontRenderer.INSTANCE.getRenderer().getBufferSource(), DisplayMode.NORMAL, 0, 15728880
-         );
+      VanillaTextRenderer.draw(
+         poseStack, net.minecraft.network.chat.Component.nullToEmpty(text).getVisualOrderText(), x, y, color, shadow, DisplayMode.NORMAL, 15728880
+      );
    }
 
    public static void drawLineRect(PoseStack poseStack, float left, float top, float right, float bottom, Color color) {
@@ -238,7 +249,7 @@ public final class GuiDrawUtils implements ClientAccess {
    }
 
    static {
-      quadBuffer.setFormat(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-      lineBuffer.setFormat(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+      quadBuffer.setFormat(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+      lineBuffer.setFormat(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
    }
 }

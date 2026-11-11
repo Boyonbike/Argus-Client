@@ -2,6 +2,7 @@ package dev.argus.client.modules.render.targets;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -58,11 +59,11 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
 
    public static final RenderPipeline PIPELINE = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
       .withLocation("pipeline/argusclient_esp_cells")
-      .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+      .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(PrimitiveTopology.QUADS)
       .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
       .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
       .withCull(false)
-      .withColorTargetState(new ColorTargetState(java.util.Optional.empty(), ColorTargetState.WRITE_ALL))
+      .withColorTargetState(ColorTargetState.DEFAULT)
       .build();
    private static final int MAX_MODELS_PER_FRAME = 128;
 
@@ -239,7 +240,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
          if (entry.hasBlockEntity()) {
             BlockEntity blockEntity = current.getBlockEntity(position);
             if (blockEntity != null) {
-               BlockEntityRenderState state = dispatcher.tryExtractRenderState(blockEntity, partialTick, null);
+               BlockEntityRenderState state = dispatcher.tryExtractRenderState(blockEntity, partialTick, null, false);
                if (state != null && dispatcher.getRenderer(state) != null) {
                   PoseStack local = new PoseStack();
                   local.translate(localX, localY, localZ);
@@ -309,7 +310,7 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
       List<GpuBufferSlice> transforms = new ArrayList<>();
       List<Mesh> drawList = new ArrayList<>();
       int maxQuads = 0;
-      Matrix4f view = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poses.last().pose());
+      Matrix4f view = new Matrix4f(RenderSystem.getModelViewMatrixCopy()).mul(poses.last().pose());
       for (Visible item : this.visible) {
          Mesh mesh = this.meshes.get(item.key());
          if (mesh == null || mesh.vertices() == null || mesh.quads() == 0) {
@@ -327,12 +328,12 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
          return false;
       }
 
-      RenderSystem.AutoStorageIndexBuffer quadIndices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+      RenderSystem.AutoStorageIndexBuffer quadIndices = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
       GpuBuffer indices = quadIndices.getBuffer(maxQuads * 6);
       try (RenderPass pass = RenderSystem.getDevice()
             .createCommandEncoder()
             .createRenderPass(
-               () -> "Argus ESP cells", target.getColorTextureView(), OptionalInt.empty(), target.getDepthTextureView(), OptionalDouble.empty()
+               () -> "Argus ESP cells", target.getColorTextureView(), java.util.Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty()
             )) {
          pass.setPipeline(PIPELINE);
          RenderSystem.bindDefaultUniforms(pass);
@@ -340,8 +341,8 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
          for (int i = 0; i < drawList.size(); i++) {
             Mesh mesh = drawList.get(i);
             pass.setUniform("DynamicTransforms", transforms.get(i));
-            pass.setVertexBuffer(0, mesh.vertices());
-            pass.drawIndexed(0, 0, mesh.quads() * 6, 1);
+            pass.setVertexBuffer(0, mesh.vertices().slice());
+            pass.drawIndexed(mesh.quads() * 6, 1, 0, 0, 0);
          }
       }
 

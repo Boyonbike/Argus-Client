@@ -38,10 +38,8 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -227,7 +225,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       )
    )
    private boolean shouldRenderBlockOutline(
-      LevelRenderer renderer, BufferSource bufferSource, PoseStack poseStack, boolean translucent, LevelRenderState renderState
+      LevelRenderer renderer, SubmitNodeCollector bufferSource, PoseStack poseStack, boolean translucent, LevelRenderState renderState
    ) {
       if (!(ClientAccess.argusclientMinecraft.hitResult instanceof BlockHitResult)) {
          return true;

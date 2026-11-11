@@ -71,3 +71,4 @@ accessible	method	net/minecraft/client/renderer/rendertype/RenderSetup	<init>	(L
 accessible	field	net/minecraft/world/item/MobBucketItem	type	Lnet/minecraft/world/entity/EntityType;
 accessible	field	net/minecraft/world/entity/Entity	wasTouchingWater	Z
 accessible	field	net/minecraft/client/gui/Hud	isHidden	Z
+accessible	class	net/minecraft/client/renderer/rendertype/RenderSetup$TextureBinding

@@ -2,7 +2,7 @@ package dev.argus.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.WorldRenderEvent;
 import java.awt.Color;
@@ -40,7 +40,7 @@ public final class LineMeshRenderer implements ClientAccess {
    }
 
    public static void begin(PoseStack poses, float width) {
-      vertices.begin(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+      vertices.begin(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
       poseStack = poses;
       pendingVertex = false;
       lineWidth = width;

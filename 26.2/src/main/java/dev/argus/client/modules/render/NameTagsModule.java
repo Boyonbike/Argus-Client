@@ -1,5 +1,6 @@
 package dev.argus.client.modules.render;
 
+import dev.argus.client.render.MeshRenderer;
 import dev.argus.client.utils.chat.LegacyFormatting;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -7,7 +8,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.commands.FakeplayerCommand;
@@ -621,7 +622,6 @@ public class NameTagsModule extends Module {
    @EventHandler(priority = -1100)
    private void onWorldRender(WorldRenderEvent.Overlay event) {
       RenderTarget renderTarget = (RenderTarget)NAME_TAG_RENDER_TARGET.get();
-      RenderUtils.getEntityBuffers().endBatch();
       Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
 
       for (Entity entity : this.visibleEntities) {
@@ -662,7 +662,8 @@ public class NameTagsModule extends Module {
       if (this.overlayMesh.isBuilding()) {
          RenderType overlayRenderTypeSnapshot = ClientRenderTypes.image(ICON_TEXTURE);
          MeshData overlayMeshData = this.overlayMesh.build();
-         overlayRenderTypeSnapshot.draw(overlayMeshData);
+         MeshRenderer.draw(overlayRenderTypeSnapshot, overlayMeshData);
+         overlayMeshData.close();
       }
 
       Lighting lightingSnapshot = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
@@ -958,7 +959,7 @@ public class NameTagsModule extends Module {
          Setting<Boolean> option = this.colorsSetting;
          return option.isExpanded();
       }));
-      this.overlayMesh = MeshBuffer.create().setFormat(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+      this.overlayMesh = MeshBuffer.create().setFormat(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
       this.itemOverlayColor = new Color(153, 69, 58);
       this.visibleEntities = new ObjectArrayList();
       this.equipmentItems = new ObjectArrayList(6);

@@ -78,10 +78,12 @@ public class ResizableHudWidgetRenderer extends HudWidgetRenderer {
          }
 
          int handleColor = ColorUtils.toArgb(ColorUtils.getThemeColor(), this.handleAnimation.getValue() * ClientContext.getHudEditor().getTransitionOpacity());
-         VertexConsumer handleVertices = RenderUtils.getEntityBuffers().getBuffer(ClientRenderTypes.guiTriangles());
+         net.minecraft.client.renderer.rendertype.RenderType triangleType = ClientRenderTypes.guiTriangles();
+         MeshBuffer handleVertices = MeshBuffer.create().setFormat(triangleType.primitiveTopology(), triangleType.format());
          handleVertices.addVertex(poses.last(), sourceDimensions[0] - 5.0F, sourceDimensions[1] + 0.0F, 0.0F).setColor(handleColor);
          handleVertices.addVertex(poses.last(), sourceDimensions[0] + 0.0F, sourceDimensions[1] + 0.0F, 0.0F).setColor(handleColor);
          handleVertices.addVertex(poses.last(), sourceDimensions[0] + 0.0F, sourceDimensions[1] - 5.0F, 0.0F).setColor(handleColor);
+         handleVertices.draw(triangleType);
       }
 
       poses.popPose();

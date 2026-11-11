@@ -8,7 +8,6 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.SubmitNodeCollector.CustomGeometryRenderer;
-import net.minecraft.client.renderer.SubmitNodeCollector.ParticleGroupRenderer;
 import net.minecraft.client.renderer.block.MovingBlockRenderState;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -33,16 +32,20 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
    @Override
    public SubmitNodeCollection order(int order) {
       return (SubmitNodeCollection)this.getSubmitsPerOrder()
-         .computeIfAbsent(order, ignoredOrder -> new ColorSubmitNodeStorage.ColoredSubmitNodeCollection(this));
+         .computeIfAbsent(order, ignoredOrder -> new ColorSubmitNodeStorage.ColoredSubmitNodeCollection());
    }
 
    public void setColorArgb(int argb) {
       this.colorArgb = argb;
    }
 
+   public void clear() {
+      this.getSubmitsPerOrder().clear();
+   }
+
    private class ColoredSubmitNodeCollection extends SubmitNodeCollection {
-      public ColoredSubmitNodeCollection(SubmitNodeStorage storage) {
-         super(storage);
+      public ColoredSubmitNodeCollection() {
+         super();
       }
 
       @Override
@@ -57,7 +60,6 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
          Component nameTag,
          boolean notSneaking,
          int packedLight,
-         double distanceToCameraSq,
          CameraRenderState cameraState
       ) {
       }
@@ -109,11 +111,8 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
          int packedLight,
          int packedOverlay,
          TextureAtlasSprite sprite,
-         boolean sheeted,
-         boolean hasFoil,
-         int tintColor,
-         CrumblingOverlay crumblingOverlay,
-         int outlineColor
+         int outlineColor,
+         CrumblingOverlay crumblingOverlay
       ) {
          super.submitModelPart(
             part,
@@ -122,16 +121,13 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
             packedLight,
             packedOverlay,
             sprite,
-            sheeted,
-            hasFoil,
             ColorSubmitNodeStorage.this.colorArgb,
-            crumblingOverlay,
-            outlineColor
+            crumblingOverlay
          );
       }
 
       @Override
-      public void submitMovingBlock(PoseStack poseStack, MovingBlockRenderState movingBlockState) {
+      public void submitMovingBlock(PoseStack poseStack, MovingBlockRenderState movingBlockState, int outlineColor) {
       }
 
       @Override
@@ -178,8 +174,5 @@ public class ColorSubmitNodeStorage extends SubmitNodeStorage {
       public void submitCustomGeometry(PoseStack poseStack, RenderType renderType, CustomGeometryRenderer renderer) {
       }
 
-      @Override
-      public void submitParticleGroup(ParticleGroupRenderer renderer) {
-      }
    }
 }

@@ -12,11 +12,9 @@ public final class RenderStateManager {
    private static final List<RenderState> registeredStates = new ObjectArrayList();
    public static final RenderState BLENDED_SMOOTH_LINES = entering -> {
       if (entering) {
-         GlStateManager._enableBlend();
          GL32C.glEnable(2848);
       } else {
          GL32C.glDisable(2848);
-         GlStateManager._disableBlend();
       }
    };
    public static final RenderState THROUGH_WALLS = entering -> {
@@ -34,11 +32,9 @@ public final class RenderStateManager {
       if (entering) {
          GlStateManager._enablePolygonOffset();
          GlStateManager._polygonOffset(1.0F, -500000.0F);
-         GlStateManager._enableBlend();
          GlStateManager._disableCull();
       } else {
          GlStateManager._polygonOffset(1.0F, 500000.0F);
-         GlStateManager._disableBlend();
          GlStateManager._enableCull();
          GlStateManager._disablePolygonOffset();
       }

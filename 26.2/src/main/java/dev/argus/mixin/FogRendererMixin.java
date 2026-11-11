@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.GpuBuffer.MappedView;
+import com.mojang.blaze3d.buffers.GpuBufferSlice.MappedView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
@@ -68,7 +68,7 @@ public abstract class FogRendererMixin {
          Vector4f skyColor = new Vector4f(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), backgroundColor.getAlpha())
             .div(255.0F);
 
-         try (MappedView mappedBuffer = RenderSystem.getDevice().createCommandEncoder().mapBuffer(skyboxModule.getSkyFogBuffer().currentBuffer(), false, true)) {
+         try (MappedView mappedBuffer = skyboxModule.getSkyFogBuffer().currentBuffer().map(false, true)) {
             this.updateBuffer(
                mappedBuffer.data(),
                0,

@@ -1,17 +1,17 @@
 package dev.argus.client.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
 public class MeshBuffer implements VertexConsumer {
    private final ByteBufferBuilder byteBuffer;
    protected BufferBuilder builder;
-   private Mode mode;
+   private PrimitiveTopology topology;
    private VertexFormat format;
 
    public static MeshBuffer create(int capacity) {
@@ -20,11 +20,11 @@ public class MeshBuffer implements VertexConsumer {
 
    public BufferBuilder getBuilder() {
       if (this.builder == null) {
-         if (this.mode == null || this.format == null) {
+         if (this.topology == null || this.format == null) {
             throw new IllegalArgumentException("Tried to invoke empty not caching buffer");
          }
 
-         this.builder = new BufferBuilder(this.byteBuffer, this.mode, this.format);
+         this.builder = new BufferBuilder(this.byteBuffer, this.topology, this.format);
       }
 
       return this.builder;
@@ -81,8 +81,8 @@ public class MeshBuffer implements VertexConsumer {
       return this.builder == null;
    }
 
-   public MeshBuffer setFormat(Mode mode, VertexFormat format) {
-      this.mode = mode;
+   public MeshBuffer setFormat(PrimitiveTopology topology, VertexFormat format) {
+      this.topology = topology;
       this.format = format;
       return this;
    }
@@ -91,7 +91,8 @@ public class MeshBuffer implements VertexConsumer {
       if (builder != null) {
          MeshData mesh = builder.build();
          if (mesh != null) {
-            MeshDrawContext.draw(mesh);
+            MeshRenderer.draw(MeshDrawContext.getRenderType(), mesh);
+            mesh.close();
          }
       }
    }
@@ -103,8 +104,8 @@ public class MeshBuffer implements VertexConsumer {
       }
    }
 
-   public BufferBuilder begin(Mode mode, VertexFormat format) {
-      this.builder = new BufferBuilder(this.byteBuffer, mode, format);
+   public BufferBuilder begin(PrimitiveTopology topology, VertexFormat format) {
+      this.builder = new BufferBuilder(this.byteBuffer, topology, format);
       return this.builder;
    }
 
@@ -113,7 +114,8 @@ public class MeshBuffer implements VertexConsumer {
          MeshData mesh = this.builder.build();
          this.builder = null;
          if (mesh != null) {
-            renderType.draw(mesh);
+            MeshRenderer.draw(renderType, mesh);
+            mesh.close();
          }
       }
    }

@@ -9,10 +9,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import dev.argus.client.render.ArgusTesselator;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.math.Axis;
 import dev.argus.client.ClientAccess;
 import dev.argus.mixin.GameRendererAccessor;
@@ -20,8 +21,7 @@ import java.awt.Color;
 import java.util.OptionalInt;
 import net.minecraft.client.Camera;
 import net.minecraft.client.gui.Font.DisplayMode;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
+import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -42,10 +42,6 @@ public final class RenderUtils implements ClientAccess {
 
    public static void setColorAlpha(int alpha) {
       setColorComponents(renderColor[0], renderColor[1], renderColor[2], alpha);
-   }
-
-   public static BufferSource getEntityBuffers() {
-      return ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource();
    }
 
    public static void setLineSmoothing(boolean enabled) {
@@ -71,7 +67,7 @@ public final class RenderUtils implements ClientAccess {
       GL32C.glLineWidth(width);
    }
 
-   public void renderEntity(Entity entity, float partialTick, PoseStack poses, MultiBufferSource buffers) {
+   public void renderEntity(Entity entity, float partialTick, PoseStack poses) {
       EntityRenderDispatcher dispatcher = ClientAccess.argusclientMinecraft.getEntityRenderDispatcher();
       Vec3 cameraPosition = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera().position();
       double entityX = Mth.lerp(partialTick, entity.xOld, entity.getX());
@@ -79,6 +75,7 @@ public final class RenderUtils implements ClientAccess {
       double entityZ = Mth.lerp(partialTick, entity.zOld, entity.getZ());
       EntityRenderState renderState = dispatcher.extractEntity(entity, partialTick);
       CameraRenderState cameraRenderState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+      SubmitNodeStorage storage = new SubmitNodeStorage();
       dispatcher.submit(
          renderState,
          cameraRenderState,
@@ -86,14 +83,14 @@ public final class RenderUtils implements ClientAccess {
          entityY - cameraPosition.y,
          entityZ - cameraPosition.z,
          poses,
-         ClientAccess.argusclientMinecraft.gameRenderer.getSubmitNodeStorage()
+         storage
       );
+      ImmediateSubmitRenderer.flush(storage);
    }
 
    public static void clearColor(RenderTarget target, Color color) {
       RenderTargetRegistry.activate(target);
-      int clearColor = ARGB.color(0, color.getRed(), color.getGreen(), color.getBlue());
-      RenderSystem.getDevice().createCommandEncoder().clearColorTexture(target.getColorTexture(), clearColor);
+      RenderSystem.getDevice().createCommandEncoder().clearColorTexture(target.getColorTexture(), new org.joml.Vector4f(color.getRed() / 255.0F, color.getGreen() / 255.0F, color.getBlue() / 255.0F, 0.0F));
    }
 
    public static void clearColor(RenderTarget target) {
@@ -155,11 +152,11 @@ public final class RenderUtils implements ClientAccess {
 
       try (RenderPass renderPass = RenderSystem.getDevice()
             .createCommandEncoder()
-            .createRenderPass(() -> "Blit render target", outputTexture, OptionalInt.empty())) {
+            .createRenderPass(() -> "Blit render target", outputTexture, java.util.Optional.empty())) {
          renderPass.setPipeline(pipeline);
          RenderSystem.bindDefaultUniforms(renderPass);
          renderPass.bindTexture("InSampler", target.getColorTextureView(), RenderSystem.getSamplerCache().getClampToEdge(filter));
-         renderPass.draw(0, 3);
+         renderPass.draw(3, 1, 0, 0);
       }
    }
 
@@ -174,7 +171,6 @@ public final class RenderUtils implements ClientAccess {
       poses.scale(0.025F * (float)scale, -0.025F * (float)scale, 1.0F);
       int halfWidth = (int)(width / 2.0F);
       GuiDrawUtils.drawTexture(poses, texture, -halfWidth, -halfWidth, 0.0F, 0.0F, (int)width, (int)height, (int)width, (int)height, color.hashCode());
-      getEntityBuffers().endLastBatch();
       poses.popPose();
    }
 
@@ -202,12 +198,15 @@ public final class RenderUtils implements ClientAccess {
          bottom = previousTop;
       }
 
-      BufferBuilder vertices = Tesselator.getInstance().begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+      BufferBuilder vertices = ArgusTesselator.getInstance().begin(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
       vertices.addVertex(poses.last().pose(), left, bottom, z).setColor(color);
       vertices.addVertex(poses.last().pose(), right, bottom, z).setColor(color);
       vertices.addVertex(poses.last().pose(), right, top, z).setColor(color);
       vertices.addVertex(poses.last().pose(), left, top, z).setColor(color);
-      ClientRenderTypes.gui().draw(vertices.buildOrThrow());
+      MeshData mesh = vertices.buildOrThrow();
+      MeshRenderer.draw(ClientRenderTypes.gui(), mesh);
+      mesh.close();
+      ArgusTesselator.getInstance().end();
    }
 
    public void fillRect(PoseStack poses, float left, float top, float right, float bottom, int color) {
@@ -273,8 +272,7 @@ public final class RenderUtils implements ClientAccess {
    }
 
    public void flushEntities() {
-      ClientAccess.argusclientMinecraft.gameRenderer.featureRenderDispatcher().renderAllFeatures();
-      ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers().bufferSource().endBatch();
+      GuiDrawUtils.flushPendingItems();
    }
 
    public static int[] getRenderColor() {

@@ -118,9 +118,7 @@ public final class FontRenderer implements ClientAccess {
          if (FontsModule.INSTANCE.isToggled()) {
             this.getRenderer().draw(poses, text.getVisualOrderText(), x, y, argb, true);
          } else {
-            ClientAccess.argusclientMinecraft
-               .font
-               .drawInBatch(text, (int)x, (int)y, argb, true, poses.last().pose(), this.getRenderer().getBufferSource(), displayMode, 0, 15728880);
+            VanillaTextRenderer.draw(poses, text.getVisualOrderText(), x, y, argb, true, displayMode, 15728880);
          }
       }
    }
@@ -138,9 +136,7 @@ public final class FontRenderer implements ClientAccess {
          if (FontsModule.INSTANCE.isToggled()) {
             this.getRenderer().draw(poses, text.getVisualOrderText(), x, y, argb, false);
          } else {
-            ClientAccess.argusclientMinecraft
-               .font
-               .drawInBatch(text, (int)x, (int)y, argb, false, poses.last().pose(), this.getRenderer().getBufferSource(), displayMode, 0, 15728880);
+            VanillaTextRenderer.draw(poses, text.getVisualOrderText(), x, y, argb, false, displayMode, 15728880);
          }
       }
    }

@@ -67,7 +67,7 @@ public class PlayerModelModule extends HudWidgetModule {
       Lighting lighting = ClientAccess.argusclientMinecraft.gameRenderer.lighting();
       Entry entityLightingEntry = Entry.ENTITY_IN_UI;
       lighting.setupFor(entityLightingEntry);
-      SubmitNodeStorage submitNodes = ClientAccess.argusclientMinecraft.gameRenderer.getSubmitNodeStorage();
+      SubmitNodeStorage submitNodes = new SubmitNodeStorage();
       CameraRenderState cameraState = ClientAccess.argusclientMinecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
       Minecraft clientForEntityRenderer = Minecraft.getInstance();
       EntityRenderDispatcher entityRenderer = clientForEntityRenderer.getEntityRenderDispatcher();
@@ -75,7 +75,8 @@ public class PlayerModelModule extends HudWidgetModule {
       EntityRenderState entityState = entityRenderer.extractEntity(entity, partialTick);
       entityState.shadowPieces.clear();
       entityRenderer.submit(entityState, cameraState, 0.0, 0.0, 0.0, poses, submitNodes);
-      RenderUtils.INSTANCE.flushEntities();
+      dev.argus.client.render.ImmediateSubmitRenderer.flush(submitNodes);
+      submitNodes.getSubmitsPerOrder().clear();
       poses.popPose();
       GameRenderer rendererForItemLighting = ClientAccess.argusclientMinecraft.gameRenderer;
       lighting = rendererForItemLighting.lighting();

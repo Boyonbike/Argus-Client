@@ -2,7 +2,7 @@ package dev.argus.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.WorldRenderEvent;
@@ -121,7 +121,7 @@ public final class WorldBoxRenderer implements ClientAccess {
 
    static {
       ClientAccess.eventBus.subscribeStatic(WorldBoxRenderer.class);
-      fillVertices.setFormat(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-      lineVertices.setFormat(Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+      fillVertices.setFormat(PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+      lineVertices.setFormat(PrimitiveTopology.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
    }
 }

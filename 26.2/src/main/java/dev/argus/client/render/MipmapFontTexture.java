@@ -6,7 +6,7 @@ import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.GpuFormat;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
@@ -24,7 +24,7 @@ public final class MipmapFontTexture extends AbstractTexture {
    private void createTexture(Supplier<String> label) {
       GpuDevice device = RenderSystem.getDevice();
       NativeImage baseImage = this.mipImages[0];
-      this.texture = device.createTexture(label, 5, TextureFormat.RGBA8, baseImage.getWidth(), baseImage.getHeight(), 1, this.mipLevelCount);
+      this.texture = device.createTexture(label, com.mojang.blaze3d.textures.GpuTexture.USAGE_COPY_DST | com.mojang.blaze3d.textures.GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, baseImage.getWidth(), baseImage.getHeight(), 1, this.mipLevelCount);
       this.sampler = RenderSystem.getSamplerCache()
          .getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.LINEAR, true);
       this.textureView = device.createTextureView(this.texture, 0, this.mipLevelCount);
@@ -36,7 +36,7 @@ public final class MipmapFontTexture extends AbstractTexture {
 
          for (int level = 0; level < this.mipImages.length; level++) {
             NativeImage image = this.mipImages[level];
-            encoder.writeToTexture(this.texture, image, level, 0, 0, 0, image.getWidth(), image.getHeight(), 0, 0);
+            encoder.writeToTexture(this.texture, image, level, 0, 0, 0);
          }
       }
    }

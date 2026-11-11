@@ -6,9 +6,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
+import dev.argus.client.render.ArgusTesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.PrimitiveTopology;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.managers.RenderStateManager;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -43,9 +43,9 @@ public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
    }
 
    protected void drawFullscreenQuad() {
-      Tesselator capturedTesselator = Tesselator.getInstance();
+      ArgusTesselator capturedTesselator = ArgusTesselator.getInstance();
       VertexFormat vertexFormat = DefaultVertexFormat.POSITION;
-      Mode quadMode = Mode.QUADS;
+      PrimitiveTopology quadMode = PrimitiveTopology.QUADS;
       BufferBuilder vertices = capturedTesselator.begin(quadMode, vertexFormat);
       vertices.addVertex(-1.0F, -1.0F, 0.0F);
       vertices.addVertex(-1.0F, 1.0F, 0.0F);
@@ -53,7 +53,8 @@ public class RenderTargetShaderStage implements ClientAccess, ShaderStage {
       vertices.addVertex(1.0F, -1.0F, 0.0F);
       RenderType renderType = ClientRenderTypes.entityShader();
       MeshData mesh = vertices.buildOrThrow();
-      renderType.draw(mesh);
+      MeshRenderer.draw(renderType, mesh);
+         mesh.close();
    }
 
    public RenderTargetShaderStage(String vertexResource, String fragmentResource, RenderTarget outputTarget) {

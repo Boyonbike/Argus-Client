@@ -1,6 +1,6 @@
 package dev.argus.client.integrations;
 
-import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
+import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import com.viaversion.viaversion.api.protocol.packet.PacketType;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
@@ -55,7 +55,7 @@ public final class ProtocolCompatibility {
 
    private static final class LegacyPackets {
       private static void setSneaking(boolean sneaking) {
-         UserConnection connection = ProtocolTranslator.getPlayNetworkUserConnection();
+         UserConnection connection = ViaFabricPlusImpl.impl().protocolTranslation().userConnection();
          PacketType packetType = ServerboundPackets1_21_5.PLAYER_COMMAND;
          PacketWrapper packet = PacketWrapper.create(packetType, connection);
          VarIntType entityIdType = Types.VAR_INT;

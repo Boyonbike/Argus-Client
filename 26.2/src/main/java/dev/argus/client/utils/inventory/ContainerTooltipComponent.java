@@ -12,7 +12,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MapRenderer;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -120,8 +119,6 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
    public static void renderMapOverlay(GuiGraphicsExtractor graphics, MapItemSavedData data, int id, float x, float y) {
       if (data != null) {
          Matrix3x2fStack poses = graphics.pose();
-         RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
-         BufferSource buffers = renderBuffers.bufferSource();
          poses.pushMatrix();
          poses.translate(x, y);
          float scaleX = 0.125F;
@@ -134,7 +131,6 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
          mapRenderer.extractRenderState(mapId, data, extractState);
          MapRenderState submitState = sharedMapRenderState;
          graphics.map(submitState);
-         buffers.endBatch();
          poses.popMatrix();
       }
    }

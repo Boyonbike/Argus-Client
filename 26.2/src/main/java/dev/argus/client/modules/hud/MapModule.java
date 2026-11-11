@@ -24,7 +24,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.ChunkPos;
@@ -201,9 +200,6 @@ public class MapModule extends HudWidgetModule {
             int pointerArgb = ColorUtils.toArgb(arrowColorOption.getValue(), renderAlpha);
             Identifier texture = NAVIGATION_TEXTURE;
             GuiDrawUtils.drawTexture(poses, texture, -128, -128, 0.0F, 0.0F, 256, 256, 256, 256, pointerArgb);
-            RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.gameRenderer.renderBuffers();
-            BufferSource bufferSource = renderBuffers.bufferSource();
-            bufferSource.endBatch();
          }
       }
 
