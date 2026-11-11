@@ -60,10 +60,20 @@ abstract class InlineCard {
 
     /** For cards holding a text field: gets the click first. */
     boolean widgetClicked(MouseButtonEvent event, boolean doubled) { return false; }
+    /** Right and middle clicks inside the visible part of the card. */
+    boolean otherClicked(MouseButtonEvent event) { return false; }
+    boolean dragged(MouseButtonEvent event) { return false; }
+    boolean released() { return false; }
+    /** Draws hover popups above everything else. */
+    void popup(GuiGraphics g, UiTheme t, int width, int height) {}
+
+    protected final float clipTop() { return clipTop; }
+    protected final float clipBottom() { return clipBottom; }
 
     final boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         if (widgetClicked(event, doubled)) return true;
-        if (event.button() != 0 || event.y() < clipTop || event.y() >= clipBottom) return false;
+        if (event.y() < clipTop || event.y() >= clipBottom) return false;
+        if (event.button() != 0) return otherClicked(event);
         for (int i = hits.size() - 1; i >= 0; i--) {
             Hit hit = hits.get(i);
             if (UiDraw.over(event.x(), event.y(), hit.x(), hit.y(), hit.w(), hit.h())) { hit.run().run(); return true; }
@@ -176,24 +186,13 @@ abstract class InlineCard {
     static final class Items extends InlineCard {
         /** Draws a 16-unit square at the row's left. */
         interface Icon { void draw(GuiGraphics g, float x, float y); }
-        /** Runs with the button's bounds and the card's left and right edges, e.g. to open a colour picker beside it. */
-        interface Placed { void run(float x, float y, float w, float h, float left, float right); }
-        /**
-         * A button; {@code done} is the message shown after it runs, or null. A {@code swatch} draws the button as a
-         * colour square; a {@code placed} action gets the button's position when clicked.
-         */
-        record Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run, IntSupplier swatch, Placed placed) {
-            Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run) { this(label, tip, accent, confirm, done, run, null, null); }
+        /** A button; {@code done} is the message shown after it runs, or null. */
+        record Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run) {
             static Action of(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, false, done, run); }
             static Action main(String label, String tip, String done, Runnable run) { return new Action(label, tip, true, false, done, run); }
             static Action on(String label, String tip, boolean lit, Runnable run) { return new Action(label, tip, lit, false, null, run); }
             static Action danger(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, true, done, run); }
-            static Action colour(String label, String tip, IntSupplier swatch, Placed placed) { return new Action(label, tip, false, false, null, () -> {}, swatch, placed); }
         }
-        /** A match for what's typed in the field; clicking it (or Enter on the first) runs {@code pick}. */
-        record Suggestion(String label, String detail, Icon icon, Runnable pick, String done) {}
-        /** The tag at a row's right: given the entry and whether it's hovered. */
-        interface Tagger { String tag(Entry entry, boolean hover); }
         record Entry(String label, String detail, boolean active, Icon icon, Runnable select, String selectDone, List<Action> actions) {}
 
         private final String title, icon, empty;
@@ -207,41 +206,11 @@ abstract class InlineCard {
         private Consumer<String> submit;
         private String armed = "";
         private long armedAt;
-        private float cardX, cardW;
-        private static final float SUGGESTION = 22;
-        private java.util.function.Function<String, List<Suggestion>> suggester;
-        private String noMatch = "", lastQuery;
-        private List<Suggestion> lastSuggestions = List.of();
-        private Tagger tagger = (e, hover) -> e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
 
         Items(UiScreen host, String title, String icon, Supplier<String> subtitle, String empty, Supplier<List<Entry>> entries) {
             super(host); this.title = title; this.icon = icon; this.subtitle = subtitle; this.empty = empty; this.entries = entries;
         }
 
-        /**
-         * Shows matches under the field while something is typed; the Add button and Enter take the first one.
-         * {@code noMatch} is shown when nothing matches.
-         */
-        Items suggest(java.util.function.Function<String, List<Suggestion>> suggester, String noMatch) { this.suggester = suggester; this.noMatch = noMatch; return this; }
-
-        private List<Suggestion> suggestions() {
-            if (suggester == null || field == null) return List.of();
-            String query = field.getValue();
-            if (query.isBlank()) { lastQuery = null; return List.of(); }
-            if (!query.equals(lastQuery)) { lastQuery = query; lastSuggestions = suggester.apply(query); }
-            return lastSuggestions;
-        }
-        private float suggestionHeight() {
-            if (suggester == null || field == null || field.getValue().isBlank()) return 0;
-            return Math.max(1, suggestions().size()) * SUGGESTION + 8;
-        }
-        private void pick(Suggestion suggestion) {
-            attempt(suggestion.pick(), suggestion.done() == null ? "" : suggestion.done());
-            if (error().isEmpty()) { field.setValue(""); lastQuery = null; }
-        }
-
-        /** Replaces the "In use" / "Click to use" tags at the rows' right. */
-        Items tags(Tagger tagger) { this.tagger = tagger; return this; }
         /** A line of help shown at the left of the top row, when there is no field. */
         Items hint(String text) { hint = text; return this; }
         /** Buttons at the right of the top row. */
@@ -259,7 +228,7 @@ abstract class InlineCard {
 
         private boolean hasTop() { return field != null || !headerActions.isEmpty() || !hint.isEmpty(); }
         private float rowHeight(List<Entry> list) { for (Entry e : list) if (e.icon() != null || !e.detail().isEmpty()) return 28; return 24; }
-        @Override float bodyHeight() { List<Entry> list = entries.get(); return (hasTop() ? 26 : 0) + suggestionHeight() + Math.max(1, list.size()) * rowHeight(list) + 4; }
+        @Override float bodyHeight() { List<Entry> list = entries.get(); return (hasTop() ? 26 : 0) + Math.max(1, list.size()) * rowHeight(list) + 4; }
 
         @Override void reattach() { if (field != null) host.hostAdd(field); }
         @Override void stopEditing() { if (field != null) field.setFocused(false); }
@@ -276,12 +245,6 @@ abstract class InlineCard {
         }
 
         private void add() {
-            if (suggester != null) {
-                List<Suggestion> found = suggestions();
-                if (found.isEmpty()) fail(field.getValue().isBlank() ? "Type a name to search." : noMatch);
-                else pick(found.get(0));
-                return;
-            }
             String text = field.getValue().trim();
             attempt(() -> submit.accept(text), submitDone.apply(text));
             if (error().isEmpty()) field.setValue("");
@@ -291,16 +254,6 @@ abstract class InlineCard {
 
         /** Draws one button right-to-left from {@code right}; returns the new right edge. */
         private float actionButton(GuiGraphics g, int mx, int my, UiTheme t, String key, float right, float cy, Action a) {
-            if (a.swatch() != null) {
-                float sw = 20, sx = right - sw, sy = cy - 8;
-                boolean hover = hovering(mx, my, sx, sy, sw, 16);
-                UiDraw.rounded(g, sx, sy, sw, 16, 5, a.swatch().getAsInt() | 0xFF000000);
-                UiDraw.outline(g, sx, sy, sw, 16, 5, hover ? 1.2f : .6f, hover ? t.text() : UiDraw.alpha(t.overlay(), .8f));
-                float left = cardX, cardRight = cardX + cardW;
-                hit(sx, sy, sw, 16, () -> { armed = ""; if (a.placed() != null) a.placed().run(sx, sy, sw, 16, left, cardRight); });
-                if (hover && a.tip() != null) host.tooltip(title() + "." + key, a.label(), a.tip());
-                return right - sw - 4;
-            }
             boolean waiting = a.confirm() && isArmed(key);
             String label = waiting ? "Confirm" : a.label();
             float bw = Math.max(a.label().length() <= 2 ? 20 : 0, buttonWidth(a.confirm() ? "Confirm" : label) + 4);
@@ -313,7 +266,6 @@ abstract class InlineCard {
         }
 
         @Override void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
-            cardX = x; cardW = w;
             float top = 0;
             if (hasTop()) {
                 float cy = y + 12, right = x + w;
@@ -327,28 +279,6 @@ abstract class InlineCard {
                     if (field.visible) field.render(g, mx, my, 0); else field.setFocused(false);
                 } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.muted());
                 top = 26;
-            }
-            float matches = suggestionHeight();
-            if (matches > 0) {
-                List<Suggestion> found = suggestions();
-                float py = y + top;
-                UiDraw.rounded(g, x, py, w, matches - 4, 6, t.crust());
-                UiDraw.outline(g, x, py, w, matches - 4, 6, .6f, UiDraw.alpha(t.accent(), .35f));
-                if (found.isEmpty()) UiDraw.text(g, UiDraw.fit(noMatch, w - 12, UiDraw.SMALL), x + 8, py + SUGGESTION / 2 + 2, UiDraw.SMALL, t.muted());
-                for (int i = 0; i < found.size(); i++) {
-                    Suggestion sg = found.get(i);
-                    float ry = py + 2 + i * SUGGESTION, cy = ry + SUGGESTION / 2;
-                    boolean hover = hovering(mx, my, x + 2, ry, w - 4, SUGGESTION);
-                    float hv = UiAnim.smooth("ic." + title + ".sg" + i, hover ? 1 : 0, 18);
-                    if (hv > 0 || i == 0) UiDraw.rounded(g, x + 2, ry, w - 4, SUGGESTION, 5, UiDraw.alpha(t.accent(), (i == 0 ? .08f : 0) + hv * .12f));
-                    float tx = x + 10;
-                    if (sg.icon() != null) { sg.icon().draw(g, x + 6, ry + (SUGGESTION - 16) / 2); tx = x + 28; }
-                    float detailW = UiDraw.width(sg.detail(), UiDraw.SMALL);
-                    UiDraw.text(g, UiDraw.fit(sg.label(), w - (tx - x) - detailW - 16), tx, cy, hover ? t.accent() : t.text());
-                    UiDraw.right(g, sg.detail(), x + w - 8, cy, UiDraw.SMALL, t.muted());
-                    hit(x + 2, ry, w - 4, SUGGESTION, () -> pick(sg));
-                }
-                top += matches;
             }
             List<Entry> list = entries.get();
             float rh = rowHeight(list);
@@ -367,7 +297,7 @@ abstract class InlineCard {
                 float tx = x + 10;
                 if (e.icon() != null) { e.icon().draw(g, x + 6, ry + (rh - 16) / 2); tx = x + 30; }
                 int colour = e.active() ? t.accent() : t.text();
-                String tag = tagger.tag(e, hover);
+                String tag = e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
                 float tagW = tag.isEmpty() ? 0 : UiDraw.width(tag, UiDraw.SMALL) + 10;
                 if (e.detail().isEmpty()) UiDraw.text(g, UiDraw.fit(e.label(), x + rowW - tx - tagW - 6), tx, cy, colour);
                 else {

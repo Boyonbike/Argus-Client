@@ -100,6 +100,8 @@ public final class TargetSettings {
    public final Blocks blocks;
    /** Rules for one specific block, entity type, item or player; they override the cards above for that thing. */
    public final SpecificTargets specific;
+   /** Set once the cards' choices have moved into the target list (see {@link TargetLinks#migrate}). */
+   public final Setting<Boolean> migrated;
    private final List<Group> groups;
 
    /** Adds the four cards to the module, in order, at the current end of its settings. */
@@ -110,6 +112,8 @@ public final class TargetSettings {
       this.blocks = new Blocks(module, enabledByDefault.contains(Kind.BLOCKS));
       this.groups = List.of(this.players, this.mobs, this.items, this.blocks);
       this.specific = new SpecificTargets(module);
+      this.migrated = module.add(new BooleanSetting("TargetsMigrated", false, ignored -> false));
+      this.migrated.setConfigName("TargetsMigrated");
    }
 
    public TargetSettings(Module module, Kind... enabledByDefault) {
@@ -137,7 +141,8 @@ public final class TargetSettings {
       Group(Module module, Kind kind, boolean enabledByDefault) {
          this.module = module;
          this.kind = kind;
-         this.card = module.add(new BooleanSetting(kind.title(), true).markAsGroup());
+         // The cards are no longer shown: the target list replaced them. They stay for old configs (see TargetLinks#migrate).
+         this.card = module.add(new BooleanSetting(kind.title(), true, ignored -> false).markAsGroup());
          this.card.setConfigName(kind.title() + "Card");
          this.enabled = this.add("Enabled", new BooleanSetting("Enabled", enabledByDefault));
          this.mirror = module.add(new BooleanSetting("Mirror", false, ignored -> false));

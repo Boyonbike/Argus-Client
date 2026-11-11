@@ -8,6 +8,10 @@ import dev.argus.client.modules.Module;
 import dev.argus.client.settings.Setting;
 import java.util.ArrayList;
 import java.util.List;
+import dev.argus.client.settings.options.ListFilterMode;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 
 /**
  * Pairing between ESP's and Tracers' target cards. Per card, either module can:
@@ -115,14 +119,10 @@ public final class TargetLinks implements ClientAccess {
 
    @EventHandler
    private void onTick(MinecraftTickEvent event) {
-      for (TargetSettings.Kind kind : TargetSettings.Kind.values()) {
-         this.syncNow(kind);
-      }
-
       this.syncRules();
    }
 
-   // ---- specific targets ----------------------------------------------------------------------------------------------
+   // ---- target groups -------------------------------------------------------------------------------------------------
 
    public SpecificTargets specific(boolean fromEsp) {
       return (fromEsp ? this.espTargets : this.tracersTargets).specific;
@@ -132,25 +132,25 @@ public final class TargetLinks implements ClientAccess {
       return this.specific(!fromEsp);
    }
 
-   /** Whether this specific target is on in the other module (and the other module itself is on). */
+   /** Whether this group is on in the other module (and the other module itself is on). */
    public boolean onInOther(boolean fromEsp, SpecificRules.Rule rule) {
-      SpecificRules.Rule other = this.otherSpecific(fromEsp).rules().find(rule.type, rule.id);
+      SpecificRules.Rule other = this.otherSpecific(fromEsp).rules().find(rule.id);
       return (fromEsp ? this.tracers : this.esp).isToggled() && other != null && other.enabled;
    }
 
    /**
-    * Switches the specific target in the other module. Switching it on adds it there (copying this page's settings for
-    * it once, unless mirrored) and turns the other module on if it was off.
+    * Switches the group in the other module. Switching it on copies it there (its things and settings, once, unless
+    * linked; things already in another group there move to this one) and turns the other module on if it was off.
     */
    public void toggleInOther(boolean fromEsp, SpecificRules.Rule rule) {
       SpecificTargets theirs = this.otherSpecific(fromEsp);
       Module otherModule = fromEsp ? this.tracers : this.esp;
+      SpecificRules.Rule other = theirs.rules().find(rule.id);
       if (this.onInOther(fromEsp, rule)) {
-         theirs.rules().find(rule.type, rule.id).enabled = false;
+         other.enabled = false;
       } else {
-         SpecificRules.Rule other = theirs.rules().add(rule.type, rule.id);
-         if (!rule.mirror) {
-            other.copyValues(rule);
+         if (other == null || !rule.mirror) {
+            other = theirs.rules().put(rule);
          }
 
          other.enabled = true;
@@ -163,15 +163,14 @@ public final class TargetLinks implements ClientAccess {
       this.syncRules();
    }
 
-   /** Links the specific target in both modules, starting from this page's settings for it. */
+   /** Links the group in both modules, starting from this page's copy. */
    public void mirror(boolean fromEsp, SpecificRules.Rule rule) {
       SpecificTargets mine = this.specific(fromEsp);
       SpecificTargets theirs = this.otherSpecific(fromEsp);
-      SpecificRules.Rule other = theirs.rules().add(rule.type, rule.id);
-      other.copyValues(rule);
+      SpecificRules.Rule other = theirs.rules().put(rule);
       other.mirror = true;
       rule.mirror = true;
-      this.agreedRules.put(rule.key(), rule.values());
+      this.agreedRules.put(rule.id, rule.values());
       mine.changed();
       theirs.changed();
    }
@@ -179,27 +178,27 @@ public final class TargetLinks implements ClientAccess {
    public void breakLink(SpecificRules.Rule rule) {
       for (boolean esp : new boolean[]{true, false}) {
          SpecificTargets targets = this.specific(esp);
-         SpecificRules.Rule found = targets.rules().find(rule.type, rule.id);
+         SpecificRules.Rule found = targets.rules().find(rule.id);
          if (found != null && found.mirror) {
             found.mirror = false;
             targets.changed();
          }
       }
 
-      this.agreedRules.remove(rule.key());
+      this.agreedRules.remove(rule.id);
    }
 
-   /** Removes the specific target from this page, and from the other page too while the two are mirrored. */
+   /** Removes the group from this page, and from the other page too while the two are linked. */
    public void remove(boolean fromEsp, SpecificRules.Rule rule) {
       SpecificTargets mine = this.specific(fromEsp);
-      SpecificRules.Rule found = mine.rules().find(rule.type, rule.id);
+      SpecificRules.Rule found = mine.rules().find(rule.id);
       if (found == null) {
          return;
       }
 
       if (found.mirror) {
          SpecificTargets theirs = this.otherSpecific(fromEsp);
-         SpecificRules.Rule other = theirs.rules().find(rule.type, rule.id);
+         SpecificRules.Rule other = theirs.rules().find(rule.id);
          if (other != null && other.mirror) {
             theirs.rules().remove(other);
             theirs.changed();
@@ -208,13 +207,15 @@ public final class TargetLinks implements ClientAccess {
 
       mine.rules().remove(found);
       mine.changed();
-      this.agreedRules.remove(rule.key());
+      this.agreedRules.remove(rule.id);
    }
 
-   /** Applies changes on mirrored specific targets right away (the GUI calls this after a click). */
+   /** Applies changes on linked groups right away (the GUI calls this after a click). Also runs every tick. */
    public void syncRules() {
       SpecificTargets esp = this.espTargets.specific;
       SpecificTargets tracers = this.tracersTargets.specific;
+      migrate(this.espTargets);
+      migrate(this.tracersTargets);
       esp.poll();
       tracers.poll();
       int changed = SpecificRules.sync(esp.rules(), tracers.rules(), this.agreedRules);
@@ -225,6 +226,83 @@ public final class TargetLinks implements ClientAccess {
       if ((changed & SpecificRules.RIGHT_CHANGED) != 0) {
          tracers.changed();
       }
+   }
+
+   /**
+    * Moves what the old Players/Mobs/Items/Blocks cards showed into the target list, once per module, then switches the
+    * cards off (they're no longer shown). Mobs picked by category (hostile, passive, neutral) have no single thing to
+    * add, so only a whitelisted mob list carries over.
+    */
+   static void migrate(TargetSettings targets) {
+      if (targets.migrated.getValue()) {
+         return;
+      }
+
+      targets.migrated.setValue(true);
+      SpecificRules rules = targets.specific.rules();
+      TargetSettings.Players players = targets.players;
+      if (players.active()) {
+         SpecificRules.Rule all = rules.add(List.of(new SpecificRules.Member(SpecificRules.Type.GROUP, SpecificRules.ALL_PLAYERS, SpecificRules.Category.PLAYERS)));
+         if (all != null) {
+            all.body.write(colorRange(players.color.getValue(), players.range.getValue(), null));
+         }
+      }
+
+      TargetSettings.Blocks blocks = targets.blocks;
+      if (blocks.active() && !blocks.list.getValue().isEmpty()) {
+         List<String> ids = new ArrayList<>();
+         for (Block block : blocks.list.getValue()) {
+            ids.add(SpecificTargets.idOf(block));
+         }
+
+         SpecificRules.Rule group = rules.add(SpecificTargets.members(SpecificRules.Type.BLOCK, ids));
+         if (group != null) {
+            group.body.write(colorRange(blocks.color.getValue(), blocks.range.getValue(), blocks.colorMode.getValue()));
+         }
+      }
+
+      TargetSettings.Items items = targets.items;
+      if (items.active() && items.filter.getValue() == ListFilterMode.WHITELIST && !items.list.getValue().isEmpty()) {
+         List<String> ids = new ArrayList<>();
+         for (Item item : items.list.getValue()) {
+            ids.add(SpecificTargets.idOf(item));
+         }
+
+         SpecificRules.Rule group = rules.add(SpecificTargets.members(SpecificRules.Type.ITEM, ids));
+         if (group != null) {
+            group.body.write(colorRange(items.color.getValue(), items.range.getValue(), null));
+         }
+      }
+
+      TargetSettings.Mobs mobs = targets.mobs;
+      if (mobs.active() && mobs.filter.getValue() == ListFilterMode.WHITELIST && !mobs.list.getValue().isEmpty()) {
+         List<String> ids = new ArrayList<>();
+         for (EntityType<?> type : mobs.list.getValue()) {
+            ids.add(SpecificTargets.idOf(type));
+         }
+
+         SpecificRules.Rule group = rules.add(SpecificTargets.members(SpecificRules.Type.ENTITY, ids));
+         if (group != null) {
+            group.body.write(colorRange(mobs.hostileColor.getValue(), mobs.range.getValue(), null));
+         }
+      }
+
+      for (TargetSettings.Group card : targets.groups()) {
+         card.enabled.setValue(false);
+      }
+
+      targets.specific.changed();
+   }
+
+   private static String colorRange(java.awt.Color color, float range, TargetSettings.ColorMode colorMode) {
+      com.google.gson.JsonObject object = new com.google.gson.JsonObject();
+      object.add("TargetColor", new dev.argus.client.settings.ColorSetting("Color", color).toJson());
+      object.addProperty("TargetRange", range);
+      if (colorMode != null) {
+         object.add("TargetColorMode", new dev.argus.client.settings.EnumSetting<>("ColorMode", colorMode).toJson());
+      }
+
+      return object.toString();
    }
 
    /** Applies any change on a mirrored card right away (the GUI calls this after a click). */

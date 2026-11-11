@@ -9,11 +9,7 @@ import dev.argus.client.modules.player.AutoRekitModule;
 import dev.argus.client.modules.render.ESPModule;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.modules.render.TracersModule;
-import dev.argus.client.modules.render.targets.RuleSettings;
-import dev.argus.client.modules.render.targets.SpecificRules;
-import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetLinks;
-import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Style;
@@ -22,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
@@ -60,138 +55,8 @@ final class ModuleTools {
         if (module instanceof DiscordSyncModule sync) page.inline(discordSync(host, sync), Placement.last());
         if (module instanceof BoatPhaseModule boat) page.inline(boatControls(host, boat), Placement.first());
         if (module instanceof HUDModule && hooks.topBar()) page.inline(hud(host, hooks), Placement.first());
-        if (module instanceof ESPModule) targets(page, host, true);
-        if (module instanceof TracersModule) targets(page, host, false);
-    }
-
-    // ---- ESP / Tracers targets --------------------------------------------------------------------------------
-
-    /**
-     * ESP's and Tracers' target tools:
-     * <ul>
-     *   <li>a "Specific targets" card on top: search for a block, entity, dropped item or player and add it; one row per
-     *       added target, with On/Off, "Toggle in X", "Mirror"/"Break link" and remove. Clicking a row opens its settings;</li>
-     *   <li>one settings card per added target, right under that list, with the settings that suit its kind and a note
-     *       saying whether it's linked with the other module;</li>
-     *   <li>"Toggle in X" and "Mirror" on the Players/Mobs/Items/Blocks cards' headers, with the same note.</li>
-     * </ul>
-     */
-    private static void targets(ModulePage page, UiScreen host, boolean fromEsp) {
-        TargetLinks links = TargetLinks.get();
-        if (links == null) return;
-        String other = links.otherName(fromEsp);
-        SpecificTargets specific = links.specific(fromEsp);
-        InlineCard.Items card = specificTargets(page, host, links, specific, fromEsp, other);
-        page.inline(card, Placement.first());
-        page.dynamic(card, () -> {
-            List<SettingsCards.Dynamic> cards = new ArrayList<>();
-            for (SpecificRules.Rule rule : specific.rules().all()) {
-                RuleSettings settings = specific.settings(rule);
-                SpecificTargets.Candidate what = specific.describe(rule);
-                ItemStack icon = what.icon();
-                cards.add(new SettingsCards.Dynamic(settings, what.name(),
-                        icon == null ? null : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, .75f),
-                        settings.settings(),
-                        new SettingsCards.Decoration(() -> rule.type.title() + " target" + (rule.enabled ? "" : " (off)") + " · "
-                                + (rule.mirror ? "Linked with " + other + ": changes apply to both" : "Only this page"), null)));
-            }
-            return cards;
-        });
-        for (TargetSettings.Kind kind : TargetSettings.Kind.values()) {
-            page.decorate(kind.title(), new SettingsCards.Decoration(
-                    () -> links.mirrored(kind) ? "Linked with " + other + ": changes apply to both"
-                            : links.onInOther(fromEsp, kind) ? "Also on in " + other : "",
-                    () -> {
-                        boolean on = links.onInOther(fromEsp, kind);
-                        boolean mirrored = links.mirrored(kind);
-                        return List.of(
-                                new SettingsCards.HeaderButton("Toggle in " + other,
-                                        on ? "Turn " + kind.title() + " off in " + other
-                                           : "Turn " + kind.title() + " on in " + other + (mirrored ? "" : ", starting from this card's settings"),
-                                        on, () -> links.toggleInOther(fromEsp, kind)),
-                                mirrored
-                                        ? new SettingsCards.HeaderButton("Break link", "Stop linking; both keep their current settings", true, () -> links.breakLink(kind))
-                                        : new SettingsCards.HeaderButton("Mirror", "Copy this card to " + other + " and keep both the same", false, () -> links.mirror(fromEsp, kind)));
-                    }));
-        }
-    }
-
-    private static InlineCard.Items specificTargets(ModulePage page, UiScreen host, TargetLinks links, SpecificTargets specific, boolean fromEsp, String other) {
-        InlineCard.Items card = new InlineCard.Items(host, "Specific targets", "search",
-                () -> {
-                    List<SpecificRules.Rule> rules = specific.rules().all();
-                    if (rules.isEmpty()) return "Search to add one block, mob, item or player with its own settings";
-                    long linked = rules.stream().filter(rule -> rule.mirror).count();
-                    return rules.size() + (rules.size() == 1 ? " target" : " targets") + (linked == 0 ? "" : " · " + linked + " linked with " + other)
-                            + " · settings in the cards below";
-                },
-                "Nothing added yet. Search above for a block, mob, item or player.",
-                () -> {
-                    List<InlineCard.Items.Entry> entries = new ArrayList<>();
-                    for (SpecificRules.Rule rule : specific.rules().all()) entries.add(ruleEntry(page, links, fromEsp, other, specific, rule));
-                    return entries;
-                });
-        card.tags((entry, hover) -> hover ? "Show settings" : "");
-        card.field("Search blocks, mobs, items, players...", 64, "Add",
-                "Adds the first match. Type block:, mob:, item: or player: first to search one kind only.", text -> "", text -> {});
-        card.suggest(text -> {
-            List<InlineCard.Items.Suggestion> found = new ArrayList<>();
-            for (SpecificTargets.Candidate candidate : SpecificTargets.search(text, 6)) {
-                boolean added = specific.rules().find(candidate.type(), candidate.id()) != null;
-                ItemStack icon = candidate.icon();
-                found.add(new InlineCard.Items.Suggestion(candidate.name(), candidate.type().title() + (added ? " · added" : ""),
-                        icon == null ? null : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, 1),
-                        () -> {
-                            SpecificRules.Rule rule = specific.rules().find(candidate.type(), candidate.id());
-                            if (rule == null) {
-                                rule = specific.rules().add(candidate.type(), candidate.id());
-                                specific.changed();
-                            }
-                            page.reveal(specific.settings(rule));
-                        },
-                        added ? candidate.name() + " is already added." : "Added " + candidate.name() + ". Its settings are open below."));
-            }
-            return found;
-        }, "No block, mob, item or player matches. Online players show up by name; use player:Name for anyone else.");
-        return card;
-    }
-
-    private static InlineCard.Items.Entry ruleEntry(ModulePage page, TargetLinks links, boolean fromEsp, String other,
-                                                    SpecificTargets specific, SpecificRules.Rule rule) {
-        SpecificTargets.Candidate what = specific.describe(rule);
-        String name = what.name();
-        boolean mirrored = rule.mirror;
-        boolean on = links.onInOther(fromEsp, rule);
-        RuleSettings settings = specific.settings(rule);
-        String detail = rule.type.title() + " · " + settings.rangeLabel() + " · "
-                + (mirrored ? "Linked with " + other : on ? "Also on in " + other : "Only this page");
-        ItemStack icon = what.icon();
-        SpecificRules.Type type = rule.type;
-        String id = rule.id;
-        Runnable toggle = () -> {
-            SpecificRules.Rule current = specific.rules().find(type, id);
-            if (current == null) return;
-            current.enabled = !current.enabled;
-            specific.changed();
-            links.syncRules();
-        };
-        return new InlineCard.Items.Entry(name, detail, rule.enabled,
-                icon == null ? (g, x, y) -> UiDraw.rounded(g, x + 2, y + 2, 12, 12, 3, settings.swatch() | 0xFF000000)
-                             : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, 1),
-                () -> page.reveal(settings), null, List.of(
-                InlineCard.Items.Action.on(rule.enabled ? "On" : "Off", rule.enabled ? "Turn " + name + " off on this page" : "Turn " + name + " on on this page",
-                        rule.enabled, toggle),
-                InlineCard.Items.Action.on("Toggle in " + other,
-                        on ? "Turn " + name + " off in " + other
-                           : "Add " + name + " to " + other + (mirrored ? "" : ", starting from these settings"),
-                        on, () -> links.toggleInOther(fromEsp, rule)),
-                mirrored
-                        ? InlineCard.Items.Action.main("Break link", "Stop linking; both keep their current settings",
-                                name + " is no longer linked.", () -> links.breakLink(rule))
-                        : InlineCard.Items.Action.of("Mirror", "Add " + name + " to " + other + " with these settings and keep both the same",
-                                name + " linked with " + other + ".", () -> links.mirror(fromEsp, rule)),
-                InlineCard.Items.Action.danger("X", mirrored ? "Remove " + name + " from both pages" : "Remove " + name + " from this page",
-                        "Removed " + name + ".", () -> links.remove(fromEsp, rule))));
+        if ((module instanceof ESPModule || module instanceof TracersModule) && TargetLinks.get() != null)
+            page.inline(new TargetsCard(host, module, TargetLinks.get(), module instanceof ESPModule), Placement.first());
     }
 
     // ---- Boat Phase --------------------------------------------------------------------------

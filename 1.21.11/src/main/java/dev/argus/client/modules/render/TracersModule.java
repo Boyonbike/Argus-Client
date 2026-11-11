@@ -179,7 +179,7 @@ public class TracersModule extends Module {
       // Cells are skipped beyond the furthest range of the card and of every specific block target.
       double range = cardOn ? (card.range.isAtMaximum() ? -1.0 : card.range.getValue()) : 0.0;
       for (SpecificRules.Rule rule : specific.rules().all()) {
-         if (range >= 0 && rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
+         if (range >= 0 && rule.enabled && rule.members().stream().anyMatch(member -> member.type() == SpecificRules.Type.BLOCK)) {
             RuleSettings settings = specific.settings(rule);
             range = settings.unlimited() ? -1.0 : Math.max(range, settings.range.getValue());
          }

@@ -28,18 +28,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The settings of one specific target, matching its category card's settings where they make sense for one thing:
+ * The settings of one target group, by its category:
  * <ul>
- *   <li><b>Player:</b> colour, range;</li>
- *   <li><b>Mob/entity:</b> colour, ignore vehicles, sound alert, range;</li>
- *   <li><b>Item:</b> enchants (for gear), colour, distance colour, chat alert, range;</li>
- *   <li><b>Block:</b> colour (auto or custom), opened containers, natural structures, height, ominous vaults, sound alert,
- *       range.</li>
+ *   <li><b>All</b> (mixed): colour, range;</li>
+ *   <li><b>Players:</b> colour, ignore naked, range;</li>
+ *   <li><b>Mobs:</b> colour, ignore vehicles, sound alert, range;</li>
+ *   <li><b>Entities:</b> colour, ignore vehicles, sound alert, and for dropped items enchants (gear only), distance
+ *       colour and chat alert; range;</li>
+ *   <li><b>Blocks:</b> colour (custom or auto), opened containers and natural structures (containers only), height,
+ *       ominous vaults (vaults only), sound alert, range.</li>
  * </ul>
  * They are real settings (so the page draws them like any card), saved inside the rule as JSON.
  */
 public abstract class RuleSettings implements SpecificRules.Body {
    private final List<Setting<?>> settings = new ArrayList<>();
+   /** The members these settings were made for; the group's settings are remade if they change. */
+   String builtFor = "";
    public final Setting<Color> color;
    public final Setting<Float> range;
 
@@ -51,13 +55,14 @@ public abstract class RuleSettings implements SpecificRules.Body {
       this.range.setDescription("How far away this target is shown. Outside it, it's hidden even if a card below would show it.");
    }
 
-   /** Settings for a target of this kind. */
-   static RuleSettings of(SpecificRules.Type type, Object target, int defaultColor) {
-      return switch (type) {
-         case PLAYER -> new PlayerRule(defaultColor);
-         case ENTITY -> new EntityRule(defaultColor);
-         case ITEM -> new ItemRule(defaultColor, target instanceof Item item ? item : null);
-         case BLOCK -> new BlockRule(defaultColor, target instanceof Block block ? block : null);
+   /** Settings for a group of this category; {@code targets} are its resolved blocks, entity types and items. */
+   static RuleSettings of(SpecificRules.Category category, List<Object> targets, int defaultColor) {
+      return switch (category) {
+         case ALL -> new AllRule(defaultColor);
+         case PLAYERS -> new PlayerRule(defaultColor);
+         case MOBS -> new EntityRule(defaultColor, List.of());
+         case ENTITIES -> new EntityRule(defaultColor, targets);
+         case BLOCKS -> new BlockRule(defaultColor, targets);
       };
    }
 
@@ -181,38 +186,35 @@ public abstract class RuleSettings implements SpecificRules.Body {
 
    // ---- kinds ---------------------------------------------------------------------------------------------------------
 
-   public static final class PlayerRule extends RuleSettings {
-      PlayerRule(int defaultColor) {
+   public static final class AllRule extends RuleSettings {
+      AllRule(int defaultColor) {
          super(defaultColor);
          this.addColor();
          this.addRange();
       }
    }
 
-   public static final class EntityRule extends RuleSettings {
-      public final Setting<Boolean> ignoreVehicles;
-      public final Setting<Boolean> sound;
+   public static final class PlayerRule extends RuleSettings {
+      public final Setting<Boolean> ignoreNaked;
 
-      EntityRule(int defaultColor) {
+      PlayerRule(int defaultColor) {
          super(defaultColor);
          this.addColor();
-         this.ignoreVehicles = this.add(new BooleanSetting("IgnoreVehicles", false), "Skip it while something is riding it.");
-         this.sound = this.add(new BooleanSetting("Sound", false), "Play an alert when one appears.");
+         this.ignoreNaked = this.add(new BooleanSetting("IgnoreNaked", false), "Skip players wearing no armour.");
          this.addRange();
       }
 
       @Override
       public boolean acceptsEntity(Entity entity, double distanceSquared) {
-         return this.inRange(distanceSquared) && !(this.ignoreVehicles.getValue() && entity.isVehicle());
-      }
-
-      @Override
-      public boolean sound() {
-         return this.sound.getValue();
+         return this.inRange(distanceSquared)
+            && !(this.ignoreNaked.getValue() && entity instanceof net.minecraft.world.entity.player.Player player && !dev.argus.client.utils.entity.PlayerStateUtils.hasArmor(player));
       }
    }
 
-   public static final class ItemRule extends RuleSettings {
+   /** Mobs, and other entities (dropped items get the item settings). */
+   public static final class EntityRule extends RuleSettings {
+      public final Setting<Boolean> ignoreVehicles;
+      public final Setting<Boolean> sound;
       public final Setting<ItemRules.EnchantMode> enchants;
       public final Setting<Set<String>> requiredEnchants;
       public final Setting<Boolean> distanceColor;
@@ -221,9 +223,11 @@ public abstract class RuleSettings implements SpecificRules.Body {
       public final Setting<Boolean> chatAlert;
       public final Setting<Boolean> coords;
 
-      ItemRule(int defaultColor, Item item) {
+      EntityRule(int defaultColor, List<Object> targets) {
          super(defaultColor);
-         boolean gear = item != null && ItemRules.categoryOf(item.getDefaultInstance()) != ItemRules.Category.OTHER;
+         boolean items = targets.stream().anyMatch(target -> target instanceof Item);
+         boolean gear = targets.stream().anyMatch(target -> target instanceof Item item && ItemRules.categoryOf(item.getDefaultInstance()) != ItemRules.Category.OTHER);
+         boolean others = targets.isEmpty() || targets.stream().anyMatch(target -> !(target instanceof Item));
          this.enchants = this.add(
             new EnumSetting<>("Enchants", ItemRules.EnchantMode.IGNORE, ignored -> gear),
             "Ignore: any of this item. Any: only enchanted ones. Specific: only ones with every enchant listed below."
@@ -233,14 +237,16 @@ public abstract class RuleSettings implements SpecificRules.Body {
             "Enchants the item must have when Enchants is Specific."
          );
          this.addColor();
-         this.distanceColor = this.add(new BooleanSetting("DistanceColor", false), "Fade from Color nearby to Far color further away.");
-         this.farColor = this.add(new ColorSetting("FarColor", new Color(25, 255, 255), ignored -> this.distanceColor.getValue()), "The colour far away.");
+         this.distanceColor = this.add(new BooleanSetting("DistanceColor", false, ignored -> items), "Fade dropped items from Color nearby to Far color further away.");
+         this.farColor = this.add(new ColorSetting("FarColor", new Color(25, 255, 255), ignored -> items && this.distanceColor.getValue()), "The colour far away.");
          this.farDistance = this.add(
-            new NumberSetting<>("FarDistance", 128.0F, 8.0F, 512.0F, ignored -> this.distanceColor.getValue()).withUnit("m"),
+            new NumberSetting<>("FarDistance", 128.0F, 8.0F, 512.0F, ignored -> items && this.distanceColor.getValue()).withUnit("m"),
             "Where the colour is fully Far color."
          );
-         this.chatAlert = this.add(new BooleanSetting("ChatAlert", false), "Say in chat when one is found.");
-         this.coords = this.add(new BooleanSetting("Coords", true, ignored -> this.chatAlert.getValue()), "Include where it is in the chat alert.");
+         this.chatAlert = this.add(new BooleanSetting("ChatAlert", false, ignored -> items), "Say in chat when a dropped one is found.");
+         this.coords = this.add(new BooleanSetting("Coords", true, ignored -> items && this.chatAlert.getValue()), "Include where it is in the chat alert.");
+         this.ignoreVehicles = this.add(new BooleanSetting("IgnoreVehicles", false, ignored -> others), "Skip ones something is riding.");
+         this.sound = this.add(new BooleanSetting("Sound", false, ignored -> others), "Play an alert when one appears.");
          this.addRange();
       }
 
@@ -251,7 +257,7 @@ public abstract class RuleSettings implements SpecificRules.Body {
          }
 
          if (!(entity instanceof ItemEntity item)) {
-            return true;
+            return !(this.ignoreVehicles.getValue() && entity.isVehicle());
          }
 
          ItemStack stack = item.getItem();
@@ -260,12 +266,17 @@ public abstract class RuleSettings implements SpecificRules.Body {
 
       @Override
       public Color entityColor(Entity entity, Vec3 from) {
-         if (!this.distanceColor.getValue()) {
+         if (!(entity instanceof ItemEntity) || !this.distanceColor.getValue()) {
             return this.color.getValue();
          }
 
          float fraction = (float)Mth.clamp(Math.sqrt(entity.position().distanceToSqr(from)) / this.farDistance.getValue(), 0.0, 1.0);
          return ColorUtils.blend(this.farColor.getValue(), this.color.getValue(), fraction);
+      }
+
+      @Override
+      public boolean sound() {
+         return this.sound.getValue();
       }
 
       @Override
@@ -294,9 +305,10 @@ public abstract class RuleSettings implements SpecificRules.Body {
       public final Setting<Boolean> onlyOminous;
       public final Setting<Boolean> sound;
 
-      BlockRule(int defaultColor, Block block) {
+      BlockRule(int defaultColor, List<Object> targets) {
          super(defaultColor);
-         boolean container = block != null && block.defaultBlockState().hasBlockEntity();
+         boolean container = targets.stream().anyMatch(target -> target instanceof Block block && block.defaultBlockState().hasBlockEntity());
+         boolean vault = targets.contains(Blocks.VAULT);
          this.colorMode = this.add(
             new EnumSetting<>("ColorMode", TargetSettings.ColorMode.CUSTOM),
             "Custom: use Color. Auto: the block's own colour (or the one set in Colors)."
@@ -317,7 +329,7 @@ public abstract class RuleSettings implements SpecificRules.Body {
             new BooleanSetting("TrialChambers", true, ignored -> container && this.ignoreNatural.getValue()), "Skip trial chamber ones."
          );
          this.height = this.add(new EnumSetting<>("Height", TargetSettings.HeightChoice.NEW), "1.12: only show ones at Y 0 and above.");
-         this.onlyOminous = this.add(new BooleanSetting("OnlyOminous", false, ignored -> block == Blocks.VAULT), "Only show ominous vaults.");
+         this.onlyOminous = this.add(new BooleanSetting("OnlyOminous", false, ignored -> vault), "Only show ominous vaults.");
          this.sound = this.add(new BooleanSetting("Sound", false), "Play an alert when a new one is found.");
          this.addRange();
       }

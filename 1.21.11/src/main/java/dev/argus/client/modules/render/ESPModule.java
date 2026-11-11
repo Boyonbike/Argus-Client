@@ -627,7 +627,7 @@ public class ESPModule extends Module {
    private boolean renderRuleMeshes(WorldRenderEvent event, SpecificTargets specific, ColorsSchemeChoice scheme, double budget) {
       Set<Float> ranges = new HashSet<>();
       for (SpecificRules.Rule rule : specific.rules().all()) {
-         if (rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
+         if (rule.enabled && rule.members().stream().anyMatch(member -> member.type() == SpecificRules.Type.BLOCK)) {
             ranges.add(specific.settings(rule).rangeKey());
          }
       }

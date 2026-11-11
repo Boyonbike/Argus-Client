@@ -1,10 +1,13 @@
 package dev.argus.client.modules.render.targets;
 
 import dev.argus.client.ClientAccess;
+import dev.argus.client.ClientContext;
+import dev.argus.client.managers.SocialRegistry;
 import dev.argus.client.modules.Module;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.settings.StringSetting;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,6 +25,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -30,16 +34,36 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 
 /**
- * A module's specific targets ({@link SpecificRules}) tied to the game: saved as a hidden setting, each with real
- * settings for its kind ({@link RuleSettings}), and looked up while drawing. A matching rule overrides the general cards:
- * the thing is drawn by the rule's settings, and not at all where the rule rejects it.
+ * A module's target groups ({@link SpecificRules}) tied to the game: saved as a hidden setting, each group with real
+ * settings for its category ({@link RuleSettings}), and looked up while drawing.
+ * <p>
+ * Players: a named player's group wins over the Friends or Enemies group, which wins over the All players group.
+ * Entities: a dropped item's item group wins over its entity type's group.
  */
 public final class SpecificTargets implements ClientAccess {
    private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
+   private static final int[] PALETTE = {0xFF3CFF6E, 0xFF3CC8FF, 0xFFFF3CC8, 0xFFFFD23C, 0xFFFF6E3C, 0xFFB46EFF};
    private static List<Candidate> catalogue;
 
-   /** Something that can be added: what it is, its id, its readable name and an icon to show. */
-   public record Candidate(SpecificRules.Type type, String id, String name, ItemStack icon) {
+   /** Something that can be added: what it is, its id, its readable name, its category, an icon and search words. */
+   public record Candidate(SpecificRules.Type type, String id, String name, SpecificRules.Category category, ItemStack icon, String aliases) {
+      public SpecificRules.Member member() {
+         return new SpecificRules.Member(this.type, this.id, this.category);
+      }
+
+      public String key() {
+         return SpecificRules.key(this.type, this.id);
+      }
+
+      /** What to call its kind in a list: Block, Mob, Entity, Item, Player or Players. */
+      public String kind() {
+         return switch (this.type) {
+            case ENTITY -> this.category == SpecificRules.Category.MOBS ? "Mob" : "Entity";
+            case ITEM -> "Dropped item";
+            case GROUP -> "Players";
+            default -> this.type.title();
+         };
+      }
    }
 
    private final Setting<String> store;
@@ -47,10 +71,14 @@ public final class SpecificTargets implements ClientAccess {
    private String loaded;
    private String saved = "";
    private int version;
+   private int structure;
    private final Map<Block, SpecificRules.Rule> blocks = new IdentityHashMap<>();
    private final Map<EntityType<?>, SpecificRules.Rule> entities = new IdentityHashMap<>();
    private final Map<Item, SpecificRules.Rule> items = new IdentityHashMap<>();
    private final Map<String, SpecificRules.Rule> players = new HashMap<>();
+   private SpecificRules.Rule allPlayers;
+   private SpecificRules.Rule friends;
+   private SpecificRules.Rule enemies;
    private final Map<String, Candidate> described = new HashMap<>();
 
    SpecificTargets(Module module) {
@@ -58,7 +86,7 @@ public final class SpecificTargets implements ClientAccess {
       this.store.setConfigName("SpecificTargets");
    }
 
-   /** The rules, re-read if the saved setting changed (config load, reset). Edit them, then call {@link #changed()}. */
+   /** The groups, re-read if the saved setting changed (config load, reset). Edit them, then call {@link #changed()}. */
    public SpecificRules rules() {
       this.refresh();
       return this.rules;
@@ -72,7 +100,7 @@ public final class SpecificTargets implements ClientAccess {
    }
 
    /**
-    * Picks up edits made through a rule's settings on the page (set settings change in place, without callbacks).
+    * Picks up edits made through a group's settings on the page (set settings change in place, without callbacks).
     * Called every client tick.
     */
    public void poll() {
@@ -91,9 +119,19 @@ public final class SpecificTargets implements ClientAccess {
       return this.version;
    }
 
-   /** A rule's settings. */
-   public RuleSettings settings(SpecificRules.Rule rule) {
+   /** Bumps when groups are added, removed or remade (not when a setting changes), so the page can rebuild its rows. */
+   public int structure() {
+      this.refresh();
       this.attach();
+      return this.structure;
+   }
+
+   /** A group's settings. */
+   public RuleSettings settings(SpecificRules.Rule rule) {
+      if (!(rule.body instanceof RuleSettings settings) || !settings.builtFor.equals(signature(rule))) {
+         this.attach();
+      }
+
       return (RuleSettings)rule.body;
    }
 
@@ -115,61 +153,108 @@ public final class SpecificTargets implements ClientAccess {
       }
    }
 
-   /** Gives every rule still holding plain text its real settings. */
-   private void attach() {
-      for (SpecificRules.Rule rule : this.rules.all()) {
-         if (!(rule.body instanceof RuleSettings)) {
-            String json = rule.body.read();
-            RuleSettings settings = RuleSettings.of(rule.type, target(rule.type, rule.id), this.colorFor(rule));
-            settings.write(json);
-            rule.body = settings;
-         }
+   private static String signature(SpecificRules.Rule rule) {
+      StringBuilder text = new StringBuilder(rule.category().name());
+      for (SpecificRules.Member member : rule.members()) {
+         text.append('|').append(member.key());
       }
+
+      return text.toString();
    }
 
-   private int colorFor(SpecificRules.Rule rule) {
-      int index = this.rules.all().indexOf(rule);
-      int[] palette = {0xFF3CFF6E, 0xFF3CC8FF, 0xFFFF3CC8, 0xFFFFD23C, 0xFFFF6E3C, 0xFFB46EFF};
-      return palette[Math.max(0, index) % palette.length];
+   /** Gives every group real settings for its category and members (remade, keeping values, if its members changed). */
+   private void attach() {
+      List<SpecificRules.Rule> all = this.rules.all();
+      for (int i = 0; i < all.size(); i++) {
+         SpecificRules.Rule rule = all.get(i);
+         String signature = signature(rule);
+         if (rule.body instanceof RuleSettings existing && existing.builtFor.equals(signature)) {
+            continue;
+         }
+
+         String json = rule.body.read();
+         List<Object> targets = new ArrayList<>();
+         for (SpecificRules.Member member : rule.members()) {
+            Object target = target(member.type(), member.id());
+            if (target != null) {
+               targets.add(target);
+            }
+         }
+
+         RuleSettings settings = RuleSettings.of(rule.category(), targets, PALETTE[i % PALETTE.length]);
+         settings.write(json);
+         settings.builtFor = signature;
+         rule.body = settings;
+         this.structure++;
+      }
    }
 
    private void rebuild() {
       this.version++;
+      this.structure++;
       this.blocks.clear();
       this.entities.clear();
       this.items.clear();
       this.players.clear();
+      this.allPlayers = this.friends = this.enemies = null;
       for (SpecificRules.Rule rule : this.rules.all()) {
          if (!rule.enabled) {
             continue;
          }
 
-         Object target = target(rule.type, rule.id);
-         switch (rule.type) {
-            case BLOCK -> {
-               if (target instanceof Block block) this.blocks.put(block, rule);
+         for (SpecificRules.Member member : rule.members()) {
+            Object target = target(member.type(), member.id());
+            switch (member.type()) {
+               case BLOCK -> {
+                  if (target instanceof Block block) this.blocks.put(block, rule);
+               }
+               case ENTITY -> {
+                  if (target instanceof EntityType<?> type) this.entities.put(type, rule);
+               }
+               case ITEM -> {
+                  if (target instanceof Item item) this.items.put(item, rule);
+               }
+               case PLAYER -> this.players.put(member.id().toLowerCase(Locale.ROOT), rule);
+               case GROUP -> {
+                  switch (member.id()) {
+                     case SpecificRules.ALL_PLAYERS -> this.allPlayers = rule;
+                     case SpecificRules.FRIENDS -> this.friends = rule;
+                     case SpecificRules.ENEMIES -> this.enemies = rule;
+                     default -> {
+                     }
+                  }
+               }
             }
-            case ENTITY -> {
-               if (target instanceof EntityType<?> type) this.entities.put(type, rule);
-            }
-            case ITEM -> {
-               if (target instanceof Item item) this.items.put(item, rule);
-            }
-            case PLAYER -> this.players.put(rule.id.toLowerCase(Locale.ROOT), rule);
          }
       }
    }
 
    // ---- lookups while drawing -----------------------------------------------------------------------------------------
 
-   /** The enabled rule for an entity (a named player first, then a dropped item's type, then the entity type), or null. */
+   /**
+    * The enabled group for an entity, or null. Players: their name's group, else Friends or Enemies, else All players.
+    * Dropped items: their item's group, else the item entity type's.
+    */
    public SpecificRules.Rule forEntity(Entity entity) {
       this.refresh();
-      if (!this.players.isEmpty() && entity instanceof Player player) {
-         SpecificRules.Rule rule = this.players.get(player.getGameProfile().name().toLowerCase(Locale.ROOT));
-         if (rule != null) {
-            return rule;
+      if (entity instanceof Player player) {
+         if (!this.players.isEmpty()) {
+            SpecificRules.Rule rule = this.players.get(player.getGameProfile().name().toLowerCase(Locale.ROOT));
+            if (rule != null) {
+               return rule;
+            }
          }
+
+         SocialRegistry social = ClientContext.socialRegistry;
+         if (this.friends != null && social != null && social.isFriendPlayer(player)) {
+            return this.friends;
+         }
+
+         if (this.enemies != null && social != null && social.isEnemyPlayer(player)) {
+            return this.enemies;
+         }
+
+         return this.allPlayers;
       }
 
       if (!this.items.isEmpty() && entity instanceof ItemEntity item) {
@@ -182,13 +267,13 @@ public final class SpecificTargets implements ClientAccess {
       return this.entities.isEmpty() ? null : this.entities.get(entity.getType());
    }
 
-   /** The enabled rule for a block, or null. */
+   /** The enabled group for a block, or null. */
    public SpecificRules.Rule forBlock(Block block) {
       this.refresh();
       return this.blocks.isEmpty() ? null : this.blocks.get(block);
    }
 
-   /** Blocks with an enabled rule (the block index scans for these too). */
+   /** Blocks in an enabled group (the block index scans for these). */
    public Set<Block> blocks() {
       this.refresh();
       return Collections.unmodifiableSet(this.blocks.keySet());
@@ -199,7 +284,7 @@ public final class SpecificTargets implements ClientAccess {
       return !this.blocks.isEmpty();
    }
 
-   /** Whether any enabled block rule plays a sound for new finds. */
+   /** Whether any enabled group with blocks plays a sound for new finds. */
    public boolean hasBlockSound() {
       for (SpecificRules.Rule rule : this.blocks.values()) {
          if (this.settings(rule).sound()) {
@@ -212,39 +297,47 @@ public final class SpecificTargets implements ClientAccess {
 
    // ---- names and search ----------------------------------------------------------------------------------------------
 
-   /** What a rule targets, with a readable name and icon. */
-   public Candidate describe(SpecificRules.Rule rule) {
-      return this.described.computeIfAbsent(rule.key(), ignored -> candidate(rule.type, rule.id));
+   /** What a member is, with a readable name and icon. */
+   public Candidate describe(SpecificRules.Member member) {
+      return this.described.computeIfAbsent(member.key(), ignored -> candidate(member.type(), member.id()));
    }
 
-   public String label(SpecificRules.Rule rule) {
-      return this.describe(rule).name();
+   /** A group's members as text, e.g. "Diamond Ore, Ancient Debris +2". */
+   public String label(SpecificRules.Rule rule, int shown) {
+      List<SpecificRules.Member> members = rule.members();
+      StringBuilder text = new StringBuilder();
+      for (int i = 0; i < Math.min(shown, members.size()); i++) {
+         if (i > 0) {
+            text.append(", ");
+         }
+
+         text.append(this.describe(members.get(i)).name());
+      }
+
+      if (members.size() > shown) {
+         text.append(" +").append(members.size() - shown);
+      }
+
+      return text.toString();
    }
 
    /**
     * Things matching what was typed, best first: exact names, then names starting with it, then names with a word
-    * starting with it, then names or ids containing it. A prefix ({@code block:}, {@code mob:}/{@code entity:},
-    * {@code item:}, {@code player:}) keeps to one kind. Players are the ones on the server's tab list; with
-    * {@code player:} any valid name can be added.
+    * starting with it, then names, ids or search words containing it. {@code only} keeps to one category (null for all).
+    * Players are the ones on the server's tab list, plus the All players, Friends and Enemies groups; with a
+    * {@code player:} prefix any valid name can be added.
     */
-   public static List<Candidate> search(String input, int limit) {
-      String text = input == null ? "" : input.trim().toLowerCase(Locale.ROOT);
-      SpecificRules.Type only = null;
-      int colon = text.indexOf(':');
-      if (colon > 0) {
-         only = switch (text.substring(0, colon).trim()) {
-            case "block", "b" -> SpecificRules.Type.BLOCK;
-            case "entity", "mob", "e", "m" -> SpecificRules.Type.ENTITY;
-            case "item", "i" -> SpecificRules.Type.ITEM;
-            case "player", "p" -> SpecificRules.Type.PLAYER;
-            default -> null;
-         };
-         if (only != null) {
-            text = text.substring(colon + 1).trim();
-         }
+   public static List<Candidate> search(String input, SpecificRules.Category only, int limit) {
+      String raw = input == null ? "" : input.trim();
+      String text = raw.toLowerCase(Locale.ROOT);
+      boolean namedPlayer = false;
+      if (text.startsWith("player:")) {
+         namedPlayer = true;
+         raw = raw.substring(7).trim();
+         text = text.substring(7).trim();
       }
 
-      if (text.isEmpty() && only == null) {
+      if (text.isEmpty()) {
          return List.of();
       }
 
@@ -256,7 +349,7 @@ public final class SpecificTargets implements ClientAccess {
 
       List<Scored> scored = new ArrayList<>();
       for (Candidate candidate : pool) {
-         if (only != null && candidate.type() != only) {
+         if (only != null && candidate.category() != only || namedPlayer && candidate.type() != SpecificRules.Type.PLAYER) {
             continue;
          }
 
@@ -267,6 +360,7 @@ public final class SpecificTargets implements ClientAccess {
       }
 
       scored.sort(Comparator.<Scored>comparingInt(Scored::score)
+         .thenComparingInt(item -> item.candidate().type() == SpecificRules.Type.GROUP ? 0 : 1)
          .thenComparingInt(item -> item.candidate().name().length())
          .thenComparing(item -> item.candidate().type()));
       List<Candidate> result = new ArrayList<>();
@@ -278,10 +372,9 @@ public final class SpecificTargets implements ClientAccess {
          result.add(item.candidate());
       }
 
-      if (only == SpecificRules.Type.PLAYER && PLAYER_NAME.matcher(text).matches()
-         && result.stream().noneMatch(candidate -> candidate.id().equalsIgnoreCase(input.substring(input.indexOf(':') + 1).trim()))) {
-         String name = input.substring(input.indexOf(':') + 1).trim();
-         result.add(0, new Candidate(SpecificRules.Type.PLAYER, name, name, Items.PLAYER_HEAD.getDefaultInstance()));
+      String name = raw;
+      if (namedPlayer && PLAYER_NAME.matcher(name).matches() && result.stream().noneMatch(candidate -> candidate.id().equalsIgnoreCase(name))) {
+         result.add(0, playerCandidate(name));
          if (result.size() > limit) {
             result.remove(result.size() - 1);
          }
@@ -292,10 +385,6 @@ public final class SpecificTargets implements ClientAccess {
 
    /** Lower is better; -1 means no match. */
    private static int score(Candidate candidate, String query) {
-      if (query.isEmpty()) {
-         return 4;
-      }
-
       String name = candidate.name().toLowerCase(Locale.ROOT);
       String id = candidate.id().toLowerCase(Locale.ROOT);
       String path = id.substring(id.indexOf(':') + 1).replace('_', ' ');
@@ -303,7 +392,7 @@ public final class SpecificTargets implements ClientAccess {
          return 0;
       }
 
-      if (name.startsWith(query) || path.startsWith(query)) {
+      if (name.startsWith(query) || path.startsWith(query) || (" " + candidate.aliases()).contains(" " + query)) {
          return 1;
       }
 
@@ -311,18 +400,19 @@ public final class SpecificTargets implements ClientAccess {
          return 2;
       }
 
-      return name.contains(query) || path.contains(query) ? 3 : -1;
+      return name.contains(query) || path.contains(query) || candidate.aliases().contains(query) ? 3 : -1;
    }
 
    private static List<Candidate> catalogue() {
       if (catalogue == null) {
          List<Candidate> list = new ArrayList<>();
+         list.add(groupCandidate(SpecificRules.ALL_PLAYERS));
+         list.add(groupCandidate(SpecificRules.FRIENDS));
+         list.add(groupCandidate(SpecificRules.ENEMIES));
          for (Block block : BuiltInRegistries.BLOCK) {
-            if (block.defaultBlockState().isAir()) {
-               continue;
+            if (!block.defaultBlockState().isAir()) {
+               list.add(candidate(SpecificRules.Type.BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString()));
             }
-
-            list.add(candidate(SpecificRules.Type.BLOCK, BuiltInRegistries.BLOCK.getKey(block).toString()));
          }
 
          for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
@@ -354,11 +444,26 @@ public final class SpecificTargets implements ClientAccess {
       for (PlayerInfo info : connection.getOnlinePlayers()) {
          String name = info.getProfile().name();
          if (PLAYER_NAME.matcher(name).matches() && !name.equalsIgnoreCase(self)) {
-            list.add(new Candidate(SpecificRules.Type.PLAYER, name, name, Items.PLAYER_HEAD.getDefaultInstance()));
+            list.add(playerCandidate(name));
          }
       }
 
       return list;
+   }
+
+   private static Candidate playerCandidate(String name) {
+      return new Candidate(SpecificRules.Type.PLAYER, name, name, SpecificRules.Category.PLAYERS, Items.PLAYER_HEAD.getDefaultInstance(), "player");
+   }
+
+   private static Candidate groupCandidate(String id) {
+      return switch (id) {
+         case SpecificRules.FRIENDS -> new Candidate(SpecificRules.Type.GROUP, id, "Friends", SpecificRules.Category.PLAYERS,
+            Items.PLAYER_HEAD.getDefaultInstance(), "friend friends player players social");
+         case SpecificRules.ENEMIES -> new Candidate(SpecificRules.Type.GROUP, id, "Enemies", SpecificRules.Category.PLAYERS,
+            Items.PLAYER_HEAD.getDefaultInstance(), "enemy enemies player players social");
+         default -> new Candidate(SpecificRules.Type.GROUP, SpecificRules.ALL_PLAYERS, "All players", SpecificRules.Category.PLAYERS,
+            Items.PLAYER_HEAD.getDefaultInstance(), "player players everyone all");
+      };
    }
 
    private static Candidate candidate(SpecificRules.Type type, String id) {
@@ -366,28 +471,55 @@ public final class SpecificTargets implements ClientAccess {
       return switch (type) {
          case BLOCK -> {
             Block block = (Block)target;
-            yield new Candidate(type, id, block == null ? id : block.getName().getString(), block == null || block.asItem() == Items.AIR ? null : block.asItem().getDefaultInstance());
+            ItemStack icon = block == null || block.asItem() == Items.AIR ? null : block.asItem().getDefaultInstance();
+            yield new Candidate(type, id, block == null ? id : block.getName().getString(), SpecificRules.Category.BLOCKS, icon, "block");
          }
          case ENTITY -> {
             EntityType<?> entity = (EntityType<?>)target;
             Item egg = lookup(BuiltInRegistries.ITEM, id + "_spawn_egg").orElse(null);
-            yield new Candidate(type, id, entity == null ? id : entity.getDescription().getString(), egg == null ? null : egg.getDefaultInstance());
+            boolean mob = entity != null && entity.getCategory() != MobCategory.MISC;
+            yield new Candidate(type, id, entity == null ? id : entity.getDescription().getString(),
+               mob ? SpecificRules.Category.MOBS : SpecificRules.Category.ENTITIES, egg == null ? null : egg.getDefaultInstance(), mob ? "mob" : "entity");
          }
          case ITEM -> {
             Item item = (Item)target;
-            yield new Candidate(type, id, item == null ? id : item.getDefaultInstance().getHoverName().getString(), item == null ? null : item.getDefaultInstance());
+            yield new Candidate(type, id, item == null ? id : item.getDefaultInstance().getHoverName().getString(), SpecificRules.Category.ENTITIES,
+               item == null ? null : item.getDefaultInstance(), "item dropped");
          }
-         case PLAYER -> new Candidate(type, id, id, Items.PLAYER_HEAD.getDefaultInstance());
+         case PLAYER -> playerCandidate(id);
+         case GROUP -> groupCandidate(id);
       };
    }
 
-   /** The block, entity type or item a rule names, or null (players, or an id this game doesn't have). */
+   /** Members for what an old config chose (see {@link TargetLinks#migrate}). */
+   static List<SpecificRules.Member> members(SpecificRules.Type type, Collection<String> ids) {
+      List<SpecificRules.Member> members = new ArrayList<>();
+      for (String id : ids) {
+         members.add(candidate(type, id).member());
+      }
+
+      return members;
+   }
+
+   static String idOf(Block block) {
+      return BuiltInRegistries.BLOCK.getKey(block).toString();
+   }
+
+   static String idOf(Item item) {
+      return BuiltInRegistries.ITEM.getKey(item).toString();
+   }
+
+   static String idOf(EntityType<?> type) {
+      return BuiltInRegistries.ENTITY_TYPE.getKey(type).toString();
+   }
+
+   /** The block, entity type or item a member names, or null (players and player groups, or an unknown id). */
    static Object target(SpecificRules.Type type, String id) {
       return switch (type) {
          case BLOCK -> lookup(BuiltInRegistries.BLOCK, id).orElse(null);
          case ENTITY -> lookup(BuiltInRegistries.ENTITY_TYPE, id).orElse(null);
          case ITEM -> lookup(BuiltInRegistries.ITEM, id).orElse(null);
-         case PLAYER -> null;
+         case PLAYER, GROUP -> null;
       };
    }
 

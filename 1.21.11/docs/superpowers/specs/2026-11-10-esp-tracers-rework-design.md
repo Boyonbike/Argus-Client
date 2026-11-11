@@ -174,32 +174,37 @@ These differ from, or add to, the design above:
 - **Not done:** the Search block-colour scheme callback is gone. A Colors scheme change now rebuilds meshes
   through the look key on the next tick. Changes made with `.color` are only picked up when a cell rebuilds.
 
-## Specific targets (added 2026-11-11, reworked the same day)
+## Target groups (2026-11-11, replaces the four cards)
 
-Players can add **specific targets**: one block, entity type, dropped item type or named player, each with its own
-settings. A specific target overrides the general cards for its thing: its own settings decide whether and how it's
-drawn, and where they reject it, it isn't drawn at all.
+ESP and Tracers now show one **Targets** card at the top of the page. The Players/Mobs/Items/Blocks cards are hidden
+(they stay in the config only so old choices can move across once).
 
-- **Specific targets card (top of the page):** a search field with live suggestions (icon, name, kind). Matches are
-  ranked: exact name, then name start, then word start, then contains. A prefix (`block:`, `mob:`/`entity:`, `item:`,
-  `player:`) searches one kind only. Players are suggested from the server's tab list; `player:Name` adds anyone.
-  Nothing is ever guessed to be a player. Enter or Add takes the first suggestion.
-- **Rows:** only added targets are listed (the "All …" rows are gone). Each row has On/Off, Toggle in other,
-  Mirror/Break link and Remove. Clicking a row opens its settings card and scrolls to it.
-- **Settings cards:** one per target, right under the list, titled with its name and icon. The subtitle says
-  "Item target · Linked with Tracers: changes apply to both" or "Only this page". The settings follow the category:
-  - Player: Color, Range.
-  - Entity: Color, Ignore vehicles, Sound, Range.
-  - Item: Enchants (Ignore/Any/Specific, gear only) + Required enchants, Color, Distance color + Far color + Far
-    distance, Chat alert + Coords, Range.
-  - Block: Color mode (Custom/Auto) + Color, Mark opened + Opened color, Hide opened, Ignore natural + structures
-    (containers only), Height, Only ominous (vaults only), Sound, Range.
-- **Category cards:** Players/Mobs/Items/Blocks keep their settings. Toggle in other and Mirror/Break link are on each
-  card's header, and the subtitle says "Linked with Tracers: changes apply to both" while mirrored.
-- **Storage and mirroring:** saved per module as a hidden `SpecificTargets` JSON list. Each rule keeps its settings as
-  one JSON object (`RuleSettings`). Edits made on the page are polled every tick, so set settings edited in place are
-  saved and mirrored too. Mirror sync works like the cards: the side that changed since the last agreed value is
-  copied, ESP wins ties, and a link with only one side set is broken (`SpecificRules.sync`).
-- **Blocks:** the block index also scans for blocks with an enabled specific target while the module is on. ESP
-  draws them in retained mesh caches, one per range in use, and the general Blocks mesh skips them. Tracers draws
-  them in its per-tick block pass.
+- **Search row:** search field, a filter button that cycles All / Blocks / Players / Mobs / Entities (right-click goes
+  back), then Add.
+- **Multi-select:** matches show with a tick box, icon, name and kind. Clicking ticks or unticks; ticked things stay at
+  the top while you search on. Enter or Add adds everything ticked as **one group**. With nothing ticked, the top match
+  is added. A thing can be in only one group, and things already added show as "already added".
+- **Categories:** a group's category comes from its things: Blocks, Players, Mobs (living entity types), Entities
+  (other entity types and dropped items) or All (mixed). The category picks the settings:
+  - All: Color, Range.
+  - Players: Color, Ignore naked, Range.
+  - Mobs: Color, Ignore vehicles, Sound, Range.
+  - Entities: Color; for dropped items, Enchants (gear only) + Required enchants, Distance color + Far color + Far
+    distance, Chat alert + Coords; for other entities, Ignore vehicles and Sound; Range.
+  - Blocks: Color mode + Color; Mark opened, Opened color, Hide opened and Ignore natural + structures (containers
+    only); Height; Only ominous (vaults only); Sound; Range.
+- **Rows:** the category tag on the left (tinted with the group's colour), the first thing's icon, the names, and
+  "On · range · linked/also on/this page only". Left click turns the group on or off. Right click drops its settings
+  down under the row. On the right: a pill naming the other module (Toggle in other), a round link button
+  (Mirror/Break link) and a round X (click twice to remove).
+- **Players:** All players, Friends and Enemies are searchable groups ("player", "friend", "enemy"). A named
+  player's group wins over Friends/Enemies, which win over All players. Online players come from the tab list;
+  `player:Name` adds anyone.
+- **Pairing:** groups pair across modules by id. Toggle in other copies the group across once (things already in
+  another group there move to it). Link keeps both copies identical, ESP winning ties, and a link with one side
+  missing is broken.
+- **Migration:** once per module, an enabled Players card becomes an All players group; an enabled Blocks card
+  becomes a group of its blocks; whitelisted Items and Mobs lists become groups. Colours and ranges carry over. Mobs
+  chosen only by hostile/neutral/passive have no single thing to carry over. The cards are then switched off.
+- **Drawing:** unchanged from before. Blocks in groups are scanned by the block index and drawn in ESP's retained
+  meshes (one cache per range in use). Tracers draws them in its per-tick block pass.
