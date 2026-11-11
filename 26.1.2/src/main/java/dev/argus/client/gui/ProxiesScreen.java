@@ -3,7 +3,7 @@ package dev.argus.client.gui;
 import dev.argus.client.network.*;
 import java.util.*;
 import java.nio.file.*;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 
 public final class ProxiesScreen extends ProfileManagerScreen {
@@ -67,7 +67,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         field(password, x + 18 + half, y + ROW3 + 12, half);
     }
 
-    @Override protected void renderForm(GuiGraphics g, int x, int y, int w, int mx, int my) {
+    @Override protected void renderForm(GuiGraphicsExtractor g, int x, int y, int w, int mx, int my) {
         var t = GuiState.theme();
         UiDraw.card(g, x, y, w, FORM_H, "shield", editId == null ? "New proxy" : "Edit proxy", "SOCKS4 or SOCKS5 · reconnect to apply changes", 100, t);
         float right = x + w - 10;
@@ -118,7 +118,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
     @Override protected int rowCount() { return profiles.proxies().size(); }
     @Override protected Object rowId(int index) { return profiles.proxies().get(index).id(); }
 
-    @Override protected void renderRow(GuiGraphics g, int index, float x, float y, float w, int mx, int my, boolean hover) {
+    @Override protected void renderRow(GuiGraphicsExtractor g, int index, float x, float y, float w, int mx, int my, boolean hover) {
         var t = GuiState.theme();
         var p = profiles.proxies().get(index);
         var active = profiles.activeProxy();

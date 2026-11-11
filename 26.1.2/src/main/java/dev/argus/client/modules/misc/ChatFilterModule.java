@@ -11,7 +11,7 @@ import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.settings.BooleanSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.chat.ChatUtils;
-import net.minecraft.client.GuiMessageTag;
+import net.minecraft.client.multiplayer.chat.GuiMessageTag;
 import net.minecraft.network.chat.Component;
 
 public class ChatFilterModule extends Module {

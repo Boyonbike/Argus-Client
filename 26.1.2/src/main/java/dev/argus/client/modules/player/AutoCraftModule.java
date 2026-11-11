@@ -51,7 +51,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.inventory.Slot;
@@ -441,7 +441,7 @@ public class AutoCraftModule extends Module {
                      }
 
                      if (gunpowderSlot != -1 && !gridHasGunpowder) {
-                        InventoryUtils.clickSlot(craftingMenu.containerId, gunpowderSlot, 0, ClickType.PICKUP);
+                        InventoryUtils.clickSlot(craftingMenu.containerId, gunpowderSlot, 0, ContainerInput.PICKUP);
 
                         for (int targetGridSlot : gunpowderGridSlots) {
                            ItemStack capturedPlacementStack = craftingMenu.getSlot(targetGridSlot).getItem();
@@ -450,13 +450,13 @@ public class AutoCraftModule extends Module {
                               ItemStack carriedStack = craftingMenu.getCarried();
                               if (!carriedStack.isEmpty()) {
                                  int targetGridButton = gunpowderUnits >= 3 ? 0 : 1;
-                                 InventoryUtils.clickSlot(craftingMenu.containerId, targetGridSlot, targetGridButton, ClickType.PICKUP);
+                                 InventoryUtils.clickSlot(craftingMenu.containerId, targetGridSlot, targetGridButton, ContainerInput.PICKUP);
                               }
                               break;
                            }
                         }
 
-                        InventoryUtils.clickSlot(craftingMenu.containerId, gunpowderSlot, 0, ClickType.PICKUP);
+                        InventoryUtils.clickSlot(craftingMenu.containerId, gunpowderSlot, 0, ContainerInput.PICKUP);
                         capturedCraftTimer = this.craftTimer;
                         capturedCraftTimer.reset();
                         return;
@@ -486,13 +486,13 @@ public class AutoCraftModule extends Module {
                   }
 
                   int capturedResultContainerId = craftingMenu.containerId;
-                  ClickType capturedClickType = this.dropSetting.getValue().getClickType();
+                  ContainerInput capturedClickType = this.dropSetting.getValue().getClickType();
                   InventoryUtils.clickSlot(capturedResultContainerId, 0, 1, capturedClickType);
                   ItemStack carriedAfterResult = craftingMenu.getCarried();
                   if (this.dropSetting.getValue() == AutoCraftModule.DropChoice.Pickup
                      && output.getCount() + carriedAfterResult.getCount() > carriedAfterResult.getMaxStackSize()) {
                      int capturedOverflowContainerId = craftingMenu.containerId;
-                     InventoryUtils.clickSlot(capturedOverflowContainerId, -999, 0, ClickType.PICKUP);
+                     InventoryUtils.clickSlot(capturedOverflowContainerId, -999, 0, ContainerInput.PICKUP);
                   }
 
                   capturedCraftTimer = this.craftTimer;
@@ -581,14 +581,14 @@ public class AutoCraftModule extends Module {
    }
 
    enum DropChoice implements NamedEntry {
-      None("None", ClickType.QUICK_MOVE),
-      Throw("Throw", ClickType.THROW),
-      Pickup("Pickup", ClickType.PICKUP);
+      None("None", ContainerInput.QUICK_MOVE),
+      Throw("Throw", ContainerInput.THROW),
+      Pickup("Pickup", ContainerInput.PICKUP);
 
       private final String displayName;
-      private final ClickType clickType;
+      private final ContainerInput clickType;
 
-      public ClickType getClickType() {
+      public ContainerInput getClickType() {
          return this.clickType;
       }
 
@@ -597,7 +597,7 @@ public class AutoCraftModule extends Module {
          return this.displayName;
       }
 
-      DropChoice(String displayName, ClickType clickType) {
+      DropChoice(String displayName, ContainerInput clickType) {
          this.displayName = displayName;
          this.clickType = clickType;
       }

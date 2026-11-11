@@ -14,7 +14,7 @@ import dev.argus.client.modules.client.UIModule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -202,7 +202,7 @@ final class SettingsScreen extends UiScreen {
     private int sectionIndex(String name) { for (int i = 0; i < sections(); i++) if (sectionName(i).equals(name)) return i; return 0; }
     private String sectionName(int index) { return index == 0 ? APPEARANCE : index == 1 ? PRESETS : index == 2 ? SOCIAL : modules.get(index - FIXED).getName(); }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         // ---- sidebar
@@ -243,7 +243,7 @@ final class SettingsScreen extends UiScreen {
 
     // ---- client module section --------------------------------------------------------------
 
-    private void module(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void module(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         if (page != null) page.render(g, mx, my, delta, t);
     }
 
@@ -255,7 +255,7 @@ final class SettingsScreen extends UiScreen {
 
     // ---- Discord page: Rich Presence and Discord Sync as two cards ---------------------------
 
-    private void discord(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void discord(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2;
         UiDraw.icon(g, icon("discord"), x, top + 13.5f, 9, t.accent());
@@ -299,7 +299,7 @@ final class SettingsScreen extends UiScreen {
     private static float syncButtonWidth(DiscordSyncModule sync) { return UiDraw.width(syncLabel(sync), UiDraw.SMALL) + 26; }
 
     /** Discord Sync's "Sync now" button, right-aligned at {@code right} in its card's header. */
-    private void syncButton(GuiGraphics g, DiscordSyncModule sync, float right, float y, int mx, int my, UiTheme t) {
+    private void syncButton(GuiGraphicsExtractor g, DiscordSyncModule sync, float right, float y, int mx, int my, UiTheme t) {
         String label = syncLabel(sync);
         float bw = syncButtonWidth(sync), bx = right - bw, bh = 18;
         boolean hover = UiDraw.over(mx, my, bx, y, bw, bh);
@@ -368,12 +368,12 @@ final class SettingsScreen extends UiScreen {
     }
 
     /** Card frame with an icon badge, title, subtitle and an optional enable switch on the right. */
-    private void card(GuiGraphics g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, int mx, int my, UiTheme t) {
+    private void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, int mx, int my, UiTheme t) {
         card(g, x, y, w, h, icon, title, subtitle, toggle, toggle != null ? 70 : 0, mx, my, t);
     }
 
     /** As above, keeping {@code reserve} pixels of the header's right side clear of the subtitle. */
-    private void card(GuiGraphics g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, float reserve, int mx, int my, UiTheme t) {
+    private void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, float reserve, int mx, int my, UiTheme t) {
         UiDraw.rounded(g, x, y, w, h, 8, UiDraw.alpha(t.mantle(), .6f));
         UiDraw.outline(g, x, y, w, h, 8, .6f, UiDraw.alpha(t.overlay(), .4f));
         UiDraw.circle(g, x + PAD + 7, y + 15, 8, UiDraw.alpha(t.accent(), .16f));
@@ -390,7 +390,7 @@ final class SettingsScreen extends UiScreen {
     }
 
     /** The key that opens this menu: click, then press a key. Backspace restores Right Shift, Escape cancels. */
-    private void menuKeyChip(GuiGraphics g, float right, float y, int mx, int my, UiTheme t) {
+    private void menuKeyChip(GuiGraphicsExtractor g, float right, float y, int mx, int my, UiTheme t) {
         UIModule ui = UIModule.INSTANCE;
         if (ui == null) return;
         Keybind bind = ui.getKeybind();
@@ -410,7 +410,7 @@ final class SettingsScreen extends UiScreen {
     @Override protected boolean capturingMenuKey() { return bindingMenuKey; }
 
     /** A two-option segmented control with a sliding thumb. */
-    private void segmented(GuiGraphics g, String key, String[] labels, int chosen, float x, float y, float w, int mx, int my, UiTheme t, java.util.function.IntConsumer pick) {
+    private void segmented(GuiGraphicsExtractor g, String key, String[] labels, int chosen, float x, float y, float w, int mx, int my, UiTheme t, java.util.function.IntConsumer pick) {
         float seg = w / 2;
         UiDraw.rounded(g, x, y, w, 18, 7, t.crust());
         float thumb = UiAnim.smooth(key, chosen, 16);
@@ -428,7 +428,7 @@ final class SettingsScreen extends UiScreen {
     static String speedLabel(double speed) { return java.math.BigDecimal.valueOf(speed).stripTrailingZeros().toPlainString() + "x"; }
 
     /** A label with a switch at the end of a row. */
-    private void toggleRow(GuiGraphics g, String label, String hint, boolean on, String key, float x, float y, float w, int mx, int my, UiTheme t, Runnable flip) {
+    private void toggleRow(GuiGraphicsExtractor g, String label, String hint, boolean on, String key, float x, float y, float w, int mx, int my, UiTheme t, Runnable flip) {
         boolean hover = UiDraw.over(mx, my, x - 4, y, w + 8, 18);
         float h = UiAnim.smooth(key + ".h", hover ? 1 : 0, 18);
         if (h > 0) UiDraw.rounded(g, x - 4, y, w + 8, 18, 6, UiDraw.alpha(t.surface(), h * .8f));
@@ -438,7 +438,7 @@ final class SettingsScreen extends UiScreen {
         if (hover) tooltip(key, label, hint);
     }
 
-    private void appearance(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void appearance(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         var p = GuiState.preferences();
         boolean light = p.mode == GuiPreferences.Mode.LIGHT;

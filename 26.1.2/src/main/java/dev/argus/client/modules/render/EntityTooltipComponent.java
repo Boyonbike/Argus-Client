@@ -2,7 +2,7 @@ package dev.argus.client.modules.render;
 
 import dev.argus.client.ClientAccess;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
@@ -31,7 +31,7 @@ public record EntityTooltipComponent(LivingEntity entity) implements ClientAcces
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       EntityRenderState state = argusclientMinecraft.getEntityRenderDispatcher().getRenderer(this.entity).createRenderState(this.entity, 1.0F);
       state.lightCoords = FULL_BRIGHT;
       state.shadowPieces.clear();

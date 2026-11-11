@@ -10,7 +10,7 @@ import dev.argus.client.modules.client.UIModule;
 import dev.argus.client.modules.hud.WatermarkModule;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -32,12 +32,12 @@ public class TitleScreenMixin extends Screen {
    }
 
    @Inject(method = "render", at = @At("TAIL"))
-   private void renderTitleWatermark(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback, @Local(ordinal = 1) float opacity) {
+   private void renderTitleWatermark(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback, @Local(ordinal = 1) float opacity) {
       if (!PanicCommand.unloaded) {
          Minecraft client = ClientAccess.argusclientMinecraft;
          int hudColor = hudModule.fadeSetting.getValue().getColor(hudModule, 0.0F).getRGB();
          String versionText = ChatFormatting.WHITE + watermarkModule.getVersionText();
-         graphics.drawString(client.font, ArgusClient.NAME + " " + versionText, 2, 2, ARGB.color(opacity, hudColor));
+         graphics.text(client.font, ArgusClient.NAME + " " + versionText, 2, 2, ARGB.color(opacity, hudColor));
       }
    }
 

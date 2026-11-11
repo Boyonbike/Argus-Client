@@ -33,7 +33,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -77,7 +77,7 @@ public class AutoEatModule extends Module {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
       int selectedHotbarSlot = ClientAccess.argusclientMinecraft.player.getInventory().getSelectedSlot();
-      ClickType clickType = ClickType.SWAP;
+      ContainerInput clickType = ContainerInput.SWAP;
       LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
       gameMode.handleInventoryMouseClick(containerId, containerSlot, selectedHotbarSlot, clickType, clickPlayer);
    }

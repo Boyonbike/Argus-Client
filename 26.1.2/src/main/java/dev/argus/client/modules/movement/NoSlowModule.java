@@ -54,7 +54,7 @@ import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
@@ -302,9 +302,9 @@ public class NoSlowModule extends Module {
          int tickThreshold = (int)(Math.ceil(latencyTicks / ClientContext.serverStateManager.getTickRateScale()) + 2.0);
          int useTicks = ClientAccess.argusclientMinecraft.player.getTicksUsingItem();
          if (useTicks == tickThreshold) {
-            InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(InventoryUtils.getSelectedSlot()), swapSlot, ClickType.SWAP);
+            InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(InventoryUtils.getSelectedSlot()), swapSlot, ContainerInput.SWAP);
             PacketSender.sendPlayerAction(Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN);
-            InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(InventoryUtils.getSelectedSlot()), swapSlot, ClickType.SWAP);
+            InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(InventoryUtils.getSelectedSlot()), swapSlot, ContainerInput.SWAP);
          }
 
          return useTicks > tickThreshold;
@@ -348,9 +348,9 @@ public class NoSlowModule extends Module {
          Predicate<ItemStack> inventoryPredicate = stack -> !this.isFoodBowShieldOrPearl(stack);
          int inventorySlot = InventoryUtils.findInventorySlot(inventoryPredicate, true);
          int containerSlot = InventoryUtils.toMenuSlot(inventorySlot);
-         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ClickType.SWAP, ClientAccess.argusclientMinecraft.player);
+         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
          PacketSender.sendUseItem(otherHand);
-         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ClickType.SWAP, ClientAccess.argusclientMinecraft.player);
+         ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(0, containerSlot, 40, ContainerInput.SWAP, ClientAccess.argusclientMinecraft.player);
       } else {
          PacketSender.sendUseItem(otherHand);
       }

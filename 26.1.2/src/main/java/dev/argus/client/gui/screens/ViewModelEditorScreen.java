@@ -14,7 +14,7 @@ import dev.argus.client.utils.math.MathUtils;
 import java.awt.Color;
 import java.util.LinkedList;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 
 public final class ViewModelEditorScreen extends ClientScreen {
@@ -35,7 +35,7 @@ public final class ViewModelEditorScreen extends ClientScreen {
    }
 
    @Override
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
       ViewModelSnapshot snapshot = this.dragStartSnapshot;
       if (this.getEditMode() != ViewModelEditMode.NONE) {
          float horizontalDelta = (float)MathUtils.floorToDecimals((this.dragStartMouseX - mouseX) * 0.005F, 2) * (this.editingOffhand ? -1 : 1);

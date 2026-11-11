@@ -17,11 +17,11 @@ import dev.argus.client.render.FontActiveTextCollector;
 import dev.argus.client.utils.chat.ChatUtils;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import net.minecraft.client.GuiMessage;
-import net.minecraft.client.GuiMessageTag;
-import net.minecraft.client.GuiMessage.Line;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.client.multiplayer.chat.GuiMessageTag;
+import net.minecraft.client.multiplayer.chat.GuiMessage.Line;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.ChatComponent.ChatGraphicsAccess;
 import net.minecraft.client.gui.components.ChatComponent.DrawingBackgroundGraphicsAccess;
@@ -210,9 +210,9 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
       return originalCommandMatch ? true : message.startsWith(CommandRegistry.getPrefix());
    }
 
-   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("HEAD"))
+   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("HEAD"))
    private void enableCustomChatText(
-      GuiGraphics graphics,
+      GuiGraphicsExtractor graphics,
       Font font,
       int ignoredRenderInt1,
       int ignoredRenderInt2,
@@ -224,9 +224,9 @@ public abstract class ChatComponentMixin implements ClientAccess, VisibleChatLin
       FontActiveTextCollector.customChatTextEnabled = fontsModule.isToggled() && fontsModule.chatSetting.getValue();
    }
 
-   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("RETURN"))
+   @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;IIIZZ)V", at = @At("RETURN"))
    private void disableCustomChatText(
-      GuiGraphics graphics,
+      GuiGraphicsExtractor graphics,
       Font font,
       int ignoredRenderInt1,
       int ignoredRenderInt2,

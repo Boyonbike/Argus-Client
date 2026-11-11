@@ -108,7 +108,7 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1141,7 +1141,7 @@ public class AutoCrystalModule extends Module {
             ResourceKey bindingCurse = Enchantments.BINDING_CURSE;
             if (!EnchantmentUtils.hasEnchantment(bindingCurse, armorStack)) {
                int slotIndex = armorSlot.getContainerSlot();
-               ClickType clickType = ClickType.THROW;
+               ContainerInput clickType = ContainerInput.THROW;
                InventoryUtils.clickSlot(slotIndex, 1, clickType);
                break;
             }

@@ -12,7 +12,7 @@ import net.minecraft.client.AttackIndicatorStatus;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
@@ -42,26 +42,26 @@ public class GuiMixin {
    private Minecraft minecraft;
 
    @Inject(method = "render", at = @At("HEAD"))
-   private void resetHudRenderColor(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void resetHudRenderColor(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    @Inject(method = "renderSelectedItemName", at = @At("HEAD"), cancellable = true)
-   private void suppressHeldItemTooltip(GuiGraphics graphics, CallbackInfo callback) {
+   private void suppressHeldItemTooltip(GuiGraphicsExtractor graphics, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.heldTooltipsSetting.getValue()) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
-   private void suppressEffectIcons(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void suppressEffectIcons(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (hudModule.isToggled() && hudModule.iconsSetting.getValue() == HUDModule.EffectIconMode.HIDE) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
-   private void cancelVanillaCrosshair(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void cancelVanillaCrosshair(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (crosshair.isToggled()) {
          if (crosshair.shouldHideVanillaCrosshair()) {
             callback.cancel();
@@ -83,7 +83,7 @@ public class GuiMixin {
    }
 
    @Inject(method = "renderCrosshair", at = @At("RETURN"))
-   private void restoreCrosshairPose(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void restoreCrosshairPose(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (crosshair.isToggled() && !crosshair.shouldHideVanillaCrosshair()) {
          graphics.pose().popMatrix();
       }
@@ -100,7 +100,7 @@ public class GuiMixin {
    }
 
    @Inject(method = "displayScoreboardSidebar", at = @At("HEAD"), cancellable = true)
-   private void suppressScoreboardSidebar(GuiGraphics graphics, Objective objective, CallbackInfo callback) {
+   private void suppressScoreboardSidebar(GuiGraphicsExtractor graphics, Objective objective, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.scoreBoardSetting.getValue()) {
          callback.cancel();
       } else {
@@ -110,19 +110,19 @@ public class GuiMixin {
    }
 
    @Inject(method = "displayScoreboardSidebar", at = @At("TAIL"), cancellable = true)
-   private void restoreScoreboardPose(GuiGraphics graphics, Objective objective, CallbackInfo callback) {
+   private void restoreScoreboardPose(GuiGraphicsExtractor graphics, Objective objective, CallbackInfo callback) {
       graphics.pose().popMatrix();
    }
 
    @Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
-   private void suppressActionBar(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void suppressActionBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.actionBarSetting.getValue()) {
          callback.cancel();
       }
    }
 
    @Inject(method = "renderTabList", at = @At("HEAD"), cancellable = true)
-   private void renderSmoothTabList(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
+   private void renderSmoothTabList(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo callback) {
       if (extraTabModule.isToggled() && extraTabModule.smoothSetting.getValue()) {
          callback.cancel();
          Scoreboard scoreboard = this.minecraft.level.getScoreboard();
@@ -142,7 +142,7 @@ public class GuiMixin {
       method = "renderCameraOverlays",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/Gui;renderTextureOverlay(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/resources/Identifier;F)V",
+         target = "Lnet/minecraft/client/gui/Gui;renderTextureOverlay(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/resources/Identifier;F)V",
          ordinal = 0
       )
    )

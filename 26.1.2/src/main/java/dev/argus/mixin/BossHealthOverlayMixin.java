@@ -3,7 +3,7 @@ package dev.argus.mixin;
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
 import dev.argus.client.modules.render.SkyboxModule;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +17,7 @@ public class BossHealthOverlayMixin {
    private static final SkyboxModule skyboxModule = ClientContext.getModule(SkyboxModule.class);
 
    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-   private void suppressBossBars(GuiGraphics graphics, CallbackInfo callback) {
+   private void suppressBossBars(GuiGraphicsExtractor graphics, CallbackInfo callback) {
       if (noRenderModule.isToggled() && noRenderModule.bossBarsSetting.getValue()) {
          callback.cancel();
       }

@@ -1,7 +1,7 @@
 package dev.argus.client.gui;
 
 import dev.argus.client.settings.SetSetting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -52,7 +52,7 @@ final class CollectionSettingScreen extends UiScreen {
     }
     private int maxScroll() { return Math.max(0, entries.size() * ROW - viewHeight); }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         boolean backHover = UiDraw.over(mx, my, left + 10, top + 10, 18, 18);

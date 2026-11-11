@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.item.ItemStack;
@@ -174,7 +174,7 @@ final class TargetsCard extends InlineCard {
 
     @Override boolean dragged(MouseButtonEvent event) { for (SettingsList list : lists()) if (list.mouseDragged(event)) return true; return false; }
     @Override boolean released() { for (SettingsList list : lists()) if (list.mouseReleased()) return true; return false; }
-    @Override void popup(GuiGraphics g, UiTheme t, int width, int height) { for (SettingsList list : lists()) list.popup(g, t, width, height); }
+    @Override void popup(GuiGraphicsExtractor g, UiTheme t, int width, int height) { for (SettingsList list : lists()) list.popup(g, t, width, height); }
 
     @Override boolean keyPressed(KeyEvent event) {
         if (field.isFocused() && field.visible && (event.key() == 257 || event.key() == 335)) { addSelected(); return true; }
@@ -232,7 +232,7 @@ final class TargetsCard extends InlineCard {
 
     private float filterX, filterW, cardY, rowRight;
 
-    @Override void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
+    @Override void draw(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w) {
         cardX = x; cardW = w; cardY = y;
         rows.clear();
         // Search row: field, filter, add.
@@ -292,7 +292,7 @@ final class TargetsCard extends InlineCard {
         }
     }
 
-    private float drawMatches(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
+    private float drawMatches(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w) {
         List<SpecificTargets.Candidate> list = visibleMatches();
         float h = panelHeight() - 4;
         UiDraw.rounded(g, x, y, w, h, 6, t.crust());
@@ -341,7 +341,7 @@ final class TargetsCard extends InlineCard {
 
     private boolean isArmed(String key) { return key.equals(armed) && System.currentTimeMillis() - armedAt < 4000; }
 
-    private float drawRow(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w, SpecificRules.Rule rule) {
+    private float drawRow(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w, SpecificRules.Rule rule) {
         RuleSettings settings = targets.settings(rule);
         boolean on = rule.enabled;
         boolean linked = rule.mirror;
@@ -412,7 +412,7 @@ final class TargetsCard extends InlineCard {
     }
 
     /** A round icon button drawn right to left; returns the new right edge. */
-    private float circle(GuiGraphics g, int mx, int my, UiTheme t, String key, float right, float cy, String icon,
+    private float circle(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String key, float right, float cy, String icon,
                          boolean lit, int tint, String tip, Runnable run) {
         float r = CIRCLE / 2, cx = right - r;
         boolean hover = hovering(mx, my, cx - r, cy - r, CIRCLE, CIRCLE);

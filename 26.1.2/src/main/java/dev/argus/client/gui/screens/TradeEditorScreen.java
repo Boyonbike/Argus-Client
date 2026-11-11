@@ -6,7 +6,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.gui.components.TradeEditorPanel;
 import dev.argus.client.render.GuiDrawUtils;
 import dev.argus.client.utils.inventory.TradeDefinition;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.ItemStack;
 
 public class TradeEditorScreen extends ClientScreen {
@@ -25,7 +25,7 @@ public class TradeEditorScreen extends ClientScreen {
    }
 
    @Override
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
       GuiDrawUtils.flush();
       if (this.tooltipStack != null) {
          graphics.setTooltipForNextFrame(ClientAccess.argusclientMinecraft.font, this.tooltipStack, mouseX, mouseY);

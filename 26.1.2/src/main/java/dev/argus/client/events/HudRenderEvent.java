@@ -1,12 +1,12 @@
 package dev.argus.client.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public class HudRenderEvent extends CancellableEvent {
    private static final HudRenderEvent INSTANCE = new HudRenderEvent();
    protected PoseStack poseStack;
-   protected GuiGraphics guiGraphics;
+   protected GuiGraphicsExtractor guiGraphics;
    protected float partialTick;
 
    public PoseStack getPoseStack() {
@@ -17,11 +17,11 @@ public class HudRenderEvent extends CancellableEvent {
       return this.partialTick;
    }
 
-   public GuiGraphics getGuiGraphics() {
+   public GuiGraphicsExtractor getGuiGraphics() {
       return this.guiGraphics;
    }
 
-   public static HudRenderEvent create(PoseStack poses, GuiGraphics graphics, float partialTick) {
+   public static HudRenderEvent create(PoseStack poses, GuiGraphicsExtractor graphics, float partialTick) {
       INSTANCE.poseStack = poses;
       INSTANCE.partialTick = partialTick;
       INSTANCE.guiGraphics = graphics;
@@ -32,7 +32,7 @@ public class HudRenderEvent extends CancellableEvent {
    public static class Before extends HudRenderEvent {
       private static final HudRenderEvent.Before INSTANCE = new HudRenderEvent.Before();
 
-      public static HudRenderEvent.Before create(PoseStack poses, GuiGraphics graphics, float partialTick) {
+      public static HudRenderEvent.Before create(PoseStack poses, GuiGraphicsExtractor graphics, float partialTick) {
          INSTANCE.poseStack = poses;
          INSTANCE.partialTick = partialTick;
          INSTANCE.guiGraphics = graphics;
@@ -44,7 +44,7 @@ public class HudRenderEvent extends CancellableEvent {
    public static class Unconditional extends HudRenderEvent {
       private static final HudRenderEvent.Unconditional INSTANCE = new HudRenderEvent.Unconditional();
 
-      public static HudRenderEvent.Unconditional create(PoseStack poses, GuiGraphics graphics, float partialTick) {
+      public static HudRenderEvent.Unconditional create(PoseStack poses, GuiGraphicsExtractor graphics, float partialTick) {
          INSTANCE.poseStack = poses;
          INSTANCE.partialTick = partialTick;
          INSTANCE.guiGraphics = graphics;

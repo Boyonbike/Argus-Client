@@ -2,7 +2,7 @@ package dev.argus.client.gui;
 
 import dev.argus.client.gui.mixin.EditBoxAccessor;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -66,7 +66,7 @@ final class UiInput extends EditBox {
 
     private float left() { return getX() - PAD - (icon == null ? 0 : 10); }
 
-    @Override public void renderWidget(GuiGraphics g, int mx, int my, float delta) {
+    @Override public void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         alignCursor();
         String text = displayValue(); int end = displayEnd();

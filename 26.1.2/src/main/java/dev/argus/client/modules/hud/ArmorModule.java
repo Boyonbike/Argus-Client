@@ -24,7 +24,7 @@ import dev.argus.client.utils.inventory.EquipmentUtils;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -95,9 +95,9 @@ public class ArmorModule extends HudWidgetModule {
       } else {
          HUDModule hudForEnabledCheck = hudModule;
          if (hudForEnabledCheck.isToggled() || this.isInHudEditor()) {
-            GuiGraphics graphicsForWidth = event.getGuiGraphics();
+            GuiGraphicsExtractor graphicsForWidth = event.getGuiGraphics();
             int screenWidth = graphicsForWidth.guiWidth();
-            GuiGraphics graphicsForHeight = event.getGuiGraphics();
+            GuiGraphicsExtractor graphicsForHeight = event.getGuiGraphics();
             int screenHeight = graphicsForHeight.guiHeight();
             int xOffset = 15;
             RenderUtils.clearColor(PostProcessShaderPass.POST_TARGET);

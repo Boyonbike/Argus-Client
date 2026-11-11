@@ -14,7 +14,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ServerboundSelectBundleItemPacket;
@@ -56,7 +56,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       int columns = this.columns();
       x += Math.max((tooltipWidth - this.getWidth(font)) / 2, 0);
       int mouseX = AbstractContainerScreenRenderTooltipEvent.mouseX;
@@ -87,7 +87,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       }
    }
 
-   private void renderEntry(Font font, GuiGraphics graphics, ItemStack item, int x, int y) {
+   private void renderEntry(Font font, GuiGraphicsExtractor graphics, ItemStack item, int x, int y) {
       MapId mapIdComponent = item.get(DataComponents.MAP_ID);
       int mapId = mapIdComponent == null ? -1 : mapIdComponent.id();
       MapDataCache mapCache = ClientContext.mapDataCache;
@@ -104,7 +104,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       }
    }
 
-   private void renderSelection(GuiGraphics graphics, Font font, int x, int y) {
+   private void renderSelection(GuiGraphicsExtractor graphics, Font font, int x, int y) {
       float progress = (float)(System.currentTimeMillis() % 2000L) / 1000.0F;
       if (progress >= 1.0F) {
          progress = 2.0F - progress;
@@ -122,7 +122,7 @@ public record BundleTooltipComponent(List entries, BundleContents bundleContents
       }
    }
 
-   private void renderWeightBar(GuiGraphics graphics, int x, int y) {
+   private void renderWeightBar(GuiGraphicsExtractor graphics, int x, int y) {
       int barWidth = this.columns() * 20 - 2;
       Fraction weight = this.bundleContents.weight();
       int filledWidth = Mth.mulAndTruncate(weight, barWidth);

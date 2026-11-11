@@ -10,9 +10,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.render.state.BlitRenderState;
-import net.minecraft.client.gui.render.state.GuiItemRenderState;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.state.gui.BlitRenderState;
+import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -31,18 +31,18 @@ public final class ShulkerIconRenderer {
       return extractingColour;
    }
 
-   public static void draw(GuiGraphics graphics, ItemStack item, Integer colour) {
+   public static void draw(GuiGraphicsExtractor graphics, ItemStack item, Integer colour) {
       Integer previous = extractingColour;
       extractingColour = colour;
       try {
-         graphics.renderItem(item, 0, 0);
+         graphics.item(item, 0, 0);
       } finally {
          extractingColour = previous;
       }
    }
 
    /** Draws pixel art in the same 16x16 space as a GUI item. */
-   public static void drawPixels(GuiGraphics graphics, PixelIcon icon, float x, float y, float scale) {
+   public static void drawPixels(GuiGraphicsExtractor graphics, PixelIcon icon, float x, float y, float scale) {
       var pose = graphics.pose();
       pose.pushMatrix();
       try {
@@ -64,7 +64,7 @@ public final class ShulkerIconRenderer {
    }
 
    /** Draws an item (optionally as a flat silhouette) at a GUI position. */
-   public static void drawAt(GuiGraphics graphics, ItemStack item, Integer colour, float x, float y, float scale) {
+   public static void drawAt(GuiGraphicsExtractor graphics, ItemStack item, Integer colour, float x, float y, float scale) {
       var pose = graphics.pose();
       pose.pushMatrix();
       try {

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class TooltipComponentCapture implements ClientAccess {
    private static boolean captureEnabled = false;
@@ -15,7 +15,7 @@ public final class TooltipComponentCapture implements ClientAccess {
       throw new AssertionError();
    }
 
-   public static List captureComponents(GuiGraphics graphics, List text, Optional tooltipComponent) {
+   public static List captureComponents(GuiGraphicsExtractor graphics, List text, Optional tooltipComponent) {
       captureEnabled = true;
       Font font = ClientAccess.argusclientMinecraft.font;
       graphics.setTooltipForNextFrame(font, text, tooltipComponent, 0, 0);

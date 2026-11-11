@@ -7,7 +7,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dev.argus.client.render.LoadingOverlayRenderer;
 import dev.argus.client.render.loading.GuiLoadingCanvas;
 import dev.argus.client.render.loading.LoadingAnimation;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.renderer.texture.ReloadableTexture;
 import net.minecraft.resources.Identifier;
@@ -43,14 +43,14 @@ abstract class LoadingOverlayMixin {
    }
 
    @Inject(method = "render", at = @At("HEAD"))
-   private void trackMouse(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+   private void trackMouse(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
       this.argus$animation.mouse(mouseX, mouseY);
    }
 
    @WrapOperation(method = "render", at = @At(value = "INVOKE", target =
-         "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"),
+         "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"),
          require = 2, allow = 2)
-   private void drawArgusLoadingScreen(GuiGraphics graphics, RenderPipeline pipeline, Identifier texture, int x, int y,
+   private void drawArgusLoadingScreen(GuiGraphicsExtractor graphics, RenderPipeline pipeline, Identifier texture, int x, int y,
          float u, float v, int width, int height, int regionWidth, int regionHeight, int textureWidth,
          int textureHeight, int color, Operation<Void> original) {
       // Vanilla draws two halves of its logo; render the whole animated screen on the first one.
@@ -62,7 +62,7 @@ abstract class LoadingOverlayMixin {
    }
 
    @Inject(method = "drawProgressBar", at = @At("HEAD"), cancellable = true)
-   private void hideVanillaProgressBar(GuiGraphics graphics, int x0, int y0, int x1, int y1, float alpha, CallbackInfo ci) {
+   private void hideVanillaProgressBar(GuiGraphicsExtractor graphics, int x0, int y0, int x1, int y1, float alpha, CallbackInfo ci) {
       // The animated screen draws its own progress bar.
       ci.cancel();
    }

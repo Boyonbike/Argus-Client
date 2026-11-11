@@ -27,7 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -248,7 +248,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         return isClosing() ? 1 - UiAnim.easeInOutSine(t) : UiAnim.easeOutCubic(t);
     }
 
-    @Override public void render(GuiGraphics g, int rawX, int rawY, float delta) {
+    @Override public void extractRenderState(GuiGraphicsExtractor g, int rawX, int rawY, float delta) {
         settle();
         syncSelection();
         super.render(g, rawX, rawY, delta);
@@ -293,7 +293,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
      * Appearance). The game shows through here, so a light scrim goes under it and the lines are
      * drawn a little stronger than on the Modules page's dark backdrop, or they would vanish.
      */
-    private void drawGrid(GuiGraphics g, UiTheme theme) {
+    private void drawGrid(GuiGraphicsExtractor g, UiTheme theme) {
         var p = GuiState.preferences();
         boolean active = dragged != null || draggingPanel || edgeDrag != null || lineOwner != null || !groupStart.isEmpty();
         gridFade = UiAnim.approach(gridFade, active && p.showGrid ? 1 : 0, active ? 12 : 8);
@@ -325,7 +325,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
      * Shades the safe zones: the edge under the pointer or being dragged, and all four (dimmer)
      * while an element is moved, so it's clear where elements stop.
      */
-    private void drawZones(GuiGraphics g, UiTheme t) {
+    private void drawZones(GuiGraphicsExtractor g, UiTheme t) {
         for (Side side : Side.values()) {
             boolean focus = side == edgeDrag || edgeDrag == null && dragged == null && side == edgeHover;
             float a = UiAnim.smooth("hud.zone." + side, focus ? 1 : dragged != null || edgeDrag != null ? .5f : 0, 14);
@@ -369,7 +369,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         fades.values().removeIf(a -> a <= .01f);
     }
 
-    private void elementFrames(GuiGraphics g, int rawX, int rawY, UiTheme t) {
+    private void elementFrames(GuiGraphicsExtractor g, int rawX, int rawY, UiTheme t) {
         List<HudWidgetRenderer> selection = new ArrayList<>(picked);
         selection.remove(dragged);
         fade(pickFade, selection);
@@ -426,7 +426,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     /** A pill like the navigation bar: title, live count, then the editor's buttons. */
-    private void toolbar(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void toolbar(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         String title = "HUD editor";
         int on = 0, total = 0;
         for (HudWidgetModule module : elements()) { total++; if (module.isToggled()) on++; }
@@ -473,7 +473,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     /** The Elements panel: a draggable window that keeps its place while hidden. */
-    private void panel(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void panel(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         panelVisible = UiAnim.approach(panelVisible, panelHidden ? 0 : 1, panelHidden ? 18 : 14);
         if (!draggingPanel) { panelShownX = UiAnim.approach(panelShownX, panelX, 22); panelShownY = UiAnim.approach(panelShownY, panelY, 22); }
         panelLift = UiAnim.approach(panelLift, draggingPanel ? 1 : 0, 14);
@@ -562,7 +562,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         }
     }
 
-    private void row(GuiGraphics g, HudWidgetModule module, float x, float y, float w, int mx, int my, UiTheme t) {
+    private void row(GuiGraphicsExtractor g, HudWidgetModule module, float x, float y, float w, int mx, int my, UiTheme t) {
         boolean hover = !busy() && !draggingPanel && my >= listTop && my < listBottom && UiDraw.over(mx, my, x, y, w, ROW_H);
         String key = "hud.row." + module.getName();
         float hv = UiAnim.smooth(key, hover ? 1 : 0, 18);
@@ -590,7 +590,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         }
     }
 
-    private void hints(GuiGraphics g, UiTheme t) {
+    private void hints(GuiGraphicsExtractor g, UiTheme t) {
         var p = GuiState.preferences();
         String text = edgeDrag != null ? "Drag to set the " + sideName(edgeDrag).toLowerCase(Locale.ROOT) + " safe zone · each edge has its own"
                 : boxing ? "Drag over elements to select them · Shift adds to the selection"
@@ -611,7 +611,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     private void tooltip(Object owner, String... lines) { tooltipOwner = owner; tooltipLines = lines; }
 
     /** Same look and timing as {@link UiScreen}'s tooltips. */
-    private void drawTooltip(GuiGraphics g, UiTheme t) {
+    private void drawTooltip(GuiGraphicsExtractor g, UiTheme t) {
         if (tooltipOwner == null || !tooltipOwner.equals(shownTooltipOwner)) { shownTooltipOwner = tooltipOwner; tooltipSince = System.nanoTime(); }
         if (tooltipOwner == null || tooltipLines == null) return;
         float rested = (System.nanoTime() - tooltipSince) / 1e9f - .35f;

@@ -28,7 +28,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -173,7 +173,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
       }
    }
 
-   private void snapWidget(GuiGraphics graphics, PoseStack poseStack, HudWidgetRenderer widget, float[] size) {
+   private void snapWidget(GuiGraphicsExtractor graphics, PoseStack poseStack, HudWidgetRenderer widget, float[] size) {
       float screenWidth = graphics.guiWidth();
       float screenHeight = graphics.guiHeight();
       this.snapWidgetAxis(poseStack, widget, size[0], screenWidth, hud.getSafeX(), true);
@@ -330,7 +330,7 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
    }
 
    @Override
-   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       PoseStack poseStack = GuiProjectionUtils.toPoseStack(graphics);
       RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, this.getTransitionOpacity());
       hoverLabel.setVisible(false);

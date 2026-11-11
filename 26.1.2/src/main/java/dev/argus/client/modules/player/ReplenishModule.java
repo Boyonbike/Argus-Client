@@ -31,7 +31,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -102,13 +102,13 @@ public class ReplenishModule extends Module {
 
          try {
             if (this.sortSetting.getValue() && count != 1 && target.getMaxStackSize() - target.getCount() > count) {
-               InventoryUtils.clickSlot(sourceSlot, 0, ClickType.PICKUP);
-               InventoryUtils.clickSlot(sourceSlot, 1, ClickType.PICKUP);
-               InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(hotbarSlot), 0, ClickType.PICKUP);
+               InventoryUtils.clickSlot(sourceSlot, 0, ContainerInput.PICKUP);
+               InventoryUtils.clickSlot(sourceSlot, 1, ContainerInput.PICKUP);
+               InventoryUtils.clickSlot(InventoryUtils.toMenuSlot(hotbarSlot), 0, ContainerInput.PICKUP);
             } else if (InventoryUtils.isHotbarFull()) {
-               InventoryUtils.clickSlot(sourceSlot, 0, ClickType.QUICK_MOVE);
+               InventoryUtils.clickSlot(sourceSlot, 0, ContainerInput.QUICK_MOVE);
             } else if (useSwap) {
-               InventoryUtils.clickSlot(sourceSlot, hotbarSlot, ClickType.SWAP);
+               InventoryUtils.clickSlot(sourceSlot, hotbarSlot, ContainerInput.SWAP);
             } else {
                InventoryUtils.swapSlotsWithPickup(sourceSlot, InventoryUtils.toMenuSlot(hotbarSlot));
             }
@@ -204,7 +204,7 @@ public class ReplenishModule extends Module {
             int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
             int clickSourceSlot = sourceSlot;
             byte mouseButton = 0;
-            ClickType quickMove = ClickType.QUICK_MOVE;
+            ContainerInput quickMove = ContainerInput.QUICK_MOVE;
             LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
             gameMode.handleInventoryMouseClick(containerId, clickSourceSlot, mouseButton, quickMove, clickPlayer);
          } else {

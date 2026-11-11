@@ -2,12 +2,12 @@ package dev.argus.client.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.render.GuiProjectionUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 
 public final class AbstractContainerScreenEvent extends CancellableEvent {
    private final Screen screen;
-   private GuiGraphics graphics;
+   private GuiGraphicsExtractor graphics;
    private PoseStack poseStack;
    private float mouseX;
    private float mouseY;
@@ -33,11 +33,11 @@ public final class AbstractContainerScreenEvent extends CancellableEvent {
       return this.mouseY;
    }
 
-   public GuiGraphics getGraphics() {
+   public GuiGraphicsExtractor getGraphics() {
       return this.graphics;
    }
 
-   public void setGraphics(GuiGraphics graphics) {
+   public void setGraphics(GuiGraphicsExtractor graphics) {
       this.graphics = graphics;
       this.poseStack = GuiProjectionUtils.toPoseStack(graphics);
    }

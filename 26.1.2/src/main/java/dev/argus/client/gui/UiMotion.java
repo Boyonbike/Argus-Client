@@ -1,6 +1,6 @@
 package dev.argus.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -42,14 +42,14 @@ final class UiMotion {
     }
 
     /** Crossfades vertically: the old value rises out while the new one rises in. */
-    static <T> void crossfade(GuiGraphics g, String key, T value, Consumer<T> draw) { crossfade(g, key, value, 0, SWAP_DRIFT, draw); }
+    static <T> void crossfade(GuiGraphicsExtractor g, String key, T value, Consumer<T> draw) { crossfade(g, key, value, 0, SWAP_DRIFT, draw); }
 
     /**
      * Draws {@code value} with {@code draw}, crossfading from the previous value whenever it
      * changes. The old value drifts out by ({@code -dx}, {@code -dy}) and the new one drifts in from
      * ({@code dx}, {@code dy}). A null value draws nothing, so text can fade out to empty.
      */
-    static <T> void crossfade(GuiGraphics g, String key, T value, float dx, float dy, Consumer<T> draw) {
+    static <T> void crossfade(GuiGraphicsExtractor g, String key, T value, float dx, float dy, Consumer<T> draw) {
         Swap s = swap(key, value);
         float t = s.changedAt == 0 ? 1 : UiAnim.eased(s.changedAt, SWAP_SECONDS);
         float before = UiRender.opacity;
@@ -70,7 +70,7 @@ final class UiMotion {
     }
 
     /** Text that crossfades when it changes; empty or null text fades out. */
-    static void text(GuiGraphics g, String key, String text, Consumer<String> draw) {
+    static void text(GuiGraphicsExtractor g, String key, String text, Consumer<String> draw) {
         crossfade(g, key, text == null || text.isEmpty() ? null : text, draw);
     }
 
@@ -89,7 +89,7 @@ final class UiMotion {
     static float rowAppear(String key, Object id) { return UiAnim.smooth(key + ".a." + id, 0, 1, 14); }
 
     /** Draws a confirm timer: a line under a button that drains as the confirm window runs out. */
-    static void drain(GuiGraphics g, float x, float y, float w, long armedAt, long windowNanos, int colour) {
+    static void drain(GuiGraphicsExtractor g, float x, float y, float w, long armedAt, long windowNanos, int colour) {
         float left = 1 - Math.clamp((System.nanoTime() - armedAt) / (float) windowNanos, 0f, 1f);
         if (left <= 0) return;
         float lw = w * left;

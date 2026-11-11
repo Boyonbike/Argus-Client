@@ -2,7 +2,7 @@ package dev.argus.client.render.loading;
 
 import org.joml.Matrix3x2fStack;
 
-/** The minimal drawing surface the loading animation needs; backed by GuiGraphics in game. */
+/** The minimal drawing surface the loading animation needs; backed by GuiGraphicsExtractor in game. */
 public interface LoadingCanvas {
    float width();
 

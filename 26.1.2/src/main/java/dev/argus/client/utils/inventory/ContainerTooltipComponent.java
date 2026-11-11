@@ -8,7 +8,7 @@ import dev.argus.client.utils.KeyUtils;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MapRenderer;
 import net.minecraft.client.renderer.RenderBuffers;
@@ -38,7 +38,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       int column = 0;
       int row = 0;
       int mouseX = AbstractContainerScreenRenderTooltipEvent.mouseX;
@@ -64,12 +64,12 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
             if (!KeyUtils.isPhysicalKeyDown(342)) {
                int mapDecorationX = itemX + 1;
                int mapDecorationY = itemY + 1;
-               graphics.renderItemDecorations(font, item, mapDecorationX, mapDecorationY);
+               graphics.itemDecorations(font, item, mapDecorationX, mapDecorationY);
             }
          } else {
             int renderX = itemX + 1;
             int renderY = itemY + 1;
-            graphics.renderItem(item, renderX, renderY);
+            graphics.item(item, renderX, renderY);
             int decorationX = itemX + 1;
             int decorationY = itemY + 1;
             String countLabel;
@@ -81,7 +81,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
                countLabel = null;
             }
 
-            graphics.renderItemDecorations(font, item, decorationX, decorationY, countLabel);
+            graphics.itemDecorations(font, item, decorationX, decorationY, countLabel);
             renderArmourDurability(graphics, font, item, decorationX, decorationY);
          }
 
@@ -100,7 +100,7 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
       }
    }
 
-   private static void renderArmourDurability(GuiGraphics graphics, Font font, ItemStack item, int x, int y) {
+   private static void renderArmourDurability(GuiGraphicsExtractor graphics, Font font, ItemStack item, int x, int y) {
       if (!tooltips.showsDurability() || !item.isDamageableItem() || !item.has(DataComponents.EQUIPPABLE)) {
          return;
       }
@@ -113,11 +113,11 @@ public record ContainerTooltipComponent(List<ItemStack> items) implements Client
       poses.pushMatrix();
       poses.translate(x + 16, y + 9);
       poses.scale(0.5F, 0.5F);
-      graphics.drawString(font, text, -font.width(text), 0, color, true);
+      graphics.text(font, text, -font.width(text), 0, color, true);
       poses.popMatrix();
    }
 
-   public static void renderMapOverlay(GuiGraphics graphics, MapItemSavedData data, int id, float x, float y) {
+   public static void renderMapOverlay(GuiGraphicsExtractor graphics, MapItemSavedData data, int id, float x, float y) {
       if (data != null) {
          Matrix3x2fStack poses = graphics.pose();
          RenderBuffers renderBuffers = ClientAccess.argusclientMinecraft.renderBuffers();

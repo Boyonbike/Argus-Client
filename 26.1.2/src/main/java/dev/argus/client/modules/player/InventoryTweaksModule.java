@@ -21,7 +21,7 @@ import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -109,7 +109,7 @@ public class InventoryTweaksModule extends Module {
                            MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
                            int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
                            int clickedSlotId = this.getClickSlotId(focusedSlot);
-                           ClickType clickType = ClickType.QUICK_MOVE;
+                           ContainerInput clickType = ContainerInput.QUICK_MOVE;
                            LocalPlayer clickPlayer = ClientAccess.argusclientMinecraft.player;
                            gameMode.handleInventoryMouseClick(containerId, clickedSlotId, mouseButton, clickType, clickPlayer);
                            this.lastQuickMovedSlotId = this.getClickSlotId(focusedSlot);

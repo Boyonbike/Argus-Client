@@ -8,7 +8,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
 import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -23,7 +23,7 @@ public final class ClientRenderTypes {
    private static final RenderType SHINE_GLINT = RenderType.create(
       "argusclient_shine_glint",
       RenderSetup.builder(ClientRenderPipelines.SHINE_GLINT)
-         .withTexture("Sampler0", ItemRenderer.ENCHANTED_GLINT_ARMOR)
+         .withTexture("Sampler0", RenderTypes.ENCHANTED_GLINT_ARMOR)
          .setTextureTransform(TextureTransform.ARMOR_ENTITY_GLINT_TEXTURING)
          .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
          .createRenderSetup()

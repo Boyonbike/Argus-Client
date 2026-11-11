@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -357,7 +357,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- rendering ------------------------------------------------------------------------------------------------
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         mouseX = mx; mouseY = my;
         UiTheme t = GuiState.theme();
         hits.clear(); dialogHits.clear(); memo.clear();
@@ -393,7 +393,7 @@ public final class ChatToolsScreen extends UiScreen {
         else if (dialog == null) shownDialog = null;
     }
 
-    private void body(GuiGraphics g, UiTheme t) {
+    private void body(GuiGraphicsExtractor g, UiTheme t) {
         switch (page) {
             case OVERVIEW -> overview(g, t);
             case PLAYERS -> players(g, t);
@@ -406,7 +406,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void sidebar(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void sidebar(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         UiDraw.rounded(g, left + 4, top + 4, SIDE + 8, panelHeight - 8, 5, UiDraw.alpha(t.mantle(), .7f));
         UiDraw.icon(g, "chat", left + 12, top + 13, 10, t.accent());
         UiDraw.bold(g, "Social", left + 27, top + 18, UiDraw.TITLE, t.text());
@@ -443,7 +443,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
     private float itemY(int index) { return top + 32 + index * ITEM; }
 
-    private void unavailable(GuiGraphics g, UiTheme t) {
+    private void unavailable(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), cy = top + panelHeight / 2f - 20;
         UiDraw.icon(g, "chat", x + w / 2 - 8, cy - 18, 16, UiDraw.alpha(t.muted(), .5f));
         boolean off = tools == null || !tools.isToggled();
@@ -456,7 +456,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void header(GuiGraphics g, UiTheme t) {
+    private void header(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         String title = page == Page.MESSAGES && recipient != null ? recipient : page.label;
         String subtitle = page == Page.MESSAGES && recipient != null ? (online(recipient) ? "Online" : "Offline") + " · private messages" : page.subtitle;
@@ -467,7 +467,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
 
     /** A page that scrolls as a whole, with edge fades and a slim scrollbar. */
-    private void scrolling(GuiGraphics g, UiTheme t, Runnable content) {
+    private void scrolling(GuiGraphicsExtractor g, UiTheme t, Runnable content) {
         float x = contentX(), w = contentWidth(), view = bodyBottom() - bodyTop();
         scroll = Math.clamp(scroll, 0, Math.max(0, contentHeight - view));
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
@@ -487,7 +487,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void footer(GuiGraphics g, UiTheme t) {
+    private void footer(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = top + panelHeight - 9;
         if (!notice.isEmpty() && System.nanoTime() - noticeAt < NOTICE_NANOS + 250_000_000L) {
             UiMotion.crossfade(g, "chat.footer", new UiMotion.Line(UiDraw.fit(notice, w), noticeError ? 1 : 2), l -> UiDraw.text(g, l.text(), x, y, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
@@ -508,7 +508,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     private List<ChatToolsModule.Outgoing> outgoing() { return tools == null || minecraft.getConnection() == null ? List.of() : memo("outgoing", tools::outgoing); }
 
-    private void tray(GuiGraphics g, UiTheme t) {
+    private void tray(GuiGraphicsExtractor g, UiTheme t) {
         var queued = outgoing();
         if (queued.isEmpty()) return;
         float x = contentX(), w = contentWidth(), y = composerY() - 4 - trayHeight();
@@ -526,7 +526,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void composerBar(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void composerBar(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         if (!hasComposer()) return;
         float x = contentX(), w = contentWidth(), y = composerY();
         composer.render(g, mx, my, delta);
@@ -549,7 +549,7 @@ public final class ChatToolsScreen extends UiScreen {
     private float buttonWidth(String label, String icon) { return Math.max(CONTROL, UiDraw.width(label, UiDraw.SMALL) + 16 + (icon == null ? 0 : 11)); }
 
     /** A pill button; returns its width. */
-    private float button(GuiGraphics g, UiTheme t, String label, String icon, float x, float y, float w, Tone tone, boolean enabled, Runnable action) {
+    private float button(GuiGraphicsExtractor g, UiTheme t, String label, String icon, float x, float y, float w, Tone tone, boolean enabled, Runnable action) {
         boolean hover = enabled && hovered(x, y, w, CONTROL);
         float hv = UiAnim.smooth("ct.b." + label + "." + (int) x + "." + (int) y, hover ? 1 : 0, 20);
         int fill = switch (tone) {
@@ -571,9 +571,9 @@ public final class ChatToolsScreen extends UiScreen {
 
     /** Buttons laid out leftwards from a right edge. */
     private final class Actions {
-        private final GuiGraphics g; private final UiTheme t;
+        private final GuiGraphicsExtractor g; private final UiTheme t;
         private float right; private final float y;
-        Actions(GuiGraphics g, UiTheme t, float right, float y) { this.g = g; this.t = t; this.right = right; this.y = y; }
+        Actions(GuiGraphicsExtractor g, UiTheme t, float right, float y) { this.g = g; this.t = t; this.right = right; this.y = y; }
         Actions add(String label, String icon, Tone tone, boolean enabled, Runnable action) {
             float w = buttonWidth(label, icon);
             right -= w;
@@ -590,7 +590,7 @@ public final class ChatToolsScreen extends UiScreen {
         float left() { return right; }
     }
 
-    private void iconButton(GuiGraphics g, UiTheme t, String icon, float x, float y, float size, int colour, String tooltip, Runnable action) {
+    private void iconButton(GuiGraphicsExtractor g, UiTheme t, String icon, float x, float y, float size, int colour, String tooltip, Runnable action) {
         boolean hover = hovered(x, y, size, size);
         float hv = UiAnim.smooth("ct.i." + icon + "." + (int) x + "." + (int) y, hover ? 1 : 0, 20);
         if (hv > 0) UiDraw.circle(g, x + size / 2, y + size / 2, size / 2, UiDraw.alpha(t.surface(), hv));
@@ -599,14 +599,14 @@ public final class ChatToolsScreen extends UiScreen {
         hit(x, y, size, size, action);
     }
 
-    private void badge(GuiGraphics g, String text, float right, float cy, int fill, int colour, boolean alignRight) {
+    private void badge(GuiGraphicsExtractor g, String text, float right, float cy, int fill, int colour, boolean alignRight) {
         float w = Math.max(10, UiDraw.width(text, UiDraw.SMALL) + 6);
         float x = alignRight ? right - w : right;
         UiDraw.rounded(g, x, cy - 5, w, 10, 5, fill);
         UiDraw.center(g, text, x, cy, w, UiDraw.SMALL, colour);
     }
 
-    private void avatar(GuiGraphics g, UiTheme t, String name, float x, float cy, int colour, boolean online) {
+    private void avatar(GuiGraphicsExtractor g, UiTheme t, String name, float x, float cy, int colour, boolean online) {
         UiDraw.circle(g, x + 8, cy, 8, UiDraw.alpha(colour, .22f));
         UiDraw.center(g, name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(Locale.ROOT), x, cy, 16, UiDraw.SMALL, colour);
         if (online) UiDraw.circle(g, x + 14, cy + 6, 2.5f, t.green());
@@ -616,12 +616,12 @@ public final class ChatToolsScreen extends UiScreen {
         return friend(name) ? t.green() : enemy(name) ? t.red() : clanMember(name) ? t.yellow() : t.text();
     }
 
-    private void rowBackground(GuiGraphics g, UiTheme t, float y, float h, boolean hover, String key) {
+    private void rowBackground(GuiGraphicsExtractor g, UiTheme t, float y, float h, boolean hover, String key) {
         float hv = UiAnim.smooth(key, hover ? 1 : 0, 20);
         UiDraw.rounded(g, contentX() - 4, y + 1, contentWidth() + 8, h - 2, 6, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), hv * .8f));
     }
 
-    private void caption(GuiGraphics g, UiTheme t, String label, String detail, String link, Runnable action) {
+    private void caption(GuiGraphicsExtractor g, UiTheme t, String label, String detail, String link, Runnable action) {
         float y = cursor;
         cursor += 16;
         if (!visible(y, 16)) return;
@@ -636,7 +636,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void emptyRow(GuiGraphics g, UiTheme t, String heading, String hint) {
+    private void emptyRow(GuiGraphicsExtractor g, UiTheme t, String heading, String hint) {
         float y = cursor, h = 34;
         cursor += h + PAD;
         if (!visible(y, h)) return;
@@ -646,7 +646,7 @@ public final class ChatToolsScreen extends UiScreen {
         UiDraw.center(g, UiDraw.fit(hint, w - 10), x, y + 24, w, UiDraw.SMALL, t.muted());
     }
 
-    private void noteRow(GuiGraphics g, UiTheme t, String title, String text) {
+    private void noteRow(GuiGraphicsExtractor g, UiTheme t, String title, String text) {
         float x = contentX(), w = contentWidth();
         List<String> lines = UiDraw.wrap(text, w - 16, UiDraw.SMALL);
         float y = cursor, h = 16 + lines.size() * 9 + 4;
@@ -657,7 +657,7 @@ public final class ChatToolsScreen extends UiScreen {
         for (int i = 0; i < lines.size(); i++) UiDraw.text(g, lines.get(i), x + 4, y + 19 + i * 9, UiDraw.SMALL, t.muted());
     }
 
-    private void toggleRow(GuiGraphics g, UiTheme t, String label, String hint, boolean on, Runnable flip) {
+    private void toggleRow(GuiGraphicsExtractor g, UiTheme t, String label, String hint, boolean on, Runnable flip) {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += ROW;
         if (!visible(y, ROW)) return;
@@ -669,7 +669,7 @@ public final class ChatToolsScreen extends UiScreen {
         hit(x - 4, y, w + 8, ROW, flip);
     }
 
-    private void menuRow(GuiGraphics g, UiTheme t, String label, String detail, boolean submenu, Runnable action) {
+    private void menuRow(GuiGraphicsExtractor g, UiTheme t, String label, String detail, boolean submenu, Runnable action) {
         float x = contentX(), w = contentWidth(), y = cursor, h = 22;
         cursor += h;
         if (!visible(y, h)) return;
@@ -683,7 +683,7 @@ public final class ChatToolsScreen extends UiScreen {
         hit(x - 4, y, w + 8, h, action);
     }
 
-    private void segmented(GuiGraphics g, UiTheme t, String key, String[] labels, int chosen, IntConsumer pick) {
+    private void segmented(GuiGraphicsExtractor g, UiTheme t, String key, String[] labels, int chosen, IntConsumer pick) {
         float x = contentX(), w = contentWidth(), y = cursor, seg = w / labels.length;
         cursor += 18 + PAD;
         if (!visible(y, 18)) return;
@@ -706,7 +706,7 @@ public final class ChatToolsScreen extends UiScreen {
             + ChatTeleportState.remaining(request.expires() - ChatToolsModule.now());
     }
 
-    private void requestRow(GuiGraphics g, UiTheme t, ChatTpaRequests.Request request) {
+    private void requestRow(GuiGraphicsExtractor g, UiTheme t, ChatTpaRequests.Request request) {
         float x = contentX(), w = contentWidth(), y = cursor, h = ROW + 2;
         cursor += h + 2;
         if (!visible(y, h)) return;
@@ -720,7 +720,7 @@ public final class ChatToolsScreen extends UiScreen {
         UiDraw.text(g, UiDraw.fit(requestText(request), tw), x + 22, y + 20, UiDraw.SMALL, t.yellow());
     }
 
-    private void timerRows(GuiGraphics g, UiTheme t) {
+    private void timerRows(GuiGraphicsExtractor g, UiTheme t) {
         long now = ChatToolsModule.now();
         float x = contentX(), w = contentWidth();
         for (var timer : timers) {
@@ -743,7 +743,7 @@ public final class ChatToolsScreen extends UiScreen {
         if (!timers.isEmpty()) cursor += PAD;
     }
 
-    private void playerList(GuiGraphics g, UiTheme t, List<String> names, boolean clanPage, String key) {
+    private void playerList(GuiGraphicsExtractor g, UiTheme t, List<String> names, boolean clanPage, String key) {
         float base = cursor;
         for (String name : names) glide(g, "ct.pl." + key, name, base, () -> playerRow(g, t, name, clanPage));
         cursor += PAD;
@@ -754,7 +754,7 @@ public final class ChatToolsScreen extends UiScreen {
      * are added or removed. The row lays out at its real place; it is only drawn (and clicked) at
      * the eased one, measured from the list's {@code base} so scrolling never lags.
      */
-    private void glide(GuiGraphics g, String key, Object id, float base, Runnable row) {
+    private void glide(GuiGraphicsExtractor g, String key, Object id, float base, Runnable row) {
         float shown = base + UiMotion.rowY(key, id, cursor - base), shift = shown - cursor;
         float before = UiRender.opacity;
         UiRender.opacity = before * UiMotion.rowAppear(key, id);
@@ -762,7 +762,7 @@ public final class ChatToolsScreen extends UiScreen {
         try { row.run(); } finally { cursor -= shift; UiRender.opacity = before; }
     }
 
-    private void playerRow(GuiGraphics g, UiTheme t, String name, boolean clanPage) {
+    private void playerRow(GuiGraphicsExtractor g, UiTheme t, String name, boolean clanPage) {
         float x = contentX(), w = contentWidth(), y = cursor, h = ROW + 2;
         cursor += h;
         if (!visible(y, h)) return;
@@ -798,7 +798,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Overview -------------------------------------------------------------------------------------------------
 
-    private void overview(GuiGraphics g, UiTheme t) {
+    private void overview(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         float y = cursor;
         cursor += CONTROL + PAD;
@@ -824,7 +824,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
 
     /** Everything that needs the player, pinned to the top of Overview until it's dealt with. */
-    private void waiting(GuiGraphics g, UiTheme t) {
+    private void waiting(GuiGraphicsExtractor g, UiTheme t) {
         var unread = tools.messages().recent().stream().filter(p -> tools.messages().unread(p) > 0).toList();
         var waiting = tools.waiting();
         int items = requests.size() + unread.size() + (waiting.problem() == null ? 0 : 1);
@@ -860,7 +860,7 @@ public final class ChatToolsScreen extends UiScreen {
         cursor += PAD;
     }
 
-    private void statusTiles(GuiGraphics g, UiTheme t) {
+    private void statusTiles(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = cursor, h = 32, tw = (w - 6) / 2;
         cursor += h + PAD;
         if (!visible(y, h)) return;
@@ -872,7 +872,7 @@ public final class ChatToolsScreen extends UiScreen {
             : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked · synced " + ago(sync.lastSuccessfulSync()) : "Not synced yet";
         tile(g, t, x + tw + 6, y, w - tw - 6, h, "shield", "Clan", clan, () -> select(Page.CLAN));
     }
-    private void tile(GuiGraphics g, UiTheme t, float x, float y, float w, float h, String icon, String title, String detail, Runnable action) {
+    private void tile(GuiGraphicsExtractor g, UiTheme t, float x, float y, float w, float h, String icon, String title, String detail, Runnable action) {
         boolean hover = hovered(x, y, w, h);
         float hv = UiAnim.smooth("ct.tile." + title, hover ? 1 : 0, 20);
         UiDraw.rounded(g, x, y, w, h, 7, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), hv * .8f));
@@ -886,7 +886,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
     private static String ago(long since) { return ChatTeleportState.remaining(Math.max(0, ChatToolsModule.now() - since)) + " ago"; }
 
-    private void homeTiles(GuiGraphics g, UiTheme t, List<String> homes) {
+    private void homeTiles(GuiGraphicsExtractor g, UiTheme t, List<String> homes) {
         float x = contentX(), w = contentWidth();
         int columns = w >= 420 ? 3 : 2;
         float gap = 6, tw = (w - gap * (columns - 1)) / columns, h = 28;
@@ -922,7 +922,7 @@ public final class ChatToolsScreen extends UiScreen {
     private static float chatLineHeight() { return CHAT_SIZE + 3; }
     private float rowHeight(ChatRow row) { return Math.max(1, row.lines().size()) * chatLineHeight() + 3; }
 
-    private void chatPage(GuiGraphics g, UiTheme t) {
+    private void chatPage(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), top = bodyTop() + 2, bottom = bodyBottom();
         var lines = tools.chatLines();
         if (lines.isEmpty()) {
@@ -964,7 +964,7 @@ public final class ChatToolsScreen extends UiScreen {
      * Draws chat lines newest-at-the-bottom, {@code fromBottom} units scrolled up, and highlights the selection.
      * While scrolled up, what's on screen holds still as new lines arrive. Returns the clamped scroll.
      */
-    private float transcript(GuiGraphics g, UiTheme t, List<ChatToolsModule.ChatLine> lines, float x, float w, float top, float bottom,
+    private float transcript(GuiGraphicsExtractor g, UiTheme t, List<ChatToolsModule.ChatLine> lines, float x, float w, float top, float bottom,
                              float fromBottom, boolean chatPage) {
         String pattern = tools.chatTimeFormat();
         float timeWidth = UiDraw.width("00:00:00", UiDraw.SMALL) * (pattern.length() / 8f) + 8;
@@ -1009,7 +1009,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
 
     /** Overview's chat card: the newest lines, scrolled on their own. A click opens Chat; a drag selects lines to copy. */
-    private void chatDock(GuiGraphics g, UiTheme t) {
+    private void chatDock(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = bodyBottom() + 4, h = dockHeight() - 8;
         boolean hover = hovered(x - 4, y, w + 8, h);
         float hv = UiAnim.smooth("ct.dock", hover ? 1 : 0, 18);
@@ -1076,7 +1076,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Messages -------------------------------------------------------------------------------------------------
 
-    private void conversations(GuiGraphics g, UiTheme t) {
+    private void conversations(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += CONTROL + PAD;
         if (visible(y, CONTROL)) new Actions(g, t, x + w, y)
@@ -1109,7 +1109,7 @@ public final class ChatToolsScreen extends UiScreen {
         float height() { return lines.size() * 9 + 8; }
     }
 
-    private void conversation(GuiGraphics g, UiTheme t) {
+    private void conversation(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = bodyTop() + 2;
         boolean isFriend = friend(recipient), on = online(recipient);
         var actions = new Actions(g, t, x + w, y)
@@ -1174,7 +1174,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Players --------------------------------------------------------------------------------------------------
 
-    private void players(GuiGraphics g, UiTheme t) {
+    private void players(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += 20 + PAD;
         search.place(Math.round(x), Math.round(y) + 4, Math.round(w));
@@ -1208,7 +1208,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void playerActions(GuiGraphics g, UiTheme t, String player) {
+    private void playerActions(GuiGraphicsExtractor g, UiTheme t, String player) {
         caption(g, t, "Actions for " + player, null, null, null);
         boolean canIgnore = tools.commandAvailable("ignore");
         String ignore = "/ignore " + player;
@@ -1232,7 +1232,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Clan -----------------------------------------------------------------------------------------------------
 
-    private void clan(GuiGraphics g, UiTheme t) {
+    private void clan(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         DiscordSyncModule sync = DiscordSyncModule.get();
         float y = cursor, h = 34;
@@ -1320,7 +1320,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Homes ----------------------------------------------------------------------------------------------------
 
-    private void homes(GuiGraphics g, UiTheme t) {
+    private void homes(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += CONTROL + PAD;
         if (visible(y, CONTROL)) new Actions(g, t, x + w, y)
@@ -1355,7 +1355,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Teleports ------------------------------------------------------------------------------------------------
 
-    private void teleports(GuiGraphics g, UiTheme t) {
+    private void teleports(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth(), y = cursor;
         cursor += CONTROL + PAD;
         if (visible(y, CONTROL)) new Actions(g, t, x + w, y).add("Request teleport", "compass", Tone.PRIMARY, true, this::requestTeleport);
@@ -1373,7 +1373,7 @@ public final class ChatToolsScreen extends UiScreen {
     }
 
     /** Manual pins your own length (the same setting as in the module's settings); Auto uses the one learned from the server. */
-    private void cooldownRow(GuiGraphics g, UiTheme t, String label, ChatTeleportState.Kind kind) {
+    private void cooldownRow(GuiGraphicsExtractor g, UiTheme t, String label, ChatTeleportState.Kind kind) {
         float x = contentX(), w = contentWidth(), y = cursor, h = ROW + 4;
         cursor += h;
         if (!visible(y, h)) return;
@@ -1401,7 +1401,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Auto TPY -------------------------------------------------------------------------------------------------
 
-    private void autoTpy(GuiGraphics g, UiTheme t) {
+    private void autoTpy(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         boolean on = tools.autoTpyEnabled();
         var stats = tools.autoTpyStats();
@@ -1443,7 +1443,7 @@ public final class ChatToolsScreen extends UiScreen {
         }
     }
 
-    private void autoQueue(GuiGraphics g, UiTheme t, AutoTpyQueue.Stats stats) {
+    private void autoQueue(GuiGraphicsExtractor g, UiTheme t, AutoTpyQueue.Stats stats) {
         toggleRow(g, t, "Requests to teleport to you", "Let accepted players arrive where you are", tools.autoTpyToMe(), tools::toggleAutoTpyToMe);
         toggleRow(g, t, "Requests to teleport you to them", "Let accepted players move you to them", tools.autoTpyToThem(), tools::toggleAutoTpyToThem);
         cursor += PAD;
@@ -1460,7 +1460,7 @@ public final class ChatToolsScreen extends UiScreen {
         cursor += PAD;
     }
 
-    private void autoRoles(GuiGraphics g, UiTheme t) {
+    private void autoRoles(GuiGraphicsExtractor g, UiTheme t) {
         var roles = tools.autoTpyAvailableRoles();
         var selected = tools.autoTpyRoleIds();
         caption(g, t, "Discord roles", selected.isEmpty() ? "no filter" : selected.size() + " selected · " + tools.autoTpyRoleMemberCount() + " players",
@@ -1475,7 +1475,7 @@ public final class ChatToolsScreen extends UiScreen {
         cursor += PAD;
     }
 
-    private void autoLists(GuiGraphics g, UiTheme t) {
+    private void autoLists(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         if (!tools.autoTpyRoleIds().isEmpty()) noteRow(g, t, "Role filter active", "These whitelist and friend preferences apply again when the role filter is cleared. Blocklisted players are always declined.");
         toggleRow(g, t, "Whitelist only", "Off accepts anyone who isn't blocklisted", tools.autoTpyWhitelistOnly(), tools::toggleAutoTpyWhitelistOnly);
@@ -1515,7 +1515,7 @@ public final class ChatToolsScreen extends UiScreen {
         notice("Added " + (updated.size() - old.size()) + " name" + (updated.size() - old.size() == 1 ? "" : "s") + (typed.invalid() > 0 ? "; skipped " + typed.invalid() + " invalid." : "."));
     }
 
-    private void autoTiming(GuiGraphics g, UiTheme t) {
+    private void autoTiming(GuiGraphicsExtractor g, UiTheme t) {
         toggleRow(g, t, "Adapt to the server", "Learn from confirmed replies; rate limits pause sending", tools.autoTpyAdaptive(), tools::toggleAutoTpyAdaptive);
         menuRow(g, t, "Reset learned speed", "Back to the configured interval", false, () -> { tools.resetAutoTpyLearning(); notice("Learned speed reset."); });
         cursor += PAD;
@@ -1525,7 +1525,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- Server ---------------------------------------------------------------------------------------------------
 
-    private void server(GuiGraphics g, UiTheme t) {
+    private void server(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         if (serverPath.isEmpty() && tools.commandAvailable("hotspot")) {
             float y = cursor;
@@ -1586,7 +1586,7 @@ public final class ChatToolsScreen extends UiScreen {
 
     // ---- dialog ---------------------------------------------------------------------------------------------------
 
-    private void dialogBox(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void dialogBox(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         Dialog dialog = shownDialog;
         boolean live = this.dialog != null;
         dialogDrawing = true;

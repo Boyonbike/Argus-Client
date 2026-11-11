@@ -30,7 +30,7 @@ import dev.argus.client.utils.LockUtils;
 import dev.argus.client.utils.math.Vec3Utils;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Overlay;
@@ -69,7 +69,7 @@ public abstract class GameRendererMixin {
    private static NoBobModule noBob = ClientContext.getModule(NoBobModule.class);
    private static HUDModule hud = ClientContext.getModule(HUDModule.class);
    @Unique
-   private GuiGraphics hudGraphics;
+   private GuiGraphicsExtractor hudGraphics;
    @Final
    @Shadow
    private Minecraft minecraft;
@@ -277,11 +277,11 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.BEFORE
       )
    )
-   private void beforeScreenRendering(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback, @Local GuiGraphics graphics) {
+   private void beforeScreenRendering(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback, @Local GuiGraphicsExtractor graphics) {
       NameProtectModule.replacementBypassed = true;
       boolean manageProjection;
       if (this.minecraft.screen instanceof ClientScreen clientScreen) {
@@ -312,7 +312,7 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+         target = "Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
          shift = Shift.AFTER
       )
    )
@@ -327,7 +327,7 @@ public abstract class GameRendererMixin {
       method = "render",
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;getOverlay()Lnet/minecraft/client/gui/screens/Overlay;", ordinal = 0)
    )
-   private Overlay captureHudGraphics(Overlay overlay, @Local GuiGraphics graphics) {
+   private Overlay captureHudGraphics(Overlay overlay, @Local GuiGraphicsExtractor graphics) {
       this.hudGraphics = graphics;
       PoseStack poses = GuiProjectionUtils.toPoseStack(graphics);
       if (ClientAccess.argusclientMinecraft.level != null
@@ -358,7 +358,7 @@ public abstract class GameRendererMixin {
    }
 
    @Unique
-   public void renderClientHud(GuiGraphics graphics, boolean manageProjection) {
+   public void renderClientHud(GuiGraphicsExtractor graphics, boolean manageProjection) {
       if (ClientAccess.argusclientMinecraft.level != null) {
          boolean nameReplacementWasBypassed = NameProtectModule.replacementBypassed;
          if (nameReplacementWasBypassed) {

@@ -4,7 +4,7 @@ import dev.argus.client.settings.options.PresetCategory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -117,7 +117,7 @@ final class PresetsPanel {
     // ---- rendering --------------------------------------------------------------------------
 
     /** Small rounded text button; registers its hit box for this frame. Returns its width. */
-    private float pill(GuiGraphics g, String label, float right, float cy, int mx, int my, int tint, boolean filled, Runnable action) {
+    private float pill(GuiGraphicsExtractor g, String label, float right, float cy, int mx, int my, int tint, boolean filled, Runnable action) {
         float pw = UiDraw.width(label, UiDraw.SMALL) + 14, px = right - pw;
         boolean hover = UiDraw.over(mx, my, px, cy - 7, pw, 14);
         float hv = UiAnim.smooth("pp." + label + "." + Math.round(cy) + "." + Math.round(right), hover ? 1 : 0, 20);
@@ -129,7 +129,7 @@ final class PresetsPanel {
     }
 
     /** Delete pill: eases wider and red while armed, crossfades its label and drains a timer line. */
-    private float confirmPill(GuiGraphics g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
+    private float confirmPill(GuiGraphicsExtractor g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
                               float right, float cy, int mx, int my, int tint, Runnable action) {
         UiTheme t = GuiState.theme();
         String shown = armed ? armedLabel : label;
@@ -145,7 +145,7 @@ final class PresetsPanel {
         return pw;
     }
 
-    void render(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         UiDraw.icon(g, "star", x, y + 13.5f, 9, t.accent());
         UiDraw.bold(g, "Presets", x + 13, y + 18, UiDraw.TITLE, t.text());

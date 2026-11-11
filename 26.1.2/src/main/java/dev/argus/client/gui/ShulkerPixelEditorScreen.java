@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -77,7 +77,7 @@ final class ShulkerPixelEditorScreen extends UiScreen {
         addRenderableWidget(new UiButton(controls, gridY + 100, 66, 18, "Load PNG", this::loadPng));
     }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme theme = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, height - top - 10, theme);
         UiDraw.bold(g, "Pixel icon editor", left + 62, top + 17, UiDraw.TITLE, theme.text());

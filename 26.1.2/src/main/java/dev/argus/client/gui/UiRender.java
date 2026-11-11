@@ -7,10 +7,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.gui.render.state.GuiElementRenderState;
+import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2f;
@@ -76,20 +76,20 @@ final class UiRender {
     static double guiScale() { return Minecraft.getInstance().getWindow().getGuiScale(); }
 
     /** Framebuffer pixels per logical unit under the current pose. */
-    static float pixelsPerUnit(GuiGraphics g) {
+    static float pixelsPerUnit(GuiGraphicsExtractor g) {
         Matrix3x2fc pose = g.pose();
         return (float) (Math.hypot(pose.m00(), pose.m01()) * guiScale());
     }
 
     /** Logical point → framebuffer pixels. */
-    static float physicalX(GuiGraphics g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m00() * x + p.m10() * y + p.m20()) * guiScale()); }
-    static float physicalY(GuiGraphics g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m01() * x + p.m11() * y + p.m21()) * guiScale()); }
+    static float physicalX(GuiGraphicsExtractor g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m00() * x + p.m10() * y + p.m20()) * guiScale()); }
+    static float physicalY(GuiGraphicsExtractor g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m01() * x + p.m11() * y + p.m21()) * guiScale()); }
 
     /**
      * Rounded rectangle. {@code mode} 0 = fill, &gt;0 = outline of that logical thickness,
      * &lt;0 = soft shadow with that logical blur width.
      */
-    static void shape(GuiGraphics g, float x, float y, float width, float height, float radius,
+    static void shape(GuiGraphicsExtractor g, float x, float y, float width, float height, float radius,
                       int top, int bottom, float mode) {
         if (width <= 0 || height <= 0) return;
         top = fade(top); bottom = fade(bottom);
@@ -106,14 +106,14 @@ final class UiRender {
         ScreenRectangle scissor = g.scissorStack.peek();
         ScreenRectangle bounds = bounds(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale, scissor);
         if (bounds == null) return;
-        g.guiRenderState.submitGuiElement(new ShapeState(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale,
+        g.guiRenderState.addGuiElement(new ShapeState(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale,
                 qx0 - cx, qy0 - cy, qx1 - cx, qy1 - cy,
                 Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), Math.round(Math.max(0, radius * k) * 8),
                 Math.round(physicalMode * 8), top, bottom, scissor, bounds));
     }
 
     /** A texture region clipped to a rounded rectangle (a circle when {@code radius} ≥ half the size). */
-    static void image(GuiGraphics g, GpuTextureView texture, GpuSampler sampler, float x, float y, float width, float height,
+    static void image(GuiGraphicsExtractor g, GpuTextureView texture, GpuSampler sampler, float x, float y, float width, float height,
                       float radius, float u0, float v0, float u1, float v1, int colour) {
         if (width <= 0 || height <= 0) return;
         colour = fade(colour);
@@ -127,14 +127,14 @@ final class UiRender {
         ScreenRectangle scissor = g.scissorStack.peek();
         ScreenRectangle bounds = bounds(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale, scissor);
         if (bounds == null) return;
-        g.guiRenderState.submitGuiElement(new ImageState(TextureSetup.singleTexture(texture, sampler),
+        g.guiRenderState.addGuiElement(new ImageState(TextureSetup.singleTexture(texture, sampler),
                 qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale, u0 - du, v0 - dv, u1 + du, v1 + dv,
                 Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), Math.round(Math.max(0, radius * k) * 8), Math.round(margin * 8),
                 colour, scissor, bounds));
     }
 
     /** Draws already-pixel-aligned textured quads ({@code x0,y0,x1,y1,u0,v0,u1,v1} per quad, in pixels). */
-    static void quads(GuiGraphics g, GpuTextureView texture, GpuSampler sampler, float[] quads, int count, int colour) {
+    static void quads(GuiGraphicsExtractor g, GpuTextureView texture, GpuSampler sampler, float[] quads, int count, int colour) {
         if (count == 0) return;
         colour = fade(colour);
         if ((colour >>> 24) == 0) return;
@@ -151,7 +151,7 @@ final class UiRender {
         ScreenRectangle scissor = g.scissorStack.peek();
         ScreenRectangle bounds = bounds(minX, minY, maxX, maxY, scissor);
         if (bounds == null) return;
-        g.guiRenderState.submitGuiElement(new QuadsState(TextureSetup.singleTexture(texture, sampler), copy, colour, scissor, bounds));
+        g.guiRenderState.addGuiElement(new QuadsState(TextureSetup.singleTexture(texture, sampler), copy, colour, scissor, bounds));
     }
 
     private static @Nullable ScreenRectangle bounds(float x0, float y0, float x1, float y1, @Nullable ScreenRectangle scissor) {

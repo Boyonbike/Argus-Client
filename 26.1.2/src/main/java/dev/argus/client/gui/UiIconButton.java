@@ -1,6 +1,6 @@
 package dev.argus.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
@@ -19,7 +19,7 @@ final class UiIconButton extends Button {
 
     @Override public void onPress(net.minecraft.client.input.InputWithModifiers input) { pressedAt = System.nanoTime(); super.onPress(input); }
 
-    @Override protected void renderContents(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderContents(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         hover = UiAnim.approach(hover, isHoveredOrFocused() && active ? 1 : 0, 18);
         float press = 1 - UiAnim.progress(pressedAt, .18f);

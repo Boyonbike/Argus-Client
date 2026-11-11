@@ -45,7 +45,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Fireworks;
@@ -448,18 +448,18 @@ public final class FireworksModule extends Module {
                int originalMenuSlot = slot;
                if (inventorySwapRequired) {
                   slot = 0;
-                  InventoryUtils.clickSlot(originalMenuSlot, 0, ClickType.SWAP);
+                  InventoryUtils.clickSlot(originalMenuSlot, 0, ContainerInput.SWAP);
                }
 
-               InventoryUtils.clickSlot(6, slot, ClickType.SWAP);
+               InventoryUtils.clickSlot(6, slot, ContainerInput.SWAP);
 
                try {
                   PacketSender.sendStartFallFlying();
                   player.startFallFlying();
                } finally {
-                  InventoryUtils.clickSlot(6, slot, ClickType.SWAP);
+                  InventoryUtils.clickSlot(6, slot, ContainerInput.SWAP);
                   if (inventorySwapRequired) {
-                     InventoryUtils.clickSlot(originalMenuSlot, 0, ClickType.SWAP);
+                     InventoryUtils.clickSlot(originalMenuSlot, 0, ContainerInput.SWAP);
                   }
                }
             }
@@ -523,12 +523,12 @@ public final class FireworksModule extends Module {
    private void temporarilyEquipElytra() {
       int elytraSlot = InventoryUtils.findHotbarSlot(Items.ELYTRA);
       if (elytraSlot != -1 && temporaryElytraSwapActive.compareAndSet(false, true)) {
-         InventoryUtils.clickSlot(6, elytraSlot, ClickType.SWAP);
+         InventoryUtils.clickSlot(6, elytraSlot, ContainerInput.SWAP);
          PacketSender.sendStartFallFlying();
          ClientAccess.argusclientMinecraft.player.startFallFlying();
          ClientContext.taskScheduler.scheduleRotationTask(() -> {
             try {
-               InventoryUtils.clickSlot(6, elytraSlot, ClickType.SWAP);
+               InventoryUtils.clickSlot(6, elytraSlot, ContainerInput.SWAP);
             } finally {
                temporaryElytraSwapActive.set(false);
             }

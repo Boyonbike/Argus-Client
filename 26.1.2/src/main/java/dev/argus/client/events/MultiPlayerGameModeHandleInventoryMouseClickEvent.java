@@ -1,12 +1,12 @@
 package dev.argus.client.events;
 
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 
 public class MultiPlayerGameModeHandleInventoryMouseClickEvent extends CancellableEvent {
    private final int containerId;
    private final int slotId;
    private final int button;
-   private final ClickType clickType;
+   private final ContainerInput clickType;
 
    public int getContainerId() {
       return this.containerId;
@@ -20,11 +20,11 @@ public class MultiPlayerGameModeHandleInventoryMouseClickEvent extends Cancellab
       return this.button;
    }
 
-   public ClickType getClickType() {
+   public ContainerInput getClickType() {
       return this.clickType;
    }
 
-   public MultiPlayerGameModeHandleInventoryMouseClickEvent(int containerId, int slotId, int button, ClickType clickType) {
+   public MultiPlayerGameModeHandleInventoryMouseClickEvent(int containerId, int slotId, int button, ContainerInput clickType) {
       this.containerId = containerId;
       this.slotId = slotId;
       this.button = button;
@@ -32,13 +32,13 @@ public class MultiPlayerGameModeHandleInventoryMouseClickEvent extends Cancellab
    }
 
    public static final class After extends MultiPlayerGameModeHandleInventoryMouseClickEvent {
-      public After(int containerId, int slotId, int button, ClickType clickType) {
+      public After(int containerId, int slotId, int button, ContainerInput clickType) {
          super(containerId, slotId, button, clickType);
       }
    }
 
    public static final class AfterStackHash extends MultiPlayerGameModeHandleInventoryMouseClickEvent {
-      public AfterStackHash(int containerId, int slotId, int button, ClickType clickType) {
+      public AfterStackHash(int containerId, int slotId, int button, ContainerInput clickType) {
          super(containerId, slotId, button, clickType);
       }
    }

@@ -4,7 +4,7 @@ import dev.argus.client.config.importing.*;
 import dev.argus.client.config.importing.ChatToolsDataImport;
 import dev.argus.client.config.importing.MeteorDataReader.DataKind;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -300,7 +300,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
     private int maxScroll() { return Math.max(0, rows.size() * ROW - paneH + 6); }
     private int maxInstanceScroll() { return Math.max(0, instances.size() * LIST_ROW - listH); }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         float bh = UiAnim.smooth("mii.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
@@ -332,7 +332,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         return parts.isEmpty() ? "Nothing selected to import." : Character.toUpperCase(parts.getFirst().charAt(0)) + String.join(" · ", parts).substring(1);
     }
 
-    private void renderInstances(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void renderInstances(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         UiDraw.bold(g, "Instances", listX + 2, listY - 9, UiDraw.SMALL, t.muted());
         UiDraw.rounded(g, listX, listY, listW, listH, 7, UiDraw.alpha(t.mantle(), .7f));
         instanceScroll = Math.clamp(instanceScroll, 0, maxInstanceScroll());
@@ -357,7 +357,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         g.disableScissor();
     }
 
-    private void renderPane(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void renderPane(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         String title = scan == null ? "What can be imported" : "Found in " + sourceLabel;
         UiDraw.bold(g, UiDraw.fit(title, paneW - 8, UiDraw.SMALL), paneX + 2, paneY - 9, UiDraw.SMALL, t.muted());
         UiDraw.rounded(g, paneX, paneY, paneW, paneH, 7, UiDraw.alpha(t.mantle(), .45f));
@@ -411,7 +411,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, paneX, paneY + paneH - 8, paneW, 8, 7, UiDraw.alpha(t.mantle(), 0), UiDraw.alpha(t.mantle(), .9f)));
     }
     /** Checkbox row: tick, icon, label and a right-aligned detail. Disabled rows say why in the detail. */
-    private void item(GuiGraphics g, UiTheme t, float y, String icon, String label, String detail, boolean on, boolean enabled, boolean hover, int mx, int my, int index) {
+    private void item(GuiGraphicsExtractor g, UiTheme t, float y, String icon, String label, String detail, boolean on, boolean enabled, boolean hover, int mx, int my, int index) {
         float cy = y + ROW / 2f, bx = paneX + 10;
         float k = UiAnim.smooth("mii.tick." + label, on && enabled ? 1 : 0, 18);
         UiDraw.rounded(g, bx, cy - 5, 10, 10, 3, UiDraw.mix(UiDraw.alpha(t.crust(), .9f), t.accent(), k));

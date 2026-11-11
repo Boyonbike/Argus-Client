@@ -19,7 +19,7 @@ import dev.argus.client.utils.inventory.ContainerTooltipComponent;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
@@ -90,7 +90,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    }
 
    @Inject(method = "renderTooltip", at = @At("HEAD"))
-   private void argusclient$postContainerScreenEvent(GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo callback) {
+   private void argusclient$postContainerScreenEvent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CallbackInfo callback) {
       this.argusclient$containerScreenEvent.setGraphics(graphics);
       this.argusclient$containerScreenEvent.setMouseX(mouseX);
       this.argusclient$containerScreenEvent.setMouseY(mouseY);
@@ -98,7 +98,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    }
 
    @Inject(method = "renderContents", at = @At("TAIL"))
-   private void argusclient$captureHoveredSlotAndMouse(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
+   private void argusclient$captureHoveredSlotAndMouse(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
       if (this.argusclient$cachedHoveredSlot == null
          || !argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          this.argusclient$cachedHoveredSlot = this.hoveredSlot;
@@ -111,7 +111,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    }
 
    @WrapMethod(method = "renderTooltip")
-   private void argusclient$pinTooltipSlot(GuiGraphics graphics, int mouseX, int mouseY, Operation<Void> original) {
+   private void argusclient$pinTooltipSlot(GuiGraphicsExtractor graphics, int mouseX, int mouseY, Operation<Void> original) {
       Slot hovered = this.hoveredSlot;
       if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          this.hoveredSlot = this.argusclient$cachedHoveredSlot;
@@ -162,7 +162,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "mouseClicked",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ClickType;)V",
+         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
          ordinal = 1
       )
    )
@@ -180,7 +180,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "mouseReleased",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ClickType;)V",
+         target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;slotClicked(Lnet/minecraft/world/inventory/Slot;IILnet/minecraft/world/inventory/ContainerInput;)V",
          ordinal = 9
       )
    )
@@ -196,11 +196,11 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "renderTooltip",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphics;setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;)V"
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;)V"
       )
    )
    private boolean argusclient$renderTooltipWithEvent(
-      GuiGraphics graphics, Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background
+      GuiGraphicsExtractor graphics, Font font, List text, Optional image, int tooltipX, int tooltipY, Identifier background
    ) {
       if (this.argusclient$cachedHoveredSlot != null && argusclient$tooltips.shouldPinTooltip(this.argusclient$cachedHoveredSlot.getItem())) {
          tooltipX = this.argusclient$tooltipX;
@@ -223,7 +223,7 @@ public class AbstractContainerScreenMixin implements ClientAccess {
    }
 
    @Inject(method = "renderSlot", at = @At("HEAD"))
-   private void argusclient$captureSlotMapData(GuiGraphics graphics, Slot slot, int mouseX, int mouseY, CallbackInfo callback) {
+   private void argusclient$captureSlotMapData(GuiGraphicsExtractor graphics, Slot slot, int mouseX, int mouseY, CallbackInfo callback) {
       this.argusclient$slotMapData = null;
       ItemStack stack = slot.getItem();
       if (stack.is(Items.FILLED_MAP)) {
@@ -237,9 +237,9 @@ public class AbstractContainerScreenMixin implements ClientAccess {
 
    @WrapWithCondition(
       method = "renderSlot",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;renderItem(Lnet/minecraft/world/item/ItemStack;III)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;renderItem(Lnet/minecraft/world/item/ItemStack;III)V")
    )
-   private boolean argusclient$shouldRenderSlotItem(GuiGraphics graphics, ItemStack stack, int itemX, int itemY, int seed) {
+   private boolean argusclient$shouldRenderSlotItem(GuiGraphicsExtractor graphics, ItemStack stack, int itemX, int itemY, int seed) {
       return !argusclient$tooltips.isToggled() || !argusclient$tooltips.mapOverlaySetting.getValue() || this.argusclient$slotMapData == null;
    }
 
@@ -247,16 +247,16 @@ public class AbstractContainerScreenMixin implements ClientAccess {
       method = "renderSlot",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphics;renderItemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V"
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;renderItemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V"
       )
    )
    private boolean argusclient$renderMapOverlay(
-      GuiGraphics graphics, Font font, ItemStack stack, int itemX, int itemY, String countText, @Local(argsOnly = true) Slot slot
+      GuiGraphicsExtractor graphics, Font font, ItemStack stack, int itemX, int itemY, String countText, @Local(argsOnly = true) Slot slot
    ) {
       if (argusclient$tooltips.isToggled() && argusclient$tooltips.mapOverlaySetting.getValue() && this.argusclient$slotMapData != null) {
          ContainerTooltipComponent.renderMapOverlay(graphics, this.argusclient$slotMapData, this.argusclient$slotMapId, itemX, itemY);
          if (!KeyUtils.isPhysicalKeyDown(342)) {
-            graphics.renderItemDecorations(font, stack, itemX, itemY);
+            graphics.itemDecorations(font, stack, itemX, itemY);
          }
 
          return false;

@@ -18,7 +18,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -192,7 +192,7 @@ public class ChestSearchController {
       return predicate.test(searchableName, query);
    }
 
-   public void onDrawGui(GuiGraphics graphics, Screen screen, PoseStack poseStack, float mouseX, float mouseY, float partialTick) {
+   public void onDrawGui(GuiGraphicsExtractor graphics, Screen screen, PoseStack poseStack, float mouseX, float mouseY, float partialTick) {
       if (chestSearchBarModule.isToggled() && searchBox != null) {
          poseStack.pushPose();
          graphics.nextStratum();

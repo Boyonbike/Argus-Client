@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -39,7 +39,7 @@ public class ArmorSwapAction implements ClientAccess {
          int armorContainerSlot = 8;
          ArmorSlot armorKindForRemoval = this.armorKind;
          armorContainerSlot -= armorKindForRemoval.getArmorIndex();
-         ClickType quickMoveClick = ClickType.QUICK_MOVE;
+         ContainerInput quickMoveClick = ContainerInput.QUICK_MOVE;
          InventoryUtils.clickSlot(armorContainerSlot, 0, quickMoveClick);
       } else {
          boolean firstModeBlocked = InventoryStateManager.wouldReachClickLimit(ClientContext.inventoryStateManager, 4);
@@ -81,7 +81,7 @@ public class ArmorSwapAction implements ClientAccess {
       Optional<Slot> destination = candidates.min(slotOrder);
       Consumer<Slot> pickup = slot -> {
          int slotIndex = slot.index;
-         ClickType pickupClick = ClickType.PICKUP;
+         ContainerInput pickupClick = ContainerInput.PICKUP;
          InventoryUtils.clickSlot(slotIndex, 0, pickupClick);
       };
       destination.ifPresent(pickup);

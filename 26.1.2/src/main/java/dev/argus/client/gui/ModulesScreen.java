@@ -4,7 +4,7 @@ import dev.argus.client.modules.misc.ChatToolsModule;
 
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -183,7 +183,7 @@ public final class ModulesScreen extends UiScreen {
         searchInput.visible = true; searchInput.active = true; setInitialFocus(searchInput);
     }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         windowModules.clear();
         UiTheme theme = GuiState.theme();
         int bottom = windows.stream().mapToInt(window -> window.y + panelHeight(window, window.collapsed ? 0 : 1)).max().orElse(height);
@@ -231,7 +231,7 @@ public final class ModulesScreen extends UiScreen {
     private float gridFade;
 
     /** A small pill at the bottom while the arrangement is squeezed, so it's clear nothing was lost. */
-    private void drawCompactHint(GuiGraphics g, UiTheme theme) {
+    private void drawCompactHint(GuiGraphicsExtractor g, UiTheme theme) {
         float shown = UiAnim.smooth("modules.compact", compact() ? 1 : 0, 7);
         if (shown <= .01f) return;
         String text = UiDraw.fit("Compact view · moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
@@ -247,7 +247,7 @@ public final class ModulesScreen extends UiScreen {
     }
 
     /** The snap grid, faded in while a window is being dragged (if enabled in Appearance). */
-    private void drawGrid(GuiGraphics g, UiTheme theme) {
+    private void drawGrid(GuiGraphicsExtractor g, UiTheme theme) {
         var p = GuiState.preferences();
         gridFade = UiAnim.approach(gridFade, dragging != null && p.showGrid ? 1 : 0, dragging != null ? 12 : 8);
         if (gridFade <= .01f) return;
@@ -258,7 +258,7 @@ public final class ModulesScreen extends UiScreen {
         for (float y = -offset, i = first; y <= height; y += GRID, i++) UiDraw.rect(g, 0, y, width, .5f, Math.floorMod((int) i, 4) == 0 ? major : minor);
     }
 
-    private void drawWindow(GuiGraphics g, Window window, int mx, int my, float delta, boolean over, UiTheme theme) {
+    private void drawWindow(GuiGraphicsExtractor g, Window window, int mx, int my, float delta, boolean over, UiTheme theme) {
         float x = window.shownX, top = top(window), w = window.width;
         float ph = panelHeight(window, window.open);
         if (top + ph < TOP || top > height - 19) return;
@@ -333,7 +333,7 @@ public final class ModulesScreen extends UiScreen {
         }
     }
 
-    private void drawSearch(GuiGraphics g, Window window, int mx, int my, boolean over, UiTheme theme, float clipBottom) {
+    private void drawSearch(GuiGraphicsExtractor g, Window window, int mx, int my, boolean over, UiTheme theme, float clipBottom) {
         float x = window.shownX, top = top(window), w = window.width;
         int inputY = Math.round(top + HEADER + 8);
         searchInput.place(Math.round(x + 6), inputY, Math.round(w - 12));
@@ -394,7 +394,7 @@ public final class ModulesScreen extends UiScreen {
         scrollbar(g, window, start, view, contentHeight(window), over, theme);
     }
 
-    private void scrollbar(GuiGraphics g, Window window, float start, int view, int total, boolean over, UiTheme theme) {
+    private void scrollbar(GuiGraphicsExtractor g, Window window, float start, int view, int total, boolean over, UiTheme theme) {
         boolean scrolling = Math.abs(window.shownScroll - window.scroll) > .5f;
         window.scrollbar = UiAnim.approach(window.scrollbar, total > view && (over || scrolling) ? 1 : 0, 10);
         if (total <= view || window.scrollbar <= 0) return;

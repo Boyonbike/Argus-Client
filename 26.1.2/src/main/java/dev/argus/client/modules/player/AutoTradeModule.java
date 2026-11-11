@@ -41,7 +41,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -256,13 +256,13 @@ public class AutoTradeModule extends Module {
       if (this.dropSetting.getValue()) {
          MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
          LocalPlayer dropPlayer = ClientAccess.argusclientMinecraft.player;
-         ClickType dropClick = ClickType.THROW;
+         ContainerInput dropClick = ContainerInput.THROW;
          byte dropButton = 0;
          gameMode.handleInventoryMouseClick(containerId, 2, dropButton, dropClick, dropPlayer);
       } else {
          MultiPlayerGameMode quickMoveGameMode = ClientAccess.argusclientMinecraft.gameMode;
          LocalPlayer movePlayer = ClientAccess.argusclientMinecraft.player;
-         ClickType moveClick = ClickType.QUICK_MOVE;
+         ContainerInput moveClick = ContainerInput.QUICK_MOVE;
          byte moveButton = 0;
          quickMoveGameMode.handleInventoryMouseClick(containerId, 2, moveButton, moveClick, movePlayer);
       }

@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import dev.argus.client.ClientContext;
 import dev.argus.client.config.importing.ImportedPresetStore;
 import dev.argus.client.settings.options.PresetCategory;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import java.util.*;
@@ -63,7 +63,7 @@ final class PresetLoadConfirmationScreen extends UiScreen {
     static String scope(PresetCategory category){return switch(category){case MODULES->"module settings and enabled modules";case ALL->"module settings, binds, HUD, colours, visuals and macros";case BINDS->"keybinds";case HUD->"HUD configuration";case COLORS->"colours";case VISUALS->"visual settings";case MACRO->"macros";};}
     @Override protected boolean modal(){return true;}
     /** The parent stays visible underneath; a single dim layer fades in with the dialog. */
-    @Override protected void backdrop(GuiGraphics g){UiDraw.rect(g,0,0,width,height,0x70000000);}
+    @Override protected void backdrop(GuiGraphicsExtractor g){UiDraw.rect(g,0,0,width,height,0x70000000);}
     @Override protected void buildContent(){
         panelWidth=Math.min(440,width-24);panelHeight=Math.min(height-24,imported?310:280);left=(width-panelWidth)/2;top=(height-panelHeight)/2;
         bodyTop=top+48;bodyHeight=Math.max(28,panelHeight-178);
@@ -92,7 +92,7 @@ final class PresetLoadConfirmationScreen extends UiScreen {
             if(controller.state()==PresetLoadController.State.NAMING)setInitialFocus(saveName);
         }
     }
-    @Override protected void renderUi(GuiGraphics g,int mx,int my,float delta){
+    @Override protected void renderUi(GuiGraphicsExtractor g,int mx,int my,float delta){
         UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,panelHeight,t,1);
         UiDraw.circle(g,left+26,top+24,12,UiDraw.alpha(t.yellow(),.15f));UiDraw.center(g,"!",left+14,top+24,24,UiDraw.TITLE,t.yellow());
         UiDraw.bold(g,"Replace current config?",left+46,top+24,UiDraw.TITLE,t.text());

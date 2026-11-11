@@ -51,7 +51,7 @@ import java.util.function.Predicate;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -65,7 +65,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ShulkerBoxMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -136,7 +136,7 @@ public class ChestStealerModule extends Module {
    }
 
    private void quickMoveAndRecordCounts(int slotIndex, List<SlotCapacity> capacities, int stackCount) {
-      ClickType quickMoveType = ClickType.QUICK_MOVE;
+      ContainerInput quickMoveType = ContainerInput.QUICK_MOVE;
       byte button = 0;
       InventoryUtils.clickSlot(slotIndex, button, quickMoveType);
       int remainingCount = stackCount;
@@ -199,7 +199,7 @@ public class ChestStealerModule extends Module {
                      if (hotbarSwap) {
                         Integer hotbarKey = (Integer)profileEntry.getKey();
                         int hotbarButton = hotbarKey;
-                        ClickType swapType = ClickType.SWAP;
+                        ContainerInput swapType = ContainerInput.SWAP;
                         InventoryUtils.clickSlot(sourceSlotIndex, hotbarButton, swapType);
                      } else {
                         InventoryUtils.swapSlotsWithPickup(sourceSlotIndex, destinationSlotIndex);
@@ -369,7 +369,7 @@ public class ChestStealerModule extends Module {
    }
 
    private void distributeStackWithPickup(int sourceSlotIndex, List<SlotCapacity> capacities, int remainingCount) {
-      ClickType pickupClickType = ClickType.PICKUP;
+      ContainerInput pickupClickType = ContainerInput.PICKUP;
       byte pickupType = 0;
       InventoryUtils.clickSlot(sourceSlotIndex, pickupType, pickupClickType);
 
@@ -378,7 +378,7 @@ public class ChestStealerModule extends Module {
          int destinationSlotIndex = capacityEntry.getSlotIndex();
          Slot destinationSlot = menu.getSlot(destinationSlotIndex);
          int clickSlotIndex = capacityEntry.getSlotIndex();
-         ClickType destinationClickType = ClickType.PICKUP;
+         ContainerInput destinationClickType = ContainerInput.PICKUP;
          byte clickButton = 0;
          InventoryUtils.clickSlot(clickSlotIndex, clickButton, destinationClickType);
          int movedCount = capacityEntry.getCapacity() - capacityEntry.getCount();
@@ -395,7 +395,7 @@ public class ChestStealerModule extends Module {
 
       ItemStack carriedStack = InventoryUtils.getCarriedStack();
       if (!carriedStack.isEmpty()) {
-         ClickType returnClickType = ClickType.PICKUP;
+         ContainerInput returnClickType = ContainerInput.PICKUP;
          byte returnButton = 0;
          InventoryUtils.clickSlot(sourceSlotIndex, returnButton, returnClickType);
       }
@@ -407,7 +407,7 @@ public class ChestStealerModule extends Module {
          this.transferAnimations.removeIf(InventoryTransferAnimation::isFinished);
 
          for (InventoryTransferAnimation animation : this.transferAnimations) {
-            GuiGraphics graphics = event.getGraphics();
+            GuiGraphicsExtractor graphics = event.getGraphics();
             animation.render(graphics);
          }
       }
@@ -503,7 +503,7 @@ public class ChestStealerModule extends Module {
 
                                     MultiPlayerGameMode throwGameMode = ClientAccess.argusclientMinecraft.gameMode;
                                     byte throwButton = 1;
-                                    ClickType throwType = ClickType.THROW;
+                                    ContainerInput throwType = ContainerInput.THROW;
                                     LocalPlayer throwPlayer = ClientAccess.argusclientMinecraft.player;
                                     throwGameMode.handleInventoryMouseClick(containerId, slotIndex, throwButton, throwType, throwPlayer);
                                     this.transferredThisTick = this.hasTransferred = true;
@@ -527,7 +527,7 @@ public class ChestStealerModule extends Module {
                                     this.trackingQuickMove = true;
                                     MultiPlayerGameMode quickMoveGameMode = ClientAccess.argusclientMinecraft.gameMode;
                                     byte quickMoveButton = 0;
-                                    ClickType quickMoveType = ClickType.QUICK_MOVE;
+                                    ContainerInput quickMoveType = ContainerInput.QUICK_MOVE;
                                     LocalPlayer quickMovePlayer = ClientAccess.argusclientMinecraft.player;
                                     quickMoveGameMode.handleInventoryMouseClick(containerId, slotIndex, quickMoveButton, quickMoveType, quickMovePlayer);
                                     this.trackingQuickMove = false;

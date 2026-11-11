@@ -6,7 +6,7 @@ import dev.argus.client.utils.ClampedInterpolatedFloat;
 import dev.argus.client.utils.collections.IntPair;
 import java.util.Objects;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -23,7 +23,7 @@ public class InventoryTransferAnimation implements ClientAccess {
       this.progress.setValue(0.0F);
    }
 
-   public void render(GuiGraphics graphics) {
+   public void render(GuiGraphicsExtractor graphics) {
       this.progress.setTarget(true);
       float fraction = this.progress.updateAndGet();
       float startX = this.source.first();
@@ -42,10 +42,10 @@ public class InventoryTransferAnimation implements ClientAccess {
       }
 
       ItemStack renderedStack = this.stack;
-      graphics.renderItem(renderedStack, drawX, drawY);
+      graphics.item(renderedStack, drawX, drawY);
       ItemStack decoratedStack = this.stack;
       Font font = ClientAccess.argusclientMinecraft.font;
-      graphics.renderItemDecorations(font, decoratedStack, drawX, drawY);
+      graphics.itemDecorations(font, decoratedStack, drawX, drawY);
       if (fraction > 0.8) {
          float red = 1.0F;
          float green = 1.0F;

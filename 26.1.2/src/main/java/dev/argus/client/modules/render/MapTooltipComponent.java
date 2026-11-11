@@ -3,7 +3,7 @@ package dev.argus.client.modules.render;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dev.argus.client.ClientAccess;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MapRenderer;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -33,7 +33,7 @@ public record MapTooltipComponent(int mapId, MapItemSavedData mapData) implement
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       Matrix3x2fStack poses = graphics.pose();
       poses.pushMatrix();
 

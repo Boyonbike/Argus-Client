@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-import net.minecraft.client.GuiMessage.Line;
+import net.minecraft.client.multiplayer.chat.GuiMessage.Line;
 import net.minecraft.network.chat.Component;
 
 public class AntiSpamModule extends Module {

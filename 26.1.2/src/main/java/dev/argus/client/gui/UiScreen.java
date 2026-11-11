@@ -4,7 +4,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.modules.client.UIModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -164,7 +164,7 @@ public abstract class UiScreen extends Screen {
     protected boolean modal() { return false; }
 
     protected abstract void buildContent();
-    protected abstract void renderUi(GuiGraphics g, int mx, int my, float delta);
+    protected abstract void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta);
 
     /** Eased 0…1 progress of this page's entrance (and exit while closing). */
     protected float appear() {
@@ -187,7 +187,7 @@ public abstract class UiScreen extends Screen {
     /** Real time the close takes, so a slower or faster animation speed still lets the last element finish leaving. */
     private long closeNanos() { return (long) ((CLOSE_NANOS + closeStaggered * CLOSE_STAGGER * 1e9f) / UiAnim.speed()); }
 
-    @Override public final void render(GuiGraphics g, int rawX, int rawY, float delta) {
+    @Override public final void extractRenderState(GuiGraphicsExtractor g, int rawX, int rawY, float delta) {
         if (modal() && parent != null) parent.render(g, -1000, -1000, delta);
         UiAnim.frame();
         int mx = (int) viewport.toLogical(rawX), my = (int) viewport.toLogical(rawY);
@@ -214,7 +214,7 @@ public abstract class UiScreen extends Screen {
             }
             try {
                 renderUi(g, mx, my, delta);
-                super.render(g, mx, my, delta);
+                super.extractRenderState(g, mx, my, delta);
             } finally { g.pose().popMatrix(); }
             UiRender.opacity = keepBackdrop ? 1 : appear;
             if (!modal()) { tabs(g, mx, my); footer(g); }
@@ -258,12 +258,12 @@ public abstract class UiScreen extends Screen {
     }
 
     /** An inner circle with an accent ring, shared by the face and the settings button. */
-    private void circleRing(GuiGraphics g, float left, float strength, UiTheme t) {
+    private void circleRing(GuiGraphicsExtractor g, float left, float strength, UiTheme t) {
         float fx = left + (BAR - FACE) / 2, fy = BAR_Y + (BAR - FACE) / 2;
         if (strength > 0) UiDraw.outline(g, fx - 1.6f, fy - 1.6f, FACE + 3.2f, FACE + 3.2f, FACE / 2 + 1.6f, 1.1f, UiDraw.alpha(t.accent(), strength));
     }
 
-    private void tabs(GuiGraphics g, int mx, int my) {
+    private void tabs(GuiGraphicsExtractor g, int mx, int my) {
         UiTheme t = GuiState.theme();
         if (UiAnim.enabled()) bar.advance(UiAnim.animDelta()); else bar.settle();
         float w = barWidthNow(), x = barLeft(), y = BAR_Y;
@@ -324,7 +324,7 @@ public abstract class UiScreen extends Screen {
         g.disableScissor();
     }
 
-    private void footer(GuiGraphics g) {
+    private void footer(GuiGraphicsExtractor g) {
         UiTheme t = GuiState.theme();
         boolean error = !GuiState.saveError.isEmpty();
         UiDraw.circle(g, 12, height - 10, 2, error ? t.red() : t.accent());
@@ -334,7 +334,7 @@ public abstract class UiScreen extends Screen {
     /** Requests a tooltip for this frame; it fades in after the pointer rests on {@code owner}. */
     protected void tooltip(Object owner, String... lines) { tooltipOwner = owner; tooltipLines = lines; }
 
-    private void drawTooltip(GuiGraphics g) {
+    private void drawTooltip(GuiGraphicsExtractor g) {
         if (tooltipOwner == null || !tooltipOwner.equals(shownTooltipOwner)) { shownTooltipOwner = tooltipOwner; tooltipSince = System.nanoTime(); }
         if (tooltipOwner == null || tooltipLines == null) return;
         float rested = (System.nanoTime() - tooltipSince) / 1e9f - .35f;
@@ -470,7 +470,7 @@ public abstract class UiScreen extends Screen {
         else ClientContext.getHudEditor().open();
     }
 
-    protected void backdrop(GuiGraphics g) {
+    protected void backdrop(GuiGraphicsExtractor g) {
         boolean dark = GuiState.preferences().mode == GuiPreferences.Mode.DARK;
         UiDraw.gradient(g, 0, 0, width, height, 0, dark ? 0x7a07070d : 0x50000000, dark ? 0xa009090f : 0x70000000);
     }

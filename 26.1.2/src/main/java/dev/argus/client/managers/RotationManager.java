@@ -39,7 +39,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Input;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -473,7 +473,7 @@ public final class RotationManager implements ClientAccess {
          int containerId = event.getContainerId();
          int slotId = event.getSlotId();
          int mouseButton = event.getButton();
-         ClickType clickType = event.getClickType();
+         ContainerInput clickType = event.getClickType();
          MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
          LocalPlayer player = ClientAccess.argusclientMinecraft.player;
          gameMode.handleInventoryMouseClick(containerId, slotId, mouseButton, clickType, player);

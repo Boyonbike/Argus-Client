@@ -27,7 +27,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -78,15 +78,15 @@ public class ShulkerReturnController extends ChestStealerController {
             ItemStack clickedStack = slot.getItem();
             TagKey shulkerTag = ItemTags.SHULKER_BOXES;
             if (clickedStack.is(shulkerTag)) {
-               if (event.getClickType() == ClickType.SWAP && event.getButton() < 9) {
+               if (event.getClickType() == ContainerInput.SWAP && event.getButton() < 9) {
                   this.pendingShulkers.add(trackedShulker);
                }
 
-               if (event.getClickType() == ClickType.QUICK_MOVE) {
+               if (event.getClickType() == ContainerInput.QUICK_MOVE) {
                   this.pendingShulkers.add(trackedShulker);
                }
 
-               if (event.getClickType() == ClickType.PICKUP) {
+               if (event.getClickType() == ContainerInput.PICKUP) {
                   this.pendingShulkers.poll();
                }
 

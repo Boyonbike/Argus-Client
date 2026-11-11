@@ -9,7 +9,7 @@ import dev.argus.client.settings.SetSetting;
 import dev.argus.client.settings.Setting;
 import java.awt.Color;
 import java.util.*;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -159,7 +159,7 @@ final class SettingsList {
     }
     private static boolean isDefault(Setting<?> setting) { return Objects.equals(setting.getValue(), setting.getDefaultValue()); }
 
-    void render(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         refresh();
         scroll = Math.clamp(scroll, 0, maxScroll());
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
@@ -366,7 +366,7 @@ final class SettingsList {
      * never takes clicks, hides while dragging or typing, and is placed beside the panel (or
      * under the label column) so it never covers another setting's control.
      */
-    void popup(GuiGraphics g, UiTheme t, int screenWidth, int screenHeight) {
+    void popup(GuiGraphicsExtractor g, UiTheme t, int screenWidth, int screenHeight) {
         boolean busy = sliding != null || (editing != null && editing == hovered);
         boolean show = hovered != null && !busy && (System.nanoTime() - hoverSince) / 1e9f >= POPUP_DELAY;
         if (show) popupFor = hovered;
@@ -597,7 +597,7 @@ final class SettingsList {
     }
 
     /** Draws the hint or the latest error message at the given footer line. */
-    void footer(GuiGraphics g, float fx, float cy, float width, UiTheme t, String override) {
+    void footer(GuiGraphicsExtractor g, float fx, float cy, float width, UiTheme t, String override) {
         String error = message();
         var line = error.isEmpty() ? new UiMotion.Line(UiDraw.fit(override != null ? override : hint(), width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
         UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));

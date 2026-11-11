@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import dev.argus.client.managers.ModuleRegistry;
-import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.sprite.Material;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 

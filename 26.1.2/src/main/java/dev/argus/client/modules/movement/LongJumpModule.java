@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.PiercingWeapon;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -115,7 +115,7 @@ public class LongJumpModule extends Module {
       PiercingWeapon piercingWeapon = componentStack.get(DataComponents.PIERCING_WEAPON);
       if (weapon.hand() == InteractionHand.OFF_HAND) {
          int containerSlot = InventoryUtils.toMenuSlot(selectedSlot);
-         InventoryUtils.clickSlot(containerSlot, 40, ClickType.SWAP);
+         InventoryUtils.clickSlot(containerSlot, 40, ContainerInput.SWAP);
       } else {
          InventoryUtils.swapTo(weapon);
       }
@@ -125,7 +125,7 @@ public class LongJumpModule extends Module {
       ClientAccess.argusclientMinecraft.player.resetOnlyAttackStrengthTicker();
       if (weapon.hand() == InteractionHand.OFF_HAND) {
          int convertedRestoreSlot = InventoryUtils.toMenuSlot(selectedSlot);
-         InventoryUtils.clickSlot(convertedRestoreSlot, 40, ClickType.SWAP);
+         InventoryUtils.clickSlot(convertedRestoreSlot, 40, ContainerInput.SWAP);
       } else {
          InventoryUtils.swapBack(selectedSlot, weapon);
       }

@@ -9,7 +9,7 @@ import dev.argus.client.settings.Setting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -150,7 +150,7 @@ final class SettingsCards {
         return 0;
     }
 
-    void render(GuiGraphics g, int mx, int my, float delta, UiTheme t, float x, float y, float w, float clipTop, float clipBottom) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t, float x, float y, float w, float clipTop, float clipBottom) {
         this.x = x; this.w = w;
         tops.clear();
         List<Object> order = order();
@@ -204,7 +204,7 @@ final class SettingsCards {
         }
     }
 
-    void popup(GuiGraphics g, UiTheme t, int width, int height) {
+    void popup(GuiGraphicsExtractor g, UiTheme t, int width, int height) {
         for (Section s : sections) if (s.body > 1) s.list.popup(g, t, width, height);
         for (InlineCard card : inline) if (card.open && card.shown() > 1) card.popup(g, t, width, height);
     }

@@ -4,7 +4,7 @@ import dev.argus.client.network.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -46,7 +46,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     protected abstract String hint();
     protected abstract void buildToolbar(int x, int y, int w);
     protected abstract int rowCount();
-    protected abstract void renderRow(GuiGraphics g, int index, float x, float y, float w, int mx, int my, boolean hover);
+    protected abstract void renderRow(GuiGraphicsExtractor g, int index, float x, float y, float w, int mx, int my, boolean hover);
     /** A stable id for a row, so rows fade in when added and glide when others are removed. */
     protected Object rowId(int index) { return index; }
     /** Icon, title and hint shown when the list is empty. */
@@ -54,7 +54,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     /** A form card replaces the toolbar and list while it is open. */
     protected boolean formOpen() { return false; }
     protected void buildForm(int x, int y, int w) {}
-    protected void renderForm(GuiGraphics g, int x, int y, int w, int mx, int my) {}
+    protected void renderForm(GuiGraphicsExtractor g, int x, int y, int w, int mx, int my) {}
     protected void closeForm() {}
     protected void submitForm() {}
 
@@ -77,7 +77,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     /** Offset of the list from the panel top; subclasses that draw a card above the list push it down. */
     protected int listY() { return LIST_Y; }
     /** Drawn between the toolbar and the list when no form is open. */
-    protected void renderAboveList(GuiGraphics g, int mx, int my) {}
+    protected void renderAboveList(GuiGraphicsExtractor g, int mx, int my) {}
     private int listTop() { return top + listY(); }
     private int listHeight() { return Math.max(ROW, panelHeight - listY() - FOOTER); }
     private int maxScroll() { return Math.max(0, rowCount() * ROW - listHeight()); }
@@ -99,7 +99,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     protected void field(UiInput input, int x, int y, int w) { input.place(x, y, w); input.active = !busy; addRenderableWidget(input); }
 
     /** Small rounded text button registered for this frame; returns its width. */
-    protected float pill(GuiGraphics g, String label, float right, float cy, int mx, int my, int tint, boolean filled, boolean enabled, Runnable action) {
+    protected float pill(GuiGraphicsExtractor g, String label, float right, float cy, int mx, int my, int tint, boolean filled, boolean enabled, Runnable action) {
         UiTheme t = GuiState.theme();
         float pw = UiDraw.width(label, UiDraw.SMALL) + 14, px = right - pw;
         boolean hover = enabled && UiDraw.over(mx, my, px, cy - 7, pw, 14) && (!drawingList || my >= listTop() && my < listTop() + listHeight());
@@ -116,7 +116,7 @@ abstract class ProfileManagerScreen extends UiScreen {
      * A two-click pill: it widens, fills with {@code tint} and swaps to {@code armedLabel} while
      * armed, with a line under it that drains as the confirm window runs out.
      */
-    protected float confirmPill(GuiGraphics g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
+    protected float confirmPill(GuiGraphicsExtractor g, String key, String label, String armedLabel, boolean armed, long armedAt, long window,
                                 float right, float cy, int mx, int my, int tint, boolean enabled, Runnable action) {
         UiTheme t = GuiState.theme();
         String shown = armed ? armedLabel : label;
@@ -139,19 +139,19 @@ abstract class ProfileManagerScreen extends UiScreen {
     protected void hit(float x, float y, float w, float h, Runnable action) { hits.add(new Hit(x, y, w, h, drawingList, action)); }
 
     /** Coloured label chip; returns its width. */
-    protected static float chip(GuiGraphics g, String label, float x, float cy, int tint) {
+    protected static float chip(GuiGraphicsExtractor g, String label, float x, float cy, int tint) {
         float cw = UiDraw.width(label, 5.5f) + 10;
         UiDraw.rounded(g, x, cy - 4.5f, cw, 9, 4.5f, UiDraw.alpha(tint, .16f));
         UiDraw.center(g, label, x, cy, cw, 5.5f, tint);
         return cw;
     }
     /** Round tinted badge holding an icon, centred on (cx, cy). */
-    protected static void badge(GuiGraphics g, String icon, float cx, float cy, int tint) {
+    protected static void badge(GuiGraphicsExtractor g, String icon, float cx, float cy, int tint) {
         UiDraw.circle(g, cx, cy, 8.5f, UiDraw.alpha(tint, .16f));
         UiDraw.icon(g, icon, cx - 4.5f, cy - 4.5f, 9, tint);
     }
     /** Small muted caption above a form field. */
-    protected static void label(GuiGraphics g, String text, float x, float cy) { UiDraw.text(g, text, x, cy, 6f, GuiState.theme().muted()); }
+    protected static void label(GuiGraphicsExtractor g, String text, float x, float cy) { UiDraw.text(g, text, x, cy, 6f, GuiState.theme().muted()); }
 
     // ---- messages and background work -----------------------------------------------------------
 
@@ -192,7 +192,7 @@ abstract class ProfileManagerScreen extends UiScreen {
 
     // ---- rendering ------------------------------------------------------------------------------
 
-    @Override protected final void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected final void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         hits.clear();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
@@ -233,7 +233,7 @@ abstract class ProfileManagerScreen extends UiScreen {
         footer(g, mx, my, t);
     }
 
-    private void renderList(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void renderList(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         UiDraw.rect(g, left + 12, top + listY() - 6, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
         int start = listTop(), view = listHeight(), n = rowCount();
         scroll = Math.clamp(scroll, 0, maxScroll());
@@ -267,14 +267,14 @@ abstract class ProfileManagerScreen extends UiScreen {
     }
 
     /** Row card background, shared by both lists; {@code highlight} outlines it in the accent. */
-    protected void rowFrame(GuiGraphics g, String key, float x, float y, float w, boolean hover, boolean highlight) {
+    protected void rowFrame(GuiGraphicsExtractor g, String key, float x, float y, float w, boolean hover, boolean highlight) {
         UiTheme t = GuiState.theme();
         float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".on", highlight ? 1 : 0, 16);
         UiDraw.rounded(g, x, y, w, ROW - 3, 6, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), hv * .7f));
         if (on > 0) UiDraw.outline(g, x, y, w, ROW - 3, 6, .7f, UiDraw.alpha(t.accent(), .45f * on));
     }
 
-    private void footer(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void footer(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         float cy = top + panelHeight - 12, right = left + panelWidth - 12;
         if (busy) right -= pill(g, "Cancel", right, cy, mx, my, t.red(), false, true, this::cancelTask) + 6;
         // The busy dot fades in and nudges the text over; messages crossfade instead of swapping.

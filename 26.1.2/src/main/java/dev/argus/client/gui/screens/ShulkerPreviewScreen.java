@@ -1,7 +1,7 @@
 package dev.argus.client.gui.screens;
 
 import dev.argus.client.ClientAccess;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -19,7 +19,7 @@ public class ShulkerPreviewScreen extends ShulkerBoxScreen implements ClientAcce
    }
 
    @Override
-   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       renderingPreview = true;
       super.render(graphics, mouseX, mouseY, partialTick);
       renderingPreview = false;

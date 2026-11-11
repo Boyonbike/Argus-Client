@@ -10,7 +10,7 @@ import dev.argus.client.settings.options.PresetCategory;
 import dev.argus.client.utils.FloatAnimation;
 import java.awt.Color;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class PresetScreen extends ClientScreen {
    private final PresetListPanel listPanel = new PresetListPanel(this);
@@ -25,7 +25,7 @@ public final class PresetScreen extends ClientScreen {
    }
 
    @Override
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
       this.fileDropHintAnimation.setTarget(!ClientAccess.argusclientMinecraft.isWindowActive(), 250L);
       float hintOpacity = this.fileDropHintAnimation.getValue();
       if (hintOpacity != 0.0F) {

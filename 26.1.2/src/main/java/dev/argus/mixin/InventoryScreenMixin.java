@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import dev.argus.client.managers.RotationManager;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class InventoryScreenMixin {
    @Inject(method = "renderEntityInInventoryFollowsMouse", at = @At("HEAD"))
    private static void beginInventoryEntityRender(
-      GuiGraphics graphics,
+      GuiGraphicsExtractor graphics,
       int left,
       int top,
       int right,
@@ -30,7 +30,7 @@ public class InventoryScreenMixin {
 
    @Inject(method = "renderEntityInInventoryFollowsMouse", at = @At("RETURN"))
    private static void endInventoryEntityRender(
-      GuiGraphics graphics,
+      GuiGraphicsExtractor graphics,
       int left,
       int top,
       int right,

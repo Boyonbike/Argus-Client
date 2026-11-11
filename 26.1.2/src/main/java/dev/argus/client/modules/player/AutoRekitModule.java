@@ -198,7 +198,7 @@ public final class AutoRekitModule extends Module {
             ItemStack originalHand = destination.getItem().copy();
             for (int i = 0; i < clicks.size(); i++) {
                 var click = clicks.get(i);
-                InventoryUtils.clickSlot(click.slot(), click.button(), click.swap() ? ClickType.SWAP : ClickType.PICKUP);
+                InventoryUtils.clickSlot(click.slot(), click.button(), click.swap() ? ContainerInput.SWAP : ContainerInput.PICKUP);
                 if (offhand && i == 0 && (!sameStack(destination.getItem(), current)
                         || !sameStack(inventory.getItem(40), originalHand))) {
                     nextTransfer = System.currentTimeMillis() + 1000;
@@ -237,7 +237,7 @@ public final class AutoRekitModule extends Module {
         ItemStack originalHand = mc.player.getInventory().getItem(selected).copy();
         boolean equipped = RekitEquipmentTransfer.execute(new RekitEquipmentTransfer.Access() {
             public boolean stage() {
-                InventoryUtils.clickSlot(source.index, selected, ClickType.SWAP);
+                InventoryUtils.clickSlot(source.index, selected, ContainerInput.SWAP);
                 ItemStack staged = mc.player.getInventory().getItem(selected);
                 return sameStack(staged, candidate) && sameStack(source.getItem(), originalHand);
             }
@@ -246,7 +246,7 @@ public final class AutoRekitModule extends Module {
                 return mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND).consumesAction();
             }
             public void restore() {
-                try { InventoryUtils.clickSlot(source.index, selected, ClickType.SWAP); }
+                try { InventoryUtils.clickSlot(source.index, selected, ContainerInput.SWAP); }
                 finally { InventoryUtils.selectHotbarSlot(originalSelected); }
             }
         });

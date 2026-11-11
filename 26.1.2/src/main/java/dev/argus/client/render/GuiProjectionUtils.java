@@ -7,8 +7,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import dev.argus.client.ClientAccess;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.CachedOrthoProjectionMatrixBuffer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
 
@@ -52,7 +52,7 @@ public final class GuiProjectionUtils implements ClientAccess {
       return poseStack;
    }
 
-   public static PoseStack toPoseStack(GuiGraphics graphics) {
+   public static PoseStack toPoseStack(GuiGraphicsExtractor graphics) {
       return toPoseStack(graphics.pose());
    }
 

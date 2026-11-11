@@ -17,7 +17,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -47,7 +47,7 @@ public final class InventoryUtils implements ClientAccess {
 
    public static void swapWithHotbarSlot(int menuSlot, int hotbarSlot) {
       if (menuSlot >= 0 && hotbarSlot >= 0) {
-         ClickType clickType = ClickType.SWAP;
+         ContainerInput clickType = ContainerInput.SWAP;
          clickSlot(menuSlot, hotbarSlot, clickType);
       }
    }
@@ -55,32 +55,32 @@ public final class InventoryUtils implements ClientAccess {
    public static void swapMenuSlots(int firstSlot, int secondSlot) {
       if (firstSlot >= 0 && secondSlot >= 0) {
          if (firstSlot >= 36 && firstSlot <= 44) {
-            clickSlot(secondSlot, firstSlot - 36, ClickType.SWAP);
+            clickSlot(secondSlot, firstSlot - 36, ContainerInput.SWAP);
          } else {
-            clickSlot(firstSlot, 0, ClickType.SWAP);
-            clickSlot(secondSlot, 0, ClickType.SWAP);
-            clickSlot(firstSlot, 0, ClickType.SWAP);
+            clickSlot(firstSlot, 0, ContainerInput.SWAP);
+            clickSlot(secondSlot, 0, ContainerInput.SWAP);
+            clickSlot(firstSlot, 0, ContainerInput.SWAP);
          }
       }
    }
 
    public static void swapSlotsWithPickup(int firstSlot, int secondSlot) {
       if (firstSlot != -1 && secondSlot != -1) {
-         clickSlot(firstSlot, 0, ClickType.PICKUP);
-         clickSlot(secondSlot, 0, ClickType.PICKUP);
+         clickSlot(firstSlot, 0, ContainerInput.PICKUP);
+         clickSlot(secondSlot, 0, ContainerInput.PICKUP);
          ItemStack carriedStack = ClientAccess.argusclientMinecraft.player.containerMenu.getCarried();
          if (!carriedStack.isEmpty()) {
-            clickSlot(firstSlot, 0, ClickType.PICKUP);
+            clickSlot(firstSlot, 0, ContainerInput.PICKUP);
          }
       }
    }
 
-   public static void clickSlot(int slot, int button, ClickType clickType) {
+   public static void clickSlot(int slot, int button, ContainerInput clickType) {
       int containerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
       ClientAccess.argusclientMinecraft.gameMode.handleInventoryMouseClick(containerId, slot, button, clickType, ClientAccess.argusclientMinecraft.player);
    }
 
-   public static void clickSlot(int containerId, int slot, int button, ClickType clickType) {
+   public static void clickSlot(int containerId, int slot, int button, ContainerInput clickType) {
       MultiPlayerGameMode gameMode = ClientAccess.argusclientMinecraft.gameMode;
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
       gameMode.handleInventoryMouseClick(containerId, slot, button, clickType, player);

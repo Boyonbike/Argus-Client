@@ -4,7 +4,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.modules.exploit.FakeVanillaModule;
 import dev.argus.client.network.*;
 import java.net.URI;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.util.Util;
 
@@ -51,7 +51,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
 
-    @Override protected void renderForm(GuiGraphics g, int x, int y, int w, int mx, int my) {
+    @Override protected void renderForm(GuiGraphicsExtractor g, int x, int y, int w, int mx, int my) {
         var t = GuiState.theme();
         if (signingIn()) {
             UiDraw.card(g, x, y, w, 74, "player", "Sign in with Microsoft", "Finish signing in in your browser, then come back here", 0, t);
@@ -81,7 +81,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
     private static final int CARD_Y = TOOLBAR_Y + 28, CARD_H = 30;
     private static FakeVanillaModule vanilla() { return ClientContext.getModule(FakeVanillaModule.class); }
     @Override protected int listY() { return vanilla() == null ? LIST_Y : LIST_Y + CARD_H + 8; }
-    @Override protected void renderAboveList(GuiGraphics g, int mx, int my) {
+    @Override protected void renderAboveList(GuiGraphicsExtractor g, int mx, int my) {
         var module = vanilla();
         if (module == null) return;
         var t = GuiState.theme();
@@ -106,7 +106,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         return switch (type) { case MICROSOFT -> t.blue(); case OFFLINE -> t.yellow(); case SESSION -> t.green(); case ALTENING -> t.accent(); };
     }
 
-    @Override protected void renderRow(GuiGraphics g, int index, float x, float y, float w, int mx, int my, boolean hover) {
+    @Override protected void renderRow(GuiGraphicsExtractor g, int index, float x, float y, float w, int mx, int my, boolean hover) {
         var t = GuiState.theme();
         var account = profiles.accounts().get(index);
         boolean active = !account.uuid().isEmpty() && account.uuid().equalsIgnoreCase(minecraft.getUser().getProfileId().toString());

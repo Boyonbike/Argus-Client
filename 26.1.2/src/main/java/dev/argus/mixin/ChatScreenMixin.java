@@ -22,8 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.GuiMessage.Line;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.multiplayer.chat.GuiMessage.Line;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -66,16 +66,16 @@ public abstract class ChatScreenMixin extends Screen {
       }
    }
 
-   @WrapWithCondition(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V"))
-   private boolean allowChatInputBackgroundFill(GuiGraphics graphics, int left, int top, int right, int bottom, int color) {
+   @WrapWithCondition(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(IIIII)V"))
+   private boolean allowChatInputBackgroundFill(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color) {
       return false;
    }
 
    @WrapWithCondition(
       method = "render",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V")
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V")
    )
-   private boolean allowChatSuperclassRender(Screen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   private boolean allowChatSuperclassRender(Screen screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       return hudModule.getChatInputOffset() / 12.0F > 0.25;
    }
 
@@ -83,11 +83,11 @@ public abstract class ChatScreenMixin extends Screen {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/components/CommandSuggestions;render(Lnet/minecraft/client/gui/GuiGraphics;II)V",
+         target = "Lnet/minecraft/client/gui/components/CommandSuggestions;render(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
          shift = Shift.BEFORE
       )
    )
-   private void updateInlineCommandSuggestion(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
+   private void updateInlineCommandSuggestion(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
       String commandInput = this.input.getValue();
       if (commandInput.startsWith(CommandRegistry.getPrefix())) {
          CommandSuggestionsSuggestionsListAccessor suggestionsWindow = (CommandSuggestionsSuggestionsListAccessor)((CommandSuggestionsAccessor)this.commandSuggestions)

@@ -11,7 +11,7 @@ import dev.argus.client.settings.BooleanSetting;
 import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.KeyUtils;
 import dev.argus.client.utils.inventory.ChestSearchController;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.item.ItemStack;
@@ -54,7 +54,7 @@ public class ChestSearchBarModule extends Module {
    @EventHandler
    private void onRender(AbstractContainerScreenEvent event) {
       ChestSearchController searchControllerSnapshot = ChestSearchController.INSTANCE;
-      GuiGraphics graphicsSnapshot = event.getGraphics();
+      GuiGraphicsExtractor graphicsSnapshot = event.getGraphics();
       Screen screenSnapshot = event.getScreen();
       PoseStack poseSnapshot = event.getPoseStack();
       float mouseXSnapshot = event.getMouseX();

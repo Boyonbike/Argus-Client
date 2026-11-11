@@ -33,7 +33,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -224,7 +224,7 @@ public class AutoExpModule extends Module {
          return false;
       }
 
-      ClickType clickType = ClickType.SWAP;
+      ContainerInput clickType = ContainerInput.SWAP;
       InventoryUtils.clickSlot(bottleInventorySlot, selectedHotbarSlot, clickType);
       this.swappedInventorySlot = bottleInventorySlot;
       this.swappedHotbarSlot = selectedHotbarSlot;
@@ -235,7 +235,7 @@ public class AutoExpModule extends Module {
       if (owner.swappedInventorySlot != -1) {
          int inventorySlot = owner.swappedInventorySlot;
          int hotbarSlot = owner.swappedHotbarSlot;
-         ClickType clickType = ClickType.SWAP;
+         ContainerInput clickType = ContainerInput.SWAP;
          InventoryUtils.clickSlot(inventorySlot, hotbarSlot, clickType);
          owner.swappedInventorySlot = -1;
          owner.swappedHotbarSlot = -1;

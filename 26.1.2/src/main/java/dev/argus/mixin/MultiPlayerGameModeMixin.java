@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,7 +23,7 @@ public class MultiPlayerGameModeMixin {
    private Minecraft minecraft;
 
    @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
-   private void onInventoryMouseClickHead(int containerId, int slotId, int mouseButton, ClickType clickType, Player actingPlayer, CallbackInfo callback) {
+   private void onInventoryMouseClickHead(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent event = new MultiPlayerGameModeHandleInventoryMouseClickEvent(
             containerId, slotId, mouseButton, clickType
@@ -36,7 +36,7 @@ public class MultiPlayerGameModeMixin {
    }
 
    @Inject(method = "handleInventoryMouseClick", at = @At("TAIL"), cancellable = true)
-   private void onInventoryMouseClickTail(int containerId, int slotId, int mouseButton, ClickType clickType, Player actingPlayer, CallbackInfo callback) {
+   private void onInventoryMouseClickTail(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent.After event = new MultiPlayerGameModeHandleInventoryMouseClickEvent.After(
             containerId, slotId, mouseButton, clickType
@@ -58,7 +58,7 @@ public class MultiPlayerGameModeMixin {
       cancellable = true
    )
    private void onInventoryMouseClickAfterStackHash(
-      int containerId, int slotId, int mouseButton, ClickType clickType, Player actingPlayer, CallbackInfo callback
+      int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback
    ) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent.AfterStackHash event = new MultiPlayerGameModeHandleInventoryMouseClickEvent.AfterStackHash(
@@ -75,10 +75,10 @@ public class MultiPlayerGameModeMixin {
       method = "handleInventoryMouseClick",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;clicked(IILnet/minecraft/world/inventory/ClickType;Lnet/minecraft/world/entity/player/Player;)V"
+         target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;clicked(IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V"
       )
    )
-   private boolean shouldApplyContainerClick(AbstractContainerMenu menu, int slotId, int mouseButton, ClickType clickType, Player actingPlayer) {
+   private boolean shouldApplyContainerClick(AbstractContainerMenu menu, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer) {
       if (this.minecraft.player == actingPlayer) {
          MultiPlayerGameModeHandleInventoryMouseClickEvent.BeforeContainerClick event = new MultiPlayerGameModeHandleInventoryMouseClickEvent.BeforeContainerClick();
          ClientAccess.eventBus.post(event);

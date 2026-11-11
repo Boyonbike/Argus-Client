@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -105,7 +105,7 @@ public class PlayerTabOverlayMixin {
 
    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isLocalServer()Z"))
    private void updateTabLayout(
-      GuiGraphics graphics,
+      GuiGraphicsExtractor graphics,
       int screenWidth,
       Scoreboard scoreboard,
       Objective objective,
@@ -131,7 +131,7 @@ public class PlayerTabOverlayMixin {
    }
 
    @Inject(method = "renderPingIcon", at = @At("HEAD"), cancellable = true)
-   private void renderCustomLatency(GuiGraphics graphics, int entryWidth, int entryX, int entryY, PlayerInfo playerInfo, CallbackInfo callback) {
+   private void renderCustomLatency(GuiGraphicsExtractor graphics, int entryWidth, int entryX, int entryY, PlayerInfo playerInfo, CallbackInfo callback) {
       if (extraTabModule.isToggled() && extraTabModule.latencySetting.getValue() != ExtraTabModule.LatencyChoice.VANILLA) {
          if (extraTabModule.latencySetting.getValue() == ExtraTabModule.LatencyChoice.NONE) {
             callback.cancel();
@@ -162,7 +162,7 @@ public class PlayerTabOverlayMixin {
       method = "render",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/components/PlayerTabOverlay;renderTablistScore(Lnet/minecraft/world/scores/Objective;ILnet/minecraft/client/gui/components/PlayerTabOverlay$ScoreDisplayEntry;IILjava/util/UUID;Lnet/minecraft/client/gui/GuiGraphics;)V"
+         target = "Lnet/minecraft/client/gui/components/PlayerTabOverlay;renderTablistScore(Lnet/minecraft/world/scores/Objective;ILnet/minecraft/client/gui/components/PlayerTabOverlay$ScoreDisplayEntry;IILjava/util/UUID;Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V"
       )
    )
    private void reserveLatencyTextInScoreBounds(Args arguments, @Local PlayerInfo playerInfo) {
@@ -181,7 +181,7 @@ public class PlayerTabOverlayMixin {
    }
 
    @Inject(method = "render", at = @At("HEAD"))
-   private void applyTabScale(GuiGraphics graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
+   private void applyTabScale(GuiGraphicsExtractor graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
       if (extraTabModule.getTabScale() != 1.0F) {
          graphics.pose().pushMatrix();
          graphics.pose().scale(extraTabModule.getTabScale(), extraTabModule.getTabScale());
@@ -189,7 +189,7 @@ public class PlayerTabOverlayMixin {
    }
 
    @Inject(method = "render", at = @At("TAIL"))
-   private void restoreTabScale(GuiGraphics graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
+   private void restoreTabScale(GuiGraphicsExtractor graphics, int screenWidth, Scoreboard scoreboard, Objective objective, CallbackInfo callback) {
       if (extraTabModule.getTabScale() != 1.0F) {
          graphics.pose().popMatrix();
       }

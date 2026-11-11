@@ -7,7 +7,7 @@ import dev.argus.client.gui.components.TradeListPanel;
 import dev.argus.client.gui.panels.Panel;
 import dev.argus.client.render.TradePanelMode;
 import dev.argus.client.render.TradePanelRequest;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class TradeManagerScreen extends ClientScreen {
    private final TradeListPanel tradeListPanel = new TradeListPanel(this);
@@ -21,7 +21,7 @@ public final class TradeManagerScreen extends ClientScreen {
    }
 
    @Override
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
       if (this.pendingPanelRequest != null) {
          this.tradeListPanel.refreshTrades();
          this.getPanels().remove(this.actionPanel);

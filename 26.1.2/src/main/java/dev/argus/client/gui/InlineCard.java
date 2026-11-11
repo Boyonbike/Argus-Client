@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -37,7 +37,7 @@ abstract class InlineCard {
     abstract String subtitle();
     abstract float bodyHeight();
     /** Draws the body; {@code y} is the top of the body, below the card header. */
-    abstract void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w);
+    abstract void draw(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w);
 
     /** Whether the card is unfolded. */
     boolean open = true;
@@ -52,7 +52,7 @@ abstract class InlineCard {
     void stopEditing() {}
     boolean keyPressed(KeyEvent event) { return false; }
 
-    final void render(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w, float clipTop, float clipBottom) {
+    final void render(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w, float clipTop, float clipBottom) {
         hits.clear();
         this.clipTop = clipTop; this.clipBottom = clipBottom;
         draw(g, mx, my, t, x, y, w);
@@ -65,7 +65,7 @@ abstract class InlineCard {
     boolean dragged(MouseButtonEvent event) { return false; }
     boolean released() { return false; }
     /** Draws hover popups above everything else. */
-    void popup(GuiGraphics g, UiTheme t, int width, int height) {}
+    void popup(GuiGraphicsExtractor g, UiTheme t, int width, int height) {}
 
     protected final float clipTop() { return clipTop; }
     protected final float clipBottom() { return clipBottom; }
@@ -105,7 +105,7 @@ abstract class InlineCard {
     }
 
     /** A pill button; {@code accent} marks the card's main action. */
-    protected final void button(GuiGraphics g, int mx, int my, UiTheme t, String key, float x, float y, float w, float h,
+    protected final void button(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String key, float x, float y, float w, float h,
                                 String label, boolean accent, String tip, Runnable run) {
         boolean hover = hovering(mx, my, x, y, w, h);
         float hv = UiAnim.smooth("ic." + title() + "." + key, hover ? 1 : 0, 18), ac = UiAnim.smooth("ic." + title() + "." + key + ".acc", accent ? 1 : 0, 16);
@@ -122,7 +122,7 @@ abstract class InlineCard {
     protected static float buttonWidth(String label) { return UiDraw.width(label, UiDraw.SMALL) + 18; }
 
     /** A segmented choice with a sliding thumb. */
-    protected final void segmented(GuiGraphics g, int mx, int my, UiTheme t, String key, String[] labels, int chosen,
+    protected final void segmented(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String key, String[] labels, int chosen,
                                    float x, float y, float segment, float h, IntConsumer pick) {
         UiDraw.rounded(g, x, y, segment * labels.length, h, h / 2, t.crust());
         float thumb = UiAnim.smooth("ic." + title() + "." + key, chosen, 16);
@@ -160,7 +160,7 @@ abstract class InlineCard {
         @Override String subtitle() { return subtitle; }
         @Override float bodyHeight() { return rows.size() * ROW + 4; }
 
-        @Override void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
+        @Override void draw(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w) {
             for (int i = 0; i < rows.size(); i++) {
                 Row row = rows.get(i);
                 float ry = y + i * ROW, cy = ry + ROW / 2f;
@@ -187,7 +187,7 @@ abstract class InlineCard {
      */
     static final class Items extends InlineCard {
         /** Draws a 16-unit square at the row's left. */
-        interface Icon { void draw(GuiGraphics g, float x, float y); }
+        interface Icon { void draw(GuiGraphicsExtractor g, float x, float y); }
         /** A button; {@code done} is the message shown after it runs, or null. */
         record Action(String label, String tip, boolean accent, boolean confirm, String done, Runnable run) {
             static Action of(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, false, done, run); }
@@ -255,7 +255,7 @@ abstract class InlineCard {
         private boolean isArmed(String key) { return key.equals(armed) && System.currentTimeMillis() - armedAt < 4000; }
 
         /** Draws one button right-to-left from {@code right}; returns the new right edge. */
-        private float actionButton(GuiGraphics g, int mx, int my, UiTheme t, String key, float right, float cy, Action a) {
+        private float actionButton(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String key, float right, float cy, Action a) {
             boolean waiting = a.confirm() && isArmed(key);
             String label = waiting ? "Confirm" : a.label();
             float bw = Math.max(a.label().length() <= 2 ? 20 : 0, buttonWidth(a.confirm() ? "Confirm" : label) + 4);
@@ -268,7 +268,7 @@ abstract class InlineCard {
             return right - bw - 4;
         }
 
-        @Override void draw(GuiGraphics g, int mx, int my, UiTheme t, float x, float y, float w) {
+        @Override void draw(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w) {
             float top = 0;
             if (hasTop()) {
                 float cy = y + 12, right = x + w;

@@ -1,6 +1,6 @@
 package dev.argus.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.Identifier;
 
@@ -77,19 +77,19 @@ final class UiDraw {
     }
 
     /** Left-aligned text, vertically centred on {@code centreY}. */
-    static void text(GuiGraphics g, String text, float x, float centreY, float size, int colour) { UiFont.drawCentred(g, text, x, centreY, size, colour, false); }
-    static void text(GuiGraphics g, String text, float x, float centreY, int colour) { text(g, text, x, centreY, TEXT, colour); }
-    static void bold(GuiGraphics g, String text, float x, float centreY, float size, int colour) { UiFont.drawCentred(g, text, x, centreY, size, colour, true); }
+    static void text(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour) { UiFont.drawCentred(g, text, x, centreY, size, colour, false); }
+    static void text(GuiGraphicsExtractor g, String text, float x, float centreY, int colour) { text(g, text, x, centreY, TEXT, colour); }
+    static void bold(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour) { UiFont.drawCentred(g, text, x, centreY, size, colour, true); }
 
-    static void center(GuiGraphics g, String text, float x, float centreY, float width, float size, int colour) {
+    static void center(GuiGraphicsExtractor g, String text, float x, float centreY, float width, float size, int colour) {
         text(g, text, x + (width - width(text, size)) / 2, centreY, size, colour);
     }
-    static void center(GuiGraphics g, String text, float x, float centreY, float width, int colour) { center(g, text, x, centreY, width, TEXT, colour); }
+    static void center(GuiGraphicsExtractor g, String text, float x, float centreY, float width, int colour) { center(g, text, x, centreY, width, TEXT, colour); }
 
-    static void right(GuiGraphics g, String text, float right, float centreY, float size, int colour) {
+    static void right(GuiGraphicsExtractor g, String text, float right, float centreY, float size, int colour) {
         text(g, text, right - width(text, size), centreY, size, colour);
     }
-    static void right(GuiGraphics g, String text, float right, float centreY, int colour) { right(g, text, right, centreY, TEXT, colour); }
+    static void right(GuiGraphicsExtractor g, String text, float right, float centreY, int colour) { right(g, text, right, centreY, TEXT, colour); }
 
     // ---- colour -----------------------------------------------------------------------------
 
@@ -107,19 +107,19 @@ final class UiDraw {
 
     // ---- shapes -----------------------------------------------------------------------------
 
-    static void rect(GuiGraphics g, float x, float y, float w, float h, int colour) { UiRender.shape(g, x, y, w, h, 0, colour, colour, 0); }
-    static void rounded(GuiGraphics g, float x, float y, float w, float h, float radius, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, 0); }
-    static void gradient(GuiGraphics g, float x, float y, float w, float h, float radius, int top, int bottom) { UiRender.shape(g, x, y, w, h, radius, top, bottom, 0); }
-    static void outline(GuiGraphics g, float x, float y, float w, float h, float radius, float thickness, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, Math.max(.01f, thickness)); }
-    static void shadow(GuiGraphics g, float x, float y, float w, float h, float radius, float blur, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, -Math.max(.5f, blur)); }
-    static void circle(GuiGraphics g, float cx, float cy, float r, int colour) { rounded(g, cx - r, cy - r, r * 2, r * 2, r, colour); }
+    static void rect(GuiGraphicsExtractor g, float x, float y, float w, float h, int colour) { UiRender.shape(g, x, y, w, h, 0, colour, colour, 0); }
+    static void rounded(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, 0); }
+    static void gradient(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int top, int bottom) { UiRender.shape(g, x, y, w, h, radius, top, bottom, 0); }
+    static void outline(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float thickness, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, Math.max(.01f, thickness)); }
+    static void shadow(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float blur, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, -Math.max(.5f, blur)); }
+    static void circle(GuiGraphicsExtractor g, float cx, float cy, float r, int colour) { rounded(g, cx - r, cy - r, r * 2, r * 2, r, colour); }
 
-    static void icon(GuiGraphics g, String name, float x, float y, float size, int colour) { UiIcons.draw(g, name, x, y, size, colour); }
+    static void icon(GuiGraphicsExtractor g, String name, float x, float y, float size, int colour) { UiIcons.draw(g, name, x, y, size, colour); }
 
     private static java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> skin;
 
     /** The signed-in player's face (with hat layer) clipped to a circle. */
-    static void face(GuiGraphics g, float x, float y, float size) {
+    static void face(GuiGraphicsExtractor g, float x, float y, float size) {
         var mc = net.minecraft.client.Minecraft.getInstance();
         if (skin == null) skin = mc.getSkinManager().createLookup(mc.getGameProfile(), false);
         var texture = mc.getTextureManager().getTexture(skin.get().body().texturePath());
@@ -132,7 +132,7 @@ final class UiDraw {
     static final float CARD_HEAD = 30, CARD_PAD = 10;
 
     /** Settings card: soft panel with an icon badge, a title and a one-line subtitle. */
-    static void card(GuiGraphics g, float x, float y, float w, float h, String icon, String title, String subtitle, float reserveRight, UiTheme t) {
+    static void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, float reserveRight, UiTheme t) {
         rounded(g, x, y, w, h, 8, alpha(t.mantle(), .6f));
         outline(g, x, y, w, h, 8, .6f, alpha(t.overlay(), .4f));
         circle(g, x + CARD_PAD + 7, y + 15, 8, alpha(t.accent(), .16f));
@@ -142,18 +142,18 @@ final class UiDraw {
     }
 
     /** Floating window: soft shadow, base fill and a hairline edge. {@code lift} deepens the shadow. */
-    static void panel(GuiGraphics g, float x, float y, float w, float h, UiTheme theme, float lift) {
+    static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme, float lift) {
         boolean dark = GuiState.preferences().mode == GuiPreferences.Mode.DARK;
         shadow(g, x, y + 2 + lift * 3, w, h, 7, 9 + lift * 8, dark ? alpha(0xff000000, .42f + lift * .2f) : alpha(0xff4c4f69, .16f + lift * .12f));
         rounded(g, x, y, w, h, 7, theme.base());
         outline(g, x, y, w, h, 7, .6f, alpha(theme.overlay(), dark ? .55f : .7f));
     }
-    static void panel(GuiGraphics g, float x, float y, float w, float h, UiTheme theme) { panel(g, x, y, w, h, theme, 0); }
+    static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme) { panel(g, x, y, w, h, theme, 0); }
 
     // ---- controls ---------------------------------------------------------------------------
 
     /** Pill switch; {@code on} animates 0…1. */
-    static void toggle(GuiGraphics g, float x, float y, float on, boolean hover, UiTheme theme) {
+    static void toggle(GuiGraphicsExtractor g, float x, float y, float on, boolean hover, UiTheme theme) {
         float w = 18, h = 10;
         rounded(g, x, y, w, h, h / 2, mix(hover ? theme.overlay() : theme.surface(), theme.accent(), on));
         float knob = h - 3.4f, travel = w - h;
@@ -161,14 +161,14 @@ final class UiDraw {
     }
 
     /** Rounded checkbox with an animated tick. */
-    static void checkbox(GuiGraphics g, float x, float y, float size, float on, UiTheme theme) {
+    static void checkbox(GuiGraphicsExtractor g, float x, float y, float size, float on, UiTheme theme) {
         rounded(g, x, y, size, size, 2.5f, mix(theme.surface(), theme.accent(), on));
         if (on < 1) outline(g, x, y, size, size, 2.5f, .7f, alpha(theme.overlay(), 1 - on));
         if (on > .02f) icon(g, "check", x + 1, y + 1, size - 2, alpha(theme.crust(), on));
     }
 
     /** Horizontal value slider; {@code value} 0…1, {@code hover}/{@code active} animate the thumb. */
-    static void slider(GuiGraphics g, float x, float y, float w, float value, float hover, UiTheme theme) {
+    static void slider(GuiGraphicsExtractor g, float x, float y, float w, float value, float hover, UiTheme theme) {
         float track = 3, cy = y;
         rounded(g, x, cy - track / 2, w, track, track / 2, theme.surface());
         rounded(g, x, cy - track / 2, Math.max(track, w * value), track, track / 2, theme.accent());

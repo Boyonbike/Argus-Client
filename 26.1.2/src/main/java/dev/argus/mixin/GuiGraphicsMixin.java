@@ -13,9 +13,9 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ActiveTextCollector;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.ActiveTextCollector.Parameters;
-import net.minecraft.client.gui.GuiGraphics.HoveredTextEffects;
+import net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(GuiGraphics.class)
+@Mixin(GuiGraphicsExtractor.class)
 public abstract class GuiGraphicsMixin {
    @Unique
    private boolean renderingPreviewItemCount;
@@ -53,7 +53,7 @@ public abstract class GuiGraphicsMixin {
       method = "setTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/resources/Identifier;)V",
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/gui/GuiGraphics;setTooltipForNextFrameInternal(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;Z)V",
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;setTooltipForNextFrameInternal(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;Z)V",
          shift = Shift.BEFORE
       ),
       cancellable = true
@@ -68,13 +68,13 @@ public abstract class GuiGraphicsMixin {
    }
 
    @Inject(
-      method = "textRenderer(Lnet/minecraft/client/gui/GuiGraphics$HoveredTextEffects;Ljava/util/function/Consumer;)Lnet/minecraft/client/gui/ActiveTextCollector;",
+      method = "textRenderer(Lnet/minecraft/client/gui/GuiGraphicsExtractor$HoveredTextEffects;Ljava/util/function/Consumer;)Lnet/minecraft/client/gui/ActiveTextCollector;",
       at = @At("HEAD"),
       cancellable = true
    )
    private void overrideChatTextCollector(HoveredTextEffects hoverEffects, Consumer submission, CallbackInfoReturnable<ActiveTextCollector> callback) {
       if (FontActiveTextCollector.customChatTextEnabled) {
-         FontActiveTextCollector collector = new FontActiveTextCollector(this.createDefaultTextParameters(1.0F), (GuiGraphics)(Object)this, hoverEffects, submission);
+         FontActiveTextCollector collector = new FontActiveTextCollector(this.createDefaultTextParameters(1.0F), (GuiGraphicsExtractor)(Object)this, hoverEffects, submission);
          callback.setReturnValue(collector);
       }
    }

@@ -11,7 +11,7 @@ import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Style;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.item.Item;
@@ -143,7 +143,7 @@ final class ShulkerComboEditScreen extends UiScreen {
 
     private int itemsPerPage() { return Math.max(1, (panelWidth - 79) / CELL); }
 
-    @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
+    @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         UiDraw.bold(g, "Edit combo", left + 62, top + 19, UiDraw.TITLE, t.text());

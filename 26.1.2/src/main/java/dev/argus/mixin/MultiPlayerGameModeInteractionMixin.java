@@ -42,7 +42,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -81,7 +81,7 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    private int destroyDelay;
 
    @Shadow
-   public abstract void handleInventoryMouseClick(int var1, int var2, int var3, ClickType var4, Player var5);
+   public abstract void handleInventoryMouseClick(int var1, int var2, int var3, ContainerInput var4, Player var5);
 
    @Shadow
    protected abstract void startPrediction(ClientLevel var1, PredictiveAction var2);
@@ -107,10 +107,10 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
    }
 
    @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
-   public void applyInventoryClickTweaks(int containerId, int slotId, int mouseButton, ClickType clickType, Player actingPlayer, CallbackInfo callback) {
+   public void applyInventoryClickTweaks(int containerId, int slotId, int mouseButton, ContainerInput clickType, Player actingPlayer, CallbackInfo callback) {
       if (inventoryTweaksModule.isToggled()) {
          AbstractContainerMenu menu = actingPlayer.containerMenu;
-         if (inventoryTweaksModule.fastArmorSetting.getValue() && mouseButton == 1 && clickType == ClickType.QUICK_MOVE) {
+         if (inventoryTweaksModule.fastArmorSetting.getValue() && mouseButton == 1 && clickType == ContainerInput.QUICK_MOVE) {
             Slot clickedSlot = menu.getSlot(slotId);
             if (clickedSlot.getItem().has(DataComponents.EQUIPPABLE) || clickedSlot.getItem().is(Items.ELYTRA)) {
                InventoryUtils.swapSlotsWithPickup(
@@ -123,14 +123,14 @@ public abstract class MultiPlayerGameModeInteractionMixin implements ClientAcces
 
          if (inventoryTweaksModule.xCarryTweaksSetting.getValue()
             && mouseButton == 1
-            && clickType == ClickType.QUICK_MOVE
+            && clickType == ContainerInput.QUICK_MOVE
             && slotId > 4
             && menu instanceof InventoryMenu) {
             for (int craftingSlotIndex = 0; craftingSlotIndex < 4; craftingSlotIndex++) {
                ItemStack craftingStack = ClientAccess.argusclientMinecraft.player.inventoryMenu.getCraftSlots().getItems().get(craftingSlotIndex);
                if (craftingStack.isEmpty()) {
-                  this.handleInventoryMouseClick(containerId, slotId, 0, ClickType.PICKUP, ClientAccess.argusclientMinecraft.player);
-                  this.handleInventoryMouseClick(containerId, craftingSlotIndex + 1, 0, ClickType.PICKUP, ClientAccess.argusclientMinecraft.player);
+                  this.handleInventoryMouseClick(containerId, slotId, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
+                  this.handleInventoryMouseClick(containerId, craftingSlotIndex + 1, 0, ContainerInput.PICKUP, ClientAccess.argusclientMinecraft.player);
                   callback.cancel();
                   return;
                }

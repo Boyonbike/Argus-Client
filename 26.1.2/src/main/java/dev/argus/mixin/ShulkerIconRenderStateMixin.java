@@ -1,7 +1,7 @@
 package dev.argus.mixin;
 
 import dev.argus.client.render.ShulkerIconRenderState;
-import net.minecraft.client.gui.render.state.GuiItemRenderState;
+import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 

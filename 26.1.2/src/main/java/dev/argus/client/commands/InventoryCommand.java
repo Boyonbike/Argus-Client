@@ -16,7 +16,7 @@ import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 
 public class InventoryCommand extends Command {
    private int openInventory(CommandContext context) {
@@ -65,7 +65,7 @@ public class InventoryCommand extends Command {
       int slot = (Integer)context.getArgument("slot", Integer.class);
       int button = (Integer)context.getArgument("button", Integer.class);
       InventoryCommand.ClickAction clickAction = (InventoryCommand.ClickAction)context.getArgument("type", InventoryCommand.ClickAction.class);
-      ClickType clickType = clickAction.getClickType();
+      ContainerInput clickType = clickAction.getClickType();
 
       try {
          InventoryUtils.clickSlot(slot, button, clickType);
@@ -98,18 +98,18 @@ public class InventoryCommand extends Command {
    }
 
    public enum ClickAction implements NamedEntry {
-      PICKUP(ClickType.PICKUP, "pickup"),
-      QUICK_MOVE(ClickType.QUICK_MOVE, "quick_move"),
-      SWAP(ClickType.SWAP, "swap"),
-      CLONE(ClickType.CLONE, "clone"),
-      THROW(ClickType.THROW, "throw"),
-      QUICK_CRAFT(ClickType.QUICK_CRAFT, "quick_craft"),
-      PICKUP_ALL(ClickType.PICKUP_ALL, "pickup_all");
+      PICKUP(ContainerInput.PICKUP, "pickup"),
+      QUICK_MOVE(ContainerInput.QUICK_MOVE, "quick_move"),
+      SWAP(ContainerInput.SWAP, "swap"),
+      CLONE(ContainerInput.CLONE, "clone"),
+      THROW(ContainerInput.THROW, "throw"),
+      QUICK_CRAFT(ContainerInput.QUICK_CRAFT, "quick_craft"),
+      PICKUP_ALL(ContainerInput.PICKUP_ALL, "pickup_all");
 
-      private final ClickType clickType;
+      private final ContainerInput clickType;
       private final String argumentName;
 
-      public ClickType getClickType() {
+      public ContainerInput getClickType() {
          return this.clickType;
       }
 
@@ -118,7 +118,7 @@ public class InventoryCommand extends Command {
          return this.argumentName;
       }
 
-      ClickAction(ClickType clickType, String argumentName) {
+      ClickAction(ContainerInput clickType, String argumentName) {
          this.clickType = clickType;
          this.argumentName = argumentName;
       }

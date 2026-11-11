@@ -49,7 +49,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess;
@@ -686,7 +686,7 @@ public class TooltipsModule extends Module {
    private List<Rule<Item>> iconRules = List.of();
    private boolean drawingOverlay;
 
-   public void drawShulkerIcon(GuiGraphics graphics, ItemStack shulker, int x, int y) {
+   public void drawShulkerIcon(GuiGraphicsExtractor graphics, ItemStack shulker, int x, int y) {
       if (!this.isToggled() || !this.shulkerIconsSetting.getValue() || this.drawingOverlay || shulker.isEmpty()
          || !(shulker.getItem() instanceof BlockItem block) || !(block.getBlock() instanceof ShulkerBoxBlock)) {
          return;

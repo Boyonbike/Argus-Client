@@ -1,7 +1,7 @@
 package dev.argus.client.render.loading;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
@@ -14,9 +14,9 @@ public final class GuiLoadingCanvas implements LoadingCanvas {
    /** Vanilla's loading-logo pipeline: SRC_ALPHA, ONE. */
    private static final RenderPipeline ADDITIVE = RenderPipelines.MOJANG_LOGO;
 
-   private final GuiGraphics graphics;
+   private final GuiGraphicsExtractor graphics;
 
-   public GuiLoadingCanvas(GuiGraphics graphics) {
+   public GuiLoadingCanvas(GuiGraphicsExtractor graphics) {
       this.graphics = graphics;
    }
 

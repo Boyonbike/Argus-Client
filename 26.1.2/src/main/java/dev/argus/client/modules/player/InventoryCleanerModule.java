@@ -23,7 +23,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -82,7 +82,7 @@ public class InventoryCleanerModule extends Module {
                         }
 
                         if (!playerInventoryMenu || (slot.index < 5 || slot.index > 8) && slot.index != 0) {
-                           ClickType clickType = ClickType.THROW;
+                           ContainerInput clickType = ContainerInput.THROW;
                            byte throwButton = 1;
                            int throwSlot = slot.index;
                            InventoryUtils.clickSlot(throwSlot, throwButton, clickType);

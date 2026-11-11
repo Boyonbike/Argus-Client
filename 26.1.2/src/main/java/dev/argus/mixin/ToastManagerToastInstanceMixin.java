@@ -2,7 +2,7 @@ package dev.argus.mixin;
 
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.render.NoRenderModule;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.TutorialToast;
 import net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId;
@@ -21,7 +21,7 @@ public class ToastManagerToastInstanceMixin {
    private Toast toast;
 
    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-   public void suppressSelectedToast(GuiGraphics graphics, int screenWidth, CallbackInfo callback) {
+   public void suppressSelectedToast(GuiGraphicsExtractor graphics, int screenWidth, CallbackInfo callback) {
       if (noRenderModule.isToggled()
          && (
             this.toast.getToken() == SystemToastId.UNSECURE_SERVER_WARNING && noRenderModule.unsecureServerSetting.getValue()

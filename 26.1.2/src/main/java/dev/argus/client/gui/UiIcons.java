@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 
 /**
@@ -63,7 +63,7 @@ final class UiIcons {
     }
 
     /** Draws a square icon of logical {@code size} with its top-left corner at (x, y). */
-    static void draw(GuiGraphics g, String name, float x, float y, float size, int colour) {
+    static void draw(GuiGraphicsExtractor g, String name, float x, float y, float size, int colour) {
         float k = UiRender.pixelsPerUnit(g);
         int pixels = Math.max(4, Math.round(size * k));
         DynamicTexture texture = texture(name, pixels);

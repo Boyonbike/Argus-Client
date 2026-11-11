@@ -21,7 +21,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -161,7 +161,7 @@ public final class AutoTemplateModule extends Module {
    }
 
    private void quickMove(AbstractContainerMenu menu, int slot) {
-      InventoryUtils.clickSlot(menu.containerId, slot, 0, ClickType.QUICK_MOVE);
+      InventoryUtils.clickSlot(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE);
       this.actionTimer.reset();
    }
 

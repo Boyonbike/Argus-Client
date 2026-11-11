@@ -60,7 +60,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
@@ -286,7 +286,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                   if (!carriedStackBeforeSwap.isEmpty() && !InventoryUtils.isInventoryFull()) {
                      Item emptyItem = Items.AIR;
                      int emptyContainerSlot = InventoryUtils.findMenuSlot(emptyItem);
-                     ClickType pickupClick = ClickType.PICKUP;
+                     ContainerInput pickupClick = ContainerInput.PICKUP;
                      InventoryUtils.clickSlot(emptyContainerSlot, 0, pickupClick);
                   }
 
@@ -300,7 +300,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                   if (useDirectSwap) {
                      this.previousSwapSlot = chosenContainerSlot;
                      MultiPlayerGameMode swapGameMode = ClientAccess.argusclientMinecraft.gameMode;
-                     ClickType swapClick = ClickType.SWAP;
+                     ContainerInput swapClick = ContainerInput.SWAP;
                      LocalPlayer swapPlayer = ClientAccess.argusclientMinecraft.player;
                      swapGameMode.handleInventoryMouseClick(containerId, chosenContainerSlot, 40, swapClick, swapPlayer);
                      this.swapDelayTimer.reset();
@@ -541,7 +541,7 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                if (offhandStack.is(totemItem) && this.tickAllowsSwap) {
                   int discardContainerId = ClientAccess.argusclientMinecraft.player.containerMenu.containerId;
                   MultiPlayerGameMode discardGameMode = ClientAccess.argusclientMinecraft.gameMode;
-                  ClickType discardClickType = ClickType.THROW;
+                  ContainerInput discardClickType = ContainerInput.THROW;
                   LocalPlayer playerForDiscard = ClientAccess.argusclientMinecraft.player;
                   discardGameMode.handleInventoryMouseClick(discardContainerId, 45, 1, discardClickType, playerForDiscard);
                }

@@ -58,7 +58,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -486,8 +486,8 @@ public class AutoArmorModule extends Module {
          }
 
          ClientContext.taskScheduler.scheduleRotationTask(() -> {
-            InventoryUtils.clickSlot(0, 0, ClickType.PICKUP);
-            InventoryUtils.clickSlot(0, 0, ClickType.PICKUP);
+            InventoryUtils.clickSlot(0, 0, ContainerInput.PICKUP);
+            InventoryUtils.clickSlot(0, 0, ContainerInput.PICKUP);
          }, 0);
       }
    }

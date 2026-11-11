@@ -23,7 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -235,7 +235,7 @@ public class ClientScreen extends Screen implements ClientAccess {
       return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
    }
 
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
    }
 
    public void onMouseRelease(double mouseX, double mouseY, int button) {
@@ -301,11 +301,11 @@ public class ClientScreen extends Screen implements ClientAccess {
    }
 
    @Override
-   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
    }
 
    @Override
-   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       PoseStack poseStack = GuiProjectionUtils.toPoseStack(graphics);
       this.hoverMouseX.setTarget(mouseX);
       this.hoverMouseY.setTarget(mouseY);

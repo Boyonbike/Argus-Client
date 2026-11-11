@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -214,7 +214,7 @@ public class ClickGuiScreen extends ClientScreen implements ClientAccess {
    }
 
    @Override
-   public void renderContents(GuiGraphics graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+   public void renderContents(GuiGraphicsExtractor graphics, PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
       GuiDrawUtils.fillRect(poseStack, GuiScaleUtils.getScaledWidth() / 2 - 70, 4, GuiScaleUtils.getScaledWidth() / 2 + 70, 18, -938208236);
       FontRenderer.INSTANCE.drawWithShadow(poseStack, "Search: ".concat(this.searchBox.getValue()), GuiScaleUtils.getScaledWidth() / 2 - 66, 7, Color.white);
       this.searchFocusAnimation.setTarget(this.searchBox.isFocused(), 300L);

@@ -5,7 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import dev.argus.client.modules.misc.ChatToolsModule;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -27,8 +27,8 @@ public abstract class TabListClanHighlightMixin {
 
     // 1.21.11 render locals: slot 22 is the row index and slot 5 the ordered PlayerInfo list.
     /** The third fill is each row's own background; the head, name and ping are drawn over it afterwards. */
-    @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V", ordinal = 2))
-    private void argus$clanRowBar(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color, Operation<Void> original,
+    @WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(IIIII)V", ordinal = 2))
+    private void argus$clanRowBar(GuiGraphicsExtractor graphics, int x0, int y0, int x1, int y1, int color, Operation<Void> original,
                                   @Local(index = 22) int index, @Local(index = 5) List<PlayerInfo> infos) {
         original.call(graphics, x0, y0, x1, y1, color);
         ChatToolsModule tools = argus$tools();

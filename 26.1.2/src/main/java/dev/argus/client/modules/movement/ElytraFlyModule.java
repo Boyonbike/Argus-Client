@@ -69,7 +69,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Input;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
@@ -290,10 +290,10 @@ public class ElytraFlyModule extends Module {
       int originalMenuSlot = elytraSlot;
       if (inventorySwapRequired) {
          elytraSlot = 0;
-         InventoryUtils.clickSlot(originalMenuSlot, 0, ClickType.SWAP);
+         InventoryUtils.clickSlot(originalMenuSlot, 0, ContainerInput.SWAP);
       }
 
-      InventoryUtils.clickSlot(6, elytraSlot, ClickType.SWAP);
+      InventoryUtils.clickSlot(6, elytraSlot, ContainerInput.SWAP);
       try {
          this.startFallFlyingWithPacket();
          if (this.fireworkUsePending && this.fireworkUseTimer.hasElapsedAndReset(150L)) {
@@ -311,9 +311,9 @@ public class ElytraFlyModule extends Module {
             this.durabilitySwapTimer.reset();
          }
       } finally {
-         InventoryUtils.clickSlot(6, elytraSlot, ClickType.SWAP);
+         InventoryUtils.clickSlot(6, elytraSlot, ContainerInput.SWAP);
          if (inventorySwapRequired) {
-            InventoryUtils.clickSlot(originalMenuSlot, 0, ClickType.SWAP);
+            InventoryUtils.clickSlot(originalMenuSlot, 0, ContainerInput.SWAP);
          }
       }
    }

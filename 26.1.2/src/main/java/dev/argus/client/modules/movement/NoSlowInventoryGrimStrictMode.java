@@ -24,7 +24,7 @@ import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.PosRot;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action;
 import net.minecraft.world.entity.player.Input;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 
 public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
@@ -89,7 +89,7 @@ public class NoSlowInventoryGrimStrictMode extends NoSlowInventoryMode {
             int containerId = event.getContainerId();
             int slotId = event.getSlotId();
             int button = event.getButton();
-            ClickType clickType = event.getClickType();
+            ContainerInput clickType = event.getClickType();
             this.queueOrRunAction(
                () -> ClientAccess.argusclientMinecraft
                   .gameMode

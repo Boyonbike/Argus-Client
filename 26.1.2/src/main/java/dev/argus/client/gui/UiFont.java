@@ -12,7 +12,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.Arrays;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -152,7 +152,7 @@ final class UiFont {
      * Draws text whose cap height is vertically centred on {@code centreY}. This keeps labels
      * optically centred in rows regardless of font size or density.
      */
-    static void drawCentred(GuiGraphics g, String text, float x, float centreY, float size, int colour, boolean bold) {
+    static void drawCentred(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour, boolean bold) {
         if (text.isEmpty()) return;
         if (!available()) { fallback(g, text, x, centreY - size * .55f, size, colour); return; }
         float k = UiRender.pixelsPerUnit(g);
@@ -241,12 +241,12 @@ final class UiFont {
 
     private static float fallbackWidth(String text) { return Minecraft.getInstance().font.width(UiDraw.legacy(text)); }
 
-    private static void fallback(GuiGraphics g, String text, float x, float y, float size, int colour) {
+    private static void fallback(GuiGraphicsExtractor g, String text, float x, float y, float size, int colour) {
         float factor = size / 8f;
         g.pose().pushMatrix();
         g.pose().translate(x, y);
         g.pose().scale(factor, factor);
-        g.drawString(Minecraft.getInstance().font, UiDraw.legacy(text), 0, 0, UiRender.fade(colour), false);
+        g.text(Minecraft.getInstance().font, UiDraw.legacy(text), 0, 0, UiRender.fade(colour), false);
         g.pose().popMatrix();
     }
 }

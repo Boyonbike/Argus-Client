@@ -2,7 +2,7 @@ package dev.argus.client.modules.render;
 
 import dev.argus.client.ClientAccess;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.object.banner.BannerFlagModel;
@@ -29,7 +29,7 @@ public record BannerTooltipComponent(DyeColor baseColor, BannerPatternLayers pat
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       if (flagModel == null) {
          flagModel = new BannerFlagModel(argusclientMinecraft.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG));
       }

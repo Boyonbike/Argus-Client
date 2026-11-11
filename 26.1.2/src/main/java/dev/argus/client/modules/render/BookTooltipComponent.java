@@ -2,7 +2,7 @@ package dev.argus.client.modules.render;
 
 import java.util.List;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -34,7 +34,7 @@ public record BookTooltipComponent(Component page) implements ClientTooltipCompo
    }
 
    @Override
-   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics graphics) {
+   public void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphicsExtractor graphics) {
       graphics.blit(RenderPipelines.GUI_TEXTURED, BookViewScreen.BOOK_LOCATION, x - 10, y, 0.0F, 0.0F, 128, 128, TEXTURE_SIZE, TEXTURE_SIZE);
       Matrix3x2fStack poses = graphics.pose();
       poses.pushMatrix();
@@ -46,7 +46,7 @@ public record BookTooltipComponent(Component page) implements ClientTooltipCompo
          int count = Math.min(lines.size(), MAX_LINES);
 
          for (int index = 0; index < count; index++) {
-            graphics.drawString(font, lines.get(index), 0, index * LINE_HEIGHT, 0xFF000000, false);
+            graphics.text(font, lines.get(index), 0, index * LINE_HEIGHT, 0xFF000000, false);
          }
       } finally {
          poses.popMatrix();

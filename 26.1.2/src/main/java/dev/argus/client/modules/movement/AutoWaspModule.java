@@ -62,7 +62,7 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
@@ -417,12 +417,12 @@ public final class AutoWaspModule extends Module {
         int containerId = mc.player.inventoryMenu.containerId;
         if (Inventory.isHotbarSlot(slot) || slot == Inventory.SLOT_OFFHAND) {
             // One swap click moves a hotbar or offhand item straight into the chest slot.
-            InventoryUtils.clickSlot(containerId, CHEST_MENU_SLOT, slot, ClickType.SWAP);
+            InventoryUtils.clickSlot(containerId, CHEST_MENU_SLOT, slot, ContainerInput.SWAP);
         } else {
             // Main inventory slots share their index with the menu: pick up, place on the chest, put back what came off.
-            InventoryUtils.clickSlot(containerId, slot, 0, ClickType.PICKUP);
-            InventoryUtils.clickSlot(containerId, CHEST_MENU_SLOT, 0, ClickType.PICKUP);
-            if (!mc.player.inventoryMenu.getCarried().isEmpty()) InventoryUtils.clickSlot(containerId, slot, 0, ClickType.PICKUP);
+            InventoryUtils.clickSlot(containerId, slot, 0, ContainerInput.PICKUP);
+            InventoryUtils.clickSlot(containerId, CHEST_MENU_SLOT, 0, ContainerInput.PICKUP);
+            if (!mc.player.inventoryMenu.getCarried().isEmpty()) InventoryUtils.clickSlot(containerId, slot, 0, ContainerInput.PICKUP);
         }
         if (glider) flightController.elytraSwapped();
         chestSwapCooldown = CHEST_SWAP_COOLDOWN_TICKS;

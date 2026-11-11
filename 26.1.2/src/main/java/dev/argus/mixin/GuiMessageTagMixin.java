@@ -3,7 +3,7 @@ package dev.argus.mixin;
 import dev.argus.client.render.ColorUtils;
 import dev.argus.client.utils.chat.ChatUtils;
 import java.awt.Color;
-import net.minecraft.client.GuiMessageTag;
+import net.minecraft.client.multiplayer.chat.GuiMessageTag;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

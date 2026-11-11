@@ -3,7 +3,7 @@ package dev.argus.client.gui;
 import dev.argus.client.settings.ColorSetting;
 import java.awt.Color;
 import java.util.Locale;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -101,7 +101,7 @@ final class ColorPicker {
 
     // ---- drawing ----------------------------------------------------------------------------
 
-    void draw(GuiGraphics g, int mx, int my, UiTheme t) {
+    void draw(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         fade = UiAnim.approach(fade, closing ? 0 : 1, closing ? 22 : 16);
         h = height();
         if (closing && fade < .02f) { if (open == this) open = null; return; }
@@ -199,20 +199,20 @@ final class ColorPicker {
 
     private static UiScreen host() { return (UiScreen) net.minecraft.client.Minecraft.getInstance().screen; }
 
-    private void knob(GuiGraphics g, float cx, float y, int colour) {
+    private void knob(GuiGraphicsExtractor g, float cx, float y, int colour) {
         UiDraw.rounded(g, cx - 2.5f, y - 2, 5, BAR + 4, 2.5f, 0xffffffff);
         UiDraw.rounded(g, cx - 1.5f, y - 1, 3, BAR + 2, 1.5f, colour | 0xff000000);
     }
 
     /** Two-tone squares behind translucent colours. */
-    private static void checker(GuiGraphics g, float x, float y, float w, float h, UiTheme t) {
+    private static void checker(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme t) {
         UiDraw.rect(g, x, y, w, h, 0xffcfcfcf);
         float cell = 3;
         for (float cy = 0; cy < h; cy += cell) for (float cx = ((int) (cy / cell) % 2) * cell; cx < w; cx += cell * 2)
             UiDraw.rect(g, x + cx, y + cy, Math.min(cell, w - cx), Math.min(cell, h - cy), 0xff8f8f8f);
     }
 
-    private void switchRow(GuiGraphics g, String label, boolean on, float x, float y, float w, int mx, int my, UiTheme t, String key) {
+    private void switchRow(GuiGraphicsExtractor g, String label, boolean on, float x, float y, float w, int mx, int my, UiTheme t, String key) {
         boolean hover = UiDraw.over(mx, my, x - 2, y, w + 4, 16);
         if (hover) UiDraw.rounded(g, x - 2, y, w + 4, 16, 5, UiDraw.alpha(t.surface(), .8f));
         UiDraw.text(g, label, x + 2, y + 8, 6f, t.text());
@@ -296,7 +296,7 @@ final class ColorPicker {
 
     // ---- static routing used by UiScreen ----------------------------------------------------
 
-    static void render(GuiGraphics g, int mx, int my, UiTheme t) { if (open != null) open.draw(g, mx, my, t); }
+    static void render(GuiGraphicsExtractor g, int mx, int my, UiTheme t) { if (open != null) open.draw(g, mx, my, t); }
     static boolean click(MouseButtonEvent e, boolean doubled) { return open != null && !open.closing && open.mouseClicked(e, doubled); }
     static boolean dragged(MouseButtonEvent e) { return open != null && !open.closing && open.mouseDragged(e); }
     static boolean released() { return open != null && open.mouseReleased(); }

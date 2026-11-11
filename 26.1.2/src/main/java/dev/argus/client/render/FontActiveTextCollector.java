@@ -5,10 +5,10 @@ import dev.argus.client.modules.client.FontsModule;
 import dev.argus.mixin.GuiGraphicsAccessor;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.ActiveTextCollector;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.TextAlignment;
 import net.minecraft.client.gui.ActiveTextCollector.Parameters;
-import net.minecraft.client.gui.GuiGraphics.HoveredTextEffects;
+import net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -60,7 +60,7 @@ public class FontActiveTextCollector implements Consumer<Style>, ActiveTextColle
       this.defaultScrollingHelper(text, centerX, left, right, top, bottom, width, height, parameters);
    }
 
-   public FontActiveTextCollector(Parameters parameters, GuiGraphics graphics, HoveredTextEffects hoveredTextEffects, Consumer<Style> styleConsumer) {
+   public FontActiveTextCollector(Parameters parameters, GuiGraphicsExtractor graphics, HoveredTextEffects hoveredTextEffects, Consumer<Style> styleConsumer) {
       this.parameters = parameters;
       this.graphicsAccessor = (GuiGraphicsAccessor)graphics;
       this.hoveredTextEffects = hoveredTextEffects;

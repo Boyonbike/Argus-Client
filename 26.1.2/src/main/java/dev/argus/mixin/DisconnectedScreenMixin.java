@@ -4,7 +4,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.modules.client.UIModule;
 import dev.argus.client.modules.misc.AutoReconnectModule;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Button.Builder;
@@ -106,7 +106,7 @@ public class DisconnectedScreenMixin extends Screen {
    }
 
    @Override
-   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       String reasonText = this.details.reason().getString();
       if (reasonText.contains("Argus Client") && reasonText.contains("[AutoLog]")) {
          this.autoReconnectButton.setX(-1000);
@@ -115,7 +115,7 @@ public class DisconnectedScreenMixin extends Screen {
          this.tryAutoReconnect();
          this.autoReconnectButton.setMessage(this.getAutoReconnectButtonMessage());
          this.autoReconnectButton.setFocused(false);
-         super.render(graphics, mouseX, mouseY, partialTick);
+         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
       }
    }
 

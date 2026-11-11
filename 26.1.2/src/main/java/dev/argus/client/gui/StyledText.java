@@ -128,7 +128,7 @@ final class StyledText {
     }
 
     /** Draws a line with its cap height centred on {@code centreY}. */
-    static void draw(net.minecraft.client.gui.GuiGraphics g, Line line, float x, float centreY, float size, int defaultColour) {
+    static void draw(net.minecraft.client.gui.GuiGraphicsExtractor g, Line line, float x, float centreY, float size, int defaultColour) {
         for (int i = 0; i < line.runs().size(); i++) {
             Run run = line.runs().get(i);
             int colour = run.colour() == 0 ? defaultColour : (run.colour() & 0x00ffffff) | (defaultColour & 0xff000000);

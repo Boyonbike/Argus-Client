@@ -6,7 +6,7 @@ import dev.argus.client.modules.Module;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -112,7 +112,7 @@ final class ModulePage {
 
     // ---- drawing -----------------------------------------------------------------------------
 
-    void render(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         float base = UiRender.opacity;
         stage(g, 0, base, () -> hero(g, mx, my, t));
@@ -123,7 +123,7 @@ final class ModulePage {
     }
 
     /** Staggered entrance for one band of the page. */
-    private void stage(GuiGraphics g, int index, float base, Runnable draw) {
+    private void stage(GuiGraphicsExtractor g, int index, float base, Runnable draw) {
         float appear = host.appear(index);
         UiRender.opacity = base * appear;
         g.pose().pushMatrix();
@@ -131,7 +131,7 @@ final class ModulePage {
         try { draw.run(); } finally { g.pose().popMatrix(); UiRender.opacity = base; }
     }
 
-    private void hero(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void hero(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         float on = UiAnim.smooth(key + "on", module.isToggled() ? 1 : 0, 14);
         // Icon badge: glows with the accent while enabled, and sends out a ring when switched.
         float bx = x + 11, by = y + 13;
@@ -187,7 +187,7 @@ final class ModulePage {
         hits.add(new Hit(px, py, pw, ph, 0, () -> { module.toggle(); UiAnim.set(key + "ring", 1); }));
     }
 
-    private void controls(GuiGraphics g, int mx, int my, UiTheme t) {
+    private void controls(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         float cy = controlsY(), cx = x, right = x + w;
         // Keybind chip.
         String label = bindLabel();
@@ -278,7 +278,7 @@ final class ModulePage {
         iconChip(g, mx, my, t, "copy", rx, cy, "Copy config", "Copy this module's settings to the clipboard to paste into another client (Ctrl+C)", this::copyConfig);
     }
 
-    private void iconChip(GuiGraphics g, int mx, int my, UiTheme t, String icon, float cx, float cy, String title, String hint, Runnable action) {
+    private void iconChip(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String icon, float cx, float cy, String title, String hint, Runnable action) {
         boolean hover = UiDraw.over(mx, my, cx, cy, CHIP, CHIP);
         float hv = UiAnim.smooth(key + icon + ".h", hover ? 1 : 0, 18);
         float flash = UiAnim.smooth(key + icon + ".done", 0, 6);
@@ -302,7 +302,7 @@ final class ModulePage {
         notice("Pasted " + result.applied() + (result.applied() == 1 ? " setting" : " settings") + " into " + GuiState.title(module.getName()));
     }
 
-    private void body(GuiGraphics g, int mx, int my, float delta, UiTheme t) {
+    private void body(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         float top = bodyTop(), bottom = bodyBottom(), cx = cardsX(), cw = cardsW();
         float view = bottom - top, total = cards.height();
         if (!scrolledToFocus) { scroll = cards.focusOffset(); shownScroll = scroll; scrolledToFocus = true; }
@@ -322,7 +322,7 @@ final class ModulePage {
         cards.popup(g, t, host.width, host.height);
     }
 
-    private void empty(GuiGraphics g, float cx, float top, float cw, UiTheme t) {
+    private void empty(GuiGraphicsExtractor g, float cx, float top, float cw, UiTheme t) {
         float cy = top + 40;
         UiDraw.circle(g, cx + cw / 2, cy, 14, UiDraw.alpha(t.surface(), .8f));
         UiDraw.icon(g, "sliders", cx + cw / 2 - 6, cy - 6, 12, t.muted());
@@ -330,7 +330,7 @@ final class ModulePage {
         UiDraw.center(g, "This module only needs switching on or off.", cx, cy + 35, cw, UiDraw.SMALL, t.muted());
     }
 
-    private void footer(GuiGraphics g, UiTheme t) {
+    private void footer(GuiGraphicsExtractor g, UiTheme t) {
         String error = cards.message();
         boolean fresh = !notice.isEmpty() && System.nanoTime() - noticeAt < 3_500_000_000L;
         String text; int kind;
