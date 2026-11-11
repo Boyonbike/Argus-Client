@@ -75,4 +75,4 @@ On Windows use `gradlew.bat build`. The client JAR is generated at
 
 See the [26.2 README](26.2/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.
-In-game appearance and controls have not been verified in a running Minecraft instance.
+In-game appearance and controls have been exercised in a development client; the final Prism instance test is the user sign-off.
