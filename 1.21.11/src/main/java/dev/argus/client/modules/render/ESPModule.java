@@ -165,11 +165,11 @@ public class ESPModule extends Module {
       this.entityFillSetting = this.add(new NumberSetting<>("Fill", 0.3F, 0.0F, 0.5F));
       this.entityTintSetting = this.add(new NumberSetting<>("Tint", 0.3F, 0.0F, 0.5F, ignored -> this.isEntity2D()));
       this.lineWidthSetting = this.add(new NumberSetting<>("LineWidth", 1.0F, 0.0F, 4.0F, ignored -> !this.isEntity2D()));
-      this.blockOutlineSetting = this.add(new NumberSetting<>("BlockOutline", 2, 0, 6).withUnit("px"));
-      this.blockFillOpacitySetting = this.add(new NumberSetting<>("BlockFill", 0.0F, 0.0F, 1.0F));
+      this.blockOutlineSetting = this.add(new NumberSetting<>("BlockOutline", 1, 0, 6).withUnit("px"));
+      this.blockFillOpacitySetting = this.add(new NumberSetting<>("BlockFill", 50.0F / 255.0F, 0.0F, 1.0F));
       this.blockFillOpacitySetting.setConfigName("StorageFill");
       this.blockFillOpacitySetting.setBoundaryLabel("None", SettingLabelCondition.MIN);
-      this.blockGlowSetting = this.add(new NumberSetting<>("BlockGlow", 1.0F, 0.0F, 5.0F));
+      this.blockGlowSetting = this.add(new NumberSetting<>("BlockGlow", 3.5F, 0.0F, 5.0F));
       this.rebuildBudgetSetting = this.add(new NumberSetting<>("RebuildBudget", 2.0F, 0.25F, 5.0F).withUnit("ms"));
 
       this.infoSetting = this.add(new BooleanSetting("Info", false, ignored -> this.isEntity2D()).markAsGroup());
@@ -183,7 +183,8 @@ public class ESPModule extends Module {
       this.healthColorSetting = this.add(new BooleanSetting("Color", false).dependsOn(this.infoSetting, this.healthBarSetting));
       this.healthColorSetting.setConfigName("HealthColor");
 
-      this.targets = new TargetSettings(this, TargetSettings.Kind.BLOCKS);
+      // Starts with Meteor's Storage ESP: its blocks, colours, outline width, fill and glow.
+      this.targets = new TargetSettings(this, dev.argus.client.modules.render.targets.DefaultTargets.esp());
       this.targets.specific.forEsp();
       this.targets.extraMigration = this::migrateExtras;
 

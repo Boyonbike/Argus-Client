@@ -49,7 +49,7 @@ public class TracersModule extends Module {
    private static ColorsModule colorsModule = ClientContext.getModule(ColorsModule.class);
    final Setting<TracersModeChoice> modeSetting = this.add(new EnumSetting<>("Mode", TracersModeChoice.LINES));
    public final Setting<TracersHitboxChoice> hitboxSetting = this.add(
-      new EnumSetting<>("Hitbox", TracersHitboxChoice.HEAD, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
+      new EnumSetting<>("Hitbox", TracersHitboxChoice.BODY, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
    );
    private final Setting<Float> minDistanceSetting = this.add(new NumberSetting<>("MinDistance", 0.0F, 0.0F, 128.0F).withUnit("m"));
    public final Setting<Integer> shadowSetting = this.add(
@@ -68,7 +68,7 @@ public class TracersModule extends Module {
    public final Setting<Boolean> ignoreVisibleSetting = this.add(
       new BooleanSetting("IgnoreVisible", true, ignored -> this.modeSetting.getValue() == TracersModeChoice.MARKER)
    );
-   public final TargetSettings targets = new TargetSettings(this, TargetSettings.Kind.PLAYERS);
+   public final TargetSettings targets = new TargetSettings(this, dev.argus.client.modules.render.targets.DefaultTargets.tracers());
    private final LineTracerRenderer lineRenderer;
    private final MarkerTracerRenderer markerRenderer;
    private final List<Target> collected = new ArrayList<>();

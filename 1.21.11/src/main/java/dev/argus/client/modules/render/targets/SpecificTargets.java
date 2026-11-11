@@ -86,9 +86,18 @@ public final class SpecificTargets implements ClientAccess {
    private final Map<String, Candidate> described = new HashMap<>();
    private final Map<String, String> lowerNames = new HashMap<>();
 
-   SpecificTargets(Module module) {
-      this.store = module.add(new StringSetting("SpecificTargets", "[]", ignored -> false));
+   /** The list a new config starts with. */
+   private final String defaults;
+
+   SpecificTargets(Module module, String defaults) {
+      this.defaults = defaults;
+      this.store = module.add(new StringSetting("SpecificTargets", defaults, ignored -> false));
       this.store.setConfigName("SpecificTargets");
+   }
+
+   /** Whether the list is still the one a new config starts with (nothing saved over it). */
+   boolean atDefaults() {
+      return this.defaults.equals(this.store.getValue());
    }
 
    /** Marks this as ESP's list, so its groups get ESP's label settings. Call before the list is first used. */

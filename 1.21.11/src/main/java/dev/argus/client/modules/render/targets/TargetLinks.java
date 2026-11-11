@@ -247,6 +247,11 @@ public final class TargetLinks implements ClientAccess {
 
       targets.migrated.setValue(true);
       SpecificRules rules = targets.specific.rules();
+      // An old config with cards on: its cards replace the starting list rather than being added on top of it.
+      if (targets.specific.atDefaults() && targets.groups().stream().anyMatch(TargetSettings.Group::active)) {
+         rules.load("[]");
+      }
+
       TargetSettings.Players players = targets.players;
       if (players.active()) {
          SpecificRules.Rule all = rules.add(List.of(new SpecificRules.Member(SpecificRules.Type.GROUP, SpecificRules.ALL_PLAYERS, SpecificRules.Category.PLAYERS)));

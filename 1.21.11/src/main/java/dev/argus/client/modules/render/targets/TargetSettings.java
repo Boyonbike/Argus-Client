@@ -108,14 +108,17 @@ public final class TargetSettings {
    public Runnable extraMigration;
    private final List<Group> groups;
 
-   /** Adds the four cards to the module, in order, at the current end of its settings. */
-   public TargetSettings(Module module, Set<Kind> enabledByDefault) {
+   /**
+    * Adds the four cards to the module, in order, at the current end of its settings. {@code defaultTargets} is the
+    * target list a new config starts with (JSON, as {@link SpecificRules#toJson()} writes it).
+    */
+   public TargetSettings(Module module, Set<Kind> enabledByDefault, String defaultTargets) {
       this.players = new Players(module, enabledByDefault.contains(Kind.PLAYERS));
       this.mobs = new Mobs(module, enabledByDefault.contains(Kind.MOBS));
       this.items = new Items(module, enabledByDefault.contains(Kind.ITEMS));
       this.blocks = new Blocks(module, enabledByDefault.contains(Kind.BLOCKS));
       this.groups = List.of(this.players, this.mobs, this.items, this.blocks);
-      this.specific = new SpecificTargets(module);
+      this.specific = new SpecificTargets(module, defaultTargets);
       this.migrated = module.add(new BooleanSetting("TargetsMigrated", false, ignored -> false));
       this.migrated.setConfigName("TargetsMigrated");
       this.migratedExtras = module.add(new BooleanSetting("TargetsMigratedExtras", false, ignored -> false));
@@ -123,7 +126,12 @@ public final class TargetSettings {
    }
 
    public TargetSettings(Module module, Kind... enabledByDefault) {
-      this(module, enabledByDefault.length == 0 ? EnumSet.noneOf(Kind.class) : EnumSet.of(enabledByDefault[0], enabledByDefault));
+      this(module, enabledByDefault.length == 0 ? EnumSet.noneOf(Kind.class) : EnumSet.of(enabledByDefault[0], enabledByDefault), "[]");
+   }
+
+   /** No old cards on; a new config starts with {@code defaultTargets} in the target list. */
+   public TargetSettings(Module module, String defaultTargets) {
+      this(module, EnumSet.noneOf(Kind.class), defaultTargets);
    }
 
    public List<Group> groups() {
