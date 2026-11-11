@@ -9,10 +9,10 @@ import dev.argus.client.modules.player.AutoRekitModule;
 import dev.argus.client.modules.render.ESPModule;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.modules.render.TracersModule;
+import dev.argus.client.modules.render.targets.RuleSettings;
 import dev.argus.client.modules.render.targets.SpecificRules;
 import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetLinks;
-import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
@@ -59,115 +60,136 @@ final class ModuleTools {
         if (module instanceof DiscordSyncModule sync) page.inline(discordSync(host, sync), Placement.last());
         if (module instanceof BoatPhaseModule boat) page.inline(boatControls(host, boat), Placement.first());
         if (module instanceof HUDModule && hooks.topBar()) page.inline(hud(host, hooks), Placement.first());
-        if (module instanceof ESPModule) page.inline(pairing(host, true), Placement.first());
-        if (module instanceof TracersModule) page.inline(pairing(host, false), Placement.first());
+        if (module instanceof ESPModule) targets(page, host, true);
+        if (module instanceof TracersModule) targets(page, host, false);
     }
 
-    // ---- ESP / Tracers active targets ---------------------------------------------------------------------------
+    // ---- ESP / Tracers targets --------------------------------------------------------------------------------
 
     /**
-     * The page's active targets: the four general cards, then every specific target (one block, entity type, dropped
-     * item or player with its own colour and range). Clicking a row turns it on or off on this page. Each row has
-     * "Toggle in X" (switching on copies this page's settings once) and "Mirror" (both pages stay identical until
-     * "Break link"); specific targets also have a colour, a range and Remove.
+     * ESP's and Tracers' target tools:
+     * <ul>
+     *   <li>a "Specific targets" card on top: search for a block, entity, dropped item or player and add it; one row per
+     *       added target, with On/Off, "Toggle in X", "Mirror"/"Break link" and remove. Clicking a row opens its settings;</li>
+     *   <li>one settings card per added target, right under that list, with the settings that suit its kind and a note
+     *       saying whether it's linked with the other module;</li>
+     *   <li>"Toggle in X" and "Mirror" on the Players/Mobs/Items/Blocks cards' headers, with the same note.</li>
+     * </ul>
      */
-    private static InlineCard pairing(UiScreen host, boolean fromEsp) {
+    private static void targets(ModulePage page, UiScreen host, boolean fromEsp) {
         TargetLinks links = TargetLinks.get();
-        String other = links == null ? (fromEsp ? "Tracers" : "ESP") : links.otherName(fromEsp);
-        InlineCard.Items card = new InlineCard.Items(host, "Active targets", "star",
+        if (links == null) return;
+        String other = links.otherName(fromEsp);
+        SpecificTargets specific = links.specific(fromEsp);
+        InlineCard.Items card = specificTargets(page, host, links, specific, fromEsp, other);
+        page.inline(card, Placement.first());
+        page.dynamic(card, () -> {
+            List<SettingsCards.Dynamic> cards = new ArrayList<>();
+            for (SpecificRules.Rule rule : specific.rules().all()) {
+                RuleSettings settings = specific.settings(rule);
+                SpecificTargets.Candidate what = specific.describe(rule);
+                ItemStack icon = what.icon();
+                cards.add(new SettingsCards.Dynamic(settings, what.name(),
+                        icon == null ? null : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, .75f),
+                        settings.settings(),
+                        new SettingsCards.Decoration(() -> rule.type.title() + " target" + (rule.enabled ? "" : " (off)") + " · "
+                                + (rule.mirror ? "Linked with " + other + ": changes apply to both" : "Only this page"), null)));
+            }
+            return cards;
+        });
+        for (TargetSettings.Kind kind : TargetSettings.Kind.values()) {
+            page.decorate(kind.title(), new SettingsCards.Decoration(
+                    () -> links.mirrored(kind) ? "Linked with " + other + ": changes apply to both"
+                            : links.onInOther(fromEsp, kind) ? "Also on in " + other : "",
+                    () -> {
+                        boolean on = links.onInOther(fromEsp, kind);
+                        boolean mirrored = links.mirrored(kind);
+                        return List.of(
+                                new SettingsCards.HeaderButton("Toggle in " + other,
+                                        on ? "Turn " + kind.title() + " off in " + other
+                                           : "Turn " + kind.title() + " on in " + other + (mirrored ? "" : ", starting from this card's settings"),
+                                        on, () -> links.toggleInOther(fromEsp, kind)),
+                                mirrored
+                                        ? new SettingsCards.HeaderButton("Break link", "Stop linking; both keep their current settings", true, () -> links.breakLink(kind))
+                                        : new SettingsCards.HeaderButton("Mirror", "Copy this card to " + other + " and keep both the same", false, () -> links.mirror(fromEsp, kind)));
+                    }));
+        }
+    }
+
+    private static InlineCard.Items specificTargets(ModulePage page, UiScreen host, TargetLinks links, SpecificTargets specific, boolean fromEsp, String other) {
+        InlineCard.Items card = new InlineCard.Items(host, "Specific targets", "search",
                 () -> {
-                    if (links == null) return "Unavailable";
-                    List<SpecificRules.Rule> rules = links.specific(fromEsp).rules().all();
-                    long mirrored = java.util.Arrays.stream(TargetSettings.Kind.values()).filter(links::mirrored).count()
-                            + rules.stream().filter(rule -> rule.mirror).count();
-                    String specific = rules.isEmpty() ? "Add a block, mob, item or player for its own colour and range"
-                            : rules.size() + (rules.size() == 1 ? " specific target" : " specific targets");
-                    return mirrored == 0 ? specific : specific + " · " + mirrored + " mirrored with " + other;
+                    List<SpecificRules.Rule> rules = specific.rules().all();
+                    if (rules.isEmpty()) return "Search to add one block, mob, item or player with its own settings";
+                    long linked = rules.stream().filter(rule -> rule.mirror).count();
+                    return rules.size() + (rules.size() == 1 ? " target" : " targets") + (linked == 0 ? "" : " · " + linked + " linked with " + other)
+                            + " · settings in the cards below";
                 },
-                "Pairing isn't available.",
+                "Nothing added yet. Search above for a block, mob, item or player.",
                 () -> {
                     List<InlineCard.Items.Entry> entries = new ArrayList<>();
-                    if (links == null) return entries;
-                    for (TargetSettings.Kind kind : TargetSettings.Kind.values()) entries.add(cardEntry(links, fromEsp, other, kind));
-                    SpecificTargets specific = links.specific(fromEsp);
-                    for (SpecificRules.Rule rule : specific.rules().all()) entries.add(ruleEntry(host, links, fromEsp, other, specific, rule));
+                    for (SpecificRules.Rule rule : specific.rules().all()) entries.add(ruleEntry(page, links, fromEsp, other, specific, rule));
                     return entries;
                 });
-        card.tags((entry, hover) -> hover ? (entry.active() ? "Click to turn off" : "Click to turn on") : entry.active() ? "On" : "Off");
-        if (links != null) {
-            card.field("Add: diamond_ore, zombie, item:elytra, player:Name", 64, "Add",
-                    "Show one specific block, entity, dropped item or player in its own colour and range. "
-                            + "Prefix with block:, entity:, item: or player: to pick which.",
-                    text -> {
-                        SpecificTargets.Parsed parsed = SpecificTargets.parse(text);
-                        return "Added " + parsed.label() + " (" + parsed.type().title().toLowerCase(java.util.Locale.ROOT) + ").";
-                    },
-                    text -> {
-                        SpecificTargets.Parsed parsed = SpecificTargets.parse(text);
-                        SpecificTargets specific = links.specific(fromEsp);
-                        if (specific.rules().find(parsed.type(), parsed.id()) != null) throw new IllegalArgumentException(parsed.label() + " is already in the list.");
-                        specific.rules().add(parsed.type(), parsed.id());
-                        specific.changed();
-                    });
-        }
+        card.tags((entry, hover) -> hover ? "Show settings" : "");
+        card.field("Search blocks, mobs, items, players...", 64, "Add",
+                "Adds the first match. Type block:, mob:, item: or player: first to search one kind only.", text -> "", text -> {});
+        card.suggest(text -> {
+            List<InlineCard.Items.Suggestion> found = new ArrayList<>();
+            for (SpecificTargets.Candidate candidate : SpecificTargets.search(text, 6)) {
+                boolean added = specific.rules().find(candidate.type(), candidate.id()) != null;
+                ItemStack icon = candidate.icon();
+                found.add(new InlineCard.Items.Suggestion(candidate.name(), candidate.type().title() + (added ? " · added" : ""),
+                        icon == null ? null : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, 1),
+                        () -> {
+                            SpecificRules.Rule rule = specific.rules().find(candidate.type(), candidate.id());
+                            if (rule == null) {
+                                rule = specific.rules().add(candidate.type(), candidate.id());
+                                specific.changed();
+                            }
+                            page.reveal(specific.settings(rule));
+                        },
+                        added ? candidate.name() + " is already added." : "Added " + candidate.name() + ". Its settings are open below."));
+            }
+            return found;
+        }, "No block, mob, item or player matches. Online players show up by name; use player:Name for anyone else.");
         return card;
     }
 
-    private static InlineCard.Items.Entry cardEntry(TargetLinks links, boolean fromEsp, String other, TargetSettings.Kind kind) {
-        boolean mirrored = links.mirrored(kind);
-        boolean on = links.onInOther(fromEsp, kind);
-        TargetSettings.Group group = links.group(fromEsp, kind);
-        String detail = "All " + kind.title().toLowerCase(java.util.Locale.ROOT) + " · "
-                + (mirrored ? "Mirrored with " + other : on ? "Separate · on in " + other : "Separate · off in " + other);
-        return new InlineCard.Items.Entry(kind.title(), detail, group.active(), null,
-                () -> { group.enabled.setValue(!group.active()); links.syncNow(kind); }, null, List.of(
-                InlineCard.Items.Action.on("Toggle in " + other,
-                        on ? "Turn " + kind.title() + " off in " + other
-                           : "Turn " + kind.title() + " on in " + other + (mirrored ? "" : ", starting from this page's settings"),
-                        on, () -> links.toggleInOther(fromEsp, kind)),
-                mirrored
-                        ? InlineCard.Items.Action.danger("Break link", "Stop mirroring; both keep their current settings",
-                                kind.title() + " is no longer mirrored.", () -> links.breakLink(kind))
-                        : InlineCard.Items.Action.main("Mirror", "Copy this page's " + kind.title() + " settings to " + other + " and keep them the same",
-                                kind.title() + " mirrored with " + other + ".", () -> links.mirror(fromEsp, kind))));
-    }
-
-    private static InlineCard.Items.Entry ruleEntry(UiScreen host, TargetLinks links, boolean fromEsp, String other,
+    private static InlineCard.Items.Entry ruleEntry(ModulePage page, TargetLinks links, boolean fromEsp, String other,
                                                     SpecificTargets specific, SpecificRules.Rule rule) {
-        String name = specific.label(rule);
+        SpecificTargets.Candidate what = specific.describe(rule);
+        String name = what.name();
         boolean mirrored = rule.mirror;
         boolean on = links.onInOther(fromEsp, rule);
-        String detail = rule.type.title() + " · " + rule.rangeLabel() + " · "
-                + (mirrored ? "Mirrored with " + other : on ? "On in " + other : "Off in " + other);
+        RuleSettings settings = specific.settings(rule);
+        String detail = rule.type.title() + " · " + settings.rangeLabel() + " · "
+                + (mirrored ? "Linked with " + other : on ? "Also on in " + other : "Only this page");
+        ItemStack icon = what.icon();
         SpecificRules.Type type = rule.type;
         String id = rule.id;
-        // Rules are re-read when the config reloads, so edits look the rule up again instead of holding on to it.
-        java.util.function.Consumer<java.util.function.Consumer<SpecificRules.Rule>> edit = change -> {
+        Runnable toggle = () -> {
             SpecificRules.Rule current = specific.rules().find(type, id);
             if (current == null) return;
-            change.accept(current);
+            current.enabled = !current.enabled;
             specific.changed();
             links.syncRules();
         };
-        return new InlineCard.Items.Entry(name, detail, rule.enabled, null,
-                () -> edit.accept(current -> current.enabled = !current.enabled), null, List.of(
-                InlineCard.Items.Action.colour("Colour", "Change " + name + "'s colour", () -> rule.color,
-                        (x, y, w, h, left, right) -> {
-                            ColorSetting colour = new ColorSetting(name, new java.awt.Color(rule.color, true));
-                            colour.setChangeCallback(() -> edit.accept(current -> current.color = colour.getValue().getRGB()));
-                            ColorPicker.show(colour, x, y, w, h, left - 12, right + 12, host.width, host.height);
-                        }),
-                InlineCard.Items.Action.of(rule.rangeLabel(), "Range for " + name + ": click to change (16m to any range)", null,
-                        () -> edit.accept(current -> current.range = current.nextRange())),
+        return new InlineCard.Items.Entry(name, detail, rule.enabled,
+                icon == null ? (g, x, y) -> UiDraw.rounded(g, x + 2, y + 2, 12, 12, 3, settings.swatch() | 0xFF000000)
+                             : (g, x, y) -> ShulkerIconRenderer.drawAt(g, icon, null, x, y, 1),
+                () -> page.reveal(settings), null, List.of(
+                InlineCard.Items.Action.on(rule.enabled ? "On" : "Off", rule.enabled ? "Turn " + name + " off on this page" : "Turn " + name + " on on this page",
+                        rule.enabled, toggle),
                 InlineCard.Items.Action.on("Toggle in " + other,
                         on ? "Turn " + name + " off in " + other
-                           : "Add " + name + " to " + other + (mirrored ? "" : ", starting from this colour and range"),
+                           : "Add " + name + " to " + other + (mirrored ? "" : ", starting from these settings"),
                         on, () -> links.toggleInOther(fromEsp, rule)),
                 mirrored
-                        ? InlineCard.Items.Action.danger("Break link", "Stop mirroring; both keep their current colour and range",
-                                name + " is no longer mirrored.", () -> links.breakLink(rule))
-                        : InlineCard.Items.Action.main("Mirror", "Add " + name + " to " + other + " with this colour and range and keep them the same",
-                                name + " mirrored with " + other + ".", () -> links.mirror(fromEsp, rule)),
+                        ? InlineCard.Items.Action.main("Break link", "Stop linking; both keep their current settings",
+                                name + " is no longer linked.", () -> links.breakLink(rule))
+                        : InlineCard.Items.Action.of("Mirror", "Add " + name + " to " + other + " with these settings and keep both the same",
+                                name + " linked with " + other + ".", () -> links.mirror(fromEsp, rule)),
                 InlineCard.Items.Action.danger("X", mirrored ? "Remove " + name + " from both pages" : "Remove " + name + " from this page",
                         "Removed " + name + ".", () -> links.remove(fromEsp, rule))));
     }

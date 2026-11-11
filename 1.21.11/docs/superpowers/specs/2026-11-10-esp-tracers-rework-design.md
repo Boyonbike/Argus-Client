@@ -174,21 +174,32 @@ These differ from, or add to, the design above:
 - **Not done:** the Search block-colour scheme callback is gone. A Colors scheme change now rebuilds meshes
   through the look key on the next tick. Changes made with `.color` are only picked up when a cell rebuilds.
 
-## Specific targets (added 2026-11-11)
+## Specific targets (added 2026-11-11, reworked the same day)
 
-The "Pair with" card is now **Active targets**. It lists the four general cards and then every **specific target**:
-one block, entity type, dropped item type or named player, each with its own colour and range.
+Players can add **specific targets**: one block, entity type, dropped item type or named player, each with its own
+settings. A specific target overrides the general cards for its thing: its own settings decide whether and how it's
+drawn, and where they reject it, it isn't drawn at all.
 
-- **Adding:** type a name in the card's field. A prefix (`block:`, `entity:`/`mob:`, `item:`, `player:`) picks the kind.
-  Without a prefix, blocks are tried first, then entities, then items, then player names.
-- **Override:** a specific target always shows its thing in its own colour, inside its own range, even if the general
-  card is off or filters it out. Outside its range the thing is hidden, even if the general card would show it.
-- **Rows:** clicking a row turns it on or off on this page. Specific rows have a colour swatch (opens the colour
-  picker), a range button (16, 32, 64, 128, 256 m, then any range), **Toggle in other**, **Mirror**/**Break link**
-  and **Remove**. Removing a mirrored target removes it from both pages.
-- **Storage:** saved per module as a hidden `SpecificTargets` setting (a JSON list). Mirror sync works like the cards:
-  the side that changed since the last agreed value is copied, ESP wins ties, and a link with only one side set is
-  treated as broken (`SpecificRules.sync`).
+- **Specific targets card (top of the page):** a search field with live suggestions (icon, name, kind). Matches are
+  ranked: exact name, then name start, then word start, then contains. A prefix (`block:`, `mob:`/`entity:`, `item:`,
+  `player:`) searches one kind only. Players are suggested from the server's tab list; `player:Name` adds anyone.
+  Nothing is ever guessed to be a player. Enter or Add takes the first suggestion.
+- **Rows:** only added targets are listed (the "All …" rows are gone). Each row has On/Off, Toggle in other,
+  Mirror/Break link and Remove. Clicking a row opens its settings card and scrolls to it.
+- **Settings cards:** one per target, right under the list, titled with its name and icon. The subtitle says
+  "Item target · Linked with Tracers: changes apply to both" or "Only this page". The settings follow the category:
+  - Player: Color, Range.
+  - Entity: Color, Ignore vehicles, Sound, Range.
+  - Item: Enchants (Ignore/Any/Specific, gear only) + Required enchants, Color, Distance color + Far color + Far
+    distance, Chat alert + Coords, Range.
+  - Block: Color mode (Custom/Auto) + Color, Mark opened + Opened color, Hide opened, Ignore natural + structures
+    (containers only), Height, Only ominous (vaults only), Sound, Range.
+- **Category cards:** Players/Mobs/Items/Blocks keep their settings. Toggle in other and Mirror/Break link are on each
+  card's header, and the subtitle says "Linked with Tracers: changes apply to both" while mirrored.
+- **Storage and mirroring:** saved per module as a hidden `SpecificTargets` JSON list. Each rule keeps its settings as
+  one JSON object (`RuleSettings`). Edits made on the page are polled every tick, so set settings edited in place are
+  saved and mirrored too. Mirror sync works like the cards: the side that changed since the last agreed value is
+  copied, ESP wins ties, and a link with only one side set is broken (`SpecificRules.sync`).
 - **Blocks:** the block index also scans for blocks with an enabled specific target while the module is on. ESP
-  draws them in separate retained mesh caches, one per range in use, and the general Blocks mesh skips them. Tracers
-  draws them in the same per-tick block pass as the card.
+  draws them in retained mesh caches, one per range in use, and the general Blocks mesh skips them. Tracers draws
+  them in its per-tick block pass.

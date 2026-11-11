@@ -16,6 +16,7 @@ import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
 import dev.argus.client.modules.render.targets.BlockTargetIndex;
 import dev.argus.client.modules.render.targets.CellIndex;
+import dev.argus.client.modules.render.targets.RuleSettings;
 import dev.argus.client.modules.render.targets.SpecificRules;
 import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetMatcher;
@@ -119,8 +120,8 @@ public class TracersModule extends Module {
             continue;
          }
 
-         if (kind == TargetSettings.Kind.ITEMS && this.targets.items.chatAlert.getValue() && entity instanceof ItemEntity item) {
-            TargetMatcher.announceItem(this.targets.items, item);
+         if (kind == TargetSettings.Kind.ITEMS && entity instanceof ItemEntity item) {
+            TargetMatcher.alertItem(this.targets, item);
          }
 
          Vec3 start;
@@ -179,7 +180,8 @@ public class TracersModule extends Module {
       double range = cardOn ? (card.range.isAtMaximum() ? -1.0 : card.range.getValue()) : 0.0;
       for (SpecificRules.Rule rule : specific.rules().all()) {
          if (range >= 0 && rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
-            range = rule.unlimited() ? -1.0 : Math.max(range, rule.range);
+            RuleSettings settings = specific.settings(rule);
+            range = settings.unlimited() ? -1.0 : Math.max(range, settings.range.getValue());
          }
       }
       LongArrayList positions = this.candidatePositions;
@@ -208,7 +210,8 @@ public class TracersModule extends Module {
          cell.forEach((packed, entry) -> {
             // A specific target overrides the card for its block.
             SpecificRules.Rule rule = specific.forBlock(entry.state().getBlock());
-            if (rule == null && (!cardOn || !TargetMatcher.acceptsBlock(card, ignored, packed, entry))) {
+            RuleSettings settings = rule == null ? null : specific.settings(rule);
+            if (settings == null ? !cardOn || !TargetMatcher.acceptsBlock(card, ignored, packed, entry) : !settings.acceptsBlock(packed, entry)) {
                return;
             }
 
@@ -216,13 +219,13 @@ public class TracersModule extends Module {
             double dy = CellIndex.unpackY(packed) + 0.5 - camera.y;
             double dz = CellIndex.unpackZ(packed) + 0.5 - camera.z;
             double distanceSquared = dx * dx + dy * dy + dz * dz;
-            if (distanceSquared < minimumSquared || !(rule == null ? card.inRange(distanceSquared) : rule.inRange(distanceSquared))) {
+            if (distanceSquared < minimumSquared || !(settings == null ? card.inRange(distanceSquared) : settings.inRange(distanceSquared))) {
                return;
             }
 
             positions.add(packed);
             distances.add(distanceSquared);
-            colors.add(rule == null ? TargetMatcher.blockColor(card, scheme, entry) : TargetMatcher.ruleColor(rule, scheme));
+            colors.add(settings == null ? TargetMatcher.blockColor(card, scheme, entry) : settings.blockColor(entry, scheme));
          });
       }
 
@@ -277,7 +280,7 @@ public class TracersModule extends Module {
    private void onTick(LocalPlayerTickEvent event) {
       this.tickCounter++;
       TargetSettings.Blocks card = this.targets.blocks;
-      if (!card.active() || !card.sound.getValue() || argusclientMinecraft.player == null) {
+      if (!TargetMatcher.blockAlertsOn(this.targets) || argusclientMinecraft.player == null) {
          return;
       }
 
@@ -286,8 +289,7 @@ public class TracersModule extends Module {
       boolean[] alert = new boolean[1];
       this.alertMark = BlockTargetIndex.get().forEachAddedSince(this.alertMark, packed -> {
          BlockTargetIndex.Entry entry = BlockTargetIndex.get().index().get(packed);
-         if (!alert[0] && entry != null && TargetMatcher.acceptsBlock(card, ignored, packed, entry)
-            && card.inRange(eye.distanceToSqr(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5))) {
+         if (!alert[0] && entry != null && TargetMatcher.alertsForBlock(this.targets, ignored, packed, entry, eye)) {
             alert[0] = true;
          }
       });
@@ -298,8 +300,8 @@ public class TracersModule extends Module {
 
    @EventHandler
    private void onEntityAdded(ClientLevelAddEntityEvent event) {
-      if (this.targets.mobs.sound.getValue() && argusclientMinecraft.player != null
-         && TargetMatcher.kindOf(this.targets, event.getEntity(), argusclientMinecraft.player.getEyePosition()) == TargetSettings.Kind.MOBS) {
+      if (argusclientMinecraft.player != null
+         && TargetMatcher.alertsForSpawn(this.targets, event.getEntity(), argusclientMinecraft.player.getEyePosition())) {
          TargetMatcher.playAlert();
       }
    }

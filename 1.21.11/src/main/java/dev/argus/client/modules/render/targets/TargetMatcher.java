@@ -53,7 +53,7 @@ public final class TargetMatcher implements ClientAccess {
       SpecificRules.Rule rule = targets.specific.forEntity(entity);
       if (rule != null) {
          // A specific target overrides the cards: shown inside its own range, hidden outside it.
-         return rule.inRange(distanceSquared) ? naturalKind(entity) : null;
+         return targets.specific.settings(rule).acceptsEntity(entity, distanceSquared) ? naturalKind(entity) : null;
       }
 
       if (entity instanceof Player player) {
@@ -148,7 +148,7 @@ public final class TargetMatcher implements ClientAccess {
    public static Color entityColor(TargetSettings targets, TargetSettings.Kind kind, Entity entity, Vec3 from) {
       SpecificRules.Rule rule = targets.specific.forEntity(entity);
       if (rule != null) {
-         return new Color(rule.color, true);
+         return targets.specific.settings(rule).entityColor(entity, from);
       }
 
       switch (kind) {
@@ -223,10 +223,53 @@ public final class TargetMatcher implements ClientAccess {
       return scheme == null ? color.getRGB() : scheme.transform(color).getRGB();
    }
 
-   /** A specific block rule's colour, after the Colors module's scheme. */
-   public static int ruleColor(SpecificRules.Rule rule, ColorsSchemeChoice scheme) {
-      Color color = new Color(rule.color, true);
-      return scheme == null ? color.getRGB() : scheme.transform(color).getRGB();
+   /**
+    * Whether a newly found block should play the alert: a specific target's own Sound setting decides for its block,
+    * otherwise the Blocks card's.
+    */
+   public static boolean alertsForBlock(TargetSettings targets, int ignoredStructures, long packed, BlockTargetIndex.Entry entry, Vec3 eye) {
+      double distanceSquared = eye.distanceToSqr(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5);
+      SpecificRules.Rule rule = targets.specific.forBlock(entry.state().getBlock());
+      if (rule != null) {
+         RuleSettings settings = targets.specific.settings(rule);
+         return settings.sound() && settings.acceptsBlock(packed, entry) && settings.inRange(distanceSquared);
+      }
+
+      TargetSettings.Blocks card = targets.blocks;
+      return card.active() && card.sound.getValue() && acceptsBlock(card, ignoredStructures, packed, entry) && card.inRange(distanceSquared);
+   }
+
+   /** Whether any block find could alert, so callers can skip walking new finds. */
+   public static boolean blockAlertsOn(TargetSettings targets) {
+      return targets.blocks.active() && targets.blocks.sound.getValue() || targets.specific.hasBlockSound();
+   }
+
+   /** Whether a newly spawned entity should play the alert (a specific target's Sound, otherwise the Mobs card's). */
+   public static boolean alertsForSpawn(TargetSettings targets, Entity entity, Vec3 eye) {
+      TargetSettings.Kind kind = kindOf(targets, entity, eye);
+      if (kind == null) {
+         return false;
+      }
+
+      SpecificRules.Rule rule = targets.specific.forEntity(entity);
+      if (rule != null) {
+         return targets.specific.settings(rule).sound();
+      }
+
+      return kind == TargetSettings.Kind.MOBS && targets.mobs.sound.getValue();
+   }
+
+   /** Announces a shown dropped item in chat if its specific target, or else the Items card, asks for it. */
+   public static void alertItem(TargetSettings targets, ItemEntity item) {
+      SpecificRules.Rule rule = targets.specific.forEntity(item);
+      if (rule != null) {
+         RuleSettings settings = targets.specific.settings(rule);
+         if (settings.chatAlert()) {
+            announceItem(settings.coords(), item);
+         }
+      } else if (targets.items.chatAlert.getValue()) {
+         announceItem(targets.items.coords.getValue(), item);
+      }
    }
 
    /** The block colour registry's colour if set, otherwise a colour that reads like the block. */
@@ -283,7 +326,7 @@ public final class TargetMatcher implements ClientAccess {
    }
 
    /** Announces a matching dropped item in chat once (shared, so ESP and Tracers don't both announce it). */
-   public static void announceItem(TargetSettings.Items card, ItemEntity item) {
+   public static void announceItem(boolean coords, ItemEntity item) {
       if (argusclientMinecraft.level != announcedLevel) {
          ANNOUNCED_ITEMS.clear();
          announcedLevel = argusclientMinecraft.level;
@@ -295,7 +338,7 @@ public final class TargetMatcher implements ClientAccess {
 
       ItemStack stack = item.getItem();
       String text = stack.getHoverName().getString() + (stack.getCount() > 1 ? " x" + stack.getCount() : "") + " found";
-      if (card.coords.getValue()) {
+      if (coords) {
          text += " at " + item.getBlockX() + ", " + item.getBlockY() + ", " + item.getBlockZ();
       }
 

@@ -51,6 +51,8 @@ final class ModulePage {
     private float x, y, w, h;
     private float scroll, shownScroll;
     private boolean binding, scrolledToFocus;
+    private float revealTarget;
+    private int revealFrames;
     /** Reset all asks for a second click within a few seconds. */
     private long resetArmedAt;
     private String notice = "";
@@ -79,6 +81,15 @@ final class ModulePage {
      * Adds a card of the module's own tools (presets, combos, shortcuts).
      */
     ModulePage inline(InlineCard card, Placement placement) { cards.addInline(card, placement); return this; }
+
+    /** Header extras for a settings group card (see {@link SettingsCards#decorate}). */
+    ModulePage decorate(String group, SettingsCards.Decoration decoration) { cards.decorate(group, decoration); return this; }
+
+    /** Cards made on the fly after an inline card (see {@link SettingsCards#dynamic}). */
+    ModulePage dynamic(InlineCard anchor, java.util.function.Supplier<List<SettingsCards.Dynamic>> source) { cards.dynamic(anchor, source); return this; }
+
+    /** Opens a dynamic card and scrolls to it. */
+    void reveal(Object key) { cards.reveal(key); }
 
     /** Places the page. */
     void layout(float x, float y, float w, float h, float panelLeft, float panelRight) {
@@ -271,6 +282,10 @@ final class ModulePage {
         float top = bodyTop(), bottom = bodyBottom(), cx = cardsX(), cw = cardsW();
         float view = bottom - top, total = cards.height();
         if (!scrolledToFocus) { scroll = cards.focusOffset(); shownScroll = scroll; scrolledToFocus = true; }
+        // A revealed card opens over a few frames, so keep aiming at it until the page has grown to fit.
+        float reveal = cards.takeReveal();
+        if (!Float.isNaN(reveal)) { revealTarget = reveal; revealFrames = 30; }
+        if (revealFrames > 0) { revealFrames--; scroll = Math.max(0, revealTarget - 4); }
         scroll = Math.clamp(scroll, 0, Math.max(0, total - view));
         shownScroll = UiAnim.approach(shownScroll, scroll, 18);
         g.enableScissor(Math.round(cx - 3), Math.round(top), Math.round(cx + cw + 3), Math.round(bottom));

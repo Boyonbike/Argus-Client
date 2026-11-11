@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A module's specific targets: one block, entity type, dropped item type or named player, each with its own colour and
- * range. A specific target always shows that one thing, whatever the general cards say. Plain Java (no game classes),
+ * A module's specific targets: one block, entity type, dropped item type or named player, each with its own settings
+ * (colour, range and the rest that suit its kind). A specific target always shows that one thing, whatever the general cards say. Plain Java (no game classes),
  * so the list, its JSON form and the mirror sync between ESP and Tracers can be unit-tested.
  */
 public final class SpecificRules {
@@ -35,90 +35,92 @@ public final class SpecificRules {
       }
    }
 
-   /** The largest range; a rule at this range has no limit. */
-   public static final float UNLIMITED = 512.0F;
-   /** The ranges the GUI cycles through. */
-   static final float[] RANGES = {16.0F, 32.0F, 64.0F, 128.0F, 256.0F, UNLIMITED};
+   /** A rule's own settings, as JSON text. The game side swaps in real settings; tests use plain text. */
+   public interface Body {
+      String read();
+
+      void write(String json);
+   }
+
+   /** Settings kept as text until the game side attaches real settings. */
+   public static final class TextBody implements Body {
+      private String json;
+
+      public TextBody(String json) {
+         this.json = json;
+      }
+
+      @Override
+      public String read() {
+         return this.json;
+      }
+
+      @Override
+      public void write(String json) {
+         this.json = json;
+      }
+   }
 
    public static final class Rule {
       public final Type type;
       /** A registry id ({@code minecraft:diamond_ore}) or a player name. */
       public final String id;
-      public int color;
-      public float range = UNLIMITED;
       public boolean enabled = true;
       public boolean mirror;
+      /** This target's own settings (colour, range and the rest for its kind). */
+      public Body body = new TextBody("{}");
 
-      public Rule(Type type, String id, int color) {
+      public Rule(Type type, String id) {
          this.type = type;
          this.id = id;
-         this.color = color;
       }
 
       public String key() {
          return SpecificRules.key(this.type, this.id);
       }
 
-      public boolean unlimited() {
-         return this.range >= UNLIMITED;
-      }
-
-      public boolean inRange(double distanceSquared) {
-         return this.unlimited() || distanceSquared <= (double)this.range * this.range;
-      }
-
-      /** The next range in the GUI's cycle (after the largest comes the smallest). */
-      public float nextRange() {
-         for (float candidate : RANGES) {
-            if (candidate > this.range + 0.01F) {
-               return candidate;
-            }
-         }
-
-         return RANGES[0];
-      }
-
-      public String rangeLabel() {
-         return this.unlimited() ? "Any range" : Math.round(this.range) + "m";
-      }
-
       /** The values pairing copies (everything but the mirror flag), as text. */
       public String values() {
-         return this.color + "|" + this.range + "|" + this.enabled;
+         return this.enabled + "|" + this.body.read();
       }
 
       public void copyValues(Rule from) {
-         this.color = from.color;
-         this.range = from.range;
          this.enabled = from.enabled;
+         String json = from.body.read();
+         if (!json.equals(this.body.read())) {
+            this.body.write(json);
+         }
       }
 
       JsonObject toJson() {
          JsonObject object = new JsonObject();
          object.addProperty("type", this.type.name());
          object.addProperty("id", this.id);
-         object.addProperty("color", this.color);
-         object.addProperty("range", this.range);
          object.addProperty("enabled", this.enabled);
          object.addProperty("mirror", this.mirror);
+         JsonElement settings;
+         try {
+            settings = JsonParser.parseString(this.body.read());
+         } catch (RuntimeException ignored) {
+            settings = new JsonObject();
+         }
+
+         object.add("settings", settings);
          return object;
       }
 
       static Rule fromJson(JsonObject object) {
          Type type = Type.valueOf(object.get("type").getAsString());
-         Rule rule = new Rule(type, object.get("id").getAsString(), object.has("color") ? object.get("color").getAsInt() : 0xFF00FF00);
-         if (object.has("range")) {
-            rule.range = Math.max(RANGES[0], Math.min(UNLIMITED, object.get("range").getAsFloat()));
-         }
-
+         Rule rule = new Rule(type, object.get("id").getAsString());
          rule.enabled = !object.has("enabled") || object.get("enabled").getAsBoolean();
          rule.mirror = object.has("mirror") && object.get("mirror").getAsBoolean();
+         if (object.get("settings") instanceof JsonObject settings) {
+            rule.body = new TextBody(settings.toString());
+         }
+
          return rule;
       }
    }
-
-   /** Colours handed to new rules in turn. */
-   private static final int[] PALETTE = {0xFF3CFF6E, 0xFF3CC8FF, 0xFFFF3CC8, 0xFFFFD23C, 0xFFFF6E3C, 0xFFB46EFF};
 
    private final List<Rule> rules = new ArrayList<>();
 
@@ -145,14 +147,14 @@ public final class SpecificRules {
       return null;
    }
 
-   /** Adds a rule (on, unlimited range, next palette colour) or returns the one already there. */
+   /** Adds a rule (on, default settings) or returns the one already there. */
    public Rule add(Type type, String id) {
       Rule existing = this.find(type, id);
       if (existing != null) {
          return existing;
       }
 
-      Rule rule = new Rule(type, id, PALETTE[this.rules.size() % PALETTE.length]);
+      Rule rule = new Rule(type, id);
       this.rules.add(rule);
       return rule;
    }

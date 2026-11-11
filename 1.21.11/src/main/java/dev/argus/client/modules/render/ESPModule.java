@@ -27,6 +27,7 @@ import dev.argus.client.modules.client.ColorsModule;
 import dev.argus.client.modules.render.targets.BlockMeshCache;
 import dev.argus.client.modules.render.targets.BlockTargetIndex;
 import dev.argus.client.modules.render.targets.CellIndex;
+import dev.argus.client.modules.render.targets.RuleSettings;
 import dev.argus.client.modules.render.targets.SpecificRules;
 import dev.argus.client.modules.render.targets.SpecificTargets;
 import dev.argus.client.modules.render.targets.TargetMatcher;
@@ -281,8 +282,8 @@ public class ESPModule extends Module {
          colorsModule == null ? null : colorsModule.schemeSetting.getValue(),
          this.targets.specific.version()
       );
-      if (card.active() && card.sound.getValue()) {
-         this.alertNewBlocks(card);
+      if (TargetMatcher.blockAlertsOn(this.targets)) {
+         this.alertNewBlocks();
       }
 
       // Light-level spots only change when blocks or light change, so scan them every few ticks
@@ -300,7 +301,7 @@ public class ESPModule extends Module {
       }
    }
 
-   private void alertNewBlocks(TargetSettings.Blocks card) {
+   private void alertNewBlocks() {
       if (argusclientMinecraft.player == null) {
          return;
       }
@@ -310,8 +311,7 @@ public class ESPModule extends Module {
       boolean[] alert = new boolean[1];
       this.alertMark = BlockTargetIndex.get().forEachAddedSince(this.alertMark, packed -> {
          BlockTargetIndex.Entry entry = index.get(packed);
-         if (!alert[0] && entry != null && TargetMatcher.acceptsBlock(card, this.ignoredStructures, packed, entry)
-            && card.inRange(eye.distanceToSqr(CellIndex.unpackX(packed) + 0.5, CellIndex.unpackY(packed) + 0.5, CellIndex.unpackZ(packed) + 0.5))) {
+         if (!alert[0] && entry != null && TargetMatcher.alertsForBlock(this.targets, this.ignoredStructures, packed, entry, eye)) {
             alert[0] = true;
          }
       });
@@ -322,12 +322,8 @@ public class ESPModule extends Module {
 
    @EventHandler
    private void onEntityAdded(ClientLevelAddEntityEvent event) {
-      TargetSettings.Mobs card = this.targets.mobs;
-      if (card.sound.getValue() && argusclientMinecraft.player != null) {
-         Entity entity = event.getEntity();
-         if (TargetMatcher.kindOf(this.targets, entity, argusclientMinecraft.player.getEyePosition()) == TargetSettings.Kind.MOBS) {
-            TargetMatcher.playAlert();
-         }
+      if (argusclientMinecraft.player != null && TargetMatcher.alertsForSpawn(this.targets, event.getEntity(), argusclientMinecraft.player.getEyePosition())) {
+         TargetMatcher.playAlert();
       }
    }
 
@@ -360,9 +356,7 @@ public class ESPModule extends Module {
       boolean labels = this.modeSetting.getValue() != ESPModeChoice.PLAIN;
       for (Entity entity : this.renderEntities) {
          if (entity instanceof ItemEntity item && TargetMatcher.kindOf(this.targets, item, camera) == TargetSettings.Kind.ITEMS) {
-            if (this.targets.items.chatAlert.getValue()) {
-               TargetMatcher.announceItem(this.targets.items, item);
-            }
+            TargetMatcher.alertItem(this.targets, item);
 
             if (labels) {
                this.addItemLabel(event, item, itemGroups);
@@ -634,7 +628,7 @@ public class ESPModule extends Module {
       Set<Float> ranges = new HashSet<>();
       for (SpecificRules.Rule rule : specific.rules().all()) {
          if (rule.enabled && rule.type == SpecificRules.Type.BLOCK) {
-            ranges.add(rule.range);
+            ranges.add(specific.settings(rule).rangeKey());
          }
       }
 
@@ -650,14 +644,19 @@ public class ESPModule extends Module {
       boolean drew = false;
       for (float range : ranges) {
          BlockMeshCache meshes = this.ruleMeshes.computeIfAbsent(range, ignored -> new BlockMeshCache());
-         double limit = range >= SpecificRules.UNLIMITED ? 0.0 : range;
+         double limit = range >= 512.0F ? 0.0 : range;
          drew |= meshes.render(
             event.getPoseStack(),
             event.getPartialTick(),
             PostProcessShaderPass.POST_TARGET,
             (packed, entry) -> {
                SpecificRules.Rule rule = specific.forBlock(entry.state().getBlock());
-               return rule != null && rule.range == range ? TargetMatcher.ruleColor(rule, scheme) : 0;
+               if (rule == null) {
+                  return 0;
+               }
+
+               RuleSettings settings = specific.settings(rule);
+               return settings.rangeKey() == range && settings.acceptsBlock(packed, entry) ? settings.blockColor(entry, scheme) : 0;
             },
             look,
             limit * limit,

@@ -139,8 +139,8 @@ public final class TargetLinks implements ClientAccess {
    }
 
    /**
-    * Switches the specific target in the other module. Switching it on adds it there (copying this page's colour and
-    * range once, unless mirrored) and turns the other module on if it was off.
+    * Switches the specific target in the other module. Switching it on adds it there (copying this page's settings for
+    * it once, unless mirrored) and turns the other module on if it was off.
     */
    public void toggleInOther(boolean fromEsp, SpecificRules.Rule rule) {
       SpecificTargets theirs = this.otherSpecific(fromEsp);
@@ -163,7 +163,7 @@ public final class TargetLinks implements ClientAccess {
       this.syncRules();
    }
 
-   /** Links the specific target in both modules, starting from this page's colour and range. */
+   /** Links the specific target in both modules, starting from this page's settings for it. */
    public void mirror(boolean fromEsp, SpecificRules.Rule rule) {
       SpecificTargets mine = this.specific(fromEsp);
       SpecificTargets theirs = this.otherSpecific(fromEsp);
@@ -215,6 +215,8 @@ public final class TargetLinks implements ClientAccess {
    public void syncRules() {
       SpecificTargets esp = this.espTargets.specific;
       SpecificTargets tracers = this.tracersTargets.specific;
+      esp.poll();
+      tracers.poll();
       int changed = SpecificRules.sync(esp.rules(), tracers.rules(), this.agreedRules);
       if ((changed & SpecificRules.LEFT_CHANGED) != 0) {
          esp.changed();

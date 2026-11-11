@@ -190,6 +190,8 @@ abstract class InlineCard {
             static Action danger(String label, String tip, String done, Runnable run) { return new Action(label, tip, false, true, done, run); }
             static Action colour(String label, String tip, IntSupplier swatch, Placed placed) { return new Action(label, tip, false, false, null, () -> {}, swatch, placed); }
         }
+        /** A match for what's typed in the field; clicking it (or Enter on the first) runs {@code pick}. */
+        record Suggestion(String label, String detail, Icon icon, Runnable pick, String done) {}
         /** The tag at a row's right: given the entry and whether it's hovered. */
         interface Tagger { String tag(Entry entry, boolean hover); }
         record Entry(String label, String detail, boolean active, Icon icon, Runnable select, String selectDone, List<Action> actions) {}
@@ -206,10 +208,36 @@ abstract class InlineCard {
         private String armed = "";
         private long armedAt;
         private float cardX, cardW;
+        private static final float SUGGESTION = 22;
+        private java.util.function.Function<String, List<Suggestion>> suggester;
+        private String noMatch = "", lastQuery;
+        private List<Suggestion> lastSuggestions = List.of();
         private Tagger tagger = (e, hover) -> e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
 
         Items(UiScreen host, String title, String icon, Supplier<String> subtitle, String empty, Supplier<List<Entry>> entries) {
             super(host); this.title = title; this.icon = icon; this.subtitle = subtitle; this.empty = empty; this.entries = entries;
+        }
+
+        /**
+         * Shows matches under the field while something is typed; the Add button and Enter take the first one.
+         * {@code noMatch} is shown when nothing matches.
+         */
+        Items suggest(java.util.function.Function<String, List<Suggestion>> suggester, String noMatch) { this.suggester = suggester; this.noMatch = noMatch; return this; }
+
+        private List<Suggestion> suggestions() {
+            if (suggester == null || field == null) return List.of();
+            String query = field.getValue();
+            if (query.isBlank()) { lastQuery = null; return List.of(); }
+            if (!query.equals(lastQuery)) { lastQuery = query; lastSuggestions = suggester.apply(query); }
+            return lastSuggestions;
+        }
+        private float suggestionHeight() {
+            if (suggester == null || field == null || field.getValue().isBlank()) return 0;
+            return Math.max(1, suggestions().size()) * SUGGESTION + 8;
+        }
+        private void pick(Suggestion suggestion) {
+            attempt(suggestion.pick(), suggestion.done() == null ? "" : suggestion.done());
+            if (error().isEmpty()) { field.setValue(""); lastQuery = null; }
         }
 
         /** Replaces the "In use" / "Click to use" tags at the rows' right. */
@@ -231,7 +259,7 @@ abstract class InlineCard {
 
         private boolean hasTop() { return field != null || !headerActions.isEmpty() || !hint.isEmpty(); }
         private float rowHeight(List<Entry> list) { for (Entry e : list) if (e.icon() != null || !e.detail().isEmpty()) return 28; return 24; }
-        @Override float bodyHeight() { List<Entry> list = entries.get(); return (hasTop() ? 26 : 0) + Math.max(1, list.size()) * rowHeight(list) + 4; }
+        @Override float bodyHeight() { List<Entry> list = entries.get(); return (hasTop() ? 26 : 0) + suggestionHeight() + Math.max(1, list.size()) * rowHeight(list) + 4; }
 
         @Override void reattach() { if (field != null) host.hostAdd(field); }
         @Override void stopEditing() { if (field != null) field.setFocused(false); }
@@ -248,6 +276,12 @@ abstract class InlineCard {
         }
 
         private void add() {
+            if (suggester != null) {
+                List<Suggestion> found = suggestions();
+                if (found.isEmpty()) fail(field.getValue().isBlank() ? "Type a name to search." : noMatch);
+                else pick(found.get(0));
+                return;
+            }
             String text = field.getValue().trim();
             attempt(() -> submit.accept(text), submitDone.apply(text));
             if (error().isEmpty()) field.setValue("");
@@ -293,6 +327,28 @@ abstract class InlineCard {
                     if (field.visible) field.render(g, mx, my, 0); else field.setFocused(false);
                 } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.muted());
                 top = 26;
+            }
+            float matches = suggestionHeight();
+            if (matches > 0) {
+                List<Suggestion> found = suggestions();
+                float py = y + top;
+                UiDraw.rounded(g, x, py, w, matches - 4, 6, t.crust());
+                UiDraw.outline(g, x, py, w, matches - 4, 6, .6f, UiDraw.alpha(t.accent(), .35f));
+                if (found.isEmpty()) UiDraw.text(g, UiDraw.fit(noMatch, w - 12, UiDraw.SMALL), x + 8, py + SUGGESTION / 2 + 2, UiDraw.SMALL, t.muted());
+                for (int i = 0; i < found.size(); i++) {
+                    Suggestion sg = found.get(i);
+                    float ry = py + 2 + i * SUGGESTION, cy = ry + SUGGESTION / 2;
+                    boolean hover = hovering(mx, my, x + 2, ry, w - 4, SUGGESTION);
+                    float hv = UiAnim.smooth("ic." + title + ".sg" + i, hover ? 1 : 0, 18);
+                    if (hv > 0 || i == 0) UiDraw.rounded(g, x + 2, ry, w - 4, SUGGESTION, 5, UiDraw.alpha(t.accent(), (i == 0 ? .08f : 0) + hv * .12f));
+                    float tx = x + 10;
+                    if (sg.icon() != null) { sg.icon().draw(g, x + 6, ry + (SUGGESTION - 16) / 2); tx = x + 28; }
+                    float detailW = UiDraw.width(sg.detail(), UiDraw.SMALL);
+                    UiDraw.text(g, UiDraw.fit(sg.label(), w - (tx - x) - detailW - 16), tx, cy, hover ? t.accent() : t.text());
+                    UiDraw.right(g, sg.detail(), x + w - 8, cy, UiDraw.SMALL, t.muted());
+                    hit(x + 2, ry, w - 4, SUGGESTION, () -> pick(sg));
+                }
+                top += matches;
             }
             List<Entry> list = entries.get();
             float rh = rowHeight(list);
