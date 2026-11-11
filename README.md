@@ -7,13 +7,13 @@ themes, ranked module/settings search, and Friends management. Client projects a
 
 | Minecraft | Client project | Download |
 | --- | --- | --- |
-| **1.21.11** | [Source, build files, and documentation](1.21.11/) | [argus-client.jar](1.21.11/argus-client.jar) |
+| **1.21.11** | [Source, build files, and documentation](1.21.11/) | [Argus-2.5.5-mc1.21.11.jar](1.21.11/Argus-2.5.5-mc1.21.11.jar) |
 
 ## Install for Minecraft 1.21.11
 
 1. Set up Minecraft **1.21.11** with Fabric Loader **0.19.5 or newer** and Java **21 or newer**.
 2. Install Fabric API for Minecraft 1.21.11.
-3. Download [`argus-client.jar`](1.21.11/argus-client.jar) and place it in your instance's `mods` folder, replacing older copies of the client or its separate GUI add-on.
+3. Download [`Argus-2.5.5-mc1.21.11.jar`](1.21.11/Argus-2.5.5-mc1.21.11.jar) and place it in your instance's `mods` folder, replacing older copies of the client or its separate GUI add-on.
 
 ## Menus
 
@@ -57,7 +57,7 @@ released under **CC0 1.0 Universal**. See the
 ├── build.gradle              Fabric Loom build
 ├── gradle.properties         Version and dependency settings
 ├── settings.gradle           Project and plugin configuration
-└── argus-client.jar   Installable client
+└── Argus-2.5.5-mc1.21.11.jar  Installable client
 ```
 
 ## Build
@@ -70,7 +70,7 @@ cd 1.21.11
 ```
 
 On Windows use `gradlew.bat build`. The client JAR is generated at
-`1.21.11/build/libs/argus-client.jar`.
+`1.21.11/build/libs/Argus-2.5.5-mc1.21.11.jar`.
 
 See the [1.21.11 README](1.21.11/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.

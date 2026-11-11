@@ -82,7 +82,7 @@ java {
 }
 
 loom { accessWidenerPath = file('src/main/resources/argusclient.accesswidener') }
-tasks.named('remapJar') { archiveFileName = 'argus-client.jar' }
+tasks.named('remapJar') { archiveFileName = "Argus-${project.version}-mc${project.minecraft_version}.jar" }
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') { expand version: project.version }
