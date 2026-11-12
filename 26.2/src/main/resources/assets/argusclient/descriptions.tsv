@@ -904,19 +904,18 @@ ElytraFly	argusBoostVerticalSpeed	Climb and dive speed while the boost key is he
 ElytraFly	argusBoostKey	Key or mouse button that boosts. Follows your Sprint key unless you pick another; Delete or reset returns it to Sprint.
 ElytraFly	argusBoostJump	Instantly skips this many Volytra acceleration ticks when boost starts; 0 disables.
 ElytraFly	argusLandingSwapHeight	How close to the floor counts as landed for Smart Elytra's chestplate swap, measured under your hitbox. While still gliding it waits until you touch down.
-ElytraFly	argusLiquidTakeoff	Hold jump in water or lava to swim up, get thrown clear of the surface and start gliding. Needs wings on, or Smart Elytra to put them on.
-ElytraFly	argusLiquidHoldJump	Only takes off while you hold jump. Turn off to launch whenever you are in the liquid.
-ElytraFly	argusLiquidWater	Takes off from water when you are upright, not sprint-swimming.
+ElytraFly	argusLiquidTakeoff	Hold jump in water or lava: at the top of your rise out of it, lifts you straight up and starts gliding. Needs wings on, or Smart Elytra to put them on.
+ElytraFly	argusLiquidHoldJump	Only takes off while you hold jump. Turn off to take off at any rise out of the liquid.
+ElytraFly	argusLiquidWater	Takes off from water when you are upright, not sprint-swimming. The glide starts once you are clear of the water.
 ElytraFly	argusLiquidWaterRise	How fast you swim up through water towards the surface.
-ElytraFly	argusLiquidWaterLaunch	Upward speed you are thrown out of water with.
-ElytraFly	argusLiquidSwim	Takes off from water while sprint-swimming. Drops sprint first so you stand up, then rises and launches.
+ElytraFly	argusLiquidWaterLaunch	Upward speed at the top of the rise, held until you are clear of the water.
+ElytraFly	argusLiquidSwim	Takes off from water while sprint-swimming. Drops sprint first so you stand up, then takes off as from water.
 ElytraFly	argusLiquidSwimRise	How fast you rise to the surface once you have stopped swimming.
-ElytraFly	argusLiquidSwimLaunch	Upward speed you are thrown out of the water with after swimming.
-ElytraFly	argusLiquidLava	Takes off from lava. The forward push is given once you are out, so lava's drag can't eat it.
+ElytraFly	argusLiquidSwimLaunch	Upward speed at the top of the rise after swimming, held until you are clear of the water.
+ElytraFly	argusLiquidLava	Takes off from lava. The glide starts right at the top of your rise, even while still touching lava.
 ElytraFly	argusLiquidLavaRise	How fast you swim up through lava towards the surface.
-ElytraFly	argusLiquidLavaLaunch	Upward speed you are thrown out of lava with.
-ElytraFly	argusLiquidPush	Forward speed added at launch, so you clear the edge of the pool. From lava it is added on your first tick in the air.
-ElytraFly	argusLiquidGlideDelay	Ticks in the air before the glide starts.
+ElytraFly	argusLiquidLavaLift	Upward speed given at the top of the rise out of lava, as the glide starts.
+ElytraFly	argusLiquidGlideDelay	Ticks to wait before trying again if the server did not start the glide.
 ElytraFly	argusLiquidFirework	Uses a firework from your inventory as soon as the glide starts.
 SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
 SpeedMine	Mode	Any speeds up all blocks; WhiteList only listed blocks; BlackList skips listed blocks.
