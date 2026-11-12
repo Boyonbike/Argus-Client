@@ -68,3 +68,4 @@ accessible	field	net/minecraft/world/entity/LivingEntity$SwingState	ticks	I
 accessible	field	net/minecraft/world/entity/LivingEntity$SwingState	oldAnimation	F
 accessible	field	net/minecraft/world/entity/LivingEntity$SwingState	animation	F
 accessible	field	net/minecraft/world/entity/LivingEntity$SwingState	currentSwing	Lnet/minecraft/world/entity/LivingEntity$SwingDescription;
+accessible	field	net/minecraft/client/renderer/feature/FeatureRenderDispatcher	preparedFrame	Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;

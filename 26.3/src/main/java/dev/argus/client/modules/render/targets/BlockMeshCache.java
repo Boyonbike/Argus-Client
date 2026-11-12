@@ -60,8 +60,10 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
    public static final RenderPipeline PIPELINE = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
       .withLocation("pipeline/argusclient_esp_cells")
       .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(PrimitiveTopology.QUADS)
-      .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
-      .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+      // 26.3 uses reversed-Z: near geometry has a larger depth value and the
+      // cleared target is 0, so nearer ESP blocks must win with GREATER_OR_EQUAL.
+      .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
+      .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
       .withCull(false)
       .withColorTargetState(ColorTargetState.DEFAULT)
       .build();
@@ -319,7 +321,9 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
 
          CellIndex.CellKey key = item.key();
          this.transform.set(view).translate((float)(key.minX() - camera.x), (float)(key.minY() - camera.y), (float)(key.minZ() - camera.z));
-         transforms.add(RenderSystem.getDynamicUniforms().writeTransform(this.transform, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()));
+         // A fresh matrix per cell: writeTransform skips the write when the record equals the previous one, and
+         // a reused (mutated) matrix always compares equal, so every cell after the first got the first's offset.
+         transforms.add(RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(this.transform), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()));
          drawList.add(mesh);
          maxQuads = Math.max(maxQuads, mesh.quads());
       }

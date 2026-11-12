@@ -7,15 +7,15 @@ themes, ranked module/settings search, and Friends management. This branch holds
 
 | Minecraft | Client project | Download |
 | --- | --- | --- |
-| **26.3** | [Source, build files, and documentation](26.3/) | [Argus-2.5.5-mc26.3.jar](26.3/Argus-2.5.5-mc26.3.jar) |
-| **26.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.2/26.2) | [Argus-2.5.5-mc26.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.2/26.2/Argus-2.5.5-mc26.2.jar) |
-| **26.1.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.1.2/26.1.2) | [Argus-2.5.5-mc26.1.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.1.2/26.1.2/Argus-2.5.5-mc26.1.2.jar) |
+| **26.3** | [Source, build files, and documentation](26.3/) | [Argus-2.6.0-mc26.3.jar](26.3/Argus-2.6.0-mc26.3.jar) |
+| **26.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.2/26.2) | [Argus-2.6.0-mc26.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.2/26.2/Argus-2.6.0-mc26.2.jar) |
+| **26.1.2** | [Source and documentation](https://github.com/Boyonbike/Argus-Client/tree/26.1.2/26.1.2) | [Argus-2.6.0-mc26.1.2.jar](https://github.com/Boyonbike/Argus-Client/blob/26.1.2/26.1.2/Argus-2.6.0-mc26.1.2.jar) |
 
 ## Install for Minecraft 26.3
 
 1. Set up Minecraft **26.3** with Fabric Loader **0.20.1 or newer** and Java **25 or newer**.
 2. Install Fabric API for Minecraft 26.3.
-3. Download [`Argus-2.5.5-mc26.3.jar`](26.3/Argus-2.5.5-mc26.3.jar) and place it in your instance's `mods` folder, replacing older copies.
+3. Download [`Argus-2.6.0-mc26.3.jar`](26.3/Argus-2.6.0-mc26.3.jar) and place it in your instance's `mods` folder, replacing older copies.
 
 ## Menus
 
@@ -59,7 +59,7 @@ released under **CC0 1.0 Universal**. See the
 ├── build.gradle              Fabric Loom build
 ├── gradle.properties         Version and dependency settings
 ├── settings.gradle           Project and plugin configuration
-└── Argus-2.5.5-mc26.3.jar  Installable client
+└── Argus-2.6.0-mc26.3.jar  Installable client
 ```
 
 ## Build
@@ -72,7 +72,7 @@ cd 26.3
 ```
 
 On Windows use `gradlew.bat build`. The client JAR is generated at
-`26.3/build/libs/Argus-2.5.5-mc26.3.jar`.
+`26.3/build/libs/Argus-2.6.0-mc26.3.jar`.
 
 See the [26.3 README](26.3/README.md) for controls, verification commands,
 and details of the source recovery. The core and GUI compile together from Java source.

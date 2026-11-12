@@ -53,7 +53,6 @@ public abstract class ScreenMixin {
    )
    private void replaceBlurredScreenBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo callback) {
       if (blurModule.isToggled() && this.minecraft.level != null && this.minecraft.player != null) {
-         this.extractMenuBackground(graphics);
          callback.cancel();
       }
    }

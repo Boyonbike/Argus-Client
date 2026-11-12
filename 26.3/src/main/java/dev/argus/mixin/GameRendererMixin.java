@@ -186,6 +186,11 @@ public abstract class GameRendererMixin {
       }
    }
 
+   @Inject(method = "close", at = @At("HEAD"))
+   private void closeArgusFeatureDispatcher(CallbackInfo callback) {
+      dev.argus.client.render.ArgusFeatureDispatcher.close();
+   }
+
    @Inject(method = "render", at = @At("HEAD"))
    private void updateFrameTimingAndChatHeight(CallbackInfo callback) {
       dev.argus.client.render.MeshRenderer.beginFrame();

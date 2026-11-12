@@ -49,7 +49,7 @@ public class PostProcessShaderPass extends BaseShaderPass {
          this.updateUniforms();
          CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
          this.program.pipeline().draw(encoder, ClientAccess.argusclientMinecraft.gameRenderer.mainRenderTarget());
-         encoder.submit();
+         // No submit(): it is the per-frame boundary (Minecraft calls it once); mid-frame it recycles transient uniform memory.
       }
    }
 

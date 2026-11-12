@@ -130,7 +130,7 @@ public class SkyRendererMixin {
             MaskShaderRenderer.MASK_TARGET.getDepthTextureView(), OptionalDouble.empty())) {
          this.renderStars(pass, brightness, poses);
       }
-      encoder.submit();
+      // No submit(): it is the per-frame boundary (Minecraft calls it once); mid-frame it recycles transient uniform memory.
       hook = false;
       RenderTargetUtils.setMainRenderTarget(previousTarget);
       MaskShaderRenderer.setParameters(4.0F, 1.5F, 1.0F, 2.0F);

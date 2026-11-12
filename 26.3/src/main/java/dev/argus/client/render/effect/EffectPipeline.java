@@ -39,6 +39,8 @@ public final class EffectPipeline {
    private final RenderPipeline pipeline;
    private final EffectUniforms uniforms;
    private final boolean vanilla;
+   /** Same program without blending, for passes that fully overwrite an intermediate target. */
+   private EffectPipeline opaque;
    private GpuBuffer quad;
 
    private EffectPipeline(EffectShaderSource source, RenderPipeline pipeline, EffectUniforms uniforms, boolean vanilla) {
@@ -70,7 +72,25 @@ public final class EffectPipeline {
          layout.withUniform(vertexSamplerMatcher.group(1), UniformType.COMBINED_IMAGE_SAMPLER);
       }
 
-      RenderPipeline pipeline = RenderPipeline.builder()
+      BindGroupLayout bindGroupLayout = layout.build();
+      RenderPipeline pipeline = buildPipeline(
+         vertexResource, fragmentResource, vanilla, bindGroupLayout, new ColorTargetState(BlendFunction.TRANSLUCENT));
+      RenderPipeline opaquePipeline = buildPipeline(vertexResource, fragmentResource, vanilla, bindGroupLayout, ColorTargetState.DEFAULT);
+      if (vanilla) {
+         REGISTERED.add(pipeline);
+         REGISTERED.add(opaquePipeline);
+      }
+      EffectUniforms uniforms = EffectUniforms.fromSource(source.fragmentSource());
+      EffectPipeline effect = new EffectPipeline(source, pipeline, uniforms, vanilla);
+      effect.opaque = new EffectPipeline(source, opaquePipeline, uniforms, vanilla);
+      effect.opaque.opaque = effect.opaque;
+      return effect;
+   }
+
+   private static RenderPipeline buildPipeline(
+      String vertexResource, String fragmentResource, boolean vanilla, BindGroupLayout layout, ColorTargetState colorTarget
+   ) {
+      return RenderPipeline.builder()
          .withLocation(Identifier.fromNamespaceAndPath("argusclient", "pipeline/effect_" + (sequence++)))
          .withVertexShader(vanilla
             ? EffectShaderSource.pipelineShaderId(vertexResource)
@@ -78,16 +98,26 @@ public final class EffectPipeline {
          .withFragmentShader(vanilla
             ? EffectShaderSource.pipelineShaderId(fragmentResource)
             : EffectShaderSource.shaderId(fragmentResource))
-         .withBindGroupLayout(layout.build())
+         .withBindGroupLayout(layout)
          .withVertexBinding(0, DefaultVertexFormat.POSITION)
-         .withPrimitiveTopology(PrimitiveTopology.QUADS)
-         .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+         // TRIANGLES, not QUADS: the backend maps QUADS to plain triangles and relies on an index
+         // buffer, so a non-indexed 4-vertex QUADS draw only fills one half of the screen.
+         .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+         // No culling: pipelines cull by default and 26.3's GL backend uses an upper-left clip origin, which
+         // makes this fullscreen quad back-facing, so every effect pass silently drew nothing.
+         .withCull(false)
+         .withColorTargetState(colorTarget)
          .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
          .build();
-      if (vanilla) {
-         REGISTERED.add(pipeline);
-      }
-      return new EffectPipeline(source, pipeline, EffectUniforms.fromSource(source.fragmentSource()), vanilla);
+   }
+
+   /**
+    * The unblended variant. Shader stages overwrite their output target, as 26.1.2 did with
+    * GL_BLEND disabled; blending there mixes the effect with stale target contents wherever
+    * the input alpha is below 1, which darkens blurred screen backgrounds.
+    */
+   public EffectPipeline opaque() {
+      return this.opaque;
    }
 
    public EffectUniforms uniforms() {
@@ -147,7 +177,7 @@ public final class EffectPipeline {
             }
          }
       }
-      pass.draw(4, 1, 0, 0);
+      pass.draw(6, 1, 0, 0);
    }
 
    private CompiledRenderPipeline compiled() {
@@ -185,9 +215,11 @@ public final class EffectPipeline {
 
    private GpuBuffer quad() {
       if (this.quad == null) {
-         ByteBuffer vertices = ByteBuffer.allocateDirect(4 * 3 * Float.BYTES).order(ByteOrder.nativeOrder());
+         ByteBuffer vertices = ByteBuffer.allocateDirect(6 * 3 * Float.BYTES).order(ByteOrder.nativeOrder());
          vertices.putFloat(-1.0F).putFloat(-1.0F).putFloat(0.0F);
          vertices.putFloat(-1.0F).putFloat(1.0F).putFloat(0.0F);
+         vertices.putFloat(1.0F).putFloat(1.0F).putFloat(0.0F);
+         vertices.putFloat(-1.0F).putFloat(-1.0F).putFloat(0.0F);
          vertices.putFloat(1.0F).putFloat(1.0F).putFloat(0.0F);
          vertices.putFloat(1.0F).putFloat(-1.0F).putFloat(0.0F);
          vertices.flip();

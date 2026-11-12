@@ -287,12 +287,16 @@ public class ChamsModule extends Module {
          double capturedStrength = this.strengthSetting.getValue().floatValue();
          this.updateGlobalGlintStrength(capturedStrength);
          renderingGlintBatch = true;
-         MeshDrawContext.setRenderType(ClientRenderTypes.shineGlint());
-         buffer.draw();
-         renderingGlintBatch = false;
-         this.updateGlobalGlintStrength(previousStrength);
-         speedOption = ClientAccess.argusclientMinecraft.options.glintSpeed();
-         speedOption.set(previousSpeed);
+         try {
+            MeshDrawContext.setRenderType(ClientRenderTypes.shineGlint());
+            buffer.draw();
+         } finally {
+            // Always hand the user's glint options back, even if the draw fails.
+            renderingGlintBatch = false;
+            this.updateGlobalGlintStrength(previousStrength);
+            speedOption = ClientAccess.argusclientMinecraft.options.glintSpeed();
+            speedOption.set(previousSpeed);
+         }
       }
    }
 
@@ -568,6 +572,7 @@ public class ChamsModule extends Module {
    }
 
    public Vector3f getGlintColor() {
+      // Only called while renderingGlintBatch is set, which renderGlintBatch does after setting the relation.
       EntityRenderRelation relation = this.activeGlintRelation;
 
       Setting<Color> colorSetting = switch (relation) {

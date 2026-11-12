@@ -59,7 +59,7 @@ void main() {
         lineOffset = -lineOffset;
     }
 
-    float side = (gl_VertexID % 2 == 0) ? 1.0 : -1.0;
+    float side = (gl_VertexIndex % 2 == 0) ? 1.0 : -1.0;
     gl_Position = vec4(clipPos.xy + side * lineOffset * clipPos.w, clipPos.zw);
     lineEdge = side;
 

@@ -262,7 +262,9 @@ public final class RenderUtils implements ClientAccess {
 
    public static void clearDepth(RenderTarget target) {
       RenderTargetRegistry.activate(target);
-      RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(target.getDepthTexture(), 1.0);
+      // Minecraft 26.2+ uses reversed-Z: the far plane is 0, so clearing to 1
+      // leaves the depth buffer at the near plane and rejects world overlays.
+      RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(target.getDepthTexture(), 0.0);
    }
 
    protected void drawVerticalLine(PoseStack poses, float x, float top, float bottom, Color color) {

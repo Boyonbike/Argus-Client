@@ -78,7 +78,7 @@ public final class MeshRenderer {
             vertexBuffer, indexBuffer, state.indexType(), 0, 0, state.indexCount(), state.primitiveTopology());
          prepared.drawFromBuffer(info, pass);
       }
-      encoder.submit();
+      // No submit(): it is the per-frame boundary (Minecraft calls it once); mid-frame it recycles transient uniform memory.
    }
 
    private static void applyColorModifiers(ByteBuffer vertices, MeshData.DrawState state, RenderType renderType) {

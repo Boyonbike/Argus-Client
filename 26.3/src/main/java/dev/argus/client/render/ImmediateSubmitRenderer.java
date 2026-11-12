@@ -14,25 +14,45 @@ import net.minecraft.client.renderer.feature.FeatureRenderDispatcher.PreparedFra
 
 /** Renders a temporary submit storage immediately, for entity/item draws outside the feature pass. */
 public final class ImmediateSubmitRenderer implements ClientAccess {
+   private static boolean flushing;
    private static boolean warnedNestedFlush;
 
    private ImmediateSubmitRenderer() {
    }
 
    public static void flush(SubmitNodeStorage storage) {
+      // Argus's dispatcher has one PreparedFrame; a flush started from inside another flush can't use it.
+      if (flushing) {
+         if (!warnedNestedFlush) {
+            warnedNestedFlush = true;
+            dev.argus.client.ArgusClient.LOGGER.warn("Nested Argus immediate submit flush skipped", new IllegalStateException());
+         }
+         return;
+      }
+
+      flushing = true;
+      try {
+         render(storage);
+      } finally {
+         flushing = false;
+      }
+   }
+
+   private static void render(SubmitNodeStorage storage) {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
       // Argus's own dispatcher: vanilla's single PreparedFrame is held open for the whole level render.
       FeatureRenderDispatcher dispatcher = ArgusFeatureDispatcher.get();
       PreparedFrame frame;
       try {
          frame = dispatcher.prepareFrame(storage);
-      } catch (IllegalStateException frameInUse) {
-         // Only reachable if a flush is nested inside another flush.
-         if (!warnedNestedFlush) {
-            warnedNestedFlush = true;
-            dev.argus.client.ArgusClient.LOGGER.warn("Nested Argus immediate submit flush skipped", frameInUse);
+      } catch (RuntimeException | Error failure) {
+         // prepareFrame marks the frame in use before preparing; close it or every later flush is rejected.
+         try {
+            dispatcher.preparedFrame.close();
+         } catch (RuntimeException closeFailure) {
+            failure.addSuppressed(closeFailure);
          }
-         return;
+         throw failure;
       }
       RenderTarget target = minecraft.gameRenderer.mainRenderTarget();
       CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
@@ -49,6 +69,6 @@ public final class ImmediateSubmitRenderer implements ClientAccess {
       } finally {
          frame.close();
       }
-      encoder.submit();
+      // No submit(): it is the per-frame boundary (Minecraft calls it once); mid-frame it recycles transient uniform memory.
    }
 }

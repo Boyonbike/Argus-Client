@@ -43,6 +43,18 @@ public final class ArgusFeatureDispatcher {
       }
    }
 
+   /** Frees the dispatcher and its staged buffer; called when vanilla closes its own in GameRenderer.close. */
+   public static void close() {
+      if (dispatcher != null) {
+         dispatcher.close();
+         dispatcher = null;
+      }
+      if (buffer != null) {
+         buffer.close();
+         buffer = null;
+      }
+   }
+
    /** Set only while {@link #get()} constructs the dispatcher. */
    public static StagedVertexBuffer constructingBuffer() {
       return CONSTRUCTING.get();

@@ -146,8 +146,9 @@ public final class EffectUniforms {
 
    public void bind(RenderPass pass, CommandEncoder encoder) {
       if (!this.fields.isEmpty()) {
-         GpuBufferSlice slice = encoder.transientMemory().uploadStaging(
-            this.data.duplicate(), 64L, GpuBuffer.USAGE_UNIFORM);
+         // The device requires uniform slices at its own offset alignment (256 on NVIDIA GL), not 64.
+         long alignment = Math.max(64L, com.mojang.blaze3d.systems.RenderSystem.getDevice().getDeviceInfo().limits().minUniformOffsetAlignment());
+         GpuBufferSlice slice = encoder.transientMemory().uploadStaging(this.data.duplicate(), alignment, GpuBuffer.USAGE_UNIFORM);
          pass.setUniform(BLOCK_NAME, slice);
       }
       for (Map.Entry<String, TextureBinding> entry : this.textures.entrySet()) {

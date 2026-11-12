@@ -51,9 +51,8 @@ public class GuiExtractMixin {
    )
    private void afterScreenRendering(DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo callback) {
       NameProtectModule.replacementBypassed = false;
-      if (dev.argus.client.ClientAccess.argusclientMinecraft.gui.screen() instanceof ClientScreen) {
-         GuiProjectionUtils.restoreProjection();
-      }
+      // Unconditional: the screen may have closed while drawing, and restore is a no-op when nothing began.
+      GuiProjectionUtils.restoreProjection();
    }
 
    @ModifyExpressionValue(

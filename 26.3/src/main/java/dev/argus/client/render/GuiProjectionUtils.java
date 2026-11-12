@@ -12,36 +12,41 @@ import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 public final class GuiProjectionUtils implements ClientAccess {
    private static final Projection GUI_PROJECTION = new Projection();
    public static final ProjectionMatrixBuffer GUI_PROJECTION_CACHE = new ProjectionMatrixBuffer("gui_argus");
    private static GpuBufferSlice savedProjectionBuffer;
    private static ProjectionType savedProjectionType;
-   private static Matrix4f savedModelView;
+   private static boolean active;
 
    public static void restoreProjection() {
-      if (savedModelView != null) {
+      if (active) {
          RenderSystem.setProjectionMatrix(savedProjectionBuffer, savedProjectionType);
-         RenderSystem.getModelViewMatrixCopy().set(savedModelView);
+         RenderSystem.getModelViewStack().popMatrix();
          savedProjectionBuffer = null;
          savedProjectionType = null;
-         savedModelView = null;
+         active = false;
       }
    }
 
    public static void beginGuiProjection() {
-      if (savedModelView == null) {
+      if (!active) {
          Window window = argusclientMinecraft.getWindow();
          float guiWidth = (float)window.getWidth() / window.getGuiScale();
          float guiHeight = (float)window.getHeight() / window.getGuiScale();
          savedProjectionBuffer = RenderSystem.getProjectionMatrixBuffer();
          savedProjectionType = RenderSystem.getProjectionType();
-         Matrix4f modelView = RenderSystem.getModelViewMatrixCopy();
-         savedModelView = new Matrix4f(modelView);
          GUI_PROJECTION.setupOrtho(1000.0F, 11000.0F, guiWidth, guiHeight, true);
          RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(GUI_PROJECTION), ProjectionType.ORTHOGRAPHIC);
+         // Same camera placement as vanilla GuiRenderer: the ortho range is 1000..11000, so GUI geometry must sit
+         // at z = -11000 (+ its own z). Identity left every Argus GUI mesh behind the near plane, clipped away;
+         // that is why the blur mask never landed and the blur passed the screen through unblurred.
+         Matrix4fStack modelView = RenderSystem.getModelViewStack();
+         modelView.pushMatrix();
          modelView.identity().translate(0.0F, 0.0F, -11000.0F);
+         active = true;
       }
    }
 
