@@ -2310,3 +2310,9 @@ Boat Speed	Echo	Speed the server reports the boat moving at, from its position u
 Boat Speed	Mode	The travel mode and its speed cap. Gold means a speed fallback is active.
 Boat Speed	Status	What the boat is doing and how many movement updates went out last tick.
 Boat Speed	Tweaks	Chooses which lines the element shows.
+BetterBossBars		Stacks boss bars with the same name and adds a counter.
+BetterBossBars	Stack	Show boss bars that share a name as one bar with an xN counter.
+BetterBossBars	HideName	Hide the names above boss bars.
+BetterBossBars	Spacing	Pixels from the top of one boss bar to the next (vanilla is 19).
+Tracers	Self	In Freecam, draw a tracer back to your own body.
+Tracers	SelfColor	Colour of the Freecam tracer to your own body.

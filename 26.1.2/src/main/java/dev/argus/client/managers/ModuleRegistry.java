@@ -171,6 +171,7 @@ import dev.argus.client.modules.player.SourceFillModule;
 import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.render.AmbienceModule;
 import dev.argus.client.modules.render.AnimationsModule;
+import dev.argus.client.modules.render.BetterBossBarsModule;
 import dev.argus.client.modules.render.BlurModule;
 import dev.argus.client.modules.render.BordersModule;
 import dev.argus.client.modules.render.BreakHighlightModule;
@@ -445,6 +446,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new BlockerModule())) {
          throw new IllegalStateException("Registration rejected BlockerModule");
+      }
+
+      if (!this.registerModule(new BetterBossBarsModule())) {
+         throw new IllegalStateException("Registration rejected BetterBossBarsModule");
       }
 
       if (!this.registerModule(new BlockCoatModule())) {
