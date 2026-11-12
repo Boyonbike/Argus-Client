@@ -788,6 +788,7 @@ Waypoints	EyesAlign	Place waypoint text at eye height.
 Waypoints	Color	Color of waypoint boxes and lines.
 Waypoints	Text	Color of the waypoint name text.
 Waypoints	BeamAlpha	Alpha of the waypoint beam.
+Waypoints	XaeroSync	Keep waypoints in step with Xaero's Minimap both ways: adding, moving, hiding or deleting one on either side does the same on the other.
 AutoEat	Items	Foods AutoEat is allowed to eat.
 AutoEat	Mode	Treat the food list as any, whitelist or blacklist.
 AutoEat	Health	Eat when health drops to this value.

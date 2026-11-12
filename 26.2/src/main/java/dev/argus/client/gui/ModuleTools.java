@@ -120,7 +120,8 @@ final class ModuleTools {
                 () -> {
                     int n = shownWaypoints().size();
                     String count = n == 0 ? "No waypoints" : n + (n == 1 ? " waypoint" : " waypoints");
-                    return inWorld() ? count + " on " + WaypointRegistry.currentServerKey() : count + " on all servers · join a world to add one";
+                    String sync = dev.argus.client.integrations.xaero.XaeroWaypointSync.enabled() ? " · synced with Xaero" : "";
+                    return (inWorld() ? count + " on " + WaypointRegistry.currentServerKey() : count + " on all servers · join a world to add one") + sync;
                 },
                 inWorld() ? "No waypoints on this server yet." : "No waypoints yet.",
                 () -> {
