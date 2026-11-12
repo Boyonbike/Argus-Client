@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.util.Mth;
@@ -79,14 +78,12 @@ public class WaypointsModule extends Module {
          }
 
          this.visibleWaypoints.clear();
-         Minecraft minecraft = ClientAccess.argusclientMinecraft;
-         String currentServer = minecraft.getCurrentServer() == null ? null : minecraft.getCurrentServer().ip;
+         String currentServer = WaypointRegistry.currentServerKey();
 
          for (Waypoint waypoint : registeredWaypoints) {
             if (waypoint != null && waypoint.isToggled()) {
                String waypointServer = waypoint.getServer();
-               boolean serverMatches = currentServer == null ? waypointServer.equalsIgnoreCase("singleplayer") : waypointServer.equalsIgnoreCase(currentServer);
-               if (serverMatches) {
+               if (waypointServer.equalsIgnoreCase(currentServer)) {
                   this.visibleWaypoints.add(waypoint);
                }
             }

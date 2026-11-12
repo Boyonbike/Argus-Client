@@ -62,6 +62,11 @@ public final class CellIndex<T> {
    private final ArrayDeque<CellKey> dirtyQueue = new ArrayDeque<>();
    private final Set<CellKey> queued = new HashSet<>();
    private int size;
+   /**
+    * One counter for every cell, so a cell dropped and recreated at the same key (a chunk rescan) never gets a revision
+    * a cached mesh already holds for the old cell.
+    */
+   private long revisions;
 
    /** Packs a block position the same way for every caller (26 bits X/Z, 12 bits Y, like Minecraft's BlockPos). */
    public static long pack(int x, int y, int z) {
@@ -97,7 +102,7 @@ public final class CellIndex<T> {
       }
 
       cell.entries.put(packed, value);
-      cell.revision++;
+      cell.revision = ++this.revisions;
       this.enqueue(key);
       if (previous == null) {
          this.size++;
@@ -116,7 +121,7 @@ public final class CellIndex<T> {
       }
 
       this.size--;
-      cell.revision++;
+      cell.revision = ++this.revisions;
       this.enqueue(key);
       return true;
    }
@@ -133,7 +138,7 @@ public final class CellIndex<T> {
          if (cell != null) {
             this.size -= cell.entries.size();
             cell.entries.clear();
-            cell.revision++;
+            cell.revision = ++this.revisions;
          }
 
          this.enqueue(key);
@@ -145,7 +150,7 @@ public final class CellIndex<T> {
       CellKey key = keyOf(packed);
       Cell<T> cell = this.cells.get(key);
       if (cell != null) {
-         cell.revision++;
+         cell.revision = ++this.revisions;
          this.enqueue(key);
       }
    }
@@ -175,7 +180,7 @@ public final class CellIndex<T> {
    /** Marks every cell for a rebuild, for example after a colour change. */
    public void dirtyAll() {
       for (Cell<T> cell : this.cells.values()) {
-         cell.revision++;
+         cell.revision = ++this.revisions;
          this.enqueue(cell.key);
       }
    }

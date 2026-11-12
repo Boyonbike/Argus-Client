@@ -34,6 +34,11 @@ final class SettingsList {
     private Setting<?> editing, sliding;
     /** A key setting waiting for its next key or mouse button. */
     private KeyBindSetting capturing;
+    /** The list that most recently started capturing a key, so GUI-move can tell a bind is in progress. */
+    private static SettingsList captureOwner;
+
+    /** True while any settings list is waiting for a key, so the pressed key mustn't also move or turn the player. */
+    static boolean anyCapturing() { return captureOwner != null && captureOwner.capturing != null; }
     private String message = "";
     private long messageAt;
     /** Details popup: the row under the pointer, since when, and where it was drawn. */
@@ -529,7 +534,7 @@ final class SettingsList {
         if (event.button() == 1) { reset(setting); return true; }
         if (event.button() != 0) return true;
         if (setting instanceof SetSetting<?> collection) host.hostOpen(new CollectionSettingScreen(host, collection));
-        else if (setting instanceof KeyBindSetting bind) { stopEditing(); capturing = bind; }
+        else if (setting instanceof KeyBindSetting bind) { stopEditing(); capturing = bind; captureOwner = this; }
         else if (current instanceof Boolean enabled) change(setting, !enabled);
         else if (slider(setting) && mx >= sliderX() - 4 && mx <= sliderX() + SLIDER + 4) { sliding = setting; slideTo(setting, mx); }
         else if (current instanceof Enum<?> choice) {

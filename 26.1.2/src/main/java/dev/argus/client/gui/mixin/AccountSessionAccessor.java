@@ -26,5 +26,6 @@ public interface AccountSessionAccessor {
     @Mutable @Accessor("skinManager") void argus$setSkins(SkinManager value);
     @Mutable @Accessor("playerSkinRenderCache") void argus$setSkinRenderCache(PlayerSkinRenderCache value);
     @Mutable @Accessor("profileFuture") void argus$setProfile(CompletableFuture<ProfileResult> value);
+    @Accessor("profileFuture") CompletableFuture<ProfileResult> argus$profile();
     @Mutable @Accessor("userPropertiesFuture") void argus$setProperties(CompletableFuture<UserApiService.UserProperties> value);
 }
