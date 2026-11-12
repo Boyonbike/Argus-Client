@@ -17,6 +17,7 @@ import dev.argus.client.utils.inventory.InventoryUtils;
 import dev.argus.client.utils.movement.argus.AdaptiveFlightController.Motion;
 import dev.argus.client.utils.movement.argus.ArgusHorizontalFlight;
 import dev.argus.client.utils.movement.argus.ElytraBoostDelay;
+import dev.argus.client.modules.combat.AutoArmorModule;
 import dev.argus.client.utils.movement.argus.SmartElytraSwap;
 import dev.argus.client.events.LocalPlayerPreTickEvent;
 import java.util.ArrayList;
@@ -893,6 +894,11 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.smartTakeoffTick = this.clientTicks;
    }
 
+   /** Whether Smart Elytra is managing the chest slot (Volytra mode with the tweak on). */
+   public boolean isSmartElytraOn() {
+      return this.active() && this.smartElytra.getValue();
+   }
+
    /** Argus landing swap: back on the ground, wear the best chestplate instead of wings (or nothing). */
    private void smartLandingSwap(LocalPlayer player) {
       if (!this.smartElytra.getValue() || !this.canSmartSwap(player)) return;
@@ -962,6 +968,10 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       if (!chestSlot.mayPickup(player)) return;
       Inventory inventory = player.getInventory();
       List<SmartElytraSwap.Candidate> candidates = new ArrayList<>();
+      // With AutoArmor on, its scoring (protection type, Safe durability, curses) picks the landing chestplate, so
+      // the two modules agree and AutoArmor has nothing to swap afterwards.
+      AutoArmorModule autoArmor = glider ? null : ClientContext.getModule(AutoArmorModule.class);
+      if (autoArmor != null && !autoArmor.isToggled()) autoArmor = null;
       for (int i = 0; i <= Inventory.INVENTORY_SIZE; i++) {
          int slot = i == Inventory.INVENTORY_SIZE ? Inventory.SLOT_OFFHAND : i;
          ItemStack stack = inventory.getItem(slot);
@@ -972,6 +982,12 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
             if (attribute.equals(Attributes.ARMOR)) armor[0] += modifier.amount();
             else if (attribute.equals(Attributes.ARMOR_TOUGHNESS)) armor[1] += modifier.amount();
          });
+         if (autoArmor != null) {
+            double score = autoArmor.scoreChestplate(stack);
+            if (score < 0.0) continue;
+            armor[0] = score;
+            armor[1] = 0.0;
+         }
          int remaining = stack.isDamageableItem() ? stack.getMaxDamage() - stack.getDamageValue() : Integer.MAX_VALUE;
          candidates.add(new SmartElytraSwap.Candidate(slot, glider, remaining, armor[0], armor[1]));
       }

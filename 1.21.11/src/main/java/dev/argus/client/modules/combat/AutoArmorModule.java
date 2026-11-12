@@ -32,6 +32,7 @@ import dev.argus.client.utils.inventory.ArmorSlot;
 import dev.argus.client.utils.inventory.EnchantmentUtils;
 import dev.argus.client.utils.inventory.InventoryUtils;
 import dev.argus.client.utils.movement.NewGrimElytraFlyHandler;
+import dev.argus.client.utils.movement.VolytraElytraFlyHandler;
 import dev.argus.client.utils.movement.WallsVelocityHandler;
 import dev.argus.client.utils.network.PacketSender;
 import dev.argus.client.utils.world.WorldUtils;
@@ -104,6 +105,36 @@ public class AutoArmorModule extends Module {
    private boolean previousHeightPredicate;
    private boolean skipNextArmorUpdate;
    private double nearestAdultPiglinDistance;
+
+   /**
+    * Whether the worn chest item is wings that elytra flight is using: while gliding or in the air, or any time
+    * ElytraFly is on. Swapping them for a chestplate would end the flight (NewGrim's FallChestplate excepted).
+    */
+   private boolean isFlyingOnWings(ItemStack chest) {
+      if (chest.isEmpty() || !chest.has(DataComponents.GLIDER)) {
+         return false;
+      }
+
+      if (elytraFlyModule.getActiveMode() instanceof NewGrimElytraFlyHandler flightMode && flightMode.shouldFallWithChestplate()) {
+         return false;
+      }
+
+      return elytraFlyModule.isToggled()
+         || ClientAccess.argusclientMinecraft.player.isFallFlying()
+         || !EntityUtils.hasCollisionBelow(ClientAccess.argusclientMinecraft.player);
+   }
+
+   /** Whether Volytra's Smart Elytra puts wings on for takeoff and off on landing, so AutoArmor never equips them. */
+   private static boolean isVolytraSwappingWings() {
+      return elytraFlyModule.isToggled()
+         && elytraFlyModule.getActiveMode() instanceof VolytraElytraFlyHandler volytra
+         && volytra.isSmartElytraOn();
+   }
+
+   /** AutoArmor's score for a chestplate (higher is better, negative never wear), for Volytra's landing swap. */
+   public double scoreChestplate(ItemStack stack) {
+      return stack.has(DataComponents.GLIDER) ? -1.0 : this.scoreArmor(stack, ArmorSlot.CHESTPLATE);
+   }
 
    private boolean shouldPreferGoldenHelmet() {
       return this.helmetSetting.getValue().isGold() && this.isPiglinWithinRange();
@@ -271,6 +302,10 @@ public class AutoArmorModule extends Module {
          Inventory equippedInventory = ClientAccess.argusclientMinecraft.player.getInventory();
          int equippedSlot = armorKind.getInventoryIndex();
          ItemStack equippedStack = equippedInventory.getItem(equippedSlot);
+         if (armorKind == ArmorSlot.CHESTPLATE && this.isFlyingOnWings(equippedStack)) {
+            continue;
+         }
+
          ResourceKey bindingCurse = Enchantments.BINDING_CURSE;
          if (!EnchantmentUtils.hasEnchantment(bindingCurse, equippedStack)) {
             double bestScore = this.scoreArmor(equippedStack, armorKind);
@@ -355,7 +390,7 @@ public class AutoArmorModule extends Module {
 
       Item elytraItem = Items.ELYTRA;
       if (stack.is(elytraItem) && armorKind == ArmorSlot.CHESTPLATE) {
-         if (DamageUtils.getDurabilityPercent(stack) <= 1) {
+         if (DamageUtils.getDurabilityPercent(stack) <= 1 || isVolytraSwappingWings()) {
             return -1.0;
          }
 
