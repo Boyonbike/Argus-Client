@@ -93,6 +93,7 @@ public final class ClientInitializer {
          ClientContext.movementSpeedTracker = new MovementSpeedTracker();
          ClientContext.rotationManager = new RotationManager();
          ClientContext.waypointRegistry = new WaypointRegistry();
+         new dev.argus.client.integrations.xaero.XaeroWaypointSync();
          ClientContext.featureBoxRenderer = new FeatureBoxRenderer();
          ClientContext.taskScheduler = new TaskScheduler();
          ClientContext.moduleRegistry = new ModuleRegistry();
