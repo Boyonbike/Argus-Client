@@ -319,16 +319,16 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.argusMotionTurnRate = this.addDouble("Argus Motion Turn Rate", "argusMotionTurnRate", 15.0, 0.0, 45.0, this.visibleWith(this.argusMotion, this.adaptiveTurning));
       // Liquid takeoff (water, swimming, lava): hold jump to rise; at the top of the rise out of the liquid, lift
       // straight up by the Lift speed and start gliding (in water, the Lift is held until clear of it).
-      this.liquidTakeoff = this.addBool("Argus Liquid Takeoff", "argusLiquidTakeoff", false, this.modeOnly());
+      this.liquidTakeoff = this.addBool("Argus Liquid Takeoff", "argusLiquidTakeoff", true, this.modeOnly());
       this.liquidHoldJump = this.addBool("Argus Liquid Hold Jump", "argusLiquidHoldJump", true, this.visibleWith(this.liquidTakeoff));
       this.liquidWater = this.addBool("Argus Liquid Water", "argusLiquidWater", true, this.visibleWith(this.liquidTakeoff));
       this.liquidWaterRise = this.addDouble("Argus Water Rise", "argusLiquidWaterRise", 0.1, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidWater));
-      this.liquidWaterLift = this.addDouble("Argus Water Lift", "argusLiquidWaterLaunch", 0.7, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidWater));
+      this.liquidWaterLift = this.addDouble("Argus Water Lift", "argusLiquidWaterLaunch", 0.8, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidWater));
       this.liquidSwim = this.addBool("Argus Liquid Swim", "argusLiquidSwim", true, this.visibleWith(this.liquidTakeoff));
       this.liquidSwimRise = this.addDouble("Argus Swim Rise", "argusLiquidSwimRise", 0.1, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidSwim));
-      this.liquidSwimLift = this.addDouble("Argus Swim Lift", "argusLiquidSwimLaunch", 0.7, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidSwim));
+      this.liquidSwimLift = this.addDouble("Argus Swim Lift", "argusLiquidSwimLaunch", 0.8, 0.2, 2.0, this.visibleWith(this.liquidTakeoff, this.liquidSwim));
       this.liquidLava = this.addBool("Argus Liquid Lava", "argusLiquidLava", true, this.visibleWith(this.liquidTakeoff));
-      this.liquidLavaRise = this.addDouble("Argus Lava Rise", "argusLiquidLavaRise", 0.3, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidLava));
+      this.liquidLavaRise = this.addDouble("Argus Lava Rise", "argusLiquidLavaRise", 0.1, 0.05, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidLava));
       this.liquidLavaLift = this.addDouble("Argus Lava Lift", "argusLiquidLavaLift", 0.2, 0.0, 1.0, this.visibleWith(this.liquidTakeoff, this.liquidLava));
       this.liquidGlideDelay = this.addInt("Argus Liquid Glide Delay", "argusLiquidGlideDelay", 2, 0, 10, this.visibleWith(this.liquidTakeoff));
       ((NumberSetting<Integer>) this.liquidGlideDelay).withUnit(" ticks");
