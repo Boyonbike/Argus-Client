@@ -5,6 +5,7 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.events.LocalPlayerMoveEvent;
 import dev.argus.client.events.LocalPlayerTickEvent;
 import dev.argus.client.events.PacketEvent;
+import dev.argus.client.events.EventHandler;
 import dev.argus.client.modules.movement.ElytraFlyModule;
 import dev.argus.client.settings.BooleanSetting;
 import dev.argus.client.settings.KeyBindSetting;
@@ -69,8 +70,9 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Faithful port of VolytraFly's elytra movement logic (General, Landing, Inventory and
- * Autopilot), plus optional Argus adaptive turning, base/boost speed caps and smart
- * elytra handling. Highway Mode, HUD and visuals are not part of this handler.
+ * Autopilot, with Autohighway and Autonav in {@link VolytraNavigator}), plus optional Argus
+ * adaptive turning, base/boost speed caps and smart elytra handling. VolytraFly's Bypass,
+ * Mapping, Building and Overdrive modes, its HUD and its visuals are not part of this handler.
  */
 public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private static final double RUBBERBAND_CAP_TOLERANCE_PERCENT = 5.0;
@@ -188,12 +190,19 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private final Setting<Boolean> useFireworks;
    private final Setting<Double> autoPilotFireworkDelay;
    private final Setting<Double> autoPilotMinimumHeight;
+   private final VolytraNavigator navigator;
+
+   /** Ticks left in which a freshly swapped-in elytra is reopened so the flight carries on. */
+   private static final int REGLIDE_WINDOW_TICKS = 10;
+   private int reglideTicksLeft;
+   private boolean glidingLastTick;
+   private final InstaDropListener instaDropListener = new InstaDropListener();
 
    private double acceleration;
    private double verticalAcceleration;
-   private double velX;
-   private double velY;
-   private double velZ;
+   double velX;
+   double velY;
+   double velZ;
    private Vec3 forward = Vec3.ZERO;
    private Vec3 right = Vec3.ZERO;
 
@@ -220,7 +229,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    private boolean verticalStepUp;
    private double verticalStepStartY;
    private int verticalStepTicks;
-   private boolean lastForwardPressed;
+   boolean lastForwardPressed;
 
    private Vec3 lastHorizontalDirection = Vec3.ZERO;
    private final ElytraBoostDelay boostDelay = new ElytraBoostDelay();
@@ -287,6 +296,9 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.autoPilotFireworkDelay = this.addDouble("Volytra Firework Delay", "volytraFireworkDelay", 8.0, 1.0, 100.0, this.visibleWith(this.useFireworks));
       this.autoPilotMinimumHeight = this.addDouble("Volytra Min Height", "volytraMinHeight", 120.0, -128.0, 4096.0, this.modeOnly());
 
+      // Autohighway and Autonav
+      this.navigator = new VolytraNavigator(this);
+
       // Tweaks
       this.tweaksGroup = this.module.add(new BooleanSetting("Tweaks", false).markAsGroup());
       this.tweaksGroup.expanded = true;
@@ -347,15 +359,15 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return migrated;
    }
 
-   private boolean active() {
+   boolean active() {
       return this.module.modeSetting.getValue() == ElytraFlyModule.ModeChoice.VOLYTRA;
    }
 
-   private <T> Predicate<T> modeOnly() {
+   <T> Predicate<T> modeOnly() {
       return value -> this.active();
    }
 
-   private <T> Predicate<T> visibleWith(Setting<Boolean> parent) {
+   <T> Predicate<T> visibleWith(Setting<Boolean> parent) {
       return value -> this.active() && parent.getValue();
    }
 
@@ -381,19 +393,19 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return value -> this.active() && !this.argusMotion.getValue() && parent.getValue();
    }
 
-   private BooleanSetting addBool(String name, String configName, boolean defaultValue, Predicate<Boolean> visible) {
+   BooleanSetting addBool(String name, String configName, boolean defaultValue, Predicate<Boolean> visible) {
       BooleanSetting setting = this.module.add(new BooleanSetting(name, defaultValue, visible));
       setting.setConfigName(configName);
       return setting;
    }
 
-   private Setting<Double> addDouble(String name, String configName, double defaultValue, double min, double max, Predicate<Double> visible) {
+   Setting<Double> addDouble(String name, String configName, double defaultValue, double min, double max, Predicate<Double> visible) {
       Setting<Double> setting = this.module.add(new NumberSetting<>(name, defaultValue, min, max, visible));
       setting.setConfigName(configName);
       return setting;
    }
 
-   private Setting<Integer> addInt(String name, String configName, int defaultValue, int min, int max, Predicate<Integer> visible) {
+   Setting<Integer> addInt(String name, String configName, int defaultValue, int min, int max, Predicate<Integer> visible) {
       Setting<Integer> setting = this.module.add(new NumberSetting<>(name, defaultValue, min, max, visible));
       setting.setConfigName(configName);
       return setting;
@@ -418,6 +430,10 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    @Override
    public void onEnable() {
       LocalPlayer player = this.minecraft().player;
+      this.instaDropListener.stop();
+      this.navigator.onEnable();
+      this.reglideTicksLeft = 0;
+      this.glidingLastTick = false;
       this.liquidTakeoffAssist.reset();
       this.atMaxSpeed = false;
       this.lastJumpPressed = false;
@@ -455,6 +471,14 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
    @Override
    public void onDisable() {
       this.liquidTakeoffAssist.reset();
+      this.navigator.onDisable();
+      this.reglideTicksLeft = 0;
+      // Insta Drop: switching the module off mid-glide stops the flight dead and drops straight down. A change of
+      // ElytraFly mode keeps the module on and is not a switch-off.
+      LocalPlayer player = this.minecraft().player;
+      if (this.instaDrop.getValue() && !this.module.isToggled() && player != null && player.isFallFlying()) {
+         this.instaDropListener.start();
+      }
       this.releaseAvoidance();
       this.releaseVerticalStep();
       this.releaseAllForcedKeys();
@@ -471,6 +495,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       LocalPlayer player = minecraft.player;
       ClientLevel world = minecraft.level;
       if (player == null || world == null) return;
+      this.navigator.trackWorld(world);
       if (!player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.GLIDER)) {
          this.lastHorizontalDirection = Vec3.ZERO;
          return;
@@ -503,12 +528,16 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
             this.handleAcceleration();
             this.handleHorizontalSpeed();
          }
+         this.navigator.applySteering(player);
 
          this.handleVerticalAcceleration();
          this.handleVerticalSpeed();
          this.applyCustomVerticalSpeedCap();
+         this.navigator.limitVerticalStep(player);
+         this.navigator.applySlopeCoupling(player);
          this.handleAntiSlam(world, player);
          this.handleMaxHeight(player);
+         this.navigator.applyClearanceGuard(player);
 
          int chunkX = SectionPos.blockToSectionCoord(player.getX() + this.velX);
          int chunkZ = SectionPos.blockToSectionCoord(player.getZ() + this.velZ);
@@ -535,7 +564,8 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
             }
          }
 
-         if (!this.argusMotion.getValue()) this.applyAdaptiveTurning();
+         // Autohighway and Autonav aim the flight themselves; turn smoothing would swing it off their route.
+         if (!this.argusMotion.getValue() && Float.isNaN(this.navigator.steerYaw(player))) this.applyAdaptiveTurning();
          if (this.argusMotion.getValue()) this.applyTotalCeiling(this.argusFlight.totalCeiling());
          this.applySpeedCap3d();
          if (this.argusMotion.getValue()) {
@@ -598,7 +628,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          settings = new ArgusHorizontalFlight.Settings(this.argusMotionAcceleration.getValue(), this.argusMotionBraking.getValue(),
             turnRate, this.withRubberbandCap(this.baseHorizontalSpeed.getValue() / 20.0), true,
             this.withRubberbandCap(this.boostHorizontalCap()), this.accelerationStep.getValue(),
-            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.startSpeed.getValue(),
+            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.curveStartSpeed(),
             this.boostJump.getValue());
          curveKey = this.boostKeyHeld();
       } else {
@@ -607,13 +637,15 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          // Volytra's setback rewind, the server's per-move limit and speed-scaled braking; a plain cruise
          // target of Horizontal Speed has none of them and rubber-bands once it gets fast.
          settings = new ArgusHorizontalFlight.Settings(this.argusMotionAcceleration.getValue(), this.argusMotionBraking.getValue(),
-            turnRate, this.withRubberbandCap(this.startSpeed.getValue()), true,
+            turnRate, this.withRubberbandCap(this.curveStartSpeed()), true,
             this.withRubberbandCap(this.horizontalSpeed.getValue()), this.accelerationStep.getValue(),
-            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.startSpeed.getValue());
+            Math.max(this.accelerationPlateau.getValue(), 1.0E-3), this.curveStartSpeed());
          curveKey = true;
       }
 
-      Motion output = this.argusFlight.step(settings, forward, right, player.getYRot(),
+      // While Autohighway or Autonav drives, Argus Motion turns towards their waypoint instead of the camera.
+      float steerYaw = this.navigator.steerYaw(player);
+      Motion output = this.argusFlight.step(settings, forward, right, Float.isNaN(steerYaw) ? player.getYRot() : steerYaw,
          this.boostDelay.ready() && curveKey);
       this.velX = output.x();
       this.velZ = output.z();
@@ -756,11 +788,6 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       LocalPlayer player = minecraft.player;
       if (player == null) return;
 
-      if (this.instaDrop.getValue() && player.isFallFlying()) {
-         player.setDeltaMovement(Vec3.ZERO);
-         player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, player.horizontalCollision));
-      }
-
       this.smartLandingSwap(player);
 
       if (this.autoReplenish.getValue() && this.canManageInventory(player)) {
@@ -773,19 +800,79 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
          }
       }
 
+      // Gliding now, or a tick ago and just lost it (an elytra breaking ends the glide)
+      boolean wasFlying = player.isFallFlying() || this.glidingLastTick;
       if (this.replace.getValue() && this.canManageInventory(player)) {
          ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-         if (chestStack.is(Items.ELYTRA)) {
-            int remaining = chestStack.getMaxDamage() - chestStack.getDamageValue();
-            if (remaining <= this.replaceDurability.getValue()) {
-               int slot = InventoryUtils.findInventorySlot(stack ->
-                  stack.is(Items.ELYTRA) && stack.getMaxDamage() - stack.getDamageValue() > this.replaceDurability.getValue(), false);
-               if (slot >= 0) {
-                  // InventoryMenu slot 6 is the chest armour slot.
-                  InventoryUtils.swapSlotsWithPickup(InventoryUtils.toMenuSlot(slot), 6);
-               }
+         // Either the worn elytra is about to give out, or it already broke mid-flight and the chest slot is empty
+         boolean needsReplacing = chestStack.is(Items.ELYTRA)
+            ? chestStack.getMaxDamage() - chestStack.getDamageValue() <= this.replaceDurability.getValue()
+            : wasFlying && chestStack.isEmpty();
+         if (needsReplacing) {
+            int slot = InventoryUtils.findInventorySlot(stack ->
+               stack.is(Items.ELYTRA) && stack.getMaxDamage() - stack.getDamageValue() > this.replaceDurability.getValue(), false);
+            if (slot >= 0) {
+               // InventoryMenu slot 6 is the chest armour slot.
+               InventoryUtils.swapSlotsWithPickup(InventoryUtils.toMenuSlot(slot), 6);
+               // The swap (or the break before it) drops out of the glide; open the new elytra again so the
+               // flight, Autopilot, Autohighway and Autonav carry on.
+               if (wasFlying) this.reglideTicksLeft = REGLIDE_WINDOW_TICKS;
             }
          }
+      }
+
+      this.continueGlideAfterSwap(player);
+      this.navigator.tick(player);
+      this.glidingLastTick = player.isFallFlying();
+   }
+
+   /** After an elytra was swapped in mid-flight, opens it again so the player doesn't drop to the ground. */
+   private void continueGlideAfterSwap(LocalPlayer player) {
+      if (this.reglideTicksLeft <= 0) return;
+      this.reglideTicksLeft--;
+      if (player.onGround() || player.isInWater()) {
+         this.reglideTicksLeft = 0;
+         return;
+      }
+      if (player.isFallFlying() || !isGlider(player.getItemBySlot(EquipmentSlot.CHEST))) return;
+      if (player.tryToStartFallFlying()) {
+         player.connection.send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
+      }
+   }
+
+   /**
+    * Insta Drop: after ElytraFly is switched off mid-glide, stops all motion each tick (and tells the server the
+    * player is on the ground) until the glide ends, so the player drops straight down instead of coasting on.
+    * Subscribed only while that drop lasts, since the module's own events stop once it is off.
+    */
+   private final class InstaDropListener {
+      private boolean active;
+      private ClientLevel world;
+
+      void start() {
+         if (this.active) return;
+         this.active = true;
+         this.world = VolytraElytraFlyHandler.this.minecraft().level;
+         ClientAccess.eventBus.subscribe(this);
+      }
+
+      void stop() {
+         if (!this.active) return;
+         this.active = false;
+         this.world = null;
+         ClientAccess.eventBus.unsubscribe(this);
+      }
+
+      @EventHandler
+      private void onLocalPlayerTick(LocalPlayerTickEvent event) {
+         Minecraft minecraft = VolytraElytraFlyHandler.this.minecraft();
+         LocalPlayer player = minecraft.player;
+         if (minecraft.level != this.world || player == null || !player.isFallFlying()) {
+            this.stop();
+            return;
+         }
+         player.setDeltaMovement(Vec3.ZERO);
+         player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, player.horizontalCollision));
       }
    }
 
@@ -1000,12 +1087,18 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       if (!player.isFallFlying()) return;
 
       if (!this.avoidanceSteering) {
-         this.releaseMovementKeys();
-         this.releaseVerticalKeys();
-         if (this.autoPilot.getValue() && player.getY() > this.autoPilotMinimumHeight.getValue()) {
-            this.setKey(this.minecraft().options.keyUp, true);
-            this.lastForwardPressed = true;
+         // Autonav, then Autohighway, then plain Autopilot
+         if (!this.navigator.drive(player)) {
+            this.releaseMovementKeys();
+            this.releaseVerticalKeys();
+            if (this.autoPilot.getValue() && player.getY() > this.autoPilotMinimumHeight.getValue()) {
+               this.setKey(this.minecraft().options.keyUp, true);
+               this.lastForwardPressed = true;
+            }
          }
+      } else {
+         // Avoidance has the keys this tick; don't repoint its dodge at a waypoint
+         this.navigator.clearSteering();
       }
 
       if (this.useFireworks.getValue()) {
@@ -1264,16 +1357,61 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       return Math.max(0.0, cap);
    }
 
+   /** Volytra's Start Speed, or 1 while Autohighway or Autonav slows down to break out of a loop. */
+   private double curveStartSpeed() {
+      double start = this.startSpeed.getValue();
+      return this.navigator.unsticking() ? Math.min(VolytraNavigator.UNSTICK_MIN_SPEED, start) : start;
+   }
+
    private double effectiveHorizontalStartSpeed() {
       return this.customSpeeds.getValue()
-         ? Math.min(this.startSpeed.getValue(), this.effectiveHorizontalSpeedCap())
-         : this.startSpeed.getValue();
+         ? Math.min(this.curveStartSpeed(), this.effectiveHorizontalSpeedCap())
+         : this.curveStartSpeed();
    }
 
    private double effectiveVerticalStartSpeed() {
-      return this.customSpeeds.getValue()
-         ? Math.min(this.verticalStartSpeed.getValue(), this.effectiveVerticalSpeedCap())
-         : this.verticalStartSpeed.getValue();
+      double start = this.verticalStartSpeed.getValue();
+      if (this.navigator.unsticking()) start = Math.min(VolytraNavigator.UNSTICK_MIN_SPEED, start);
+      return this.customSpeeds.getValue() ? Math.min(start, this.effectiveVerticalSpeedCap()) : start;
+   }
+
+   // ---------------------------------------------------------------- hooks for VolytraNavigator
+
+   /** Restarts the speed ramps from their start, as Autonav does on taking off, arriving and unsticking. */
+   void resetRamps() {
+      this.zeroAcceleration();
+      this.argusFlying = false;
+   }
+
+   /** The clearance guard cut this tick's move short: the ramp drops to what was kept. */
+   void onGuardSpeedLoss(double keptHorizontal) {
+      double kept = Math.max(this.effectiveHorizontalStartSpeed(), keptHorizontal);
+      if (kept < this.acceleration) this.acceleration = kept;
+      this.atMaxSpeed = this.acceleration >= this.effectiveHorizontalSpeedCap();
+      this.accelerationDelayTicks = 0;
+   }
+
+   /** The highest Y Autonav and Autohighway may aim for: Max Height, or none when Limit Height is off. */
+   double flightCeiling() {
+      return this.limitMaxHeight.getValue() ? this.maxHeight.getValue() : Double.POSITIVE_INFINITY;
+   }
+
+   int flightCeilingBlock() {
+      return this.limitMaxHeight.getValue() ? (int) Math.floor(this.maxHeight.getValue()) : 100_000;
+   }
+
+   boolean limitsHeight() {
+      return this.limitMaxHeight.getValue();
+   }
+
+   /** The fastest the flight goes, in blocks per tick. */
+   double topHorizontalSpeed() {
+      return this.effectiveHorizontalSpeedCap();
+   }
+
+   /** Sets a key's state unless the player is physically holding it. */
+   void forceKey(KeyMapping mapping, boolean down) {
+      if (!this.isKeyPhysicallyPressed(mapping)) this.setKey(mapping, down);
    }
 
    private void handleVerticalAcceleration() {
@@ -1604,7 +1742,7 @@ public class VolytraElytraFlyHandler extends ElytraFlyModeHandler {
       this.avoidanceSteering = false;
    }
 
-   private boolean isMovementKeyPhysicallyPressed() {
+   boolean isMovementKeyPhysicallyPressed() {
       return this.isKeyPhysicallyPressed(this.minecraft().options.keyUp)
          || this.isKeyPhysicallyPressed(this.minecraft().options.keyDown)
          || this.isKeyPhysicallyPressed(this.minecraft().options.keyLeft)
