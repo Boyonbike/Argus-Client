@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class WaypointRegistry extends AbstractRegistry<Waypoint> implements ClientAccess, JsonConfigurable {
@@ -40,16 +40,7 @@ public final class WaypointRegistry extends AbstractRegistry<Waypoint> implement
          return Collections.emptyList();
       }
 
-      ClientPacketListener serverCheckConnection = ClientAccess.argusclientMinecraft.player.connection;
-      String serverAddress;
-      if (serverCheckConnection.getServerData() == null) {
-         serverAddress = "singleplayer";
-      } else {
-         ClientPacketListener addressConnection = ClientAccess.argusclientMinecraft.player.connection;
-         serverAddress = addressConnection.getServerData().ip;
-      }
-
-      String currentServer = serverAddress;
+      String currentServer = currentServerKey();
       return this.entries.stream().filter(candidate -> {
          if (candidate.getServer() != null) {
             String waypointServer = candidate.getServer();
@@ -66,6 +57,15 @@ public final class WaypointRegistry extends AbstractRegistry<Waypoint> implement
          double waypointZ = waypoint.getZ();
          return playerSnapshot.distanceToSqr(waypointX, waypointY, waypointZ);
       })).toList();
+   }
+
+   /**
+    * The key waypoints are stored under for the server you are on: the address from the server list, or
+    * "singleplayer". Adding, listing, toggling and rendering all use this, so they always agree.
+    */
+   public static String currentServerKey() {
+      ServerData server = ClientAccess.argusclientMinecraft.getCurrentServer();
+      return server == null || server.ip == null || server.ip.isBlank() ? "singleplayer" : server.ip;
    }
 
    @Override

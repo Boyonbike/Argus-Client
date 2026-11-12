@@ -9,7 +9,8 @@
  * world-render events, box renderer and hotbar selection replace their Meteor
  * counterparts; the Cube shape is laid out from the player's facing; the tool
  * pick runs before each of the module's own breaks instead of on every manual
- * break, and switch-back happens once nothing is left to break.
+ * break, and switch-back happens once nothing is left to break. It leaves
+ * Block Coat's coating block and hotbar slot alone while Block Coat is on.
  * Distributed under GNU GPL v3; see licenses/GPL-3.0.txt and THIRD_PARTY_NOTICES.md.
  * This program is distributed WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -19,6 +20,7 @@ package dev.argus.client.modules.player;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.ClientAccess;
+import dev.argus.client.ClientContext;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.LocalPlayerPreTickEvent;
 import dev.argus.client.events.WorldRenderEvent;
@@ -103,6 +105,8 @@ public class RedstoneNukerModule extends Module {
    private int timer;
    private int noBlockTimer;
    private int previousSlot = -1;
+   private int toolSlot = -1;
+   private BlockCoatModule blockCoat;
    private AABB cubeBounds;
 
    public RedstoneNukerModule() {
@@ -159,6 +163,7 @@ public class RedstoneNukerModule extends Module {
       this.timer = 0;
       this.noBlockTimer = 0;
       this.previousSlot = -1;
+      this.toolSlot = -1;
    }
 
    @Override
@@ -203,20 +208,26 @@ public class RedstoneNukerModule extends Module {
       }
 
       int broken = 0;
+      boolean coatHoldsHotbar = this.blockCoatHoldsHotbar();
       for (BlockPos pos : this.targets) {
          if (broken >= this.bptSetting.getValue()) {
             break;
          }
 
-         if (!this.breakBlock(player, pos)) {
+         // While Block Coat holds the hotbar, a block that takes more than one hit would lose its progress the
+         // next time Block Coat switches slots, so only break what the held item breaks at once.
+         if (coatHoldsHotbar && !this.breaksInstantly(player, pos)) {
+            continue;
+         }
+
+         if (!this.breakBlock(player, pos, !coatHoldsHotbar)) {
             break;
          }
 
          this.brokenBlocks.add(new BrokenBlock(pos));
          this.lastBlockPos = pos;
          broken++;
-         BlockState state = ClientAccess.argusclientMinecraft.level.getBlockState(pos);
-         if (WorldUtils.getBreakProgress(player.getMainHandItem(), state, player.onGround()) < 1.0) {
+         if (!this.breaksInstantly(player, pos)) {
             break;
          }
       }
@@ -251,6 +262,7 @@ public class RedstoneNukerModule extends Module {
       int uniformReach = (int) Math.round(range) - 1;
       Mode mode = this.modeSetting.getValue();
       Set<Block> whitelist = this.blocksSetting.getValue();
+      Block coating = this.blockCoat().coatingBlock();
       BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
       for (int x = minX; x <= maxX; x++) {
@@ -269,7 +281,8 @@ public class RedstoneNukerModule extends Module {
                }
 
                BlockState state = level.getBlockState(cursor);
-               if (!whitelist.contains(state.getBlock()) || !WorldUtils.canMineBlock(cursor)) {
+               // Never break what Block Coat is placing, or the two undo each other.
+               if (!whitelist.contains(state.getBlock()) || state.is(coating) || !WorldUtils.canMineBlock(cursor)) {
                   continue;
                }
 
@@ -312,10 +325,30 @@ public class RedstoneNukerModule extends Module {
       );
    }
 
-   /** Picks a tool if wanted and hits the block; false when Anti Break stops it. */
-   private boolean breakBlock(LocalPlayer player, BlockPos pos) {
+   private BlockCoatModule blockCoat() {
+      if (this.blockCoat == null) {
+         this.blockCoat = ClientContext.getModule(BlockCoatModule.class);
+      }
+
+      return this.blockCoat;
+   }
+
+   private boolean blockCoatHoldsHotbar() {
+      return this.blockCoat().holdsHotbar();
+   }
+
+   private boolean breaksInstantly(LocalPlayer player, BlockPos pos) {
+      BlockState state = ClientAccess.argusclientMinecraft.level.getBlockState(pos);
+      return player.isCreative() || WorldUtils.getBreakProgress(player.getMainHandItem(), state, player.onGround()) >= 1.0;
+   }
+
+   /** Picks a tool if wanted and allowed, and hits the block; false when Anti Break stops it. */
+   private boolean breakBlock(LocalPlayer player, BlockPos pos, boolean maySwitch) {
       if (this.autoToolSetting.getValue()) {
-         this.selectTool(player, ClientAccess.argusclientMinecraft.level.getBlockState(pos));
+         if (maySwitch) {
+            this.selectTool(player, ClientAccess.argusclientMinecraft.level.getBlockState(pos));
+         }
+
          ItemStack held = player.getMainHandItem();
          if (isTool(held) && this.isWornOut(held)) {
             return false;
@@ -327,7 +360,7 @@ public class RedstoneNukerModule extends Module {
       }
 
       if (this.swingSetting.getValue()) {
-         player.swing(InteractionHand.MAIN_HAND);
+         player.swing(InteractionHand.MAIN_HAND, player.getItemInHand(InteractionHand.MAIN_HAND).getAttackAnimation(), false);
       }
 
       return true;
@@ -355,6 +388,7 @@ public class RedstoneNukerModule extends Module {
          }
 
          InventoryUtils.selectHotbarSlotForPlacement(bestSlot);
+         this.toolSlot = bestSlot;
       }
    }
 
@@ -388,12 +422,15 @@ public class RedstoneNukerModule extends Module {
          || stack.getItem() instanceof ShearsItem;
    }
 
+   /** Switches back only if the tool this module picked is still selected, so it never undoes another module's switch. */
    private void restoreSlot() {
-      if (this.previousSlot != -1 && this.switchBackSetting.getValue() && !this.isWorldUnavailable()) {
+      if (this.previousSlot != -1 && this.switchBackSetting.getValue() && !this.isWorldUnavailable()
+         && InventoryUtils.getSelectedSlot() == this.toolSlot) {
          InventoryUtils.selectHotbarSlotForPlacement(this.previousSlot);
       }
 
       this.previousSlot = -1;
+      this.toolSlot = -1;
    }
 
    @EventHandler

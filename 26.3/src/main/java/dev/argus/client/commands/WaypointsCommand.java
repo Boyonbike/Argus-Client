@@ -11,7 +11,6 @@ import dev.argus.client.ClientContext;
 import dev.argus.client.managers.WaypointRegistry;
 import dev.argus.client.modules.render.WaypointsModule;
 import dev.argus.client.settings.options.DimensionType;
-import dev.argus.client.utils.ServerAddressUtils;
 import dev.argus.client.utils.chat.ChatUtils;
 import dev.argus.client.utils.world.Waypoint;
 import dev.argus.client.utils.world.WorldUtils;
@@ -30,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class WaypointsCommand extends Command {
    static String getCurrentServerKey() {
-      return ServerAddressUtils.getCurrentServerAddress();
+      return WaypointRegistry.currentServerKey();
    }
 
    public WaypointsCommand() {
