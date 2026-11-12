@@ -348,7 +348,7 @@ def has_selector(jar: Jar, owner: str, selector: str) -> bool:
 
 
 def is_mc(owner: str) -> bool:
-    return owner.replace("/", ".").startswith(("net.minecraft", "com.mojang.blaze3d"))
+    return owner.replace("/", ".").startswith(("net.minecraft", "com.mojang.blaze3d", "com.mojang.renderpearl"))
 
 
 def parse_declaration(decl: str):

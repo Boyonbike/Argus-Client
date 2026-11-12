@@ -1,18 +1,19 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-// Copy of the vanilla GUI uniform block (dynamictransforms.glsl).
+// Copy of the vanilla GUI uniform block (26.3 dynamictransforms.glsl).
 layout(std140) uniform DynamicTransforms {
     mat4 ModelViewMat;
+    mat4 TextureMat;
     vec4 ColorModulator;
     vec3 ModelOffset;
-    mat4 TextureMat;
 };
 
-in vec2 localPos;
-in vec4 vertexColor;
-flat in vec4 shapeParams;
+layout(location = 0) in vec2 localPos;
+layout(location = 1) in vec4 vertexColor;
+layout(location = 2) flat in vec4 shapeParams;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 // Signed distance to a rounded box centred on the origin, in physical pixels.
 float roundedBox(vec2 point, vec2 halfSize, float radius) {

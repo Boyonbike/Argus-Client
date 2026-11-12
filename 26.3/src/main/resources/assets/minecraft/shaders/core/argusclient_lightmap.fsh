@@ -1,30 +1,30 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
 
+// Ambience "Screen" brightness: every non-maximum lightmap cell becomes the
+// chosen tint colour. LightmapInfo is the 26.3 vanilla block followed by the
+// Argus tint; LightTextureMixin uploads this extended copy for Argus pipelines.
 layout(std140) uniform LightmapInfo {
-    float AmbientLightFactor;
     float SkyFactor;
     float BlockFactor;
-    int UseBrightLightmap;
     float NightVisionFactor;
     float DarknessScale;
-    float DarkenWorldFactor;
+    float BossOverlayWorldDarkeningFactor;
     float BrightnessFactor;
+    vec3 BlockLightTint;
     vec3 SkyLightColor;
-    vec3 AmbienceColor;
+    vec3 AmbientColor;
+    vec3 NightVisionColor;
+    vec4 ArgusTint;
 } lightmapInfo;
 
-in vec2 texCoord;
+layout(location = 0) in vec2 texCoord;
 
-out vec4 fragColor;
-
-float get_brightness(float level) {
-    float curved_level = level / (4.0 - 3.0 * level);
-    return mix(curved_level, 1.0, lightmapInfo.AmbientLightFactor);
-}
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     if (texCoord.x * 16 < 15 || texCoord.y * 16 < 15) {
-        fragColor = vec4(lightmapInfo.AmbienceColor, 1.0);
+        fragColor = vec4(lightmapInfo.ArgusTint.rgb, 1.0);
     } else {
         fragColor = vec4(1.0);
     }

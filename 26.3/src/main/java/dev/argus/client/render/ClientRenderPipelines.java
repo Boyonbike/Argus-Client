@@ -171,23 +171,23 @@ public final class ClientRenderPipelines {
       .withDepthStencilState(DEPTH_NONE)
       .withColorTargetState(NO_BLEND)
       .build();
-   public static final RenderPipeline AMBIENCE = RenderPipeline.builder()
+   // Mirrors vanilla RenderPipelines.LIGHTMAP: a vertex-less fullscreen triangle drawn by Lightmap.render.
+   public static final RenderPipeline AMBIENCE = RenderPipeline.builder(RenderPipelines.GLOBALS_SNIPPET)
       .withLocation("pipeline/argusclient_ambience")
       .withVertexShader("core/screenquad")
       .withFragmentShader("core/argusclient_lightmap")
       .withBindGroupLayout(BindGroupLayouts.LIGHTMAP_INFO)
-      .withVertexBinding(0, DefaultVertexFormat.POSITION).withPrimitiveTopology(PrimitiveTopology.QUADS)
-      .withDepthStencilState(DEPTH_NO_WRITE)
-      .withDepthStencilState(DEPTH_NONE)
+      .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+      .withColorTargetState(ColorTargetState.DEFAULT)
       .build();
-   public static final RenderPipeline OCCLUSION = RenderPipeline.builder()
+   // Mirrors vanilla RenderPipelines.LIGHTMAP: a vertex-less fullscreen triangle drawn by Lightmap.render.
+   public static final RenderPipeline OCCLUSION = RenderPipeline.builder(RenderPipelines.GLOBALS_SNIPPET)
       .withLocation("pipeline/argusclient_occlusion")
       .withVertexShader("core/screenquad")
       .withFragmentShader("core/argusclient_occlusion")
       .withBindGroupLayout(BindGroupLayouts.LIGHTMAP_INFO)
-      .withVertexBinding(0, DefaultVertexFormat.POSITION).withPrimitiveTopology(PrimitiveTopology.QUADS)
-      .withDepthStencilState(DEPTH_NO_WRITE)
-      .withDepthStencilState(DEPTH_NONE)
+      .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+      .withColorTargetState(ColorTargetState.DEFAULT)
       .build();
    public static final RenderPipeline SHINE_GLINT = RenderPipeline.builder()
          .withBindGroupLayout(BindGroupLayouts.PROJECTION)

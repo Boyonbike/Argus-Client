@@ -11,6 +11,7 @@ import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.IndexType;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 import dev.argus.client.ClientAccess;
@@ -58,6 +59,14 @@ public final class MeshRenderer {
       PENDING.add(vertexBuffer);
       PENDING.add(indexBuffer);
       PreparedRenderType prepared = renderType.prepare();
+      if (dev.argus.client.managers.RenderStateManager.ignoresDepth()) {
+         RenderPipeline throughWalls = ThroughWallsPipelines.of(prepared.pipeline());
+         if (throughWalls != prepared.pipeline()) {
+            prepared = new PreparedRenderType(
+               prepared.name(), throughWalls, prepared.oitPipelineSet(), prepared.dynamicTransforms(),
+               prepared.scissorState(), prepared.textures());
+         }
+      }
       RenderTarget target = RenderTargetUtils.currentRenderTarget();
       CommandEncoder encoder = device.createCommandEncoder();
       try (RenderPass pass = target.hasDepth()

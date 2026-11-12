@@ -25,7 +25,9 @@ layout(std140) uniform EffectUniforms {
 layout(location = 0) out vec4 color;
 
 layout(location = 0) in vec2 v_TexCoord;
-layout(location = 1) in vec2 v_OneTexel;
+// One texel in UV space. Derived here, not passed from base.vsh: OpenGL requires the
+// EffectUniforms block to be identical in every stage, and each effect declares its own.
+#define v_OneTexel (1.0 / u_Size)
 
 uniform sampler2D u_Texture;
 uniform sampler2D u_Overlay;

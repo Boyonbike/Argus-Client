@@ -8,6 +8,7 @@ import dev.argus.client.modules.render.SkyboxModule;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.extract.LevelExtractor;
+import net.minecraft.util.ARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -49,8 +50,9 @@ public class LevelExtractorMixin {
       )
    )
    private Object applyCloudColor(Object originalColor) {
+      // 26.3: CLOUD_COLOR is a Vector4fc (it was an ARGB int in 26.2).
       return skyboxModule.isToggled() && skyboxModule.cloudsSetting.getValue()
-         ? skyboxModule.cloudsColorSetting.getValue().hashCode()
+         ? ARGB.vector4fFromARGB32(skyboxModule.cloudsColorSetting.getValue().getRGB())
          : originalColor;
    }
 }

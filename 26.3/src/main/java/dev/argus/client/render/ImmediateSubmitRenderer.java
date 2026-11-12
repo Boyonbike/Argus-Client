@@ -14,17 +14,24 @@ import net.minecraft.client.renderer.feature.FeatureRenderDispatcher.PreparedFra
 
 /** Renders a temporary submit storage immediately, for entity/item draws outside the feature pass. */
 public final class ImmediateSubmitRenderer implements ClientAccess {
+   private static boolean warnedNestedFlush;
+
    private ImmediateSubmitRenderer() {
    }
 
    public static void flush(SubmitNodeStorage storage) {
       Minecraft minecraft = ClientAccess.argusclientMinecraft;
-      FeatureRenderDispatcher dispatcher = minecraft.gameRenderer.featureRenderDispatcher();
+      // Argus's own dispatcher: vanilla's single PreparedFrame is held open for the whole level render.
+      FeatureRenderDispatcher dispatcher = ArgusFeatureDispatcher.get();
       PreparedFrame frame;
       try {
          frame = dispatcher.prepareFrame(storage);
       } catch (IllegalStateException frameInUse) {
-         // The main feature frame is already being prepared this tick; its own pass covers the geometry.
+         // Only reachable if a flush is nested inside another flush.
+         if (!warnedNestedFlush) {
+            warnedNestedFlush = true;
+            dev.argus.client.ArgusClient.LOGGER.warn("Nested Argus immediate submit flush skipped", frameInUse);
+         }
          return;
       }
       RenderTarget target = minecraft.gameRenderer.mainRenderTarget();

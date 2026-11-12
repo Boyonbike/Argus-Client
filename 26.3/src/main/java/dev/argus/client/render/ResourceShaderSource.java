@@ -30,7 +30,11 @@ public final class ResourceShaderSource implements ShaderSource {
 
    @Override
    public CachedIncludeSource getInclude(Identifier id) {
-      Identifier file = ShaderManager.SHADER_INCLUDE_CONVERTER.idToFile(id);
+      // 26.3 include ids already end in ".glsl" (ShaderManager.includeShaderLocationToId), so only the
+      // directory is added; SHADER_INCLUDE_CONVERTER.idToFile would append a second ".glsl".
+      Identifier file = id.getPath().endsWith(ShaderManager.SHADER_INCLUDE_EXTENSION)
+         ? id.withPrefix(ShaderManager.SHADER_INCLUDE_PATH)
+         : ShaderManager.SHADER_INCLUDE_CONVERTER.idToFile(id);
       return this.resources.getResource(file).map(resource -> {
          try {
             return CachedIncludeSource.create(id, resource.readAllAsString());

@@ -6,9 +6,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Legacy global render-state hooks. 26.3 RenderPearl pipelines own depth,
- * cull and polygon-offset state, so these hooks no longer touch the backend;
- * blend/depth behaviour is expressed by the RenderPipeline used for the draw.
+ * Render-state requests for Argus's immediate draws. 26.3 RenderPearl pipelines
+ * own depth, cull and polygon-offset state, so these states no longer touch the
+ * backend directly: while THROUGH_WALLS (alone or combined) is registered,
+ * MeshRenderer draws with a ThroughWallsPipelines copy (no depth test, no cull).
  */
 public final class RenderStateManager {
    private static final List<RenderState> registeredStates = new ObjectArrayList();
@@ -47,5 +48,18 @@ public final class RenderStateManager {
 
    public static boolean isActive() {
       return active;
+   }
+
+   /** Whether the registered states ask for drawing through walls (depth test off). */
+   public static boolean ignoresDepth() {
+      if (!active) {
+         return false;
+      }
+      for (RenderState state : registeredStates) {
+         if (state == THROUGH_WALLS || state == POLYGON_OFFSET_THROUGH_WALLS) {
+            return true;
+         }
+      }
+      return false;
    }
 }
