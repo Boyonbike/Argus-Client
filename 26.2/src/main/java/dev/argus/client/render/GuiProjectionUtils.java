@@ -12,36 +12,40 @@ import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 public final class GuiProjectionUtils implements ClientAccess {
    private static final Projection GUI_PROJECTION = new Projection();
    public static final ProjectionMatrixBuffer GUI_PROJECTION_CACHE = new ProjectionMatrixBuffer("gui_argus");
    private static GpuBufferSlice savedProjectionBuffer;
    private static ProjectionType savedProjectionType;
-   private static Matrix4f savedModelView;
+   private static boolean active;
 
    public static void restoreProjection() {
-      if (savedModelView != null) {
+      if (active) {
          RenderSystem.setProjectionMatrix(savedProjectionBuffer, savedProjectionType);
-         RenderSystem.getModelViewMatrixCopy().set(savedModelView);
+         RenderSystem.getModelViewStack().popMatrix();
          savedProjectionBuffer = null;
          savedProjectionType = null;
-         savedModelView = null;
+         active = false;
       }
    }
 
    public static void beginGuiProjection() {
-      if (savedModelView == null) {
+      if (!active) {
          Window window = argusclientMinecraft.getWindow();
          float guiWidth = (float)window.getWidth() / window.getGuiScale();
          float guiHeight = (float)window.getHeight() / window.getGuiScale();
          savedProjectionBuffer = RenderSystem.getProjectionMatrixBuffer();
          savedProjectionType = RenderSystem.getProjectionType();
-         Matrix4f modelView = RenderSystem.getModelViewMatrixCopy();
-         savedModelView = new Matrix4f(modelView);
          GUI_PROJECTION.setupOrtho(1000.0F, 11000.0F, guiWidth, guiHeight, true);
          RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(GUI_PROJECTION), ProjectionType.ORTHOGRAPHIC);
-         modelView.identity().translate(0.0F, 0.0F, -11000.0F);
+         // The old code set identity + a -11000 Z translate on a copy, so it never applied; keep that
+         // proven behaviour (identity) but on the real stack, so the restore actually restores it.
+         Matrix4fStack modelView = RenderSystem.getModelViewStack();
+         modelView.pushMatrix();
+         modelView.identity();
+         active = true;
       }
    }
 

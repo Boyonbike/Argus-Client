@@ -30,7 +30,7 @@ public final class ClientRenderPipelines {
       .withColorTargetState(blend(BlendFunction.TRANSLUCENT))
       .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH).withPrimitiveTopology(PrimitiveTopology.LINES)
       .buildSnippet();
-   public static final Snippet WORLD_LINES_SNIPPET = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
+   public static final Snippet WORLD_LINES_SNIPPET = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
       .withVertexShader("core/argusclient_lines_smooth")
       .withFragmentShader("core/argusclient_lines_smooth")
       .withColorTargetState(blend(BlendFunction.TRANSLUCENT))

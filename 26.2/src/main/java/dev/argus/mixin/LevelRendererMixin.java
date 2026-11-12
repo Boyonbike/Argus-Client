@@ -130,6 +130,11 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       float partialTick = RenderUtils.getPartialTick();
       GpuBufferSlice previousFog = RenderSystem.getShaderFog();
       RenderSystem.setShaderFog(ClientAccess.argusclientMinecraft.gameRenderer.fogRenderer.getBuffer(FogMode.NONE));
+      // Vanilla keeps the camera rotation on the model-view stack until after this hook; Argus
+      // bakes it into its own PoseStack, so clear it here or every world draw is rotated twice.
+      org.joml.Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
+      modelViewStack.pushMatrix();
+      modelViewStack.identity();
       poses.pushPose();
       RenderUtils.applyCameraRotation(poses);
       WorldRenderEvent.BeforeDepthClear beforeDepthEvent = WorldRenderEvent.BeforeDepthClear.create(poses, partialTick);
@@ -142,6 +147,7 @@ public abstract class LevelRendererMixin implements ClientAccess, LevelRendererF
       WorldRenderEvent.Overlay overlayEvent = WorldRenderEvent.Overlay.create(poses, partialTick);
       ClientAccess.eventBus.post(overlayEvent);
       poses.popPose();
+      modelViewStack.popMatrix();
       RenderSystem.setShaderFog(previousFog);
    }
 

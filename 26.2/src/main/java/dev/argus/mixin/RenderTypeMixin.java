@@ -58,11 +58,12 @@ public class RenderTypeMixin {
          return original.call(uniforms, modelView, textureMatrix);
       }
       GlintModule glint = ClientContext.getModule(GlintModule.class);
-      ChamsModule chams = ClientContext.getModule(ChamsModule.class);
+      boolean chamsBatch = ChamsModule.renderingGlintBatch;
+      ChamsModule chams = chamsBatch ? ClientContext.getModule(ChamsModule.class) : null;
       Vector4f colour = GlintTint.colour(
          glint != null && glint.isToggled(),
          glint == null ? null : glint.getGlintColor(),
-         ChamsModule.renderingGlintBatch,
+         chamsBatch,
          chams == null ? null : chams.getGlintColor(),
          RenderUtils.getRenderColor()[3]
       );

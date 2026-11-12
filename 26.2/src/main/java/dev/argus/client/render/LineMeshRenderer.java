@@ -25,6 +25,10 @@ public final class LineMeshRenderer implements ClientAccess {
    private static final Vector3f tracerTarget = new Vector3f();
    static final MeshBuffer vertices = MeshBuffer.create();
    static PoseStack poseStack;
+   /** View-space distance tracers are drawn at; about where 26.1.2's NDC z=0 landed (2 x near plane). */
+   private static final float TRACER_DEPTH = 0.1F;
+   /** NDC depth of {@link #TRACER_DEPTH}. 26.2+ uses reversed-Z, where a fixed z=0 is the far plane. */
+   private static float tracerNdcZ;
    private static int pendingColor;
    private static boolean pendingVertex;
    private static float lineWidth;
@@ -32,6 +36,8 @@ public final class LineMeshRenderer implements ClientAccess {
    public static void updateProjection(PoseStack poses) {
       projectionMatrix.set(RenderUtils.WORLD_PROJECTION_MATRIX).mul(poses.last().pose());
       inverseProjectionMatrix.set(projectionMatrix).invert();
+      RenderUtils.WORLD_PROJECTION_MATRIX.transform(clipPosition.set(0.0F, 0.0F, -TRACER_DEPTH, 1.0F));
+      tracerNdcZ = clipPosition.w != 0.0F ? clipPosition.z / clipPosition.w : 0.0F;
       unproject(0.0F, 0.0F, tracerOrigin);
    }
 
@@ -137,7 +143,7 @@ public final class LineMeshRenderer implements ClientAccess {
    }
 
    private static Vector3f unproject(float x, float y, Vector3f out) {
-      clipPosition.set(x, y, 0.0F, 1.0F);
+      clipPosition.set(x, y, tracerNdcZ, 1.0F);
       inverseProjectionMatrix.transform(clipPosition);
       return out.set(clipPosition.x, clipPosition.y, clipPosition.z).div(clipPosition.w);
    }

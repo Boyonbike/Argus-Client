@@ -319,7 +319,9 @@ public final class BlockMeshCache implements ClientAccess, AutoCloseable {
 
          CellIndex.CellKey key = item.key();
          this.transform.set(view).translate((float)(key.minX() - camera.x), (float)(key.minY() - camera.y), (float)(key.minZ() - camera.z));
-         transforms.add(RenderSystem.getDynamicUniforms().writeTransform(this.transform, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()));
+         // A fresh matrix per cell: writeTransform skips the write when the record equals the previous one, and
+         // a reused (mutated) matrix always compares equal, so every cell after the first got the first's offset.
+         transforms.add(RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(this.transform), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()));
          drawList.add(mesh);
          maxQuads = Math.max(maxQuads, mesh.quads());
       }

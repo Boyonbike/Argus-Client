@@ -14,7 +14,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.argus.client.render.ArgusTesselator;
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.math.Axis;
 import dev.argus.client.ClientAccess;
 import dev.argus.mixin.GameRendererAccessor;
 import java.awt.Color;
@@ -288,14 +287,12 @@ public final class RenderUtils implements ClientAccess {
 
    public static void applyCameraRotation(PoseStack poses) {
       Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
-      poses.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
-      poses.mulPose(Axis.YP.rotationDegrees(camera.yRot() + 180.0F));
+      poses.mulPose(camera.rotation().conjugate(new org.joml.Quaternionf()));
    }
 
    public static void applyCameraRotation(Matrix4f matrix) {
       Camera camera = ClientAccess.argusclientMinecraft.gameRenderer.mainCamera();
-      matrix.rotate(Axis.XP.rotationDegrees(camera.xRot()));
-      matrix.rotate(Axis.YP.rotationDegrees(camera.yRot() + 180.0F));
+      matrix.rotation(camera.rotation().conjugate(new org.joml.Quaternionf()));
    }
 
    public static void blitToMain(RenderTarget target) {
