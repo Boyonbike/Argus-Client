@@ -91,3 +91,19 @@ boss bars that share a name are stacked into one with an xN counter, names can
 be hidden and the bar spacing changed. It was rewritten for Argus's settings and
 Mojang-mapped boss bar overlay on 12 November 2026 and is covered by GPL-3.0 on
 the same terms as the AutoWasp files above.
+
+## Trouser-Streak Redstone Nuker
+
+- **Project:** Trouser-Streak (a Meteor Client add-on)
+- **Authors:** etianl and Trouser-Streak contributors; based on Meteor Client's
+  Nuker, Copyright (c) Meteor Development
+- **Source:** <https://github.com/etianl/Trouser-Streak>, revision
+  `b2455f6c23cdc0cb3f375584c3d150b5e775d457`
+- **Licence:** GNU GPL version 3 (GPL-3.0), inherited from Meteor Client
+- **Full licence text:** [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt)
+
+The **RedstoneNuker** module (`RedstoneNukerModule.java`) is ported from
+Trouser-Streak's RedstoneNuker, which breaks redstone parts near the player so
+placed TNT can't be set off. It was rewritten for Argus's settings, events,
+box renderer and hotbar selection on 12 November 2026 and is covered by GPL-3.0
+on the same terms as the AutoWasp files above.

@@ -1,6 +1,7 @@
 package dev.argus.client.modules.render.targets;
 
 import dev.argus.client.ClientAccess;
+import dev.argus.client.events.BlockStateChangeEvent;
 import dev.argus.client.events.EventHandler;
 import dev.argus.client.events.MinecraftDisconnectEvent;
 import dev.argus.client.events.MinecraftTickEvent;
@@ -8,6 +9,8 @@ import dev.argus.client.events.MultiPlayerGameModeUseItemOnEvent;
 import dev.argus.client.modules.Module;
 import dev.argus.client.utils.world.ChunkScanner;
 import dev.argus.client.utils.world.WorldUtils;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -33,8 +36,10 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 
 /**
  * The block targets of both ESP and Tracers, found once for the union of their block lists. Loaded chunks are scanned on
- * a worker thread (skipping sections that can't hold a wanted block); block updates and unloads follow the same queue,
- * and every change is applied on the client thread into 8x8x8 cells. Block entities are re-checked five times a second
+ * a worker thread (skipping sections that can't hold a wanted block) and unloads follow the same queue; single block
+ * changes are applied straight away on the client thread, after the world has them, into 8x8x8 cells. A chunk scan can
+ * read a block just before it changes, so its result is checked against the live chunk when applied and the changes
+ * made since the scan began are replayed on top. Block entities are re-checked five times a second
  * for lid and shulker poses and for containers the player opened, so an idle stash never changes a cell.
  * <p>
  * Each module filters the shared entries by its own card (height, ominous vaults, natural chests, opened containers).
@@ -72,9 +77,15 @@ public final class BlockTargetIndex implements ClientAccess {
       }
    }
 
-   /** A batch from the worker: a whole chunk (replacing what was stored) or single positions (null entry = removed). */
-   private record Result(int generation, int chunkX, int chunkZ, boolean wholeChunk, long[] positions, Entry[] entries) {
+   /**
+    * A whole chunk from the worker, replacing what was stored. {@code startSeq} is the block-change count when the scan
+    * began; changes after it are replayed when the result is applied ({@link Long#MAX_VALUE} for an unload).
+    */
+   private record Result(int generation, int chunkX, int chunkZ, long startSeq, long[] positions, Entry[] entries) {
    }
+
+   /** How long block changes are remembered for replaying over chunk scans that began before them. */
+   private static final int CHANGE_MEMORY_TICKS = 200;
 
    private final List<Source> sources = new ArrayList<>();
    private final CellIndex<Entry> index = new CellIndex<>();
@@ -82,19 +93,27 @@ public final class BlockTargetIndex implements ClientAccess {
    private final LongLinkedOpenHashSet opened = new LongLinkedOpenHashSet();
    private final LongArrayList added = new LongArrayList();
    private final ConcurrentLinkedQueue<Result> results = new ConcurrentLinkedQueue<>();
-   private final ChunkScanner scanner = new ChunkScanner(1, this::scanChunk, this::unloadChunk, this::updateBlock);
+   private final ChunkScanner scanner = new ChunkScanner(1, this::scanChunk, this::unloadChunk, null);
    private volatile Set<Block> scanning = Set.of();
    private volatile int generation;
    private ClientLevel level;
    private boolean subscribed;
    private boolean running;
    private int ticks;
+   /** Ticks since start; unlike {@link #ticks} it is never reset, so change ages stay right. */
+   private long clock;
    private long version;
    private long addedEnd;
    /** Entries stored per chunk column, so the farthest chunks can make way when the index is full. */
    private final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap chunkCounts = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
    /** Loaded chunks left out (or cut short) because the index was full; rescanned when they become nearer. */
    private final LongOpenHashSet skipped = new LongOpenHashSet();
+   /** Counts block changes; written on the client thread, read by the worker when a scan begins. */
+   private volatile long changeSeq;
+   /** Recent block changes per chunk column (packed position -> change count), for replaying over older scans. */
+   private final Long2ObjectOpenHashMap<Long2LongOpenHashMap> recentChanges = new Long2ObjectOpenHashMap<>();
+   /** The tick each chunk in {@link #recentChanges} last changed, so old ones are forgotten. */
+   private final Long2LongOpenHashMap recentChangeTicks = new Long2LongOpenHashMap();
 
    private BlockTargetIndex() {
    }
@@ -179,9 +198,11 @@ public final class BlockTargetIndex implements ClientAccess {
          this.restart(wanted);
       }
 
+      this.clock++;
       this.drain();
       if (this.ticks % 20 == 0) {
          this.rescanNearerSkipped();
+         this.forgetOldChanges();
       }
 
       if (++this.ticks % 4 == 0) {
@@ -193,6 +214,24 @@ public final class BlockTargetIndex implements ClientAccess {
    private void onDisconnect(MinecraftDisconnectEvent event) {
       this.stop();
       this.opened.clear();
+   }
+
+   /** A block changed in the client world (server update or local prediction), already applied to the chunk. */
+   @EventHandler
+   private void onBlockStateChange(BlockStateChangeEvent event) {
+      ClientLevel current = argusclientMinecraft.level;
+      if (!this.running || current == null || current != this.level) {
+         return;
+      }
+
+      BlockPos position = event.getPos();
+      long packed = CellIndex.pack(position.getX(), position.getY(), position.getZ());
+      long chunkKey = ChunkPos.asLong(position.getX() >> 4, position.getZ() >> 4);
+      long seq = this.changeSeq + 1;
+      this.changeSeq = seq;
+      this.recentChanges.computeIfAbsent(chunkKey, ignored -> new Long2LongOpenHashMap()).put(packed, seq);
+      this.recentChangeTicks.put(chunkKey, this.clock);
+      this.applyLive(current, position, packed, chunkKey, event.getNewState());
    }
 
    @EventHandler(priority = -200)
@@ -235,6 +274,8 @@ public final class BlockTargetIndex implements ClientAccess {
       this.scanning = Set.copyOf(wanted);
       this.chunkCounts.clear();
       this.skipped.clear();
+      this.recentChanges.clear();
+      this.recentChangeTicks.clear();
       this.scanner.start();
       this.running = true;
       this.scanNearestFirst();
@@ -354,6 +395,8 @@ public final class BlockTargetIndex implements ClientAccess {
          this.blockEntities.clear();
          this.chunkCounts.clear();
          this.skipped.clear();
+         this.recentChanges.clear();
+         this.recentChangeTicks.clear();
          this.scanning = Set.of();
          this.version++;
       }
@@ -372,50 +415,113 @@ public final class BlockTargetIndex implements ClientAccess {
          }
 
          long chunkKey = ChunkPos.asLong(result.chunkX(), result.chunkZ());
-         if (result.wholeChunk()) {
-            this.removeChunk(result.chunkX(), result.chunkZ());
-            this.skipped.remove(chunkKey);
-            if (result.positions().length > 0 && !this.makeRoom(result.chunkX(), result.chunkZ(), result.positions().length)) {
-               // Still too full: keep what fits (nearest chunks were stored first) and try again when it's nearer.
-               this.skipped.add(chunkKey);
-            }
+         this.removeChunk(result.chunkX(), result.chunkZ());
+         this.skipped.remove(chunkKey);
+         ClientLevel world = this.level;
+         LevelChunk chunk = world == null ? null : world.getChunkSource().getChunkNow(result.chunkX(), result.chunkZ());
+         if (chunk == null) {
+            // Unloaded meanwhile (or an unload result): nothing of this chunk stays.
+            continue;
          }
 
+         if (result.positions().length > 0 && !this.makeRoom(result.chunkX(), result.chunkZ(), result.positions().length)) {
+            // Still too full: keep what fits (nearest chunks were stored first) and try again when it's nearer.
+            this.skipped.add(chunkKey);
+         }
+
+         Set<Block> wanted = this.scanning;
+         MutableBlockPos position = new MutableBlockPos();
          for (int i = 0; i < result.positions().length; i++) {
             long packed = result.positions()[i];
-            Entry entry = result.entries()[i];
-            if (entry == null) {
-               if (this.index.remove(packed)) {
-                  this.blockEntities.remove(packed);
-                  this.chunkCounts.addTo(chunkKey, -1);
-                  this.touchNeighbours(packed);
-                  this.version++;
-               }
-            } else if (this.index.size() < MAX_ENTRIES || this.index.get(packed) != null) {
-               Entry previous = this.index.get(packed);
-               if (previous != null && previous.state() == entry.state()) {
-                  entry = new Entry(entry.state(), entry.structures(), previous.pose(), previous.opened());
-               } else {
-                  entry = new Entry(entry.state(), entry.structures(), 0, this.opened.contains(packed));
-               }
-
-               if (this.index.put(packed, entry)) {
-                  this.chunkCounts.addTo(chunkKey, 1);
-                  this.added.add(packed);
-                  this.addedEnd++;
-                  if (this.added.size() > 4096) {
-                     this.added.removeElements(0, this.added.size() - 4096);
-                  }
-               }
-
-               if (entry.hasBlockEntity()) {
-                  this.blockEntities.add(packed);
-               } else {
-                  this.blockEntities.remove(packed);
-               }
-
-               this.version++;
+            position.set(CellIndex.unpackX(packed), CellIndex.unpackY(packed), CellIndex.unpackZ(packed));
+            // The scan ran on another thread and may have read a block just before it was broken or replaced.
+            BlockState live = chunk.getBlockState(position);
+            if (!wanted.contains(live.getBlock())) {
+               continue;
             }
+
+            Entry entry = result.entries()[i];
+            if (live != entry.state()) {
+               entry = new Entry(live, structures(chunk, position, live), 0, false);
+            }
+
+            this.apply(packed, chunkKey, entry);
+         }
+
+         // Blocks changed after the scan began (placed ones it may have missed) are re-read from the live chunk.
+         Long2LongOpenHashMap changes = this.recentChanges.get(chunkKey);
+         if (changes != null && result.startSeq() != Long.MAX_VALUE) {
+            for (Long2LongOpenHashMap.Entry change : changes.long2LongEntrySet()) {
+               if (change.getLongValue() > result.startSeq()) {
+                  long packed = change.getLongKey();
+                  position.set(CellIndex.unpackX(packed), CellIndex.unpackY(packed), CellIndex.unpackZ(packed));
+                  this.applyLive(world, position.immutable(), packed, chunkKey, chunk.getBlockState(position));
+               }
+            }
+         }
+      }
+   }
+
+   /** Stores or removes one position from the block now in the world. */
+   private void applyLive(ClientLevel current, BlockPos position, long packed, long chunkKey, BlockState state) {
+      if (this.scanning.contains(state.getBlock())) {
+         int structures = current.hasChunkAt(position) ? structures(current.getChunkAt(position), position, state) : 0;
+         this.apply(packed, chunkKey, new Entry(state, structures, 0, false));
+      } else {
+         this.apply(packed, chunkKey, null);
+      }
+   }
+
+   /** Stores an entry (keeping a pose and opened mark while the block is unchanged), or removes it when null. */
+   private void apply(long packed, long chunkKey, Entry entry) {
+      if (entry == null) {
+         if (this.index.remove(packed)) {
+            this.blockEntities.remove(packed);
+            this.chunkCounts.addTo(chunkKey, -1);
+            this.touchNeighbours(packed);
+            this.version++;
+         }
+
+         return;
+      }
+
+      Entry previous = this.index.get(packed);
+      if (previous == null && this.index.size() >= MAX_ENTRIES) {
+         return;
+      }
+
+      if (previous != null && previous.state() == entry.state()) {
+         entry = new Entry(entry.state(), entry.structures(), previous.pose(), previous.opened());
+      } else {
+         entry = new Entry(entry.state(), entry.structures(), 0, this.opened.contains(packed));
+      }
+
+      if (this.index.put(packed, entry)) {
+         this.chunkCounts.addTo(chunkKey, 1);
+         this.added.add(packed);
+         this.addedEnd++;
+         if (this.added.size() > 4096) {
+            this.added.removeElements(0, this.added.size() - 4096);
+         }
+      }
+
+      if (entry.hasBlockEntity()) {
+         this.blockEntities.add(packed);
+      } else {
+         this.blockEntities.remove(packed);
+      }
+
+      this.version++;
+   }
+
+   /** Drops remembered block changes no in-flight scan can still be older than. */
+   private void forgetOldChanges() {
+      var iterator = this.recentChangeTicks.long2LongEntrySet().iterator();
+      while (iterator.hasNext()) {
+         Long2LongOpenHashMap.Entry entry = iterator.next();
+         if (this.clock - entry.getLongValue() > CHANGE_MEMORY_TICKS) {
+            this.recentChanges.remove(entry.getLongKey());
+            iterator.remove();
          }
       }
    }
@@ -468,6 +574,7 @@ public final class BlockTargetIndex implements ClientAccess {
 
    private void scanChunk(ChunkPos chunkPosition, LevelChunk chunk) {
       int scanGeneration = this.generation;
+      long startSeq = this.changeSeq;
       Set<Block> wanted = this.scanning;
       if (wanted.isEmpty() || Thread.currentThread().isInterrupted()) {
          return;
@@ -510,7 +617,7 @@ public final class BlockTargetIndex implements ClientAccess {
          }
       }
 
-      this.results.add(new Result(scanGeneration, chunkPosition.x, chunkPosition.z, true, positions.toLongArray(), entries.toArray(Entry[]::new)));
+      this.results.add(new Result(scanGeneration, chunkPosition.x, chunkPosition.z, startSeq, positions.toLongArray(), entries.toArray(Entry[]::new)));
    }
 
    /**
@@ -530,24 +637,7 @@ public final class BlockTargetIndex implements ClientAccess {
    }
 
    private void unloadChunk(ChunkPos chunkPosition, LevelChunk chunk) {
-      this.results.add(new Result(this.generation, chunkPosition.x, chunkPosition.z, true, new long[0], new Entry[0]));
-   }
-
-   private void updateBlock(BlockPos position, BlockState state) {
-      Set<Block> wanted = this.scanning;
-      long packed = CellIndex.pack(position.getX(), position.getY(), position.getZ());
-      Entry entry = null;
-      if (wanted.contains(state.getBlock())) {
-         ClientLevel current = argusclientMinecraft.level;
-         int structures = 0;
-         if (current != null && current.hasChunkAt(position)) {
-            structures = structures(current.getChunkAt(position), position, state);
-         }
-
-         entry = new Entry(state, structures, 0, false);
-      }
-
-      this.results.add(new Result(this.generation, position.getX() >> 4, position.getZ() >> 4, false, new long[]{packed}, new Entry[]{entry}));
+      this.results.add(new Result(this.generation, chunkPosition.x, chunkPosition.z, Long.MAX_VALUE, new long[0], new Entry[0]));
    }
 
    private static int structures(LevelChunk chunk, BlockPos position, BlockState state) {

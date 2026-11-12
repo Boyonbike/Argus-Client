@@ -32,6 +32,7 @@ import dev.argus.client.modules.player.blockcoat.PlacementTracker;
 import dev.argus.client.modules.player.blockcoat.ServerPacer;
 import dev.argus.client.modules.player.blockcoat.StickySlot;
 import dev.argus.client.modules.player.blockcoat.TntBlastPlanner;
+import dev.argus.client.modules.player.blockcoat.TntFireSafety;
 import dev.argus.client.modules.player.blockcoat.TntRedstoneSafety;
 import dev.argus.client.render.WorldBoxRenderer;
 import dev.argus.client.settings.BooleanSetting;
@@ -73,8 +74,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.AbstractFurnaceBlock;
+import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BrewingStandBlock;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.CrafterBlock;
+import net.minecraft.world.level.block.DecoratedPotBlock;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.HopperBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -133,6 +143,7 @@ public final class BlockCoatModule extends Module {
     private final Setting<Integer> perTick = add(new NumberSetting<>("BPT", 8, 1, 32));
     private final Setting<Float> reach = add(new NumberSetting<>("Reach", 6.0F, 1.0F, 6.0F).withUnit("m"));
     private final Setting<SurfaceTypes> surfaces = add(new EnumSetting<>("Surfaces", SurfaceTypes.ALL));
+    private final Setting<Boolean> storageOnly = add(new BooleanSetting("StorageOnly", false));
     private final Setting<AutoSwitch> autoSwitch = add(new EnumSetting<>("AutoSwitch", AutoSwitch.STICKY));
     private final Setting<Priority> order = add(new EnumSetting<>("Order", Priority.NEAREST));
     private final Setting<Boolean> rotate = add(new BooleanSetting("Rotate", true));
@@ -144,6 +155,7 @@ public final class BlockCoatModule extends Module {
     // TNT saving and liquid filling only apply while the coating block is TNT.
     private final Setting<Boolean> conservativeTnt = add(new BooleanSetting("ConservativeTNT", false));
     private final Setting<Boolean> liquidFiller = add(new BooleanSetting("LiquidFiller", true));
+    private final Setting<Boolean> fireSafety = add(new BooleanSetting("FireSafety", true));
     // Scaffold and tunnel
     private final Setting<Boolean> scaffold = add(new BooleanSetting("Scaffold", false));
     private final Setting<Integer> scaffoldWidth = add(new NumberSetting<>("ScaffoldWidth", 3, 1, 9).dependsOn(scaffold));
@@ -195,6 +207,7 @@ public final class BlockCoatModule extends Module {
     };
     // Section answers stay valid until a block, chunk or tick boundary.
     private final TntRedstoneSafety.SectionMemo redstoneSections = new TntRedstoneSafety.SectionMemo(this::redstoneSection);
+    private final TntRedstoneSafety.SectionMemo fireSections = new TntRedstoneSafety.SectionMemo(this::fireSection);
     private static final Color PREVIEW_FILL = new Color(70, 220, 110, 35), PREVIEW_LINE = new Color(70, 220, 110, 180);
     private static final Color PENDING_FILL = new Color(255, 180, 50, 40), PENDING_LINE = new Color(255, 180, 50, 200);
     private static final Color REJECTED_FILL = new Color(230, 70, 70, 20), REJECTED_LINE = new Color(230, 70, 70, 100);
@@ -224,6 +237,7 @@ public final class BlockCoatModule extends Module {
     private ClientLevel level;
     private volatile BlockPos scanOrigin;
     private SurfaceTypes scannedSurfaces;
+    private boolean scannedStorageOnly;
     private volatile int scannedRadius;
     private Vec3 lastPosition;
     private boolean lastGround;
@@ -246,7 +260,7 @@ public final class BlockCoatModule extends Module {
     private String status = "Starting";
 
     private record Update(BlockPos pos, boolean matchesBlock, boolean replaceable, PlacementTracker.Attempt<Block> attempt) {}
-    private enum Rejection { None, Occupied, Retry, Redstone, Entity, Protected, Passage, Height, NoTerrain, Reach, Covered, Planning, Deferred }
+    private enum Rejection { None, Occupied, Retry, Redstone, Fire, Entity, Protected, Passage, Height, NoTerrain, Reach, Covered, Planning, Deferred }
     private record Validation(Rejection reason, BlockHitResult hit, boolean liquid) {
         boolean valid() { return reason == Rejection.None; }
     }
@@ -294,7 +308,7 @@ public final class BlockCoatModule extends Module {
         changed.clear(); searchQueue.clear(); hitCache.clear(); reorder = true;
         candidates.clear(); updates.clear();
         blasts.clear();
-        redstoneSections.clear();
+        redstoneSections.clear(); fireSections.clear();
         clearPreview();
         dirty.set(true); corrected.set(false);
         level = null; scanOrigin = null; lastPosition = null;
@@ -358,7 +372,7 @@ public final class BlockCoatModule extends Module {
     @EventHandler
     private void onBlockChange(BlockStateChangeEvent event) {
         BlockPos pos = event.getPos();
-        redstoneSections.clear();
+        redstoneSections.clear(); fireSections.clear();
         if (event.getOldState().is(Blocks.TNT) && !event.getNewState().is(Blocks.TNT))
             passageClearance.removed(clearanceCell(pos), tick);
         BlockPos origin = scanOrigin;
@@ -372,7 +386,7 @@ public final class BlockCoatModule extends Module {
     @EventHandler
     private void onChunkData(ClientChunkCacheReplaceWithPacketDataEvent event) {
         // Full chunk replacement need not emit individual block updates. This event runs after it is applied.
-        redstoneSections.clear();
+        redstoneSections.clear(); fireSections.clear();
         BlockPos origin = scanOrigin;
         if (origin == null) return;
         ChunkPos chunk = event.getChunk().getPos();
@@ -391,7 +405,7 @@ public final class BlockCoatModule extends Module {
     private void onTick(RotationRequestEvent event) {
         if (mc.player == null || mc.level == null || mc.gameMode == null) { reset(); return; }
         // Packets are applied before the tick starts, so section answers from the previous tick may be stale.
-        redstoneSections.clear();
+        redstoneSections.clear(); fireSections.clear();
         Block selected = selectBlock();
         if (activeBlock != selected) { reset(); activeBlock = selected; }
         if (activeConservativeTnt != conservativeTnt.getValue()) {
@@ -485,7 +499,7 @@ public final class BlockCoatModule extends Module {
         if (!findCoatingBlock().found()) { status = "No blocks"; return; }
         BlockPos origin = mc.player.blockPosition();
         boolean fullScan = dirty.getAndSet(false) || scannedRadius != radius.getValue()
-            || scannedSurfaces != surfaces.getValue() || tick % 40 == 0;
+            || scannedSurfaces != surfaces.getValue() || scannedStorageOnly != storageOnly.getValue() || tick % 40 == 0;
         if (fullScan || !origin.equals(scanOrigin)) scan(origin, !fullScan && scanOrigin != null);
         refreshChanges();
 
@@ -558,6 +572,21 @@ public final class BlockCoatModule extends Module {
     private Block listedBlock(ItemStack stack) {
         return stack.getItem() instanceof BlockItem item && item.getBlock().asItem() == item
             && blocks.getValue().contains(item.getBlock()) ? item.getBlock() : null;
+    }
+
+    /** The block being coated with, or null while Block Coat is off. Other modules must not break it. */
+    public Block coatingBlock() {
+        return isToggled() ? activeBlock : null;
+    }
+
+    /**
+     * True while Block Coat wants the selected hotbar slot: it is holding its sticky slot, or the coating block
+     * is in the main hand. Other modules should not switch slots meanwhile, or the two switch back and forth.
+     */
+    public boolean holdsHotbar() {
+        if (!isToggled() || mc.player == null) return false;
+        if (autoSwitch.getValue() == AutoSwitch.SILENT) return false;
+        return sticky.holding() || mc.player.getMainHandItem().is(activeBlock.asItem());
     }
 
     private boolean holdsBlock(Block block) {
@@ -721,6 +750,14 @@ public final class BlockCoatModule extends Module {
             state.getDestroySpeed(mc.level, pos));
     }
 
+    /** Item storage blocks; ender chests are excluded since coating them protects nothing. */
+    private static boolean storage(BlockState state) {
+        Block block = state.getBlock();
+        return block instanceof ChestBlock || block instanceof BarrelBlock || block instanceof ShulkerBoxBlock
+            || block instanceof HopperBlock || block instanceof DispenserBlock || block instanceof AbstractFurnaceBlock
+            || block instanceof BrewingStandBlock || block instanceof CrafterBlock || block instanceof DecoratedPotBlock;
+    }
+
     private boolean enabledFace(Direction face) {
         return switch (surfaces.getValue()) {
             case ALL -> true;
@@ -742,6 +779,7 @@ public final class BlockCoatModule extends Module {
         visibilityRetry.clear();
         reorder = true;
         scanOrigin = origin.immutable(); scannedRadius = radius.getValue(); scannedSurfaces = surfaces.getValue();
+        scannedStorageOnly = storageOnly.getValue();
         int r = radius.getValue();
         // Scan targets rather than surfaces, so a terrain face just outside the cube still coats its boundary cell.
         for (BlockPos mutable : BlockPos.betweenClosed(origin.offset(-r, -r, -r), origin.offset(r, r, r))) {
@@ -776,7 +814,9 @@ public final class BlockCoatModule extends Module {
 
     private boolean hasTerrainFace(BlockPos target) {
         for (Direction side : Direction.values()) {
-            if (enabledFace(side.getOpposite()) && terrain(target.relative(side))) return true;
+            BlockPos neighbour = target.relative(side);
+            if (enabledFace(side.getOpposite()) && terrain(neighbour)
+                && (!storageOnly.getValue() || storage(mc.level.getBlockState(neighbour)))) return true;
         }
         return false;
     }
@@ -904,6 +944,17 @@ public final class BlockCoatModule extends Module {
             ? TntRedstoneSafety.Section.CLEAR : TntRedstoneSafety.Section.MAYBE;
     }
 
+    /** A section's palette tells whether it can hold fire or lava, without reading its blocks. */
+    private TntRedstoneSafety.Section fireSection(int sectionX, int sectionY, int sectionZ) {
+        LevelChunk chunk = mc.level.getChunkSource().getChunk(sectionX, sectionZ, ChunkStatus.FULL, false);
+        if (chunk == null) return TntRedstoneSafety.Section.UNKNOWN;
+        int index = chunk.getSectionIndexFromSectionY(sectionY);
+        if (index < 0 || index >= chunk.getSectionsCount()) return TntRedstoneSafety.Section.CLEAR;
+        LevelChunkSection section = chunk.getSection(index);
+        return section.hasOnlyAir() || !section.maybeHas(TntFireSafety::hazard)
+            ? TntRedstoneSafety.Section.CLEAR : TntRedstoneSafety.Section.MAYBE;
+    }
+
     /** The target must be free of entities that would block the coating block, as the server will check. */
     private boolean unobstructed(BlockPos target) {
         return mc.level.isUnobstructed(activeBlock.defaultBlockState(), target, CollisionContext.empty());
@@ -922,6 +973,9 @@ public final class BlockCoatModule extends Module {
         if (!TntRedstoneSafety.canPlace(activeBlock == Blocks.TNT, target, mc.level::isOutsideBuildHeight,
             pos -> loaded(pos) ? mc.level.getBlockState(pos) : null, mc.level::hasNeighborSignal, redstoneSections))
             return reject(Rejection.Redstone);
+        if (fireSafety.getValue() && !TntFireSafety.canPlace(activeBlock == Blocks.TNT, target, mc.level::isOutsideBuildHeight,
+            pos -> loaded(pos) ? mc.level.getBlockState(pos) : null, fireSections))
+            return reject(Rejection.Fire);
         boolean platform = !underfoot && scaffoldTarget(target);
         if (!underfoot && !platform && !liquid && !hasTerrainFace(target)) return reject(Rejection.NoTerrain);
         AABB block = new AABB(target);

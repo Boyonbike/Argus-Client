@@ -257,24 +257,48 @@ public abstract class UiScreen extends Screen {
         return Math.clamp((barProgress() - .3f - i * step) / .4f, 0f, 1f);
     }
 
-    /** An inner circle with an accent ring, shared by the face and the settings button. */
-    private void circleRing(GuiGraphics g, float left, float strength, UiTheme t) {
-        float fx = left + (BAR - FACE) / 2, fy = BAR_Y + (BAR - FACE) / 2;
-        if (strength > 0) UiDraw.outline(g, fx - 1.6f, fy - 1.6f, FACE + 3.2f, FACE + 3.2f, FACE / 2 + 1.6f, 1.1f, UiDraw.alpha(t.accent(), strength));
+    /*
+     * The menu can render at a fractional pixel scale, and the renderer snaps each shape's origin and
+     * size separately, so circles placed by logical offsets drift a pixel off the bar's centre. The bar
+     * is snapped to whole framebuffer pixels instead, and the face, settings circle, rings and icon are
+     * laid out from its pixel edges with sizes of matching parity, so every inset is a whole pixel.
+     */
+    private float barPxLeft, barPxTop, barPx, pxPerUnit;
+
+    /** Physical size for a {@code logical}-unit item centred in the bar, nudged so the inset is whole. */
+    private float centredPx(float logical) {
+        float size = Math.max(1, Math.round(logical * pxPerUnit));
+        return (barPx - size) % 2 == 0 ? size : size + 1;
+    }
+    private float lx(GuiGraphics g, float px) { return UiRender.logicalX(g, px, barPxTop); }
+    private float ly(GuiGraphics g, float py) { return UiRender.logicalY(g, barPxLeft, py); }
+
+    /** An inner circle with an accent ring, shared by the face and the settings button; {@code cellPx} is the circle cell's left edge. */
+    private void circleRing(GuiGraphics g, float cellPx, float strength, UiTheme t) {
+        if (strength <= 0) return;
+        float face = centredPx(FACE), gap = Math.round(1.6f * pxPerUnit), size = face + gap * 2, inset = (barPx - size) / 2;
+        float rx = lx(g, cellPx + inset), ry = ly(g, barPxTop + inset), rs = size / pxPerUnit;
+        UiDraw.outline(g, rx, ry, rs, rs, rs / 2, 1.1f, UiDraw.alpha(t.accent(), strength));
     }
 
     private void tabs(GuiGraphics g, int mx, int my) {
         UiTheme t = GuiState.theme();
         if (UiAnim.enabled()) bar.advance(UiAnim.animDelta()); else bar.settle();
-        float w = barWidthNow(), x = barLeft(), y = BAR_Y;
+        pxPerUnit = UiRender.pixelsPerUnit(g);
+        barPxLeft = Math.round(UiRender.physicalX(g, barLeft(), BAR_Y));
+        barPxTop = Math.round(UiRender.physicalY(g, barLeft(), BAR_Y));
+        barPx = Math.max(1, Math.round(BAR * pxPerUnit));
+        float barPxWidth = Math.max(barPx, Math.round(barWidthNow() * pxPerUnit));
+        float x = lx(g, barPxLeft), y = ly(g, barPxTop), w = barPxWidth / pxPerUnit;
+        float facePx = centredPx(FACE), faceInset = (barPx - facePx) / 2, gearCellPx = barPxLeft + barPxWidth - barPx;
         boolean faceHover = closingAt == 0 && overFace(mx, my);
         float fh = UiAnim.smooth("bar.face", faceHover ? 1 : 0, 18);
         UiDraw.shadow(g, x, y + 1, w, BAR, BAR / 2, 8 + fh * 3, UiDraw.alpha(0xff000000, .28f));
         UiDraw.rounded(g, x, y, w, BAR, BAR / 2, t.mantle());
         UiDraw.outline(g, x, y, w, BAR, BAR / 2, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .5f), t.accent(), fh * .8f));
         // Face on the left, with an accent ring that grows on hover and while the bar is open.
-        circleRing(g, x, Math.max(fh, barProgress() * .6f), t);
-        UiDraw.face(g, x + (BAR - FACE) / 2, y + (BAR - FACE) / 2, FACE);
+        circleRing(g, barPxLeft, Math.max(fh, barProgress() * .6f), t);
+        UiDraw.face(g, lx(g, barPxLeft + faceInset), ly(g, barPxTop + faceInset), facePx / pxPerUnit);
         if (faceHover) tooltip("bar.face", barOpen() ? "Hide navigation" : "Show navigation");
         if (barProgress() < .01f) return;
         float before = UiRender.opacity;
@@ -282,13 +306,15 @@ public abstract class UiScreen extends Screen {
         float gearReveal = Math.clamp((barProgress() - .45f) / .4f, 0f, 1f);
         if (gearReveal > 0) {
             UiRender.opacity = before * gearReveal;
-            float gx = gearLeft();
             boolean gearHover = closingAt == 0 && overGear(mx, my);
             float gh = UiAnim.smooth("bar.gear", gearHover ? 1 : 0, 18), ga = UiAnim.smooth("bar.gear.on", settingsActive() ? 1 : 0, 16);
-            UiDraw.circle(g, gx + BAR / 2, y + BAR / 2, FACE / 2, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), gh * .7f), UiDraw.alpha(t.accent(), .25f), ga));
-            circleRing(g, gx, Math.max(gh, ga * .9f), t);
+            float gs = facePx / pxPerUnit;
+            UiDraw.rounded(g, lx(g, gearCellPx + faceInset), ly(g, barPxTop + faceInset), gs, gs, gs / 2,
+                    UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), gh * .7f), UiDraw.alpha(t.accent(), .25f), ga));
+            circleRing(g, gearCellPx, Math.max(gh, ga * .9f), t);
             int colour = UiDraw.mix(UiDraw.mix(t.muted(), t.text(), gh), t.accent(), ga);
-            UiDraw.icon(g, "client", gx + (BAR - GEAR) / 2, y + (BAR - GEAR) / 2, GEAR, colour);
+            float iconPx = centredPx(GEAR), iconInset = (barPx - iconPx) / 2;
+            UiDraw.icon(g, "client", lx(g, gearCellPx + iconInset), ly(g, barPxTop + iconInset), iconPx / pxPerUnit, colour);
             if (gearHover) tooltip("bar.gear", "Settings", "Appearance, presets, client options and this bar's tabs");
             UiRender.opacity = before;
         }
@@ -382,6 +408,11 @@ public abstract class UiScreen extends Screen {
 
     /** True while a screen is waiting to record a new menu key, so pressing it doesn't close the menu. */
     protected boolean capturingMenuKey() { return false; }
+
+    /** True when {@code screen} is an Argus screen waiting for a key to bind (a setting or the menu key). */
+    public static boolean isCapturingKey(Screen screen) {
+        return screen instanceof UiScreen ui && (ui.capturingMenuKey() || SettingsList.anyCapturing());
+    }
 
     @Override public final boolean mouseClicked(MouseButtonEvent raw, boolean doubled) {
         if (closingAt != 0) return true;

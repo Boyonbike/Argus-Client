@@ -164,6 +164,7 @@ import dev.argus.client.modules.player.NoEffectsModule;
 import dev.argus.client.modules.player.NoGlitchBlocksModule;
 import dev.argus.client.modules.player.NoInteractModule;
 import dev.argus.client.modules.player.NukerModule;
+import dev.argus.client.modules.player.RedstoneNukerModule;
 import dev.argus.client.modules.player.ReplenishModule;
 import dev.argus.client.modules.player.RotationLockModule;
 import dev.argus.client.modules.player.ScaffoldModule;
@@ -774,6 +775,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new NukerModule())) {
          throw new IllegalStateException("Registration rejected NukerModule");
+      }
+
+      if (!this.registerModule(new RedstoneNukerModule())) {
+         throw new IllegalStateException("Registration rejected RedstoneNukerModule");
       }
 
       if (!this.registerModule(new OffhandModule())) {

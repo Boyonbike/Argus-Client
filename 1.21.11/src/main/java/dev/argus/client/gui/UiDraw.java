@@ -117,15 +117,39 @@ final class UiDraw {
     static void icon(GuiGraphics g, String name, float x, float y, float size, int colour) { UiIcons.draw(g, name, x, y, size, colour); }
 
     private static java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> skin;
+    private static Object skinKey;
+
+    /**
+     * Skin lookup for whichever account is signed in right now. Rebuilt when the account (or its skin manager)
+     * changes; while a switched account's profile is still being fetched it uses the bare id so the render thread
+     * never waits on the network, then upgrades once the textured profile arrives.
+     */
+    static java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> skin() {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        var future = ((dev.argus.client.gui.mixin.AccountSessionAccessor) mc).argus$profile();
+        boolean ready = future.isDone() && !future.isCompletedExceptionally();
+        var user = mc.getUser();
+        Object key = java.util.List.of(user.getProfileId(), ready, System.identityHashCode(mc.getSkinManager()));
+        if (skin == null || !key.equals(skinKey)) {
+            var profile = ready ? mc.getGameProfile() : new com.mojang.authlib.GameProfile(user.getProfileId(), user.getName());
+            skin = mc.getSkinManager().createLookup(profile, false);
+            skinKey = key;
+        }
+        return skin;
+    }
 
     /** The signed-in player's face (with hat layer) clipped to a circle. */
-    static void face(GuiGraphics g, float x, float y, float size) {
-        var mc = net.minecraft.client.Minecraft.getInstance();
-        if (skin == null) skin = mc.getSkinManager().createLookup(mc.getGameProfile(), false);
-        var texture = mc.getTextureManager().getTexture(skin.get().body().texturePath());
+    static void face(GuiGraphics g, float x, float y, float size) { face(g, skin(), x, y, size, 1); }
+
+    /** A player's face (with hat layer) clipped to a circle, faded by {@code opacity}. */
+    static void face(GuiGraphics g, java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> lookup,
+                     float x, float y, float size, float opacity) {
+        if (opacity <= 0 || size <= 0) return;
+        var texture = net.minecraft.client.Minecraft.getInstance().getTextureManager().getTexture(lookup.get().body().texturePath());
         float r = size / 2, s = 1 / 64f;
-        UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 8 * s, 8 * s, 16 * s, 16 * s, 0xffffffff);
-        UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 40 * s, 8 * s, 48 * s, 16 * s, 0xffffffff);
+        int colour = alpha(0xffffffff, opacity);
+        UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 8 * s, 8 * s, 16 * s, 16 * s, colour);
+        UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 40 * s, 8 * s, 48 * s, 16 * s, colour);
     }
 
     /** Height of a card's title area. */

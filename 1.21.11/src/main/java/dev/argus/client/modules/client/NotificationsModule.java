@@ -96,7 +96,18 @@ public class NotificationsModule extends Module {
       }
    }
 
-   @EventHandler
+   /**
+    * Toggle feedback is wired up through this always-subscribed listener rather than an @EventHandler on the module,
+    * so every module reports its toggles in chat whether or not Notifications itself is enabled. The Modules and
+    * OnlyDrawn settings still control it.
+    */
+   private final class ModuleToggleFeedback {
+      @EventHandler
+      private void onModuleToggle(ModuleToggleEvent event) {
+         NotificationsModule.this.onModuleToggle(event);
+      }
+   }
+
    private void onModuleToggle(ModuleToggleEvent event) {
       if (!this.isWorldUnavailable()) {
          Setting<Boolean> modulesOption = this.modulesSetting;
@@ -346,6 +357,7 @@ public class NotificationsModule extends Module {
       this.totemMessages = new ArrayList<>();
       this.totemRandom = new Random();
       this.setDrawn(false);
+      ClientAccess.eventBus.subscribe(new ModuleToggleFeedback());
       this.sayChatSetting.setChangeCallback(() -> {
          Setting<Boolean> lambdaChatOption = this.sayChatSetting;
          Boolean lambdaSayChat = lambdaChatOption.getValue();
@@ -363,5 +375,6 @@ public class NotificationsModule extends Module {
       });
       this.randomSetting.setChangeCallback(() -> this.totemMessageIndex = 0);
       this.pathSetting.setChangeCallback(this::reloadTotemMessages);
+      this.setToggled(true);
    }
 }

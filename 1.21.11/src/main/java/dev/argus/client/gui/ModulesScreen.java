@@ -569,7 +569,8 @@ public final class ModulesScreen extends UiScreen {
                 else if (rowTop + SEARCH_ROW > searchWindow.scroll + view) searchWindow.scroll = (int) (rowTop + SEARCH_ROW - view);
                 return true;
             }
-            if ((key == 257 || key == 335) && selected >= 0 && selected < results.size()) { activate(results.get(selected), (event.modifiers() & 1) != 0 ? 1 : 0); return true; }
+            // Enter opens the selected module's settings; Shift+Enter toggles it instead.
+            if ((key == 257 || key == 335) && selected >= 0 && selected < results.size()) { activate(results.get(selected), (event.modifiers() & 1) != 0 ? 0 : 1); return true; }
         }
         return super.keyPressed(event);
     }
