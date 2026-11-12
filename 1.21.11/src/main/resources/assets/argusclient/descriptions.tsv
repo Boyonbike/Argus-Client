@@ -917,6 +917,24 @@ ElytraFly	argusLiquidLavaRise	How fast you swim up through lava towards the surf
 ElytraFly	argusLiquidLavaLift	Upward speed given at the top of the rise out of lava, as the glide starts.
 ElytraFly	argusLiquidGlideDelay	Ticks to wait before trying again if the server did not start the glide.
 ElytraFly	argusLiquidFirework	Uses a firework from your inventory as soon as the glide starts.
+ElytraFly	volytraInstaDrop	Switching ElytraFly off mid-glide stops all motion so you drop straight down.
+ElytraFly	volytraAutohighway	Locks onto the nearest highway (an axis or diagonal through 0, 0) and flies along it, pathfinding round obstacles.
+ElytraFly	volytraHighwayDirection	Which way to fly along the highway, relative to the world centre.
+ElytraFly	volytraHighwayIntelligence	How far ahead Autohighway pathfinds and how quickly it reacts to getting stuck. Higher uses more CPU.
+ElytraFly	volytraAutohighwayKey	Key that switches Autohighway on and off.
+ElytraFly	volytraAutonav	Flies to typed coordinates, or a spot clicked on Xaero's World Map, planning round obstacles.
+ElytraFly	volytraAutonavX	X coordinate for Go.
+ElytraFly	volytraAutonavZ	Z coordinate for Go.
+ElytraFly	volytraAutonavGo	Switch on to start flying to the X and Z above.
+ElytraFly	volytraMapClickButton	Mouse button that picks a destination on Xaero's World Map.
+ElytraFly	volytraCloseMapOnClick	Closes the world map once a destination is picked.
+ElytraFly	volytraAutonavIntelligence	How hard Autonav searches for a way round obstacles. Higher uses more CPU.
+ElytraFly	volytraAutonavAvoidLava	Plans routes that keep clear of lava.
+ElytraFly	volytraAutonavAvoidWater	Plans routes that keep clear of water.
+ElytraFly	volytraArrivalRadius	How close to the destination counts as arrived; Autonav then hovers until you take over.
+ElytraFly	volytraPrioritiseHighways	Joins and follows a highway when that gets you towards the destination.
+ElytraFly	volytraAutonavKey	Key that switches Autonav on and off.
+ElytraFly	volytraAutonavCancelKey	Key that cancels the current Autonav trip.
 SpeedMine	Blocks	Blocks that SpeedMine is allowed to target.
 SpeedMine	Mode	Any speeds up all blocks; WhiteList only listed blocks; BlackList skips listed blocks.
 SpeedMine	Damage	Mining progress needed before the block breaks.
