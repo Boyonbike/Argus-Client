@@ -15,7 +15,6 @@ import dev.argus.client.render.ClientRenderPipelines;
 import dev.argus.client.render.ColorUtils;
 import dev.argus.client.render.FontRenderer;
 import dev.argus.client.render.GuiDrawUtils;
-import dev.argus.client.render.GuiProjectionUtils;
 import dev.argus.client.render.HudAnchorGroup;
 import dev.argus.client.render.HudHoverLabel;
 import dev.argus.client.render.HudWidgetRenderer;
@@ -47,6 +46,9 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
    private float dragOffsetX;
    private float dragOffsetY;
    private float mouseX;
+   private int canvasWidth;
+   private int canvasHeight;
+   private boolean canvasPending;
    private float mouseY;
 
    private IntPair getArrowKeyOffset(int keyCode) {
@@ -175,9 +177,9 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
       }
    }
 
-   private void snapWidget(GuiGraphicsExtractor graphics, PoseStack poseStack, HudWidgetRenderer widget, float[] size) {
-      float screenWidth = graphics.guiWidth();
-      float screenHeight = graphics.guiHeight();
+   private void snapWidget(PoseStack poseStack, HudWidgetRenderer widget, float[] size) {
+      float screenWidth = this.canvasWidth;
+      float screenHeight = this.canvasHeight;
       this.snapWidgetAxis(poseStack, widget, size[0], screenWidth, hud.getSafeX(), true);
       this.snapWidgetAxis(poseStack, widget, size[1], screenHeight, hud.getSafeY(), false);
    }
@@ -331,44 +333,67 @@ public class HudEditorScreen extends ClientScreen implements ClientAccess {
       }
    }
 
+   /** Draws the HUD canvas for this frame; called from the render phase (see GameRendererMixin). */
+   public void renderCanvas() {
+      if (!this.canvasPending) {
+         return;
+      }
+
+      this.canvasPending = false;
+      PoseStack poseStack = new PoseStack();
+      float mouseX = this.mouseX;
+      float mouseY = this.mouseY;
+      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, this.getTransitionOpacity());
+
+      try {
+         hoverLabel.setVisible(false);
+         float screenCenterX = this.canvasWidth / 2.0F;
+         float screenCenterY = this.canvasHeight / 2.0F;
+         Color guideColor = ColorUtils.withAlpha(Color.white, (int)(RenderUtils.getRenderColor()[3] * 0.4F));
+         GuiDrawUtils.fillRect(poseStack, screenCenterX - 0.5F, 0.0F, screenCenterX + 0.5F, screenCenterY * 2.0F, guideColor);
+         GuiDrawUtils.fillRect(poseStack, 0.0F, screenCenterY - 0.5F, screenCenterX - 0.5F, screenCenterY + 0.5F, guideColor);
+         GuiDrawUtils.fillRect(poseStack, screenCenterX + 0.5F, screenCenterY - 0.5F, screenCenterX * 2.0F, screenCenterY + 0.5F, guideColor);
+         this.marginController.render(poseStack, (int)mouseX, (int)mouseY);
+         this.renderWidgets(poseStack, mouseX, mouseY);
+         if (this.draggingWidget) {
+            HudAnchorGroup freeGroup = this.getAnchorGroup(HudAnchor.NONE);
+            HudWidgetRenderer widget = (HudWidgetRenderer)freeGroup.getWidgets().getLast();
+            float[] size = widget.getDimensions();
+            widget.setX(Math.max(0.0F, Math.min(this.canvasWidth - size[0], mouseX - this.dragOffsetX)), true);
+            widget.setY(Math.max(0.0F, Math.min(this.canvasHeight - size[1], mouseY - this.dragOffsetY)), true);
+            widget.updateDirections();
+            this.snapWidget(poseStack, widget, size);
+         }
+
+         float labelOpacity = this.hoverLabelOpacity.updateAndGet();
+         this.hoverLabelOpacity.setTarget(hoverLabel.isVisible());
+         if (hoverLabel.isVisible() || labelOpacity > 0.1) {
+            FontRenderer.INSTANCE
+               .drawWithShadow(
+                  poseStack,
+                  hoverLabel.getText(),
+                  hoverLabel.getX() + 10.0F * (1.0F - labelOpacity) * hoverLabel.getHorizontalDirection(),
+                  hoverLabel.getY(),
+                  ColorUtils.withAlpha(Color.white, (int)(labelOpacity * 255.0F))
+               );
+         }
+      } finally {
+         RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
+      }
+   }
+
+   /**
+    * Records what the canvas needs; the canvas itself (guides, margins, elements, snapping) is drawn by
+    * {@link #renderCanvas()} from GameRenderer's render phase. Since 26.x, extraction runs before the
+    * world is drawn, so immediate-mode HUD draws made here were painted over and elements showed empty.
+    */
    @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-      PoseStack poseStack = GuiProjectionUtils.toPoseStack(graphics);
-      RenderUtils.setRenderColor(1.0F, 1.0F, 1.0F, this.getTransitionOpacity());
-      hoverLabel.setVisible(false);
       this.mouseX = mouseX;
       this.mouseY = mouseY;
-      float screenCenterX = graphics.guiWidth() / 2.0F;
-      float screenCenterY = graphics.guiHeight() / 2.0F;
-      Color guideColor = ColorUtils.withAlpha(Color.white, (int)(RenderUtils.getRenderColor()[3] * 0.4F));
-      GuiDrawUtils.fillRect(poseStack, screenCenterX - 0.5F, 0.0F, screenCenterX + 0.5F, screenCenterY * 2.0F, guideColor);
-      GuiDrawUtils.fillRect(poseStack, 0.0F, screenCenterY - 0.5F, screenCenterX - 0.5F, screenCenterY + 0.5F, guideColor);
-      GuiDrawUtils.fillRect(poseStack, screenCenterX + 0.5F, screenCenterY - 0.5F, screenCenterX * 2.0F, screenCenterY + 0.5F, guideColor);
-      this.marginController.render(poseStack, mouseX, mouseY);
-      this.renderWidgets(poseStack, mouseX, mouseY);
-      if (this.draggingWidget) {
-         HudAnchorGroup freeGroup = this.getAnchorGroup(HudAnchor.NONE);
-         HudWidgetRenderer widget = (HudWidgetRenderer)freeGroup.getWidgets().getLast();
-         float[] size = widget.getDimensions();
-         widget.setX(Math.max(0.0F, Math.min(graphics.guiWidth() - size[0], mouseX - this.dragOffsetX)), true);
-         widget.setY(Math.max(0.0F, Math.min(graphics.guiHeight() - size[1], mouseY - this.dragOffsetY)), true);
-         widget.updateDirections();
-         this.snapWidget(graphics, poseStack, widget, size);
-      }
-
-      float labelOpacity = this.hoverLabelOpacity.updateAndGet();
-      this.hoverLabelOpacity.setTarget(hoverLabel.isVisible());
-      if (hoverLabel.isVisible() || labelOpacity > 0.1) {
-         FontRenderer.INSTANCE
-            .drawWithShadow(
-               poseStack,
-               hoverLabel.getText(),
-               hoverLabel.getX() + 10.0F * (1.0F - labelOpacity) * hoverLabel.getHorizontalDirection(),
-               hoverLabel.getY(),
-               ColorUtils.withAlpha(Color.white, (int)(labelOpacity * 255.0F))
-            );
-      }
-
+      this.canvasWidth = graphics.guiWidth();
+      this.canvasHeight = graphics.guiHeight();
+      this.canvasPending = true;
       super.extractRenderState(graphics, mouseX, mouseY, partialTick);
       if (this.centerPanelPending) {
          this.centerModulePanel();

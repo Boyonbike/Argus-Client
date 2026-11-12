@@ -37,17 +37,11 @@ public final class ClientRenderPipelines {
       .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH).withPrimitiveTopology(PrimitiveTopology.LINES)
       .withCull(false)
       .buildSnippet();
-   public static final Snippet GUI_TRIANGLES_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.PROJECTION)
-      .withVertexShader("core/gui")
-      .withFragmentShader("core/gui")
-      .withColorTargetState(blend(BlendFunction.TRANSLUCENT))
-      .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+   public static final Snippet GUI_TRIANGLES_SNIPPET = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
+      .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
       .buildSnippet();
-   public static final Snippet GUI_TRIANGLE_STRIP_SNIPPET = RenderPipeline.builder().withBindGroupLayout(BindGroupLayouts.PROJECTION)
-      .withVertexShader("core/gui")
-      .withFragmentShader("core/gui")
-      .withColorTargetState(blend(BlendFunction.TRANSLUCENT))
-      .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(PrimitiveTopology.TRIANGLE_STRIP)
+   public static final Snippet GUI_TRIANGLE_STRIP_SNIPPET = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
+      .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_STRIP)
       .buildSnippet();
    public static final RenderPipeline POSITION_TEX_COLOR = RenderPipeline.builder(POSITION_TEX_COLOR_SNIPPET)
       .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR).withPrimitiveTopology(PrimitiveTopology.QUADS)
@@ -78,7 +72,7 @@ public final class ClientRenderPipelines {
       .build();
    public static final RenderPipeline GUI_LINES = RenderPipeline.builder(GUI_LINES_SNIPPET).withLocation("pipeline/gui_lines").build();
    public static final RenderPipeline GUI_TRIANGLES = RenderPipeline.builder(GUI_TRIANGLES_SNIPPET).withLocation("pipeline/gui_trigs").build();
-   public static final RenderPipeline GUI_TRIANGLE_STRIP = RenderPipeline.builder(GUI_TRIANGLE_STRIP_SNIPPET).withLocation("pipeline/gui_trigs").build();
+   public static final RenderPipeline GUI_TRIANGLE_STRIP = RenderPipeline.builder(GUI_TRIANGLE_STRIP_SNIPPET).withLocation("pipeline/gui_trig_strip").build();
    public static final RenderPipeline WORLD_FILL = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
       .withLocation("pipeline/world_fill_pipeline")
       .withColorTargetState(blend(BlendFunction.TRANSLUCENT))

@@ -173,6 +173,15 @@ public abstract class GameRendererMixin {
 
       if (this.minecraft.gui.screen() != null) {
          this.renderClientHud(graphics, true);
+         if (this.minecraft.gui.screen() instanceof dev.argus.client.gui.screens.HudEditorScreen editor) {
+            // The editor's canvas (its HUD elements) is drawn here rather than during extraction,
+            // which runs before the world and would be painted over.
+            GuiProjectionUtils.beginGuiProjection();
+            editor.renderCanvas();
+            GuiDrawUtils.flush();
+            GuiProjectionUtils.restoreProjection();
+         }
+
          RenderUtils.clearDepth(this.minecraft.gameRenderer.mainRenderTarget());
       }
    }
