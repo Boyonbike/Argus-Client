@@ -52,6 +52,8 @@ public class WaypointsModule extends Module {
    private final Setting<Color> colorSetting;
    private final Setting<Color> textSetting;
    private final Setting<Integer> beamAlphaSetting;
+   /** Two-way sync with Xaero's Minimap; removed when Xaero isn't installed. Runs whether or not the module is on. */
+   public final Setting<Boolean> xaeroSyncSetting;
    private final CopyOnWriteArrayList<Waypoint> visibleWaypoints;
    private static final int DISTANCE_UNITS_PER_KILOMETER = 1000;
    private static final double FAR_WAYPOINT_DISTANCE = 120.0;
@@ -202,6 +204,10 @@ public class WaypointsModule extends Module {
       this.colorSetting = this.add(new ColorSetting("Color", new Color(-457336321, true)));
       this.textSetting = this.add(new ColorSetting("Text", new Color(-1, true)));
       this.beamAlphaSetting = this.add(new NumberSetting<>("BeamAlpha", 40, 0, 255));
+      this.xaeroSyncSetting = this.add(new BooleanSetting("XaeroSync", true));
+      if (ClientContext.waypointAdapter == null || !ClientContext.waypointAdapter.isAvailable()) {
+         this.unregister(this.xaeroSyncSetting);
+      }
       this.visibleWaypoints = new CopyOnWriteArrayList<>();
       Setting<Float> distanceSettingForLabel = this.distanceSetting;
       SettingLabelCondition unlimitedBoundary = SettingLabelCondition.MAX;

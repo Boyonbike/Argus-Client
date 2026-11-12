@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.argus.client.ClientAccess;
 import dev.argus.client.events.bus.EventBus;
+import dev.argus.client.integrations.xaero.WaypointSyncPlanner;
 import dev.argus.client.settings.JsonConfigurable;
 import dev.argus.client.utils.world.Waypoint;
 import java.util.ArrayList;
@@ -17,6 +18,12 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class WaypointRegistry extends AbstractRegistry<Waypoint> implements ClientAccess, JsonConfigurable {
+   /** Which waypoints are synced with Xaero's Minimap, and how they were at the last sync (see XaeroWaypointSync). */
+   private final List<WaypointSyncPlanner.Link> xaeroLinks = new ArrayList<>();
+
+   public List<WaypointSyncPlanner.Link> getXaeroLinks() {
+      return this.xaeroLinks;
+   }
    public WaypointRegistry() {
       super(new ArrayList<>());
       EventBus eventBus = ClientAccess.eventBus;
@@ -72,6 +79,19 @@ public final class WaypointRegistry extends AbstractRegistry<Waypoint> implement
    public void fromJson(JsonElement json) {
       if (json.isJsonObject()) {
          JsonObject configObject = json.getAsJsonObject();
+         if (configObject.has("xaeroLinks") && configObject.get("xaeroLinks").isJsonArray()) {
+            this.xaeroLinks.clear();
+            for (JsonElement element : configObject.getAsJsonArray("xaeroLinks")) {
+               try {
+                  WaypointSyncPlanner.Link link = ClientAccess.gson.fromJson(element, WaypointSyncPlanner.Link.class);
+                  if (link != null && link.server() != null && link.dimension() != null && link.world() != null
+                     && link.argusName() != null && link.xaeroName() != null && link.set() != null) this.xaeroLinks.add(link);
+               } catch (Exception loadFailure) {
+                  loadFailure.printStackTrace();
+               }
+            }
+         }
+
          if (configObject.has("waypoints")) {
             configObject = json.getAsJsonObject();
 
@@ -101,6 +121,9 @@ public final class WaypointRegistry extends AbstractRegistry<Waypoint> implement
       }
 
       configObject.add("waypoints", waypointArray);
+      JsonArray linkArray = new JsonArray();
+      for (WaypointSyncPlanner.Link link : this.xaeroLinks) linkArray.add(ClientAccess.gson.toJsonTree(link));
+      configObject.add("xaeroLinks", linkArray);
       return configObject;
    }
 
