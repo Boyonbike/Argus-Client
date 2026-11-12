@@ -14,6 +14,7 @@ import dev.argus.client.managers.ModuleRegistry;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.ModuleCategory;
 import dev.argus.client.modules.client.ColorsModule;
+import dev.argus.client.modules.player.FreecamModule;
 import dev.argus.client.modules.render.targets.BlockTargetIndex;
 import dev.argus.client.modules.render.targets.CellIndex;
 import dev.argus.client.modules.render.targets.RuleSettings;
@@ -24,6 +25,7 @@ import dev.argus.client.modules.render.targets.TargetSettings;
 import dev.argus.client.render.ColorUtils;
 import dev.argus.client.render.RenderUtils;
 import dev.argus.client.settings.BooleanSetting;
+import dev.argus.client.settings.ColorSetting;
 import dev.argus.client.settings.EnumSetting;
 import dev.argus.client.settings.NumberSetting;
 import dev.argus.client.settings.Setting;
@@ -47,6 +49,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public class TracersModule extends Module {
    private static ColorsModule colorsModule = ClientContext.getModule(ColorsModule.class);
+   private static FreecamModule freecamModule = ClientContext.getModule(FreecamModule.class);
    final Setting<TracersModeChoice> modeSetting = this.add(new EnumSetting<>("Mode", TracersModeChoice.LINES));
    public final Setting<TracersHitboxChoice> hitboxSetting = this.add(
       new EnumSetting<>("Hitbox", TracersHitboxChoice.BODY, ignored -> this.modeSetting.getValue() == TracersModeChoice.LINES)
@@ -68,6 +71,9 @@ public class TracersModule extends Module {
    public final Setting<Boolean> ignoreVisibleSetting = this.add(
       new BooleanSetting("IgnoreVisible", true, ignored -> this.modeSetting.getValue() == TracersModeChoice.MARKER)
    );
+   /** In Freecam, a line back to your own body so you can find it again. */
+   private final Setting<Boolean> selfSetting = this.add(new BooleanSetting("Self", true));
+   private final Setting<Color> selfColorSetting = this.add(new ColorSetting("SelfColor", new Color(255, 255, 255, 255)).dependsOn(this.selfSetting));
    public final TargetSettings targets = new TargetSettings(this, dev.argus.client.modules.render.targets.DefaultTargets.tracers());
    private final LineTracerRenderer lineRenderer;
    private final MarkerTracerRenderer markerRenderer;
@@ -103,6 +109,7 @@ public class TracersModule extends Module {
 
    public static void bindReferencedModules(ModuleRegistry moduleRegistry) {
       colorsModule = (ColorsModule)moduleRegistry.getModule(ColorsModule.class);
+      freecamModule = (FreecamModule)moduleRegistry.getModule(FreecamModule.class);
    }
 
    /** Every target to draw this frame. */
@@ -152,9 +159,24 @@ public class TracersModule extends Module {
          this.collected.add(new Target(aim, start, end, bounds, color, entity));
       }
 
+      this.collectSelf(tickDelta, heightFraction);
       this.collectBlocks(camera, minimumSquared);
       this.collectChorus(camera, minimumSquared);
       return this.collected;
+   }
+
+   /** While Freecam is on, a line to your own body (left out everywhere else: you are never a target). */
+   private void collectSelf(float tickDelta, float heightFraction) {
+      if (!this.selfSetting.getValue() || freecamModule == null || !freecamModule.isToggled()) {
+         return;
+      }
+
+      Player self = argusclientMinecraft.player;
+      AABB bounds = BoundingBoxUtils.getRenderBounds(self, tickDelta);
+      TracerEndpoints endpoints = this.getEndpoints(self);
+      Vec3 aim = Vec3Utils.lerp(heightFraction, endpoints.start(), endpoints.end());
+      // No entity: the marker renderer skips the camera entity, which in Freecam is still you.
+      this.collected.add(new Target(aim, endpoints.start(), endpoints.end(), bounds, this.selfColorSetting.getValue(), null));
    }
 
    /** Lines to where players just teleported, while the Chorus teleports extra is in the list. */
