@@ -26,7 +26,8 @@ source font is in `tools/font-source/lexend-deca.ttf`; it is not loaded by Minec
 - **Full licence text:** [licenses/VolytraFly-CC0.txt](licenses/VolytraFly-CC0.txt)
 
 The **Volytra Fly** mode in Argus Client is a port and adaptation of the elytra
-flight logic from VolytraFly. The original project is dedicated to the public
+flight logic from VolytraFly, including its Autohighway and Autonav navigation
+(route planner and Xaero's World Map destination picking). The original project is dedicated to the public
 domain under CC0 1.0 Universal. Argus Client credits Volizray as the author of
 the original flight logic; the adaptation, integration and any subsequent
 changes are part of Argus Client.
