@@ -77,3 +77,17 @@ rewritten for Argus's settings, events and Mojang-mapped rendering calls on
 `BookPreviewScreen.java`). These parts are covered by GPL-3.0 on the same
 terms as the AutoWasp files above.
 
+## Meteor Client boss bar stacking
+
+- **Project:** Meteor Client
+- **Authors:** Meteor Development and contributors
+- **Source:** <https://github.com/MeteorDevelopment/meteor-client>
+- **Licence:** GNU GPL version 3 (GPL-3.0)
+- **Full licence text:** [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt)
+
+The **BetterBossBars** module (`BetterBossBarsModule.java` and its hooks in
+`BossHealthOverlayMixin.java`) is ported from Meteor Client's BossStack module:
+boss bars that share a name are stacked into one with an xN counter, names can
+be hidden and the bar spacing changed. It was rewritten for Argus's settings and
+Mojang-mapped boss bar overlay on 12 November 2026 and is covered by GPL-3.0 on
+the same terms as the AutoWasp files above.
