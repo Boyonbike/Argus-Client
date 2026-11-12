@@ -40,11 +40,11 @@ public final class GuiProjectionUtils implements ClientAccess {
          savedProjectionType = RenderSystem.getProjectionType();
          GUI_PROJECTION.setupOrtho(1000.0F, 11000.0F, guiWidth, guiHeight, true);
          RenderSystem.setProjectionMatrix(GUI_PROJECTION_CACHE.getBuffer(GUI_PROJECTION), ProjectionType.ORTHOGRAPHIC);
-         // The old code set identity + a -11000 Z translate on a copy, so it never applied; keep that
-         // proven behaviour (identity) but on the real stack, so the restore actually restores it.
+         // Same camera placement as vanilla GuiRenderer: the ortho range is 1000..11000, so GUI geometry must sit
+         // at z = -11000 (+ its own z). Identity left every Argus GUI mesh behind the near plane, clipped away.
          Matrix4fStack modelView = RenderSystem.getModelViewStack();
          modelView.pushMatrix();
-         modelView.identity();
+         modelView.identity().translate(0.0F, 0.0F, -11000.0F);
          active = true;
       }
    }
