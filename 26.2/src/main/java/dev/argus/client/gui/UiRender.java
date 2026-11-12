@@ -85,6 +85,16 @@ final class UiRender {
     static float physicalX(GuiGraphicsExtractor g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m00() * x + p.m10() * y + p.m20()) * guiScale()); }
     static float physicalY(GuiGraphicsExtractor g, float x, float y) { Matrix3x2fc p = g.pose(); return (float) ((p.m01() * x + p.m11() * y + p.m21()) * guiScale()); }
 
+    /** Framebuffer pixels → logical point under the current pose (inverse of {@link #physicalX}/{@link #physicalY}). */
+    static float logicalX(GuiGraphicsExtractor g, float px, float py) {
+        Matrix3x2fc p = g.pose(); double s = guiScale(), dx = px / s - p.m20(), dy = py / s - p.m21();
+        return (float) ((p.m11() * dx - p.m10() * dy) / (p.m00() * p.m11() - p.m10() * p.m01()));
+    }
+    static float logicalY(GuiGraphicsExtractor g, float px, float py) {
+        Matrix3x2fc p = g.pose(); double s = guiScale(), dx = px / s - p.m20(), dy = py / s - p.m21();
+        return (float) ((p.m00() * dy - p.m01() * dx) / (p.m00() * p.m11() - p.m10() * p.m01()));
+    }
+
     /**
      * Rounded rectangle. {@code mode} 0 = fill, &gt;0 = outline of that logical thickness,
      * &lt;0 = soft shadow with that logical blur width.

@@ -9,6 +9,14 @@ import dev.argus.client.modules.player.AutoRekitModule;
 import dev.argus.client.modules.render.ESPModule;
 import dev.argus.client.modules.render.TooltipsModule;
 import dev.argus.client.modules.render.TracersModule;
+import dev.argus.client.modules.render.WaypointsModule;
+import dev.argus.client.ClientContext;
+import dev.argus.client.managers.WaypointRegistry;
+import dev.argus.client.utils.world.Waypoint;
+import dev.argus.client.utils.world.WorldUtils;
+import java.util.Locale;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import dev.argus.client.modules.render.targets.TargetLinks;
 import dev.argus.client.render.ShulkerIconRenderer;
 import dev.argus.client.utils.inventory.ShulkerIconSelector.Rule;
@@ -53,10 +61,87 @@ final class ModuleTools {
         if (module instanceof TooltipsModule tooltips) page.inline(shulkerCombos(host, tooltips), Placement.after("ShulkerIcons"));
         if (module instanceof ChatToolsModule) page.inline(social(host, hooks), Placement.first());
         if (module instanceof DiscordSyncModule sync) page.inline(discordSync(host, sync), Placement.last());
+        if (module instanceof WaypointsModule) page.inline(waypoints(host), Placement.first());
         if (module instanceof BoatPhaseModule boat) page.inline(boatControls(host, boat), Placement.first());
         if (module instanceof HUDModule && hooks.topBar()) page.inline(hud(host, hooks), Placement.first());
         if ((module instanceof ESPModule || module instanceof TracersModule) && TargetLinks.get() != null)
             page.inline(new TargetsCard(host, module, TargetLinks.get(), module instanceof ESPModule), Placement.first());
+    }
+
+    // ---- Waypoints ---------------------------------------------------------------------------
+
+    private static boolean inWorld() { return Minecraft.getInstance().player != null && Minecraft.getInstance().level != null; }
+
+    private static String coords(Waypoint w) {
+        return String.format(Locale.ROOT, "%.0f, %.0f, %.0f", w.getX(), w.getY(), w.getZ());
+    }
+
+    /** The waypoints on the server you are on, or every waypoint (with its server) when you are not in a world. */
+    private static List<Waypoint> shownWaypoints() {
+        List<Waypoint> list = new ArrayList<>();
+        boolean inWorld = inWorld();
+        String server = inWorld ? WaypointRegistry.currentServerKey() : null;
+        for (Waypoint w : ClientContext.waypointRegistry.getRegistry())
+            if (w != null && w.getName() != null && w.getServer() != null && (server == null || server.equalsIgnoreCase(w.getServer()))) list.add(w);
+        if (inWorld) {
+            Vec3 at = Minecraft.getInstance().player.position();
+            list.sort(java.util.Comparator.comparingDouble(w -> w.distanceTo(at)));
+        }
+        return list;
+    }
+
+    /**
+     * Adds a waypoint from what was typed: {@code name} for where you stand, or {@code name x y z} for those
+     * coordinates (in the dimension you are in).
+     */
+    private static void addWaypoint(String text) {
+        if (!inWorld()) throw new IllegalStateException("Join a world to add a waypoint.");
+        String[] parts = text.trim().split("\\s+");
+        Vec3 position = Minecraft.getInstance().player.position();
+        String name = text.trim();
+        if (parts.length >= 4) {
+            try {
+                double x = Double.parseDouble(parts[parts.length - 3]), y = Double.parseDouble(parts[parts.length - 2]), z = Double.parseDouble(parts[parts.length - 1]);
+                position = new Vec3(x, y, z);
+                name = String.join(" ", java.util.Arrays.copyOf(parts, parts.length - 3));
+            } catch (NumberFormatException notCoordinates) {
+                // The whole text is the name.
+            }
+        }
+        if (name.isEmpty()) throw new IllegalArgumentException("Type a name for the waypoint.");
+        String dimension = WorldUtils.getDimension().getDisplayName().toLowerCase(Locale.ROOT);
+        if (!ClientContext.waypointRegistry.registerWaypoint(new Waypoint(name, position, dimension, WaypointRegistry.currentServerKey())))
+            throw new IllegalArgumentException("There is already a waypoint called " + name + " on this server.");
+        ClientContext.configurationManager.saveAsync();
+    }
+
+    private static InlineCard waypoints(UiScreen host) {
+        return new InlineCard.Items(host, "Waypoints", "compass",
+                () -> {
+                    int n = shownWaypoints().size();
+                    String count = n == 0 ? "No waypoints" : n + (n == 1 ? " waypoint" : " waypoints");
+                    return inWorld() ? count + " on " + WaypointRegistry.currentServerKey() : count + " on all servers · join a world to add one";
+                },
+                inWorld() ? "No waypoints on this server yet." : "No waypoints yet.",
+                () -> {
+                    boolean inWorld = inWorld();
+                    List<InlineCard.Items.Entry> entries = new ArrayList<>();
+                    for (Waypoint w : shownWaypoints()) {
+                        String detail = coords(w) + " · " + w.getDimension() + (inWorld ? "" : " · " + w.getServer());
+                        entries.add(new InlineCard.Items.Entry(w.getName(), detail, false, null, null, null, List.of(
+                                InlineCard.Items.Action.on(w.isToggled() ? "Shown" : "Hidden", "Show or hide this waypoint", w.isToggled(), () -> {
+                                    w.setToggled(!w.isToggled());
+                                    ClientContext.configurationManager.saveAsync();
+                                }),
+                                InlineCard.Items.Action.danger("Delete", "Remove this waypoint", "Deleted " + w.getName() + ".", () -> {
+                                    ClientContext.waypointRegistry.unregisterWaypoint(w);
+                                    ClientContext.configurationManager.saveAsync();
+                                }))));
+                    }
+                    return entries;
+                })
+                .field("Name, or name x y z…", 64, "Add", "Adds a waypoint where you stand, or at x y z if you type them after the name",
+                        text -> "Added waypoint " + text.trim() + ".", ModuleTools::addWaypoint);
     }
 
     // ---- Boat Phase --------------------------------------------------------------------------

@@ -750,7 +750,7 @@ StashFinder	Minimum	Minimum minecarts for a cart stash.
 Notifications	Watermark	Color of the client name in chat.
 Notifications	Brackets	Color of the brackets around the prefix.
 Notifications	Commands	Notify in chat when commands are used.
-Notifications	Modules	Notify in chat when modules are toggled.
+Notifications	Modules	Notify in chat when any module is toggled, even while Notifications is off.
 Notifications	OnlyDrawn	Only notify for modules shown in the array list.
 Notifications	TotemPops	Announce totem pops in chat.
 Notifications	Self	Include your own totem pops too.
@@ -2212,6 +2212,7 @@ BlockCoat	Radius	Cube half-size: radius 5 scans an 11 x 11 x 11 block cube.
 BlockCoat	BPT	Maximum surrounding placement attempts per tick.
 BlockCoat	Reach	Maximum eye-to-face distance, also capped by your interaction range.
 BlockCoat	Surfaces	Exposed terrain faces to coat.
+BlockCoat	StorageOnly	Only coat around storage blocks: chests, barrels, shulker boxes, hoppers, dispensers, droppers, furnaces, brewing stands, crafters and pots. Ender chests are skipped.
 BlockCoat	AutoSwitch	Sticky holds the block while placing and switches back after a second idle. Silent switches to it and back for every placement (two extra packets each). Normal leaves it selected. Disabled only places from your hands.
 BlockCoat	Order	Order reachable targets, including retries, by distance.
 BlockCoat	Rotate	Rotate toward the support face before interacting. Turn off only to test whether the server needs it.
@@ -2222,6 +2223,7 @@ BlockCoat	PauseTimeout	Seconds before resuming while a pause item is still held.
 BlockCoat	PauseResetOnUse	Restart the pause timeout whenever a listed item is used.
 BlockCoat	ConservativeTNT	Save TNT by skipping placements whose terrain an estimated blast already covers. Jump, scaffold and liquid filling are unchanged.
 BlockCoat	LiquidFiller	Replace isolated water source blocks with TNT. Skips sources touching another source. Only applies while coating with TNT.
+BlockCoat	FireSafety	Skip TNT placements near fire, soul fire or lava: within 3 blocks sideways, 5 blocks above or 2 blocks below a hazard. Unloaded terrain counts as unsafe.
 BlockCoat	Scaffold	Build a strip below your movement while still coating surfaces. Disabled during flight.
 BlockCoat	ScaffoldWidth	Strip width in blocks.
 BlockCoat	TunnelBackfill	Coat only behind you. The jump support is exempt.
@@ -2316,3 +2318,31 @@ BetterBossBars	HideName	Hide the names above boss bars.
 BetterBossBars	Spacing	Pixels from the top of one boss bar to the next (vanilla is 19).
 Tracers	Self	In Freecam, draw a tracer back to your own body.
 Tracers	SelfColor	Colour of the Freecam tracer to your own body.
+RedstoneNuker		Breaks redstone around you so TNT you place can't be set off by a trap.
+RedstoneNuker	Shape	Area searched: a sphere, a cube of equal sides, or a cube sized per direction.
+RedstoneNuker	Mode	All breaks everything listed, Flatten skips blocks below your feet, Smash only breaks blocks that break instantly.
+RedstoneNuker	Range	Search radius for the Sphere and UniformCube shapes.
+RedstoneNuker	Up	Blocks above your feet the Cube shape reaches.
+RedstoneNuker	Down	Blocks below your feet the Cube shape reaches.
+RedstoneNuker	Left	Blocks to your left the Cube shape reaches.
+RedstoneNuker	Right	Blocks to your right the Cube shape reaches.
+RedstoneNuker	Forward	Blocks in front of you the Cube shape reaches.
+RedstoneNuker	Back	Blocks behind you the Cube shape reaches.
+RedstoneNuker	Delay	Ticks to wait before moving on to a new block.
+RedstoneNuker	BPT	Most blocks broken in one tick when they break instantly.
+RedstoneNuker	Sort	Which blocks are broken first.
+RedstoneNuker	Swing	Swing your hand when breaking.
+RedstoneNuker	Blocks	Blocks to break. Defaults to redstone parts, pressure plates, tripwire and fire.
+RedstoneNuker	RenderBounds	Draw the Cube shape's area.
+RedstoneNuker	BoundsMode	Draw the area as lines, sides or both.
+RedstoneNuker	BoundsSide	Side colour of the Cube area.
+RedstoneNuker	BoundsLine	Line colour of the Cube area.
+RedstoneNuker	RenderBroken	Briefly highlight blocks as they are broken.
+RedstoneNuker	BrokenMode	Draw broken blocks as lines, sides or both.
+RedstoneNuker	BrokenSide	Side colour of broken blocks.
+RedstoneNuker	BrokenLine	Line colour of broken blocks.
+RedstoneNuker	AutoTool	Switch to the best hotbar tool before breaking.
+RedstoneNuker	Prefer	Give extra weight to Fortune or Silk Touch tools.
+RedstoneNuker	AntiBreak	Don't use a tool that is nearly broken.
+RedstoneNuker	AntiBreakPercent	Durability left, in percent, below which a tool is not used.
+RedstoneNuker	SwitchBack	Go back to the slot you had selected once nothing is left to break.

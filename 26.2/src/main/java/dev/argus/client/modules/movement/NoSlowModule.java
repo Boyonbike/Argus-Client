@@ -230,6 +230,10 @@ public class NoSlowModule extends Module {
    }
 
    public boolean isGuiMoveAllowed() {
+      if (dev.argus.client.gui.UiScreen.isCapturingKey(ClientAccess.argusclientMinecraft.gui.screen())) {
+         return false;
+      }
+
       if (ClientAccess.argusclientMinecraft.gui.screen() != null && isTypingInTextField(ClientAccess.argusclientMinecraft.gui.screen())) {
          return false;
       }
