@@ -76,6 +76,7 @@ public final class AntiCoordsModule extends Module {
       this.hideRotationsSetting.setChangeCallback(this::onTextureSettingChanged);
       this.hideOffsetsSetting.setChangeCallback(this::onTextureSettingChanged);
       instance = this;
+      AntiCoordsHooks.ready = true;
    }
 
    @Override
