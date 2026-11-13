@@ -107,3 +107,33 @@ Trouser-Streak's RedstoneNuker, which breaks redstone parts near the player so
 placed TNT can't be set off. It was rewritten for Argus's settings, events,
 box renderer and hotbar selection on 12 November 2026 and is covered by GPL-3.0
 on the same terms as the AutoWasp files above.
+
+## Base Hunting modules
+
+The **Base Hunting** window's modules (the `modules/basehunting` package, plus
+`NewChunksAlerts.java`, `TunnelsStairs.java` and the `Tracked*WaypointAccessor`
+mixins) were written for Argus Client on 13 November 2026 against Argus's own
+settings, events and renderers. They follow the detection rules of these
+Meteor Client add-ons, rather than copying their code wholesale:
+
+- **Trouser-Streak** by etianl and contributors
+  (<https://github.com/etianl/Trouser-Streak>, version 1.6.9): BaseFinder
+  (including its default block lists), ActivatedSpawners, NoSpawner,
+  PortalPatterns, CaveDisturbance, PlayerActivity, the CollectibleESP, PotESP
+  and MobGearESP parts of HuntersESP, WaypointCoords, LodestoneCoords, BeeCoords, WorldEventCoords,
+  and the staircase finder in Tunnels. GPL-3.0, as noted for RedstoneNuker
+  above; [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt).
+- **bephax-community** (<https://github.com/bephaxcommunity/BepHaxCommunity>):
+  AreaLoader (now part of Spiral), TrailFollower, RotationDetector, ODMob,
+  the VanityESP part of HuntersESP and the stash checks folded into BaseFinder. No licence
+  file was found in the copy used; check the upstream project's terms before
+  distributing.
+- **Stash hunting add-on** by Jeff ("Jefff Mod"): the old-chunk alerts and
+  lava falls added to NewChunks. No licence file was found in the
+  copy used; check the upstream project's terms before distributing.
+- **Comet** by Boyonabike (GPL-3.0-only): StashReport, which copies its report
+  to the clipboard instead of sending a Discord webhook, and whose dub count
+  follows Majkey's DubCounter, used with the author's permission.
+
+Where these parts derive from GPL-3.0 code they are covered by GPL-3.0 on the
+same terms as the AutoWasp files above.
