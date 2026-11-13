@@ -25,6 +25,14 @@ final class ChatTpaRequestsTest {
         assertEquals("P0",state.pending(1).getFirst().player());
         assertEquals(1,state.rejected());
     }
+    @Test void onlyAcceptingSomeoneComingToYouIsAnArrival() {
+        message("Alice has requested to teleport to you.", 0);
+        message("Bob has requested that you teleport to them.", 0);
+        assertTrue(state.acceptsArrival("/tpy Alice", 10));
+        assertFalse(state.acceptsArrival("/tpy Bob", 10), "Accepting a /tpahere moves you");
+        assertFalse(state.acceptsArrival("/tpn Alice", 10));
+        assertFalse(state.acceptsArrival("/tpy Carol", 10), "An unknown request is left to the teleport tracker");
+    }
     @Test void incomingRequestProvidesNamedYesAndNoCommands() {
         message("§6[TPA] §fAlice has requested to teleport to you.", 100);
         var request = state.pending(100).getFirst();

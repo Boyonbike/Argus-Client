@@ -21,7 +21,8 @@ public final class ChatTpaRequests {
         public boolean verbsKnown() { return yesVerb != null && noVerb != null; }
         public String description() { return toThem ? "Teleport to " + player : player + " wants to teleport to you"; }
     }
-    public enum ChangeKind { Upsert, Cancelled, Expired, Accepted }
+    /** Upsert is a new request; Refreshed only updates an existing one (e.g. its expiry line) and must not be answered again. */
+    public enum ChangeKind { Upsert, Refreshed, Cancelled, Expired, Accepted }
     public record Change(ChangeKind kind, Request request, boolean named) {
         public Change(ChangeKind kind,Request request) { this(kind,request,true); }
     }
@@ -123,7 +124,7 @@ public final class ChatTpaRequests {
             Request previous = requests.get(mostRecent);
             if (previous != null) {
                 var updated=new Request(previous.player(),previous.toThem(),expires,previous.yesVerb(),previous.noVerb());
-                requests.put(mostRecent,updated);changed(ChangeKind.Upsert,updated);
+                requests.put(mostRecent,updated);changed(ChangeKind.Refreshed,updated);
             }
         }
     }
@@ -132,6 +133,17 @@ public final class ChatTpaRequests {
         pending(now);
         Decision decision = decision(command);
         if (decision != null) requests.remove(key(decision.player()));
+    }
+
+    /**
+     * True when the command accepts a pending request in which the other player comes to you: you do not teleport, so
+     * it starts none of your own teleport timers. False for any other command, or an accept this list does not know.
+     */
+    public boolean acceptsArrival(String command, long now) {
+        pending(now);
+        Decision decision = decision(command);
+        Request request = decision == null || !decision.yes() ? null : requests.get(key(decision.player()));
+        return request != null && !request.toThem();
     }
 
     public boolean isPending(Request request, long now) {

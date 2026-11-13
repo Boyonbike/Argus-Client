@@ -17,7 +17,7 @@ public final class ChatTeleportState {
         }
         /** The state without the target, for a row or tile that already names it. */
         public String status(long now) {
-            if (deadline == 0) return "Waiting for server";
+            if (deadline == 0) return phase == Phase.Request ? "Request sent" : "Waiting for server";
             String time = (estimated ? "~" : "") + remaining(deadline - now);
             return switch (phase) {
                 case Cooldown -> "Cooldown " + time;
@@ -25,19 +25,24 @@ public final class ChatTeleportState {
                 default -> "Teleporting in " + time;
             };
         }
-        /** The HUD line: the kind only, never the home or player, e.g. "Home cooldown 25s" or "TPA teleport in 4s". */
+        /**
+         * The HUD line, or "" for a state the HUD does not show (waiting on the server, a request not yet accepted, a
+         * hotspot cooldown): "Teleporting to Alice in 5s", "Teleporting to base in 5s", "Teleporting to Hotspot in 5s",
+         * "Player teleportation cooldown: 30s" or "Home teleportation cooldown: 30s".
+         */
         public String hud(long now) {
-            if (deadline == 0) return kind + ": waiting for server";
+            if (deadline == 0) return "";
             String time = (estimated ? "~" : "") + remaining(deadline - now);
-            return kind + switch (phase) {
-                case Cooldown -> " cooldown ";
-                case Request -> " request ";
-                default -> " teleport in ";
-            } + time;
+            if (phase == Phase.Teleport) {
+                String where = kind == Kind.Hotspot ? "Hotspot" : !target.isEmpty() ? target : kind == Kind.Home ? "home" : "player";
+                return "Teleporting to " + where + " in " + time;
+            }
+            if (phase != Phase.Cooldown || kind == Kind.Hotspot) return "";
+            return (kind == Kind.Home ? "Home" : "Player") + " teleportation cooldown: " + time;
         }
         public String label(long now) {
             String title = kind + (target.isEmpty() ? "" : " " + target);
-            if (deadline == 0) return title + ": awaiting server";
+            if (deadline == 0) return title + (phase == Phase.Request ? ": request sent" : ": awaiting server");
             return title + ": " + switch (phase) {
                 case Cooldown -> "cooldown ";
                 case Request -> "request ";
@@ -148,8 +153,8 @@ public final class ChatTeleportState {
         boolean cooldownText = COOLDOWN_CUE.matcher(text).find();
         if (cooldownText && (PERK.matcher(text).find() || home && tpa && durations(text).size() > 1)) return;
         boolean genericCooldown = text.contains("cooldown") || text.contains("wait") && (text.contains("command") || text.contains("again") || text.contains("before"));
-        if (!home && !tpa && !hotspot && !text.contains("teleport") && !(genericCooldown && now - lastContextAt < 5_000)) return;
-        Kind kind = home ? Kind.Home : tpa ? Kind.TPA : hotspot ? Kind.Hotspot : lastKind;
+        if (!home && !tpa && !hotspot && !text.contains("teleport") && !text.contains("request") && !(genericCooldown && now - lastContextAt < 5_000)) return;
+        Kind kind = home ? Kind.Home : tpa ? Kind.TPA : hotspot ? Kind.Hotspot : unnamed(text, now);
         Timer previous = timers.get(kind);
         Operation operation = operations.get(kind);
         Completed success = completed.get(kind);
@@ -205,7 +210,36 @@ public final class ChatTeleportState {
         if (operation != null && text.contains("accepted")) {
             operations.put(kind, new Operation(operation.target(), now));
             timers.put(kind, new Timer(kind, Phase.Waiting, operation.target(), 0, now + 30_000));
+            return;
         }
+        // "Request sent to: Alice" / "Please wait for Alice to accept or deny": nothing happens until Alice answers.
+        if (operation != null && kind == Kind.TPA && previous != null && previous.phase() == Phase.Waiting && text.contains("request")
+            && (text.contains("sent") || text.contains("to accept")))
+            timers.put(kind, new Timer(kind, Phase.Request, operation.target(), 0, previous.expires()));
+    }
+
+    /**
+     * Which teleport a line that names no kind is about. Home and TPA cooldowns run separately, so a line such as
+     * "Teleporting to: base" or "Teleporting in 15 seconds" must not go to whichever command happened to be typed last:
+     * a line naming a pending (or just finished) teleport's target is that teleport's, then the only teleport in flight
+     * takes it, and only when several are in flight does the latest command decide.
+     */
+    private Kind unnamed(String text, long now) {
+        Kind named = null;
+        int matches = 0;
+        for (Kind kind : Kind.values()) {
+            Operation operation = operations.get(kind);
+            Completed done = completed.get(kind);
+            String target = operation != null ? operation.target() : done != null && now - done.at() <= 5_000 ? done.target() : "";
+            if (target.length() < 2) continue;
+            String lower = Pattern.quote(target.toLowerCase(Locale.ROOT));
+            if (Pattern.compile("(?<![a-z0-9_])" + lower + "(?![a-z0-9_])").matcher(text).find()) { named = kind; matches++; }
+        }
+        if (matches == 1) return named;
+        Kind only = null;
+        int inFlight = 0;
+        for (Kind kind : operations.keySet()) { only = kind; inFlight++; }
+        return inFlight == 1 ? only : lastKind;
     }
 
     /**
@@ -228,14 +262,20 @@ public final class ChatTeleportState {
      */
     public void teleported(long now) {
         expire(now);
+        // A warmup at its end is the likeliest teleport; otherwise the latest command still waiting on the server. A
+        // request the other player has not accepted yet (Request phase) is never it.
         Kind latest = null;
         long latestAt = Long.MIN_VALUE;
+        boolean latestWarm = false;
         for (Kind kind : Kind.values()) {
             Timer timer = timers.get(kind);
             Operation operation = operations.get(kind);
             if (timer == null || operation == null || now - operation.refreshedAt() > 120_000) continue;
-            boolean ready = timer.phase() == Phase.Waiting || timer.phase() == Phase.Teleport && now >= timer.deadline() - 2_000;
-            if (ready && operation.refreshedAt() >= latestAt) { latest = kind; latestAt = operation.refreshedAt(); }
+            boolean warm = timer.phase() == Phase.Teleport && now >= timer.deadline() - 2_000;
+            if (!warm && timer.phase() != Phase.Waiting) continue;
+            if (warm && !latestWarm || warm == latestWarm && operation.refreshedAt() >= latestAt) {
+                latest = kind; latestAt = operation.refreshedAt(); latestWarm = warm;
+            }
         }
         if (latest != null) complete(latest, operations.get(latest), null, now);
     }

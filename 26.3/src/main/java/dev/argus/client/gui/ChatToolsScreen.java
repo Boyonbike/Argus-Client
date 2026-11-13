@@ -1425,8 +1425,8 @@ public final class ChatToolsScreen extends UiScreen {
         float ky = cursor, kh = 28, kw = (w - 18) / 4;
         cursor += kh + PAD;
         if (visible(ky, kh)) {
-            String[] values = {String.valueOf(stats.queued()), String.valueOf(stats.awaiting()), String.valueOf(stats.retries()), tools.autoTpyIntervalMs() + " ms"};
-            String[] labels = {"Queued", "Awaiting reply", "Retries", "Between accepts"};
+            String[] values = {String.valueOf(stats.live()), String.valueOf(stats.sent()), String.valueOf(stats.overflow()), tools.autoTpyIntervalMs() + " ms"};
+            String[] labels = {"Queued", "Accepted", "Overflowed", "Between accepts"};
             for (int i = 0; i < 4; i++) {
                 float kx = x + i * (kw + 6);
                 UiDraw.rounded(g, kx, ky, kw, kh, 6, UiDraw.alpha(t.mantle(), .8f));
@@ -1450,12 +1450,10 @@ public final class ChatToolsScreen extends UiScreen {
         toggleRow(g, t, "Requests to teleport you to them", "Let accepted players move you to them", tools.autoTpyToThem(), tools::toggleAutoTpyToThem);
         cursor += PAD;
         caption(g, t, "Live requests", stats.overflow() > 0 ? stats.overflow() + " overflowed" : null, stats.live() > 0 ? "Clear all" : null, tools::clearAutoTpy);
-        var live = tools.autoTpyEntries().stream().filter(entry -> entry.state() == AutoTpyQueue.State.Queued
-            || entry.state() == AutoTpyQueue.State.AwaitingReply || entry.state() == AutoTpyQueue.State.RetryWaiting).limit(64).toList();
+        var live = tools.autoTpyEntries().stream().limit(64).toList();
         if (live.isEmpty()) emptyRow(g, t, "No requests waiting", stats.latest().isEmpty() ? "Eligible requests appear here while they're accepted." : stats.latest());
         for (var entry : live) {
-            String state = switch (entry.state()) { case AwaitingReply -> "Awaiting reply"; case RetryWaiting -> "Retrying"; default -> "Queued"; };
-            menuRow(g, t, entry.player() + (entry.friend() ? " · Friend" : ""), state + " · attempt " + entry.attempts() + " · click to cancel", false,
+            menuRow(g, t, entry.player() + (entry.friend() ? " · Friend" : ""), "Queued · click to cancel", false,
                 () -> tools.cancelAutoTpy(entry.player()));
         }
         if (stats.live() > 64) emptyRow(g, t, "Showing the first 64 live requests", stats.live() + " requests are still tracked.");
@@ -1521,7 +1519,7 @@ public final class ChatToolsScreen extends UiScreen {
         toggleRow(g, t, "Adapt to the server", "Learn from confirmed replies; rate limits pause sending", tools.autoTpyAdaptive(), tools::toggleAutoTpyAdaptive);
         menuRow(g, t, "Reset learned speed", "Back to the configured interval", false, () -> { tools.resetAutoTpyLearning(); notice("Learned speed reset."); });
         cursor += PAD;
-        noteRow(g, t, "Pacing, retries and buffer", "Intervals, retry limits and the buffer size are in Settings, in the Auto TPY card.");
+        noteRow(g, t, "Pacing and buffer", "Intervals and the buffer size are in Settings, in the Auto TPY card.");
         menuRow(g, t, "Open Auto TPY settings", null, true, () -> select(Page.SETTINGS));
     }
 

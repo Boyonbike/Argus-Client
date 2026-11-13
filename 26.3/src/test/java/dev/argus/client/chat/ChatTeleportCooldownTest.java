@@ -37,16 +37,29 @@ final class ChatTeleportCooldownTest {
         assertEquals("Hotspot: cooldown 2m", cooldown.label(6_000));
     }
 
-    @Test void hudLinesNameOnlyTheKind() {
+    @Test void hudShowsOneLinePerKindWarmupThenCooldown() {
+        var home = ChatTeleportState.Kind.Home;
+        var tpa = ChatTeleportState.Kind.TPA;
         var state = state(30, 15);
         state.sent("home base", 0);
-        assertEquals("Home: waiting for server", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(0), 0));
+        assertEquals("", ChatCountdowns.hud(home, state.timers(0), 0), "Waiting on the server shows nothing");
         state.message("Teleporting to base in 5 seconds", 10);
-        assertEquals("Home teleport in 5s", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(10), 10));
-        assertEquals("Home cooldown ~30s", ChatCountdowns.hud(ChatTeleportState.Kind.Home, state.timers(5_010), 5_010));
+        assertEquals("Teleporting to base in 5s", ChatCountdowns.hud(home, state.timers(10), 10));
+        assertEquals("Home teleportation cooldown: ~30s", ChatCountdowns.hud(home, state.timers(5_010), 5_010));
         state.sent("tpa Alice", 6_000);
         state.message("Teleport request sent. This request expires after 2 minutes.", 6_000);
-        assertEquals("TPA request 2m", ChatCountdowns.hud(ChatTeleportState.Kind.TPA, state.timers(6_000), 6_000));
+        assertEquals("", ChatCountdowns.hud(tpa, state.timers(6_000), 6_000), "A request not yet accepted shows nothing");
+        state.message("Teleport request accepted", 7_000);
+        state.message("Teleporting in 3 seconds", 7_000);
+        assertEquals("Teleporting to Alice in 3s", ChatCountdowns.hud(tpa, state.timers(7_000), 7_000));
+        state.message("Teleportation successful", 10_000);
+        var timers = state.timers(10_000);
+        assertEquals("Player teleportation cooldown: ~15s", ChatCountdowns.hud(tpa, timers, 10_000));
+        assertEquals("Home teleportation cooldown: ~26s", ChatCountdowns.hud(home, timers, 10_000), "Both cooldowns run at once");
+        var hotspot = state(30, 15);
+        hotspot.sent("hotspot", 0);
+        hotspot.message("Teleporting to the hotspot in 5 seconds", 0);
+        assertEquals("Teleporting to Hotspot in 5s", ChatCountdowns.hud(ChatTeleportState.Kind.Hotspot, hotspot.timers(0), 0));
         assertEquals("", ChatCountdowns.hud(ChatTeleportState.Kind.Hotspot, List.of(), 0));
     }
 
@@ -56,7 +69,7 @@ final class ChatTeleportCooldownTest {
         state.teleported(400);
         var timer = state.timers(400).getFirst();
         assertEquals(ChatTeleportState.Phase.Cooldown, timer.phase());
-        assertEquals("Home cooldown ~30s", timer.hud(400));
+        assertEquals("Home teleportation cooldown: ~30s", timer.hud(400));
         var midWarmup = state(30, 15);
         midWarmup.sent("hotspot", 0);
         midWarmup.message("Teleporting to the hotspot in 10 seconds", 0);
@@ -390,7 +403,7 @@ final class ChatTeleportCooldownTest {
         state.message("6b6t Voting \u00bb You have 79 votes. At 210 votes, you gain: /home cooldown: 1 minute 30 seconds \u2192 15 seconds", 44_000);
         var timer = state.timers(70_000).getFirst();
         assertEquals(ChatTeleportState.Phase.Cooldown, timer.phase());
-        assertEquals("Home cooldown ~35s", timer.hud(70_000));
+        assertEquals("Home teleportation cooldown: ~35s", timer.hud(70_000));
         assertEquals(java.util.Map.of(ChatTeleportState.Kind.Home, 89_000L), state.learned(), "An advert never teaches a cooldown");
     }
 
@@ -398,7 +411,7 @@ final class ChatTeleportCooldownTest {
         var state = state(30, 30);
         state.sent("/home base", 0);
         state.message("You must wait 10 seconds before using /home or /tpa again.", 100);
-        assertEquals("Home cooldown 10s", state.timers(100).getFirst().hud(100));
+        assertEquals("Home teleportation cooldown: 10s", state.timers(100).getFirst().hud(100));
     }
 
     @Test void learnedLengthRunsFromTheTeleportToWhenYouCanTeleportAgainRoundedToFive() {
@@ -411,7 +424,7 @@ final class ChatTeleportCooldownTest {
         state.message("You have to wait 0m 39s to teleport again.", 65_000);
         // Teleport at 15s (end of warmup), next teleport at 65s + 39s = 104s: 89s, rounded to 90s.
         assertEquals(java.util.Map.of(ChatTeleportState.Kind.Home, 90_000L), state.learned());
-        assertEquals("Home cooldown 39s", state.timers(65_000).getFirst().hud(65_000), "The running countdown keeps the server's exact time");
+        assertEquals("Home teleportation cooldown: 39s", state.timers(65_000).getFirst().hud(65_000), "The running countdown keeps the server's exact time");
     }
 
     @Test void aManualLengthBeatsTheLearnedOneAndEachKindKeepsItsOwn() {
@@ -423,8 +436,54 @@ final class ChatTeleportCooldownTest {
         state.sent("/tpa Alice", 2_000);
         state.message("Teleported to destination!", 3_000);
         var timers = state.timers(3_000);
-        assertEquals("Home cooldown ~1m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.Home).findFirst().orElseThrow().hud(1_000));
-        assertEquals("TPA cooldown ~2m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.TPA).findFirst().orElseThrow().hud(3_000));
+        assertEquals("Home teleportation cooldown: ~1m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.Home).findFirst().orElseThrow().hud(1_000));
+        assertEquals("Player teleportation cooldown: ~2m", timers.stream().filter(x -> x.kind() == ChatTeleportState.Kind.TPA).findFirst().orElseThrow().hud(3_000));
+    }
+
+    // A home warmup ends with "Teleporting to: base" while a /tpa is still waiting: the line is the home's, not the TPA's.
+    @Test void aHomeSuccessDuringAPendingTpaStaysWithTheHome() {
+        var state = state(30, 60);
+        state.sent("home base", 0);
+        state.message("Teleporting to base in 15 seconds. [Cancel]", 0);
+        state.sent("tpa Alice", 5_000);
+        state.message("Request sent to: Alice", 5_100);
+        state.message("Teleporting to: base", 15_000);
+        var timers = state.timers(15_000);
+        assertEquals("Home base: cooldown ~30s", timers.getFirst().label(15_000));
+        assertEquals("TPA Alice: request sent", timers.getLast().label(15_000));
+        // The TPA is then accepted, warms up and happens: its own cooldown runs next to the home one.
+        state.message("Your request sent to Alice was accepted!", 20_000);
+        state.message("Teleporting in 15 seconds... [Cancel]", 20_000);
+        assertEquals("TPA Alice: teleport 15s", state.timers(20_000).getLast().label(20_000));
+        state.message("Teleported to destination!", 35_000);
+        timers = state.timers(35_000);
+        assertEquals(2, timers.size());
+        assertEquals("Home base: cooldown ~10s", timers.getFirst().label(35_000));
+        assertEquals("TPA Alice: cooldown ~1m", timers.getLast().label(35_000));
+    }
+
+    // After the home warmup ends, a TPA warmup line that names neither kind belongs to the TPA still in flight.
+    @Test void aKindlessWarmupGoesToTheOnlyTeleportInFlight() {
+        var state = state(30, 60);
+        state.sent("tpa Alice", 0);
+        state.sent("home base", 1_000);
+        state.message("Teleporting to base in 3 seconds. [Cancel]", 1_000);
+        state.timers(4_000);
+        state.message("Teleporting in 15 seconds... [Cancel]", 10_000);
+        assertEquals("TPA Alice: teleport 15s", state.timers(10_000).getLast().label(10_000));
+    }
+
+    // A /tpa still waiting to be accepted is not what a long jump completes.
+    @Test void aJumpNeverCompletesATpaThatIsStillWaitingToBeAccepted() {
+        var state = state(30, 60);
+        state.sent("home base", 0);
+        state.message("Teleporting to base in 5 seconds. [Cancel]", 0);
+        state.sent("tpa Alice", 2_000);
+        state.message("Please wait for Alice to accept or deny your request.", 2_100);
+        state.teleported(4_500);
+        var timers = state.timers(4_500);
+        assertEquals("Home base: cooldown ~30s", timers.getFirst().label(4_500));
+        assertEquals("TPA Alice: request sent", timers.getLast().label(4_500));
     }
 
     private static ChatTeleportState state(int home, int tp) {
