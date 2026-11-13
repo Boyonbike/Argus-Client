@@ -2,6 +2,7 @@ package dev.argus.client.render.loading;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Builds the single texture atlas used by the animated loading screen.
@@ -11,20 +12,19 @@ import java.util.Arrays;
  * draw calls. This class is plain Java (no Minecraft types) so it can be exercised offline.
  */
 public final class LoadingAtlas {
-   public static final int WIDTH = 2048;
+   public static final int WIDTH = 4096;
    public static final int HEIGHT = 2048;
    public static final int LOGO = 256;
-   /** Texels per logo unit of the FRAME and SOCKET layers (supersampled so the eye edges stay smooth). */
-   public static final int EYE_SCALE = 2;
+   /** Texels per logo unit of the FRAME, SOCKET and SILHOUETTE layers (the logo, upscaled edge-aware). */
+   public static final int LOGO_SCALE = 4;
    /** Texels per logo unit of the procedurally drawn IRIS. */
    public static final int IRIS_SCALE = 4;
 
    public record Region(int x, int y, int w, int h) {
    }
 
-   // Logo layers share the logo's own 256x256 coordinate space; FRAME/SOCKET/IRIS are supersampled.
+   // Logo layers share the logo's own 256x256 coordinate space; FRAME/SOCKET/SILHOUETTE/IRIS are supersampled.
    public static final Region GLOW = new Region(512, 0, 256, 256);
-   public static final Region SILHOUETTE = new Region(768, 0, 256, 256);
    public static final Region EYELID = new Region(0, 256, 256, 256);
    public static final Region DOT = new Region(336, 256, 64, 64);
    public static final Region SPARK = new Region(400, 256, 64, 64);
@@ -38,8 +38,14 @@ public final class LoadingAtlas {
    public static final Region SHOCK = new Region(1536, 0, 512, 512);
    public static final Region RING_C = new Region(1024, 512, 512, 512);
    public static final Region GLYPHS = new Region(1536, 512, 512, 512);
-   public static final Region FRAME = new Region(0, 1024, LOGO * EYE_SCALE, LOGO * EYE_SCALE);
-   public static final Region SOCKET = new Region(512, 1024, LOGO * EYE_SCALE, LOGO * EYE_SCALE);
+   public static final Region FRAME = new Region(2048, 0, LOGO * LOGO_SCALE, LOGO * LOGO_SCALE);
+   public static final Region SILHOUETTE = new Region(3072, 0, LOGO * LOGO_SCALE, LOGO * LOGO_SCALE);
+   /** The socket layer only covers the eye: this logo-space rectangle. */
+   public static final int SOCKET_OX = 56;
+   public static final int SOCKET_OY = 88;
+   public static final int SOCKET_W = 144;
+   public static final int SOCKET_H = 104;
+   public static final Region SOCKET = new Region(0, 1024, SOCKET_W * LOGO_SCALE, SOCKET_H * LOGO_SCALE);
    public static final Region IRIS = new Region(1024, 1024, 80 * IRIS_SCALE, 80 * IRIS_SCALE);
 
    /** Size of the soft glow silhouette relative to its cell; drawn at logoSize / GLOW_SCALE. */
@@ -78,6 +84,7 @@ public final class LoadingAtlas {
    private static final int GLYPH_BASELINE = 50;
 
    public final int[] pixels = new int[WIDTH * HEIGHT];
+   private boolean abgr;
 
    /** Eye socket rows (logo space) and the eyelid closing line. */
    public int eyeTop;
@@ -117,6 +124,24 @@ public final class LoadingAtlas {
       return atlas;
    }
 
+   /**
+    * The pixels in NativeImage's in-memory order (ABGR), for a straight memory copy on upload. Converts
+    * {@link #pixels} in place on first call so the atlas is not held twice.
+    */
+   public synchronized int[] pixelsAbgr() {
+      if (!this.abgr) {
+         int[] p = this.pixels;
+         IntStream.range(0, HEIGHT).parallel().forEach(y -> {
+            for (int i = y * WIDTH, end = i + WIDTH; i < end; i++) {
+               int v = p[i];
+               p[i] = v & 0xFF00FF00 | (v & 0xFF) << 16 | v >> 16 & 0xFF;
+            }
+         });
+         this.abgr = true;
+      }
+      return this.pixels;
+   }
+
    // ---------------------------------------------------------------- logo
 
    private void buildLogoLayers(int[] logo) {
@@ -141,8 +166,6 @@ public final class LoadingAtlas {
       for (int y = 0; y < LOGO; y++) {
          for (int x = 0; x < LOGO; x++) {
             int i = y * LOGO + x;
-            int p = logo[i];
-            put(SILHOUETTE, x, y, silhouette(p));
             if (socket[i]) {
                this.eyeTop = Math.min(this.eyeTop, y);
                this.eyeBottom = Math.max(this.eyeBottom, y);
@@ -174,37 +197,47 @@ public final class LoadingAtlas {
    }
 
    /**
-    * FRAME (the logo with the inner socket punched out) and SOCKET (what shows through the hole) at
-    * {@link #EYE_SCALE}x. The punch-out is a level set of a smoothed distance-to-lid field (the lid art is
-    * stair-stepped pixel art) and the socket's dark iris bed is drawn analytically, so neither edge steps
-    * along the logo's texel grid when magnified.
+    * FRAME (the logo with the inner socket punched out), SOCKET (what shows through the hole) and the
+    * SILHOUETTE used by the light sweep, all at {@link #LOGO_SCALE}x from an edge-aware upscale of the art
+    * so the whole emblem is as crisp as the procedurally drawn iris. The punch-out is a level set of a
+    * smoothed distance-to-lid field (the lid art is stair-stepped pixel art) and the socket's dark iris bed
+    * is drawn analytically, so neither edge steps along the logo's texel grid when magnified.
     */
    private void buildEyeLayers(int[] logo, boolean[] socket) {
+      int size = LOGO * LOGO_SCALE;
+      int[] hd = new LogoUpscaler(logo).render(LOGO_SCALE, EDGE_AA);
       float[] lidDistance = lidDistance(logo, socket);
       for (int pass = 0; pass < 3; pass++) {
          boxBlur(lidDistance, LOGO, 3);
       }
-      float[] c = new float[4];
-      for (int y = 0; y < FRAME.h; y++) {
-         for (int x = 0; x < FRAME.w; x++) {
-            float lx = (x + 0.5F) / EYE_SCALE;
-            float ly = (y + 0.5F) / EYE_SCALE;
-            sampleLogo(logo, lx, ly, c);
-            int rgb = c[3] > 0.0F ? rgb(c[0] / c[3], c[1] / c[3], c[2] / c[3]) : 0;
+      int sx0 = SOCKET_OX * LOGO_SCALE;
+      int sy0 = SOCKET_OY * LOGO_SCALE;
+      IntStream.range(0, size).parallel().forEach(y -> {
+         for (int x = 0; x < size; x++) {
+            float lx = (x + 0.5F) / LOGO_SCALE;
+            float ly = (y + 0.5F) / LOGO_SCALE;
+            int p = hd[y * size + x];
+            int rgb = p & 0x00FFFFFF;
+            float alpha = (p >>> 24) / 255.0F;
             boolean inSocket = socket[(int) ly * LOGO + (int) lx];
+            put(SILHOUETTE, x, y, silhouette(p));
 
             float hole = inSocket ? coverage(sampleField(lidDistance, lx, ly) - LID_TUCK) : 0.0F;
             // RGB is kept under the hole so filtering at its edge never pulls in black.
-            put(FRAME, x, y, rgb | Math.round(c[3] * (1.0F - hole) * 255.0F) << 24);
+            put(FRAME, x, y, rgb | Math.round(alpha * (1.0F - hole) * 255.0F) << 24);
 
-            if (inSocket) {
-               float bed = coverage(IRIS_RIM + 0.75F - dist(lx, ly, IRIS_CX, IRIS_CY));
-               put(SOCKET, x, y, 0xFF000000 | lerpRgb(rgb, SOCKET_DARK, bed));
-            } else {
-               put(SOCKET, x, y, SOCKET_DARK & 0x00FFFFFF);
+            int bx = x - sx0;
+            int by = y - sy0;
+            if (bx >= 0 && by >= 0 && bx < SOCKET.w && by < SOCKET.h) {
+               if (inSocket) {
+                  float bed = coverage(IRIS_RIM + 0.75F - dist(lx, ly, IRIS_CX, IRIS_CY));
+                  put(SOCKET, bx, by, 0xFF000000 | lerpRgb(rgb, SOCKET_DARK, bed));
+               } else {
+                  put(SOCKET, bx, by, SOCKET_DARK & 0x00FFFFFF);
+               }
             }
          }
-      }
+      });
    }
 
    /** Bilinear sample of a LOGO x LOGO scalar field at logo-space (x, y). */
@@ -222,28 +255,6 @@ public final class LoadingAtlas {
          sum += field[sy * LOGO + sx] * ((k & 1) == 1 ? tx : 1.0F - tx) * ((k >> 1) == 1 ? ty : 1.0F - ty);
       }
       return sum;
-   }
-
-   /** Bilinear, alpha-premultiplied sample of the logo at logo-space (x, y); out = {r, g, b, a}. */
-   private static void sampleLogo(int[] logo, float x, float y, float[] out) {
-      float fx = x - 0.5F;
-      float fy = y - 0.5F;
-      int x0 = (int) Math.floor(fx);
-      int y0 = (int) Math.floor(fy);
-      float tx = fx - x0;
-      float ty = fy - y0;
-      Arrays.fill(out, 0.0F);
-      for (int k = 0; k < 4; k++) {
-         int sx = clamp(x0 + (k & 1), 0, LOGO - 1);
-         int sy = clamp(y0 + (k >> 1), 0, LOGO - 1);
-         float w = ((k & 1) == 1 ? tx : 1.0F - tx) * ((k >> 1) == 1 ? ty : 1.0F - ty);
-         int p = logo[sy * LOGO + sx];
-         float a = (p >>> 24) / 255.0F * w;
-         out[0] += (p >> 16 & 255) * a;
-         out[1] += (p >> 8 & 255) * a;
-         out[2] += (p & 255) * a;
-         out[3] += a;
-      }
    }
 
    private boolean[] floodSocket(int[] logo) {
@@ -577,7 +588,7 @@ public final class LoadingAtlas {
    private void fillRadial(Region region, RadialFn fn) {
       float cx = region.w * 0.5F;
       float cy = region.h * 0.5F;
-      for (int y = 0; y < region.h; y++) {
+      IntStream.range(0, region.h).parallel().forEach(y -> {
          for (int x = 0; x < region.w; x++) {
             float dx = x + 0.5F - cx;
             float dy = y + 0.5F - cy;
@@ -592,7 +603,7 @@ public final class LoadingAtlas {
             }
             putWhite(region, x, y, clamp01(fn.apply(r, angle)));
          }
-      }
+      });
    }
 
    private void buildRays() {
