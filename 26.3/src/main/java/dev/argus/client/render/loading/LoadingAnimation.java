@@ -243,14 +243,17 @@ public final class LoadingAnimation {
       float a = logoAlpha;
 
       if (!atlas.eyeValid) {
-         this.layer(LoadingAtlas.FRAME, LoadingAtlas.EYE_SCALE, a);
+         this.layer(LoadingAtlas.FRAME, LoadingAtlas.LOGO_SCALE, a);
          pose.popMatrix();
          return;
       }
 
       this.updateGaze(t, dt, cx, cy + bob + (LoadingAtlas.IRIS_CY - 128.0F) * size / 256.0F, logo, out);
 
-      this.layer(LoadingAtlas.SOCKET, LoadingAtlas.EYE_SCALE, a);
+      pose.pushMatrix();
+      pose.translate(LoadingAtlas.SOCKET_OX, LoadingAtlas.SOCKET_OY);
+      this.layer(LoadingAtlas.SOCKET, LoadingAtlas.LOGO_SCALE, a);
+      pose.popMatrix();
 
       float lids = this.blink(t);
       // Iris: follows the gaze and dilates slightly; contracts sharply when the eye wakes.
@@ -274,7 +277,7 @@ public final class LoadingAnimation {
 
       this.drawEyelids(atlas, lids, a);
 
-      this.layer(LoadingAtlas.FRAME, LoadingAtlas.EYE_SCALE, a);
+      this.layer(LoadingAtlas.FRAME, LoadingAtlas.LOGO_SCALE, a);
 
       if (sweep >= 0.0F) {
          this.drawSweep(sweep, a);
@@ -406,6 +409,10 @@ public final class LoadingAnimation {
       float half = 30.0F;
       int seg = 6;
       Region sil = LoadingAtlas.SILHOUETTE;
+      int s = LoadingAtlas.LOGO_SCALE;
+      Matrix3x2fStack pose = this.graphics.pose();
+      pose.pushMatrix();
+      pose.scale(1.0F / s);
       for (int y = 12; y < 244; y += 4) {
          float c = center - (y + 2 - 128) * slope;
          int from = Math.max(0, (int) Math.floor((c - half) / seg) * seg);
@@ -414,10 +421,11 @@ public final class LoadingAnimation {
             float d = (x + seg * 0.5F - c) / (half * 0.55F);
             float v = (float) Math.exp(-d * d) * 0.7F;
             if (v > 0.02F) {
-               this.blit(ADD, sil, x, y, x, y, seg, 4, ICE, v * a);
+               this.blit(ADD, sil, x * s, y * s, x * s, y * s, seg * s, 4 * s, ICE, v * a);
             }
          }
       }
+      pose.popMatrix();
    }
 
    private void drawShockwaves(float t, float cx, float cy, float logo, float out) {
