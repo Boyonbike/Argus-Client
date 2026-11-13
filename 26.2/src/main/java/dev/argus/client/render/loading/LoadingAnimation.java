@@ -243,15 +243,14 @@ public final class LoadingAnimation {
       float a = logoAlpha;
 
       if (!atlas.eyeValid) {
-         this.blit(NORMAL, LoadingAtlas.FRAME, 0, 0, 0, 0, 256, 256, 0xFFFFFF, a);
-         this.blit(NORMAL, LoadingAtlas.SOCKET, 0, 0, 0, 0, 256, 256, 0xFFFFFF, a);
+         this.layer(LoadingAtlas.FRAME, LoadingAtlas.EYE_SCALE, a);
          pose.popMatrix();
          return;
       }
 
       this.updateGaze(t, dt, cx, cy + bob + (LoadingAtlas.IRIS_CY - 128.0F) * size / 256.0F, logo, out);
 
-      this.blit(NORMAL, LoadingAtlas.SOCKET, 0, 0, 0, 0, 256, 256, 0xFFFFFF, a);
+      this.layer(LoadingAtlas.SOCKET, LoadingAtlas.EYE_SCALE, a);
 
       float lids = this.blink(t);
       // Iris: follows the gaze and dilates slightly; contracts sharply when the eye wakes.
@@ -262,8 +261,10 @@ public final class LoadingAnimation {
          pose.translate(LoadingAtlas.IRIS_CX + this.lookX, LoadingAtlas.IRIS_CY + this.lookY);
          pose.scale(dilate);
          pose.translate(-LoadingAtlas.IRIS_CX, -LoadingAtlas.IRIS_CY);
-         Region iris = LoadingAtlas.IRIS;
-         this.blit(NORMAL, iris, LoadingAtlas.IRIS_OX, LoadingAtlas.IRIS_OY, 0, 0, iris.w(), iris.h(), 0xFFFFFF, a);
+         pose.pushMatrix();
+         pose.translate(LoadingAtlas.IRIS_OX, LoadingAtlas.IRIS_OY);
+         this.layer(LoadingAtlas.IRIS, LoadingAtlas.IRIS_SCALE, a);
+         pose.popMatrix();
          // Living glint on the pupil highlight + inner glow.
          float glint = 0.45F + 0.25F * (float) Math.sin(t * 2.6F) + 0.6F * wakeFlash;
          this.sprite(ADD, LoadingAtlas.DOT, LoadingAtlas.IRIS_CX, LoadingAtlas.IRIS_CY, 44.0F, 44.0F, 0.0F, TEAL, (0.22F + 0.5F * outro) * a);
@@ -273,7 +274,7 @@ public final class LoadingAnimation {
 
       this.drawEyelids(atlas, lids, a);
 
-      this.blit(NORMAL, LoadingAtlas.FRAME, 0, 0, 0, 0, 256, 256, 0xFFFFFF, a);
+      this.layer(LoadingAtlas.FRAME, LoadingAtlas.EYE_SCALE, a);
 
       if (sweep >= 0.0F) {
          this.drawSweep(sweep, a);
@@ -359,15 +360,18 @@ public final class LoadingAnimation {
       float mid = atlas.eyeMid;
       float topEdge = atlas.eyeTop + amount * (mid - atlas.eyeTop);
       float bottomEdge = atlas.eyeBottom + 1 - amount * (atlas.eyeBottom + 1 - mid);
+      // Lids are stretched to their exact (fractional) edge so they glide instead of stepping a texel at a time.
+      Region lid = LoadingAtlas.EYELID;
       int top = atlas.eyeTop;
       int topRows = (int) Math.ceil(topEdge) - top;
       if (topRows > 0) {
-         this.blit(NORMAL, LoadingAtlas.EYELID, 0, top, 0, top, 256, topRows, 0xFFFFFF, a);
+         this.stretchRegion(NORMAL, lid.x(), lid.y() + top, lid.w(), topRows, 0.0F, top, lid.w(), topEdge - top, 0xFFFFFF, a);
       }
+      int bottomEnd = atlas.eyeBottom + 1;
       int bottomStart = (int) Math.floor(bottomEdge);
-      int bottomRows = atlas.eyeBottom + 1 - bottomStart;
-      if (bottomRows > 0) {
-         this.blit(NORMAL, LoadingAtlas.EYELID, 0, bottomStart, 0, bottomStart, 256, bottomRows, 0xFFFFFF, a);
+      if (bottomEnd > bottomStart) {
+         this.stretchRegion(NORMAL, lid.x(), lid.y() + bottomStart, lid.w(), bottomEnd - bottomStart,
+               0.0F, bottomEdge, lid.w(), bottomEnd - bottomEdge, 0xFFFFFF, a);
       }
       // Glowing lash lines on the closing edges.
       float glow = a * (0.55F + 0.45F * amount);
@@ -620,6 +624,15 @@ public final class LoadingAnimation {
       }
       pose.scale(w / r.w(), h / r.h());
       this.graphics.blit(pipeline, -r.w() / 2, -r.h() / 2, r.x(), r.y(), r.w(), r.h(), argb(rgb, total));
+      pose.popMatrix();
+   }
+
+   /** Draws a whole logo layer stored at {@code scale} texels per logo unit in the current (logo-space) transform. */
+   private void layer(Region r, int scale, float a) {
+      Matrix3x2fStack pose = this.graphics.pose();
+      pose.pushMatrix();
+      pose.scale(1.0F / scale);
+      this.blit(NORMAL, r, 0, 0, 0, 0, r.w(), r.h(), 0xFFFFFF, a);
       pose.popMatrix();
    }
 
