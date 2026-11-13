@@ -14,7 +14,7 @@ public final class BakeGuiArt {
     private static Path icons = Path.of("src/main/resources/assets/argusclient/textures/icons");
     private static final String[] NAMES = {"combat", "movement", "render", "player", "exploit", "client", "misc", "favourites",
             "search", "chevron_down", "chevron_right", "chevron_left", "check", "close", "plus", "star", "keyboard", "palette", "people", "reset", "chevron_up",
-            "modules", "hud", "shield", "compass", "drop", "chat", "font", "bell", "sliders", "link"};
+            "modules", "hud", "shield", "compass", "drop", "chat", "font", "bell", "sliders", "link", "base_hunting"};
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) icons = Path.of(args[0]);
@@ -62,6 +62,12 @@ public final class BakeGuiArt {
                 case "bell" -> { Path2D p = new Path2D.Double(); p.moveTo(3.2, 11.6); p.lineTo(12.8, 11.6); p.curveTo(11.6, 10.4, 11.8, 9, 11.8, 7); p.curveTo(11.8, 4.4, 10.2, 2.6, 8, 2.6); p.curveTo(5.8, 2.6, 4.2, 4.4, 4.2, 7); p.curveTo(4.2, 9, 4.4, 10.4, 3.2, 11.6); p.closePath(); g.draw(p); g.draw(new Arc2D.Double(6.4, 12, 3.2, 2.6, 180, 180, Arc2D.OPEN)); }
                 case "sliders" -> { for (int i = 0; i < 3; i++) { double y = 3.6 + i * 4.4, k = new double[]{10.6, 5.4, 8.8}[i]; g.draw(new Line2D.Double(2.2, y, 13.8, y)); g.setColor(new Color(0, 0, 0, 0)); g.setComposite(AlphaComposite.Clear); g.fill(new Ellipse2D.Double(k - 2.1, y - 2.1, 4.2, 4.2)); g.setComposite(AlphaComposite.SrcOver); g.setColor(Color.WHITE); g.draw(new Ellipse2D.Double(k - 1.5, y - 1.5, 3, 3)); } }
                 case "link" -> { g.rotate(-Math.PI / 4, 8, 8); g.draw(new RoundRectangle2D.Double(1.2, 5.6, 8, 4.8, 4.8, 4.8)); g.draw(new RoundRectangle2D.Double(6.8, 5.6, 8, 4.8, 4.8, 4.8)); }
+                case "base_hunting" -> {
+                    // A house outline under a magnifying glass: looking for bases.
+                    Path2D house = new Path2D.Double(); house.moveTo(1.8, 8.2); house.lineTo(6.6, 3.6); house.lineTo(11.4, 8.2);
+                    house.moveTo(3.2, 7); house.lineTo(3.2, 13.2); house.lineTo(8.4, 13.2); g.draw(house);
+                    g.draw(new Ellipse2D.Double(8.2, 8.2, 4.6, 4.6)); g.draw(new Line2D.Double(12.2, 12.2, 14.4, 14.4));
+                }
                 case "people" -> { g.draw(new Ellipse2D.Double(3, 2.5, 5, 5)); g.draw(new Arc2D.Double(1, 9, 9, 8, 0, 180, Arc2D.OPEN)); g.draw(new Arc2D.Double(9, 3, 4.5, 4.5, -90, 230, Arc2D.OPEN)); g.draw(new Arc2D.Double(10, 9, 5.5, 7, 0, 90, Arc2D.OPEN)); }
             }
             g.dispose();

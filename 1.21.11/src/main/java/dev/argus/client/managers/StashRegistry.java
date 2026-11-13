@@ -8,13 +8,12 @@ import dev.argus.client.ClientAccess;
 import dev.argus.client.ClientContext;
 import dev.argus.client.events.bus.EventBus;
 import dev.argus.client.modules.misc.StashEntry;
-import dev.argus.client.modules.misc.StashFinderModule;
+import dev.argus.client.modules.basehunting.BaseFinderModule;
 import dev.argus.client.settings.JsonConfigurable;
 import dev.argus.client.settings.Setting;
 import java.util.Collection;
 
 public final class StashRegistry extends Registry<StashEntry> implements ClientAccess, JsonConfigurable {
-   private static StashFinderModule stashFinderModule = ClientContext.getModule(StashFinderModule.class);
 
    public StashRegistry() {
       EventBus eventBus = ClientAccess.eventBus;
@@ -42,9 +41,8 @@ public final class StashRegistry extends Registry<StashEntry> implements ClientA
 
    @Override
    public JsonElement toJson() {
-      Setting<Boolean> logSetting = stashFinderModule.logSetting;
-      Boolean loggingEnabled = logSetting.getValue();
-      if (!loggingEnabled) {
+      BaseFinderModule baseFinder = ClientContext.getModule(BaseFinderModule.class);
+      if (baseFinder != null && !baseFinder.saveStashes()) {
          return new JsonObject();
       }
 

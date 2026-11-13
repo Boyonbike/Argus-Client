@@ -9,6 +9,7 @@ public enum ModuleCategory implements NamedEntry {
    MOVEMENT("Movement"),
    PLAYER("Player"),
    EXPLOIT("Exploit"),
+   BASE_HUNTING("Base Hunting"),
    CLIENT("Client"),
    HUD("HUD");
 

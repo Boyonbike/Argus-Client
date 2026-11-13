@@ -18,6 +18,7 @@ import dev.argus.client.settings.Setting;
 import dev.argus.client.utils.chat.ChatUtils;
 import dev.argus.client.utils.collections.NamedIdentifier;
 import dev.argus.client.utils.combat.ExtraBreakTarget;
+import dev.argus.client.utils.movement.PlayerMovementKeys;
 import dev.argus.client.utils.world.WorldUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -67,9 +68,17 @@ public class AutoWalkModule extends Module {
       }
    }
 
+   @Override
+   public void onDisable() {
+      PlayerMovementKeys.holdForward(this, false);
+   }
+
    @EventHandler
    private void onAbstractClientPlayerTickEvent(AbstractClientPlayerTickEvent event) {
-      if (!this.shouldPauseForAction()) {
+      boolean walking = !this.shouldPauseForAction();
+      // Elytra fly modes such as Volytra Fly read the forward key itself, so hold that too, not just the input.
+      PlayerMovementKeys.holdForward(this, walking);
+      if (walking) {
          ClientContext.inputOverrides.requestForwardMovement(1.0F);
          ClientContext.inputOverrides.requestForward(true);
          if (this.autoJumpSetting.getValue()) {
