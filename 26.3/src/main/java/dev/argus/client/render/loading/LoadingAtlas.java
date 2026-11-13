@@ -12,19 +12,20 @@ import java.util.Arrays;
  */
 public final class LoadingAtlas {
    public static final int WIDTH = 2048;
-   public static final int HEIGHT = 1024;
+   public static final int HEIGHT = 2048;
    public static final int LOGO = 256;
+   /** Texels per logo unit of the FRAME and SOCKET layers (supersampled so the eye edges stay smooth). */
+   public static final int EYE_SCALE = 2;
+   /** Texels per logo unit of the procedurally drawn IRIS. */
+   public static final int IRIS_SCALE = 4;
 
    public record Region(int x, int y, int w, int h) {
    }
 
-   // Logo layers share the logo's own 256x256 coordinate space.
-   public static final Region FRAME = new Region(0, 0, 256, 256);
-   public static final Region SOCKET = new Region(256, 0, 256, 256);
+   // Logo layers share the logo's own 256x256 coordinate space; FRAME/SOCKET/IRIS are supersampled.
    public static final Region GLOW = new Region(512, 0, 256, 256);
    public static final Region SILHOUETTE = new Region(768, 0, 256, 256);
    public static final Region EYELID = new Region(0, 256, 256, 256);
-   public static final Region IRIS = new Region(256, 256, 80, 80);
    public static final Region DOT = new Region(336, 256, 64, 64);
    public static final Region SPARK = new Region(400, 256, 64, 64);
    public static final Region WHITE = new Region(432, 340, 16, 16);
@@ -37,6 +38,9 @@ public final class LoadingAtlas {
    public static final Region SHOCK = new Region(1536, 0, 512, 512);
    public static final Region RING_C = new Region(1024, 512, 512, 512);
    public static final Region GLYPHS = new Region(1536, 512, 512, 512);
+   public static final Region FRAME = new Region(0, 1024, LOGO * EYE_SCALE, LOGO * EYE_SCALE);
+   public static final Region SOCKET = new Region(512, 1024, LOGO * EYE_SCALE, LOGO * EYE_SCALE);
+   public static final Region IRIS = new Region(1024, 1024, 80 * IRIS_SCALE, 80 * IRIS_SCALE);
 
    /** Size of the soft glow silhouette relative to its cell; drawn at logoSize / GLOW_SCALE. */
    public static final float GLOW_SCALE = 0.62F;
@@ -44,10 +48,16 @@ public final class LoadingAtlas {
    // Eye geometry measured from argusclient.png (logo texel space, pixel edges at integers).
    public static final float IRIS_CX = 128.0F;
    public static final float IRIS_CY = 134.5F;
-   private static final float IRIS_R = 31.2F;
    private static final float IRIS_RIM = 33.2F;
-   private static final int IRIS_CUT_Y = 112;
-   /** Logo-space origin of the IRIS sprite. */
+   /** The cyan iris ring and the round highlight that bites into the pupil, as drawn in the art. */
+   private static final float RING_INNER = 19.3F;
+   private static final float RING_OUTER = 31.6F;
+   private static final float HIGHLIGHT_X = 117.0F;
+   private static final float HIGHLIGHT_Y = 124.5F;
+   private static final float HIGHLIGHT_R = 6.6F;
+   /** Width of the anti-aliased transition on drawn edges, in logo units. */
+   private static final float EDGE_AA = 0.45F;
+   /** Logo-space origin of the IRIS sprite (80x80 logo units). */
    public static final int IRIS_OX = 88;
    public static final int IRIS_OY = 94;
    private static final int SOCKET_SEED_X = 128;
@@ -123,12 +133,6 @@ public final class LoadingAtlas {
          Arrays.fill(socket, false);
       }
 
-      float[] lidDistance = lidDistance(logo, socket);
-      boolean[] inner = new boolean[LOGO * LOGO];
-      for (int i = 0; i < inner.length; i++) {
-         inner[i] = socket[i] && lidDistance[i] > LID_TUCK;
-      }
-
       this.eyeTop = LOGO;
       this.eyeBottom = -1;
       Arrays.fill(this.rowMinX, -1);
@@ -138,23 +142,18 @@ public final class LoadingAtlas {
          for (int x = 0; x < LOGO; x++) {
             int i = y * LOGO + x;
             int p = logo[i];
-            // Frame: the logo with the inner socket punched out (RGB kept for clean filtering).
-            put(FRAME, x, y, inner[i] ? p & 0x00FFFFFF : p);
             put(SILHOUETTE, x, y, silhouette(p));
             if (socket[i]) {
-               float d = dist(x + 0.5F, y + 0.5F, IRIS_CX, IRIS_CY);
-               put(SOCKET, x, y, d <= IRIS_RIM + 0.75F ? SOCKET_DARK : p | 0xFF000000);
                this.eyeTop = Math.min(this.eyeTop, y);
                this.eyeBottom = Math.max(this.eyeBottom, y);
                if (this.rowMinX[y] < 0) {
                   this.rowMinX[y] = x;
                }
                this.rowMaxX[y] = x;
-            } else {
-               put(SOCKET, x, y, SOCKET_DARK & 0x00FFFFFF);
             }
          }
       }
+      this.buildEyeLayers(logo, socket);
       this.eyeMid = IRIS_CY + 1.5F;
       if (this.eyeBottom < this.eyeTop) {
          this.eyeTop = this.eyeBottom = (int) this.eyeMid;
@@ -171,7 +170,80 @@ public final class LoadingAtlas {
          }
       }
 
-      buildIris(logo);
+      this.buildIris(logo);
+   }
+
+   /**
+    * FRAME (the logo with the inner socket punched out) and SOCKET (what shows through the hole) at
+    * {@link #EYE_SCALE}x. The punch-out is a level set of a smoothed distance-to-lid field (the lid art is
+    * stair-stepped pixel art) and the socket's dark iris bed is drawn analytically, so neither edge steps
+    * along the logo's texel grid when magnified.
+    */
+   private void buildEyeLayers(int[] logo, boolean[] socket) {
+      float[] lidDistance = lidDistance(logo, socket);
+      for (int pass = 0; pass < 3; pass++) {
+         boxBlur(lidDistance, LOGO, 3);
+      }
+      float[] c = new float[4];
+      for (int y = 0; y < FRAME.h; y++) {
+         for (int x = 0; x < FRAME.w; x++) {
+            float lx = (x + 0.5F) / EYE_SCALE;
+            float ly = (y + 0.5F) / EYE_SCALE;
+            sampleLogo(logo, lx, ly, c);
+            int rgb = c[3] > 0.0F ? rgb(c[0] / c[3], c[1] / c[3], c[2] / c[3]) : 0;
+            boolean inSocket = socket[(int) ly * LOGO + (int) lx];
+
+            float hole = inSocket ? coverage(sampleField(lidDistance, lx, ly) - LID_TUCK) : 0.0F;
+            // RGB is kept under the hole so filtering at its edge never pulls in black.
+            put(FRAME, x, y, rgb | Math.round(c[3] * (1.0F - hole) * 255.0F) << 24);
+
+            if (inSocket) {
+               float bed = coverage(IRIS_RIM + 0.75F - dist(lx, ly, IRIS_CX, IRIS_CY));
+               put(SOCKET, x, y, 0xFF000000 | lerpRgb(rgb, SOCKET_DARK, bed));
+            } else {
+               put(SOCKET, x, y, SOCKET_DARK & 0x00FFFFFF);
+            }
+         }
+      }
+   }
+
+   /** Bilinear sample of a LOGO x LOGO scalar field at logo-space (x, y). */
+   private static float sampleField(float[] field, float x, float y) {
+      float fx = x - 0.5F;
+      float fy = y - 0.5F;
+      int x0 = (int) Math.floor(fx);
+      int y0 = (int) Math.floor(fy);
+      float tx = fx - x0;
+      float ty = fy - y0;
+      float sum = 0.0F;
+      for (int k = 0; k < 4; k++) {
+         int sx = clamp(x0 + (k & 1), 0, LOGO - 1);
+         int sy = clamp(y0 + (k >> 1), 0, LOGO - 1);
+         sum += field[sy * LOGO + sx] * ((k & 1) == 1 ? tx : 1.0F - tx) * ((k >> 1) == 1 ? ty : 1.0F - ty);
+      }
+      return sum;
+   }
+
+   /** Bilinear, alpha-premultiplied sample of the logo at logo-space (x, y); out = {r, g, b, a}. */
+   private static void sampleLogo(int[] logo, float x, float y, float[] out) {
+      float fx = x - 0.5F;
+      float fy = y - 0.5F;
+      int x0 = (int) Math.floor(fx);
+      int y0 = (int) Math.floor(fy);
+      float tx = fx - x0;
+      float ty = fy - y0;
+      Arrays.fill(out, 0.0F);
+      for (int k = 0; k < 4; k++) {
+         int sx = clamp(x0 + (k & 1), 0, LOGO - 1);
+         int sy = clamp(y0 + (k >> 1), 0, LOGO - 1);
+         float w = ((k & 1) == 1 ? tx : 1.0F - tx) * ((k >> 1) == 1 ? ty : 1.0F - ty);
+         int p = logo[sy * LOGO + sx];
+         float a = (p >>> 24) / 255.0F * w;
+         out[0] += (p >> 16 & 255) * a;
+         out[1] += (p >> 8 & 255) * a;
+         out[2] += (p & 255) * a;
+         out[3] += a;
+      }
    }
 
    private boolean[] floodSocket(int[] logo) {
@@ -293,22 +365,24 @@ public final class LoadingAtlas {
       return out;
    }
 
+   /**
+    * The iris, redrawn analytically at {@link #IRIS_SCALE}x from the art's measured geometry: a dark bed,
+    * the cyan ring and its round highlight. The art hides the top of the iris under the lid, so copying
+    * its texels left a seam there and stepped edges once magnified; colours are still taken from the art.
+    */
    private void buildIris(int[] logo) {
+      int ring = logo[Math.round(IRIS_CY + (RING_INNER + RING_OUTER) * 0.5F) * LOGO + (int) IRIS_CX] & 0x00FFFFFF;
+      int pupil = logo[Math.round(IRIS_CY + RING_INNER * 0.5F) * LOGO + (int) IRIS_CX] & 0x00FFFFFF;
       for (int y = 0; y < IRIS.h; y++) {
          for (int x = 0; x < IRIS.w; x++) {
-            int lx = IRIS_OX + x;
-            int ly = IRIS_OY + y;
-            float d = dist(lx + 0.5F, ly + 0.5F, IRIS_CX, IRIS_CY);
-            int color;
-            if (d <= IRIS_R) {
-               // The top of the iris is hidden by the lid in the art; mirror the lower ring into it.
-               int sy = ly >= IRIS_CUT_Y ? ly : Math.round(2.0F * IRIS_CY - ly - 1.0F);
-               color = logo[clamp(sy, 0, LOGO - 1) * LOGO + clamp(lx, 0, LOGO - 1)] | 0xFF000000;
-            } else {
-               float a = clamp01(IRIS_RIM + 0.5F - d);
-               color = (SOCKET_DARK & 0x00FFFFFF) | Math.round(a * 255.0F) << 24;
-            }
-            put(IRIS, x, y, color);
+            float lx = IRIS_OX + (x + 0.5F) / IRIS_SCALE;
+            float ly = IRIS_OY + (y + 0.5F) / IRIS_SCALE;
+            float d = dist(lx, ly, IRIS_CX, IRIS_CY);
+            float band = Math.min(coverage(RING_OUTER - d), coverage(d - RING_INNER));
+            float highlight = coverage(HIGHLIGHT_R - dist(lx, ly, HIGHLIGHT_X, HIGHLIGHT_Y));
+            float cyan = Math.max(band, highlight);
+            float alpha = clamp01(IRIS_RIM + 0.5F - d);
+            put(IRIS, x, y, lerpRgb(pupil, ring, cyan) | Math.round(alpha * 255.0F) << 24);
          }
       }
    }
@@ -604,6 +678,17 @@ public final class LoadingAtlas {
    private static float edgeFade(int x, int y, int w, int h) {
       int d = Math.min(Math.min(x, y), Math.min(w - 1 - x, h - 1 - y));
       return clamp01(d / 6.0F);
+   }
+
+   /** Anti-aliased coverage of a shape whose signed distance (positive inside, logo units) is {@code d}. */
+   private static float coverage(float d) {
+      return clamp01(d / EDGE_AA + 0.5F);
+   }
+
+   private static int lerpRgb(int a, int b, float t) {
+      return rgb((a >> 16 & 255) + ((b >> 16 & 255) - (a >> 16 & 255)) * t,
+            (a >> 8 & 255) + ((b >> 8 & 255) - (a >> 8 & 255)) * t,
+            (a & 255) + ((b & 255) - (a & 255)) * t);
    }
 
    private static float dist(float x, float y, float cx, float cy) {
