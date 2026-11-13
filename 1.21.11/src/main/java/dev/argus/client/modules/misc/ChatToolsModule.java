@@ -134,10 +134,6 @@ public final class ChatToolsModule extends Module {
     private final NumberSetting<Integer> autoMinimum = autoTpy(new NumberSetting<>("Fastest interval", 50, 0, 60000).withUnit("ms"));
     private final NumberSetting<Integer> autoMaximum = autoTpy(new NumberSetting<>("Slowest interval", 5000, 0, 60000).withUnit("ms"));
     private final NumberSetting<Integer> autoCapacity = autoTpy(new NumberSetting<>("Buffer limit", 1024, 64, 16384));
-    private final NumberSetting<Integer> autoInFlight = autoTpy(new NumberSetting<>("Awaiting replies", 4, 1, 32));
-    private final NumberSetting<Integer> autoAttempts = autoTpy(new NumberSetting<>("Max attempts", 3, 1, 10));
-    private final NumberSetting<Integer> autoReplyTimeout = autoTpy(new NumberSetting<>("Reply timeout", 3000, 500, 30000).withUnit("ms"));
-    private final NumberSetting<Integer> autoBackoff = autoTpy(new NumberSetting<>("Retry backoff", 1000, 0, 30000).withUnit("ms"));
 
     private final Setting<Boolean> clanGroup = group("Clan");
     private final BooleanSetting highlightClanChat = add(new BooleanSetting("Highlight clan in chat", true));
@@ -246,7 +242,7 @@ public final class ChatToolsModule extends Module {
         refreshMessagePatterns();
         for (var setting : List.of(autoTpyEnabled, autoWhitelistOnly, autoAllowFriends, autoToMe, autoToThem, autoAdaptive))
             setting.setChangeCallback(this::syncAutoTpy);
-        for (var setting : List.of(autoInterval, autoCapacity, autoInFlight, autoAttempts, autoReplyTimeout, autoBackoff))
+        for (var setting : List.of(autoInterval, autoCapacity))
             setting.setChangeCallback(this::syncAutoTpy);
         autoMinimum.setChangeCallback(() -> { autoBounds(true); syncAutoTpy(); });
         autoMaximum.setChangeCallback(() -> { autoBounds(false); syncAutoTpy(); });
@@ -499,14 +495,13 @@ public final class ChatToolsModule extends Module {
     // ---- Auto TPY -------------------------------------------------------------------------------------------------
 
     private void syncAutoTpy() {
-        if (autoTpy == null || autoBackoff == null || store == null) return;
+        if (autoTpy == null || autoMaximum == null || store == null) return;
         Set<String> friends = new HashSet<>(friends());
         refreshAutoTpyRoles();
         autoTpy.configure(new AutoTpyPolicy(Set.copyOf(store.get(ChatToolsStore.Lists.AUTO_TPY_WHITELIST)),
                 Set.copyOf(store.get(ChatToolsStore.Lists.AUTO_TPY_BLOCKLIST)), autoWhitelistOnly.getValue(), autoAllowFriends.getValue(),
                 autoToMe.getValue(), autoToThem.getValue(), autoRoleMembers, !autoRoleSelection.isEmpty()),
-            friends, autoCapacity.getValue(), autoInFlight.getValue(), autoAttempts.getValue(), autoReplyTimeout.getValue(),
-            autoBackoff.getValue(), autoInterval.getValue(), autoAdaptive.getValue(), autoMinimum.getValue(), autoMaximum.getValue());
+            friends, autoCapacity.getValue(), autoInterval.getValue(), autoAdaptive.getValue(), autoMinimum.getValue(), autoMaximum.getValue());
         incomingRequests.capacity(autoCapacity.getValue());
         boolean on = isToggled() && autoTpyEnabled.getValue();
         boolean starting = on && !autoTpy.enabled();
@@ -569,8 +564,7 @@ public final class ChatToolsModule extends Module {
     public List<AutoTpyQueue.Entry> autoTpyEntries() { return autoTpy.queue().entries(now()); }
     public AutoTpyQueue.Stats autoTpyStats() {
         var stats = autoTpy.queue().stats(now());
-        return new AutoTpyQueue.Stats(stats.live(), stats.queued(), stats.awaiting(), stats.retries(),
-            stats.overflow() + incomingRequests.rejected(), stats.latest());
+        return new AutoTpyQueue.Stats(stats.live(), stats.sent(), stats.overflow() + incomingRequests.rejected(), stats.latest());
     }
     public long autoTpyIntervalMs() { return autoTpy.pacer().intervalMs(); }
     public void cancelAutoTpy(String player) { autoTpy.queue().cancel(player, now()); }
@@ -1066,7 +1060,8 @@ public final class ChatToolsModule extends Module {
             if (ChatWhisperQueue.isWhisper(command, messageCommand.getValue())) whispers.sent(command, now());
             syncSavedCooldowns();
             autoTpy.commandSent(command, now(), autoTick);
-            teleports.sent(command, now());
+            // Accepting someone's /tpa brings them to you: it is not your teleport and must not touch your TPA timer.
+            if (!incomingRequests.acceptsArrival(command, now())) teleports.sent(command, now());
             incomingRequests.sent(command, now());
             ChatHomeEdit edit = ChatHomeEdit.parse(command);
             if (edit != null) {

@@ -13,15 +13,17 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 /**
- * What Chat Tools is waiting on: one line each for /home, /tpa and /hotspot (warmup, then the cooldown until you can
- * teleport again), incoming request timeouts, unread private messages and a Discord sync problem. Each line appears
+ * What Chat Tools is waiting on: a player line and a home line (warmup, then that kind's own cooldown), the hotspot warmup, incoming request timeouts, unread private messages and a Discord sync problem. Each line appears
  * only while it applies, and each can be moved on its own in the HUD editor.
  */
 public class ChatWaitingHudModule extends HudWidgetModule {
     public ChatWaitingHudModule() {
         super("Chat Waiting", new String[] {"chat-waiting", "unread", "requests", "teleport", "countdown", "cooldown", "home", "hotspot"});
         List<HudTextRow> rows = new ArrayList<>();
-        for (ChatTeleportState.Kind kind : ChatTeleportState.Kind.values()) rows.add(line(tools -> tools.countdown(kind)));
+        // One line each for player and home (the warmup, then that kind's own cooldown) and one for the hotspot warmup.
+        rows.add(line(tools -> tools.countdown(ChatTeleportState.Kind.TPA)));
+        rows.add(line(tools -> tools.countdown(ChatTeleportState.Kind.Home)));
+        rows.add(line(tools -> tools.countdown(ChatTeleportState.Kind.Hotspot)));
         rows.add(line(ChatToolsModule::requestCountdown));
         rows.add(line(tools -> {
             int count = tools.waiting().unread();

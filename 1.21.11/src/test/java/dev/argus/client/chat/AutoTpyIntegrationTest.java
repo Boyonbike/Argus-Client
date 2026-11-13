@@ -1,67 +1,67 @@
 package dev.argus.client.chat;
 import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 class AutoTpyIntegrationTest {
+    private static final AutoTpyPolicy ANYONE=new AutoTpyPolicy(Set.of(),Set.of(),false,false,true,false);
     private AutoTpyController c() {
-        var c=new AutoTpyController(); c.configure(new AutoTpyPolicy(Set.of(),Set.of(),false,false,true,false),Set.of(),1024,4,3,3000,1000,500,false,50,5000); c.enabled(true); return c;
+        var c=new AutoTpyController(); c.configure(ANYONE,Set.of(),1024,500,false,50,5000); c.enabled(true); return c;
     }
-    @Test void explicitCancellationChangesStopQueuedAndInflightAttempts() {
-        var c=c();c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        c.lifecycle(new ChatTpaRequests.Change(ChatTpaRequests.ChangeKind.Cancelled,new ChatTpaRequests.Request("Alice",false,120000)),1);
-        c.tick(2,1,cmd->fail("Cancelled request was sent"));
-        c.offer(new AutoTpyQueue.Request("Bob",false,120000,"/tpy Bob"),3);c.tick(3,2,cmd->c.commandSent(cmd,3,2));
-        c.message("Bob's teleport request has been cancelled.",4);
-        c.tick(10000,3,cmd->fail("Cancelled request was retried"));
+    private AutoTpyQueue.Request req(String name) { return new AutoTpyQueue.Request(name,false,120000,"/tpy "+name); }
+
+    @Test void everyRequestFromTheSamePlayerIsAccepted() {
+        var c=c(); var sent=new ArrayList<String>();
+        long now=0,tick=0;
+        for(int i=0;i<3;i++) {
+            c.offer(req("Alice"),now);
+            final long n=now,t=tick;
+            c.tick(n,t,cmd->{sent.add(cmd);c.commandSent(cmd,n,t);});
+            c.message("You accepted Alice's teleport request.",now+10);
+            now+=600;tick++;
+        }
+        assertEquals(List.of("/tpy Alice","/tpy Alice","/tpy Alice"),sent);
     }
-    @Test void ambiguousRateLimitPausesWithoutTrainingAndSettingsDoNotBurst() {
-        var c=c();c.configure(new AutoTpyPolicy(Set.of(),Set.of(),false,false,true,false),Set.of(),1024,4,3,3000,1000,500,true,50,5000);
-        for(String n:List.of("Alice","Bob")) c.offer(new AutoTpyQueue.Request(n,false,120000,"/tpy "+n),0);
-        c.tick(0,1,cmd->c.commandSent(cmd,0,1));c.tick(500,2,cmd->c.commandSent(cmd,500,2));
-        c.message("Please wait 30 seconds before using this command again.",600);
-        assertEquals(500,c.pacer().intervalMs());assertFalse(c.pacer().ready(30000,3));
-    }
-    @Test void disableClearsAndFilterChangeBeforeSendDeniesFriend() {
-        var c=c();c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        c.configure(new AutoTpyPolicy(Set.of("Alice"),Set.of("Alice"),true,true,true,false),Set.of("alice"),1024,4,3,3000,1000,500,false,50,5000);
-        c.tick(0,1,cmd->fail("Blocked friend was sent"));assertEquals(0,c.queue().stats(0).live());
-        c.enabled(false); assertTrue(c.queue().entries(1).isEmpty());
-    }
-    @Test void automaticSendDoesNotMeanAcceptedAndManualAnswerStopsRetries() {
-        var c=c(); c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        var sent=new java.util.ArrayList<String>();
-        c.tick(0,1,cmd->{sent.add(cmd);c.commandSent(cmd,0,1);});
-        assertEquals(List.of("/tpy Alice"),sent); assertEquals(1,c.queue().stats(0).awaiting());
-        c.commandSent("tpy Alice",1,1); c.tick(10000,2,sent::add); assertEquals(1,sent.size());
-    }
-    @Test void localSendFailureRollsBackReservationAndCanRetry() {
-        var c=c(); c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        c.tick(0,1,cmd->{throw new IllegalStateException("closed");});
-        assertEquals(0,c.queue().stats(0).awaiting());
-        var sent=new java.util.ArrayList<String>();c.tick(1000,2,sent::add);
+    @Test void noReplyNeverCausesARetry() {
+        var c=c(); var sent=new ArrayList<String>();
+        c.offer(req("Alice"),0); c.tick(0,1,sent::add);
+        for(int t=2;t<200;t++) c.tick(t*500L,t,sent::add);
         assertEquals(List.of("/tpy Alice"),sent);
     }
-    @Test void confirmsOnceAndResetNeverReplays() {
-        var c=c(); c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        c.tick(0,1,cmd->c.commandSent(cmd,0,1)); c.message("You accepted Alice's teleport request.",10);
-        assertEquals(AutoTpyQueue.State.Accepted,c.queue().entries(10).getFirst().state());
-        c.reset(); assertEquals(0,c.queue().stats(11).live());
+    @Test void pacingSpacesBurstsAndOneSendPerTick() {
+        var c=c(); var sent=new ArrayList<String>();
+        for(String n:List.of("Alice","Bob")) c.offer(req(n),0);
+        c.tick(0,1,sent::add); c.tick(0,1,sent::add); c.tick(400,2,sent::add);
+        assertEquals(1,sent.size());
+        c.tick(500,3,sent::add); assertEquals(List.of("/tpy Alice","/tpy Bob"),sent);
     }
-    @Test void unknownAndAmbiguousRepliesDoNotResolveAttempts() {
-        var c=c(); for(String name:List.of("Alice","Bob")) c.offer(new AutoTpyQueue.Request(name,false,120000,"/tpy "+name),0);
-        c.tick(0,1,cmd->c.commandSent(cmd,0,1)); c.tick(500,2,cmd->c.commandSent(cmd,500,2));
-        c.message("Teleport request accepted.",600); assertEquals(2,c.queue().stats(600).awaiting());
-        c.tick(4000,3,cmd->c.commandSent(cmd,4000,3)); c.message("Teleport request accepted.",4001);
-        assertTrue(c.queue().entries(4001).stream().noneMatch(e->e.state()==AutoTpyQueue.State.Accepted));
-    }
-    @Test void revokedRoleCancelsQueuedAndRetryingRequestsBeforeEmission() {
+    @Test void cancellationAndManualAnswerStopQueuedRequests() {
         var c=c();
-        c.configure(new AutoTpyPolicy(Set.of(),Set.of(),true,true,true,false,Set.of("Alice"),true),Set.of("alice"),1024,4,3,3000,1000,500,false,50,5000);
-        c.offer(new AutoTpyQueue.Request("Alice",false,120000,"/tpy Alice"),0);
-        c.configure(new AutoTpyPolicy(Set.of("Alice"),Set.of(),false,true,true,false,Set.of(),true),Set.of("alice"),1024,4,3,3000,1000,500,false,50,5000);
-        c.tick(0,1,cmd->fail("Revoked role sent a queued request"));
-        assertEquals(0,c.queue().stats(0).live());
-        assertEquals(AutoTpyQueue.State.Cancelled,c.queue().entries(0).getFirst().state());
+        c.offer(req("Alice"),0); c.offer(req("Bob"),0);
+        c.lifecycle(new ChatTpaRequests.Change(ChatTpaRequests.ChangeKind.Cancelled,new ChatTpaRequests.Request("Alice",false,120000)),1);
+        c.commandSent("tpn Bob",1,1);
+        c.tick(10000,2,cmd->fail("Cancelled request was sent: "+cmd));
+    }
+    @Test void rateLimitRequeuesLastAutomaticAccept() {
+        var c=c(); var sent=new ArrayList<String>();
+        c.offer(req("Alice"),0); c.tick(0,1,cmd->{sent.add(cmd);c.commandSent(cmd,0,1);});
+        c.message("Please wait 3 seconds before using this command again.",100);
+        c.tick(1000,2,sent::add); assertEquals(1,sent.size());
+        c.tick(3200,3,sent::add); assertEquals(List.of("/tpy Alice","/tpy Alice"),sent);
+    }
+    @Test void localSendFailureStaysQueued() {
+        var c=c(); c.offer(req("Alice"),0);
+        c.tick(0,1,cmd->{throw new IllegalStateException("closed");});
+        var sent=new ArrayList<String>(); c.tick(1000,2,sent::add);
+        assertEquals(List.of("/tpy Alice"),sent);
+    }
+    @Test void filtersApplyBeforeSendAndDisableClears() {
+        var c=c(); c.offer(req("Alice"),0);
+        c.configure(new AutoTpyPolicy(Set.of("Alice"),Set.of("Alice"),true,true,true,false),Set.of("alice"),1024,500,false,50,5000);
+        c.tick(0,1,cmd->fail("Blocked player was sent"));
+        c.offer(req("Alice"),1); assertEquals(0,c.queue().stats(1).live());
+        c.configure(ANYONE,Set.of(),1024,500,false,50,5000); c.offer(req("Bob"),2);
+        c.enabled(false); assertTrue(c.queue().entries(3).isEmpty());
     }
 }
