@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.texture.ReloadableTexture;
 import net.minecraft.client.renderer.texture.TextureContents;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.lwjgl.system.MemoryUtil;
 
 /**
  * Replaces the Mojang Studios logo texture with the generated loading-screen atlas.
@@ -40,13 +41,9 @@ public final class LoadingOverlayRenderer extends ReloadableTexture {
       LoadingAtlas atlas = atlas(logo);
       NativeImage image = new NativeImage(LoadingAtlas.WIDTH, LoadingAtlas.HEIGHT, false);
       if (atlas != null) {
-         int[] pixels = atlas.pixels;
-         for (int y = 0; y < LoadingAtlas.HEIGHT; y++) {
-            int row = y * LoadingAtlas.WIDTH;
-            for (int x = 0; x < LoadingAtlas.WIDTH; x++) {
-               image.setPixel(x, y, pixels[row + x]);
-            }
-         }
+         // One memory copy instead of 8M setPixel calls (the image is tightly packed RGBA, i.e. ABGR ints).
+         int[] pixels = atlas.pixelsAbgr();
+         MemoryUtil.memIntBuffer(image.getPointer(), pixels.length).put(pixels);
       } else {
          // Fallback: the plain logo in the top-left cell.
          for (int y = 0; y < LoadingAtlas.LOGO; y++) {
@@ -79,7 +76,12 @@ public final class LoadingOverlayRenderer extends ReloadableTexture {
          Thread worker = new Thread(() -> {
             try {
                int[] logo = readPixels(LOGO_PATH, LoadingAtlas.LOGO);
-               future.complete(logo == null ? null : LoadingAtlas.build(logo, readPixels(GLYPHS_PATH, LoadingAtlas.GLYPHS.w())));
+               LoadingAtlas built = logo == null ? null : LoadingAtlas.build(logo, readPixels(GLYPHS_PATH, LoadingAtlas.GLYPHS.w()));
+               if (built != null) {
+                  // Pre-swizzle here so the render thread's upload is a plain memory copy.
+                  built.pixelsAbgr();
+               }
+               future.complete(built);
             } catch (Throwable error) {
                future.completeExceptionally(error);
             }
