@@ -9,6 +9,7 @@ package dev.argus.mixin;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import dev.argus.client.modules.misc.AntiCoordsHooks;
 import dev.argus.client.modules.misc.AntiCoordsModule;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -27,17 +28,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class AntiCoordsBlockStateMixin {
    @ModifyVariable(method = "getSeed", at = @At("HEAD"), argsOnly = true)
    private BlockPos argus$antiCoordsSeedPos(BlockPos pos) {
-      return AntiCoordsModule.seedPos(pos);
+      return AntiCoordsHooks.ready ? AntiCoordsModule.seedPos(pos) : pos;
    }
 
    @ModifyReturnValue(method = "getSeed", at = @At("RETURN"))
    private long argus$antiCoordsSeed(long seed) {
-      return AntiCoordsModule.seed(seed);
+      return AntiCoordsHooks.ready ? AntiCoordsModule.seed(seed) : seed;
    }
 
    @Inject(method = "getOffset", at = @At("HEAD"), cancellable = true)
    private void argus$antiCoordsOffset(BlockPos pos, CallbackInfoReturnable<Vec3> cir, @Local(argsOnly = true) LocalRef<BlockPos> posRef) {
-      if (!((BlockBehaviour.BlockStateBase) (Object) this).hasOffsetFunction()) {
+      if (!AntiCoordsHooks.ready || !((BlockBehaviour.BlockStateBase) (Object) this).hasOffsetFunction()) {
          return;
       }
 
