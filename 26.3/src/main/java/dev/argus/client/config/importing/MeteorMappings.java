@@ -17,6 +17,7 @@ public final class MeteorMappings {
         String pairs="""
             anchor-aura AnchorAura
             anti-afk AntiAFK
+            anti-coords AntiCoords
             anti-hunger AntiHunger
             anti-packet-kick NoPacketKick
             auto-armor AutoArmor
@@ -65,6 +66,7 @@ public final class MeteorMappings {
             kill-aura Aura
             kill-effects KillEffects
             liquid-filler SourceFill
+            smart-sponge AutoSponge
             logout-spots LogoutSpots
             long-jump LongJump
             middle-click-extra MiddleClick

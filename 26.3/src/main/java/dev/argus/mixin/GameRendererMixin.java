@@ -155,6 +155,8 @@ public abstract class GameRendererMixin {
       at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/render/GuiRenderer;render()V")
    )
    private void renderHudBeforeGui(CallbackInfo callback) {
+      // First, so an AntiCoords screenshot holds only the world: nothing 2D has been drawn yet.
+      dev.argus.client.modules.misc.AntiCoordsModule.captureWorld();
       GuiGraphicsExtractor graphics = dev.argus.client.gui.GuiCapture.hudGraphics;
       if (graphics == null) {
          return;
@@ -193,6 +195,12 @@ public abstract class GameRendererMixin {
          RenderUtils.clearDepth(this.minecraft.gameRenderer.mainRenderTarget());
          this.renderClientHud(dev.argus.client.gui.GuiCapture.hudGraphics, true);
       }
+   }
+
+   /** A deferred AntiCoords screenshot hides the hand, outline and name tags before this frame is extracted. */
+   @Inject(method = "extract", at = @At("HEAD"))
+   private void prepareAntiCoordsScreenshot(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo callback) {
+      dev.argus.client.modules.misc.AntiCoordsModule.beforeFrame();
    }
 
    @Inject(method = "close", at = @At("HEAD"))

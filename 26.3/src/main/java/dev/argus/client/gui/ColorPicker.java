@@ -272,7 +272,7 @@ final class ColorPicker {
     boolean mouseReleased() { boolean was = dragging != null; dragging = null; return was; }
 
     boolean keyPressed(KeyEvent event) {
-        if (InputKeys.glfw(event) == 256) { close(); return true; }
+        if (InputKeys.glfw(event) == 256) { if (hex.isFocused()) applyHex(); close(); return true; }
         if (!hex.isFocused()) return false;
         if (InputKeys.glfw(event) == 257 || InputKeys.glfw(event) == 335) { applyHex(); return true; }
         hex.keyPressed(event);

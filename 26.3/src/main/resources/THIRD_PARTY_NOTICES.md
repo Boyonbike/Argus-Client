@@ -93,3 +93,26 @@ boss bars that share a name are stacked into one with an xN counter, names can
 be hidden and the bar spacing changed. It was rewritten for Argus's settings and
 Mojang-mapped boss bar overlay on 12 November 2026 and is covered by GPL-3.0 on
 the same terms as the AutoWasp files above.
+
+## NoTextureRotations and Comet: AntiCoords and AutoSponge
+
+- **Project:** NoTextureRotations
+- **Author:** rfresh2
+- **Source:** <https://github.com/rfresh2/NoTextureRotations>, revisions
+  `5f20453dce38f04a9b1671fe4638a68c882272d1` (26.x branch) and
+  `8cb7deeede7205474be36b5863890b610d6095f3` (keyed-hash branch)
+- **Licence:** Apache License 2.0
+- **Full licence text:** [licenses/Apache-2.0-NoTextureRotations.txt](licenses/Apache-2.0-NoTextureRotations.txt)
+
+The **AntiCoords** module's texture rotation and offset hiding is adapted from
+NoTextureRotations, by way of the Anti Coords module in Comet by Boyonabike. The
+adapted files are `AntiCoordsModule.java`, `utils/world/KeyedHash.java`,
+`AntiCoordsBlockStateMixin.java` and `AntiCoordsEntityTickMixin.java`. They were
+modified for Argus on 13 November 2026: rewritten against Argus's settings and
+module system, with the key kept in the Argus config folder as `anti-coords.key`
+and Argus's per-session texture seed salt stepping aside while the module
+replaces seeds. The upstream project has no separate NOTICE file; this section and
+the source headers provide the required attribution.
+
+The **AutoSponge** module and AntiCoords' clean-screenshot hooks are ported from
+Comet's Smart Sponge and Anti Coords (Comet original code, CC0-1.0).

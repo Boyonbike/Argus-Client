@@ -8,6 +8,9 @@
   "mixins": [
     "BlockBehaviourMixin",
     "BlockBehaviourBlockStateBaseMixin",
+    "AntiCoordsBlockStateMixin",
+    "AntiCoordsEntityTickMixin",
+    "AntiCoordsScreenshotMixin",
     "BlockMixin",
     "BlockCollisionsMixin",
     "AbstractBoatMixin",
