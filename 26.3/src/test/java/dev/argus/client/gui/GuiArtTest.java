@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class GuiArtTest {
     private static final String[] ICONS = {"combat", "movement", "render", "player", "exploit", "client", "misc", "favourites", "search",
             "chevron_down", "chevron_right", "chevron_left", "check", "close", "plus", "star", "keyboard", "palette", "people", "reset", "chevron_up",
-            "modules", "hud", "shield", "compass", "drop", "chat", "font", "bell", "sliders"};
+            "modules", "hud", "shield", "compass", "drop", "chat", "font", "bell", "sliders", "base_hunting"};
 
     @Test void iconsAreHighDensityAntialiasedMasks() throws Exception {
         for (String name : ICONS) {

@@ -108,7 +108,6 @@ import dev.argus.client.modules.misc.NoRotateModule;
 import dev.argus.client.modules.misc.SkinFlickerModule;
 import dev.argus.client.modules.misc.SoundBlockerModule;
 import dev.argus.client.modules.misc.SpammerModule;
-import dev.argus.client.modules.misc.StashFinderModule;
 import dev.argus.client.modules.misc.SwingModule;
 import dev.argus.client.modules.misc.VisualRangeModule;
 import dev.argus.client.modules.movement.AutoWalkModule;
@@ -897,10 +896,6 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected SprintModule");
       }
 
-      if (!this.registerModule(new StashFinderModule())) {
-         throw new IllegalStateException("Registration rejected StashFinderModule");
-      }
-
       if (!this.registerModule(new StepModule())) {
          throw new IllegalStateException("Registration rejected StepModule");
       }
@@ -987,6 +982,12 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new ZoomModule())) {
          throw new IllegalStateException("Registration rejected ZoomModule");
+      }
+
+      for (Module baseHuntingModule : dev.argus.client.modules.basehunting.BaseHuntingModules.create()) {
+         if (!this.registerModule(baseHuntingModule)) {
+            throw new IllegalStateException("Registration rejected " + baseHuntingModule.getClass().getSimpleName());
+         }
       }
 
       this.registerPathfindingModules();

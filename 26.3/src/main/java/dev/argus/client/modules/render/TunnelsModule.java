@@ -56,6 +56,7 @@ public class TunnelsModule extends Module {
    private volatile List<TunnelsModule.Tunnel> tunnels;
    private final AtomicBoolean mergeInProgress;
    private final ChunkScanner chunkScanner;
+   private final TunnelsStairs stairs;
 
    private boolean isNonSolid(BlockPos position) {
       ClientLevel level = ClientAccess.argusclientMinecraft.level;
@@ -99,6 +100,7 @@ public class TunnelsModule extends Module {
    @Override
    public void onDisable() {
       this.tunnels.clear();
+      this.stairs.clear();
       ChunkScanner scanner = this.chunkScanner;
       scanner.stop();
    }
@@ -166,6 +168,7 @@ public class TunnelsModule extends Module {
             if (timerForElapsedCheck.hasElapsed(75L)) {
                capturedTimer = this.mergeTimer;
                capturedTimer.reset();
+               this.stairs.pruneFarFrom(ClientAccess.argusclientMinecraft.player.getEyePosition());
                boolean busy = true;
                AtomicBoolean busyFlag = this.mergeInProgress;
                busyFlag.set(busy);
@@ -204,6 +207,9 @@ public class TunnelsModule extends Module {
             }
          }
       }
+      if (!this.isWorldUnavailable()) {
+         this.stairs.render(event, this.lineWidthSetting.getValue());
+      }
    }
 
    private void scanChunk(ChunkPos chunkPosition, LevelChunk unusedChunk) {
@@ -223,6 +229,7 @@ public class TunnelsModule extends Module {
                positionToSet.set(x, blockY, z);
                MutableBlockPos nonSolidPosition = scanPosition;
                if (this.isNonSolid(nonSolidPosition)) {
+                  this.stairs.scan(nonSolidPosition.immutable());
                   MutableBlockPos verticalPosition = scanPosition;
                   if (!this.isVerticalTunnelCell(verticalPosition)) {
                      MutableBlockPos horizontalPosition = scanPosition;
@@ -321,7 +328,7 @@ public class TunnelsModule extends Module {
    }
 
    public TunnelsModule() {
-      super("Tunnels", "Highlights dug-out tunnels.", ModuleCategory.RENDER);
+      super("Tunnels", "Highlights dug-out tunnels.", ModuleCategory.BASE_HUNTING);
       String minimumLengthKey = new String("MinLength");
       this.minLengthSetting = this.add(new NumberSetting<>(minimumLengthKey, 4, 1, 16).withUnit(new String("m")));
       this.fillSetting = this.add(new ColorSetting(new String("Fill"), new Color(1358888960, true)));
@@ -330,9 +337,13 @@ public class TunnelsModule extends Module {
       this.pendingTunnels = new ConcurrentLinkedQueue<>();
       this.tunnels = Collections.emptyList();
       this.mergeInProgress = new AtomicBoolean(false);
+      this.stairs = new TunnelsStairs(this, this::isNonSolid);
       this.chunkScanner = new ChunkScanner(1, this::scanChunk, (unloadedChunkPosition, unusedChunk) -> {
          BlockableEventLoop<?> client = ClientAccess.argusclientMinecraft;
-         Runnable removeUnloadedTunnels = () -> this.tunnels.removeIf(tunnel -> this.isTunnelCenterInChunk(tunnel, unloadedChunkPosition));
+         Runnable removeUnloadedTunnels = () -> {
+            this.tunnels.removeIf(tunnel -> this.isTunnelCenterInChunk(tunnel, unloadedChunkPosition));
+            this.stairs.forgetChunk(unloadedChunkPosition);
+         };
          client.executeIfPossible(removeUnloadedTunnels);
       }, null);
    }
