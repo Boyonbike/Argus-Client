@@ -143,7 +143,6 @@ public final class BlockCoatModule extends Module {
     private final Setting<Integer> perTick = add(new NumberSetting<>("BPT", 8, 1, 32));
     private final Setting<Float> reach = add(new NumberSetting<>("Reach", 6.0F, 1.0F, 6.0F).withUnit("m"));
     private final Setting<SurfaceTypes> surfaces = add(new EnumSetting<>("Surfaces", SurfaceTypes.ALL));
-    private final Setting<Boolean> storageOnly = add(new BooleanSetting("StorageOnly", false));
     private final Setting<AutoSwitch> autoSwitch = add(new EnumSetting<>("AutoSwitch", AutoSwitch.STICKY));
     private final Setting<Priority> order = add(new EnumSetting<>("Order", Priority.NEAREST));
     private final Setting<Boolean> rotate = add(new BooleanSetting("Rotate", true));
@@ -152,6 +151,7 @@ public final class BlockCoatModule extends Module {
     private final Setting<Set<Item>> pauseItems = add(new RegistrySetSetting<>("PauseItems", BuiltInRegistries.ITEM, Items.FLINT_AND_STEEL));
     private final Setting<Integer> pauseItemsTimeout = add(new NumberSetting<>("PauseTimeout", 5, 0, 60).withUnit("s"));
     private final Setting<Boolean> pauseItemsResetOnUse = add(new BooleanSetting("PauseResetOnUse", true));
+    private final Setting<Boolean> storageOnly = add(new BooleanSetting("StorageOnly", false));
     // TNT saving and liquid filling only apply while the coating block is TNT.
     private final Setting<Boolean> conservativeTnt = add(new BooleanSetting("ConservativeTNT", false));
     private final Setting<Boolean> liquidFiller = add(new BooleanSetting("LiquidFiller", true));

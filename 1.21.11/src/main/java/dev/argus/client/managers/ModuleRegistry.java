@@ -98,6 +98,7 @@ import dev.argus.client.modules.misc.ChestSearchBarModule;
 import dev.argus.client.modules.misc.CoordLoggerModule;
 import dev.argus.client.modules.misc.CustomDeathTextModule;
 import dev.argus.client.modules.misc.ExtraScreenshotModule;
+import dev.argus.client.modules.misc.AntiCoordsModule;
 import dev.argus.client.modules.misc.ExtraTabModule;
 import dev.argus.client.modules.misc.HeavenModule;
 import dev.argus.client.modules.misc.KillEffectsModule;
@@ -168,6 +169,7 @@ import dev.argus.client.modules.player.ReplenishModule;
 import dev.argus.client.modules.player.RotationLockModule;
 import dev.argus.client.modules.player.ScaffoldModule;
 import dev.argus.client.modules.player.SourceFillModule;
+import dev.argus.client.modules.player.AutoSpongeModule;
 import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.render.AmbienceModule;
 import dev.argus.client.modules.render.AnimationsModule;
@@ -536,6 +538,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected ExtraScreenshotModule");
       }
 
+      if (!this.registerModule(new AntiCoordsModule())) {
+         throw new IllegalStateException("Registration rejected AntiCoordsModule");
+      }
+
       if (!this.registerModule(new ExtraTabModule())) {
          throw new IllegalStateException("Registration rejected ExtraTabModule");
       }
@@ -878,6 +884,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new SourceFillModule())) {
          throw new IllegalStateException("Registration rejected SourceFillModule");
+      }
+
+      if (!this.registerModule(new AutoSpongeModule())) {
+         throw new IllegalStateException("Registration rejected AutoSpongeModule");
       }
 
       if (!this.registerModule(new SpammerModule())) {

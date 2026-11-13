@@ -351,8 +351,16 @@ public abstract class GameRendererMixin {
       }
    }
 
+   /** Once the world is drawn and before the GUI is, so an AntiCoords screenshot holds only the world. */
+   @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V"))
+   private void captureAntiCoordsScreenshot(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
+      dev.argus.client.modules.misc.AntiCoordsModule.captureWorld();
+   }
+
    @Inject(method = "render", at = @At("HEAD"))
    private void updateFrameTimingAndChatHeight(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo callback) {
+      // A deferred AntiCoords screenshot hides the hand, outline and name tags before this frame is drawn.
+      dev.argus.client.modules.misc.AntiCoordsModule.beforeFrame();
       hud.updateChatInputHeight(ClientAccess.argusclientMinecraft.screen instanceof ChatScreen ? 12.0F : 0.0F);
       ClientContext.frameTiming.recordFrame();
    }
