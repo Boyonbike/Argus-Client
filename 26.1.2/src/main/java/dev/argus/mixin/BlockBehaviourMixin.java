@@ -22,6 +22,11 @@ public class BlockBehaviourMixin {
 
    @ModifyReturnValue(method = "getSeed", at = @At("RETURN"))
    private long hashBlockSeed(long originalSeed) {
+      // AntiCoords replaces the seed itself, and its Keyed mode must stay the same across sessions.
+      if (dev.argus.client.modules.misc.AntiCoordsModule.replacesSeeds()) {
+         return originalSeed;
+      }
+
       return MurmurHash3.hash32(originalSeed, seedHashSalt);
    }
 }

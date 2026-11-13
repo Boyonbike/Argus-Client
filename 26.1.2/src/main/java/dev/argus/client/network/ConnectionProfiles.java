@@ -16,6 +16,8 @@ public final class ConnectionProfiles {
     private List<ProxyEntry> proxies = new ArrayList<>();
     private List<AccountEntry> accounts = new ArrayList<>();
     private String selected;
+    /** Whether the switched-on proxy stays on across restarts. Off means every launch starts on a direct connection. */
+    private boolean keepProxy;
     public ConnectionProfiles(Path path) throws IOException {
         this.path = path;
         if (!Files.exists(path)) return;
@@ -26,12 +28,15 @@ public final class ConnectionProfiles {
             for (JsonElement e : root.getAsJsonArray("proxies")) proxies.add(GSON.fromJson(e, ProxyEntry.class));
             for (JsonElement e : root.getAsJsonArray("accounts")) accounts.add(GSON.fromJson(e, AccountEntry.class));
             selected = root.has("selected") ? root.get("selected").getAsString() : null;
+            keepProxy = root.has("keepProxy") && root.get("keepProxy").getAsBoolean();
             if (proxies.stream().anyMatch(Objects::isNull) || accounts.stream().anyMatch(Objects::isNull)) throw new IllegalArgumentException();
         } catch (RuntimeException e) { throw new IOException("Couldn't read saved accounts/proxies. The original file has been preserved."); }
     }
     public synchronized List<ProxyEntry> proxies() { return List.copyOf(proxies); }
     public synchronized List<AccountEntry> accounts() { return List.copyOf(accounts); }
     public synchronized ProxyEntry activeProxy() { return proxies.stream().filter(p -> p.id().equals(selected)).findFirst().orElse(null); }
+    public synchronized boolean keepProxy() { return keepProxy; }
+    public synchronized void setKeepProxy(boolean keep) throws IOException { write(proxies, accounts, selected, keep); }
     public synchronized void selectProxy(String id) throws IOException {
         if (id != null && proxies.stream().noneMatch(p -> p.id().equals(id))) throw new IllegalArgumentException("Proxy no longer exists.");
         write(proxies, accounts, id);
@@ -58,8 +63,9 @@ public final class ConnectionProfiles {
         next.add(account); write(proxies, next, selected);
     }
     public synchronized void removeAccount(String id) throws IOException { var next = new ArrayList<>(accounts); next.removeIf(a -> a.id().equals(id)); write(proxies, next, selected); }
-    private void write(List<ProxyEntry> p, List<AccountEntry> a, String s) throws IOException {
-        JsonObject root = new JsonObject(); root.addProperty("version", 1); root.add("proxies", GSON.toJsonTree(p)); root.add("accounts", GSON.toJsonTree(a)); if (s != null) root.addProperty("selected", s);
+    private void write(List<ProxyEntry> p, List<AccountEntry> a, String s) throws IOException { write(p, a, s, keepProxy); }
+    private void write(List<ProxyEntry> p, List<AccountEntry> a, String s, boolean keep) throws IOException {
+        JsonObject root = new JsonObject(); root.addProperty("version", 1); root.addProperty("keepProxy", keep); root.add("proxies", GSON.toJsonTree(p)); root.add("accounts", GSON.toJsonTree(a)); if (s != null) root.addProperty("selected", s);
         Files.createDirectories(path.toAbsolutePath().getParent());
         Path temp = Files.createTempFile(path.toAbsolutePath().getParent(), ".connections-", ".tmp");
         try {
@@ -67,7 +73,7 @@ public final class ConnectionProfiles {
             Files.writeString(temp, GSON.toJson(root));
             try { Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException ignored) { Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING); }
-            proxies = new ArrayList<>(p); accounts = new ArrayList<>(a); selected = s;
+            proxies = new ArrayList<>(p); accounts = new ArrayList<>(a); selected = s; keepProxy = keep;
         } finally { Files.deleteIfExists(temp); }
     }
 

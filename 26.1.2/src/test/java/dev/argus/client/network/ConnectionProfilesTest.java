@@ -30,6 +30,19 @@ class ConnectionProfilesTest {
         loaded.removeProxy(second.id()); assertNull(loaded.activeProxy());
         assertEquals(1, new ConnectionProfiles(dir.resolve("connections.json")).proxies().size());
     }
+    @Test void keepProxyDefaultsOffAndSurvivesReload() throws Exception {
+        Path path = dir.resolve("connections.json");
+        var store = new ConnectionProfiles(path);
+        assertFalse(store.keepProxy());
+        var proxy = ProxyEntry.parse("127.0.0.1:1080"); store.putProxy(proxy);
+        store.setKeepProxy(true);
+        var loaded = new ConnectionProfiles(path);
+        assertTrue(loaded.keepProxy());
+        assertEquals(proxy.id(), loaded.activeProxy().id());
+        // Files written before the setting existed start on a direct connection.
+        Files.writeString(path, Files.readString(path).replace("\"keepProxy\": true,", ""));
+        assertFalse(new ConnectionProfiles(path).keepProxy());
+    }
     @Test void malformedStorageIsNeverSilentlyOverwritten() throws Exception {
         Path path = dir.resolve("connections.json"); java.nio.file.Files.writeString(path, "broken");
         assertThrows(java.io.IOException.class, () -> new ConnectionProfiles(path));

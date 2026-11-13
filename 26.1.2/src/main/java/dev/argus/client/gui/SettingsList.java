@@ -103,7 +103,7 @@ final class SettingsList {
     String hint() {
         if (!message.isEmpty() && (System.nanoTime() - messageAt) / 1e9f < 4.5f) return null;
         if (capturing != null) return "Press a key or mouse button · Esc cancels · Delete restores the default";
-        return editing != null ? "Enter applies · Esc cancels" : "Click to change · Drag sliders · The reset icon restores the default";
+        return editing != null ? "Enter or Esc saves · Click away saves" : "Click to change · Drag sliders · The reset icon restores the default";
     }
     String message() { return message.isEmpty() || (System.nanoTime() - messageAt) / 1e9f >= 4.5f ? "" : message; }
 
@@ -465,7 +465,13 @@ final class SettingsList {
 
     @SuppressWarnings({"rawtypes", "unchecked"}) private void change(Setting setting, Object next) { setting.setValue(next); message = ""; }
 
+    /** Ends an inline edit, saving what was typed when it's valid; an invalid value is dropped and its error stays shown. */
     void stopEditing() {
+        if (editing != null && editor != null) apply();
+        closeEditor();
+    }
+
+    private void closeEditor() {
         if (editor != null) host.hostRemove(editor);
         editor = null; editing = null; capturing = null;
     }
@@ -483,7 +489,7 @@ final class SettingsList {
     }
 
     private void reset(Setting<?> setting) {
-        if (editing == setting) stopEditing();
+        if (editing == setting) closeEditor();
         setting.reset(); message = "";
         UiAnim.set("set." + System.identityHashCode(setting) + ".reset", 1);
     }
@@ -525,8 +531,9 @@ final class SettingsList {
         if (!UiDraw.over(mx, my, x, y, w, h) || my < clipTop() || my >= clipBottom()) { if (editing != null) stopEditing(); return false; }
         int i = (int) Math.floor((my - y + shownScroll) / ROW);
         if (i < 0 || i >= visible.size()) { stopEditing(); return true; }
-        Setting<?> setting = visible.get(i); Object current = setting.getValue(); message = "";
-        if (editing != null && editing != setting) stopEditing();
+        Setting<?> setting = visible.get(i); Object current = setting.getValue();
+        boolean rejected = editing != null && editing != setting && !saveOrDrop();
+        if (!rejected) message = "";
         if (setting.isGroupOnly()) return true;
         float rowY = y + i * ROW - shownScroll;
         if (UiDraw.over(mx, my, resetX() - 3, rowY + 3, 16, ROW - 6)) { if (!isDefault(setting)) reset(setting); return true; }
@@ -561,7 +568,7 @@ final class SettingsList {
         scroll = Math.clamp(scroll - (int) (vertical * ROW * 2), 0, maxScroll()); return true;
     }
 
-    /** Enter applies and Esc cancels an inline edit. */
+    /** Enter applies an inline edit. Esc applies it too, then lets the Esc close the menu; an invalid value keeps the editor open. */
     boolean keyPressed(KeyEvent event) {
         if (capturing != null) {
             if (event.key() == 259 || event.key() == 261) capturing.followDefault();
@@ -571,11 +578,19 @@ final class SettingsList {
         }
         if (editor == null || editing == null) return false;
         if (event.key() == 257 || event.key() == 335) { apply(); return true; }
-        if (event.key() == 256) { stopEditing(); return true; }
+        if (event.key() == 256) return !apply();
         return false;
     }
 
-    private void apply() {
+    /** Ends the edit as {@link #stopEditing()} does; false when the typed value was rejected. */
+    private boolean saveOrDrop() {
+        boolean rejected = editing != null && editor != null && !apply();
+        closeEditor();
+        return !rejected;
+    }
+
+    /** Applies the typed value and closes the editor; on a bad value shows why and keeps it open. */
+    private boolean apply() {
         String input = editor.getValue().trim();
         try {
             Object old = editing.getValue();
@@ -593,11 +608,13 @@ final class SettingsList {
                 if (hex.length() != 6 && hex.length() != 8) throw new IllegalArgumentException();
                 long bits = Long.parseUnsignedLong(hex, 16); colour.setColor(new Color((int) (hex.length() == 6 ? bits | 0xff000000L : bits), true));
             } else editing.parseValue(input);
-            stopEditing(); message = "";
+            closeEditor(); message = "";
+            return true;
         } catch (RuntimeException failure) {
             String range = editing.isNumericBoundsEnabled() && editing.getMinimumValue() != null && editing.getMaximumValue() != null
                     ? " Allowed: " + editing.getMinimumValue() + " to " + editing.getMaximumValue() + "." : "";
             fail("That value isn't valid." + range);
+            return false;
         }
     }
 
