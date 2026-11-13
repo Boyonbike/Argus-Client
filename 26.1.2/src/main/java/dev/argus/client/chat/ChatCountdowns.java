@@ -16,9 +16,12 @@ public final class ChatCountdowns {
         for (var request : requests) result.add(request(request, now));
         return List.copyOf(result);
     }
-    /** The HUD line for one kind (Home, TPA or Hotspot), or "" when nothing of that kind is running. */
+    /**
+     * One kind's HUD line: its warmup ("Teleporting to base in 5s"), then its cooldown ("Home teleportation cooldown: 30s"),
+     * or "" when neither is running. Home and player each have their own line, so both cooldowns can show at once.
+     */
     public static String hud(ChatTeleportState.Kind kind, List<ChatTeleportState.Timer> timers, long now) {
-        return timers.stream().filter(t -> t.kind() == kind).map(t -> t.hud(now)).findFirst().orElse("");
+        return timers.stream().filter(t -> t.kind() == kind).map(t -> t.hud(now)).filter(s -> !s.isEmpty()).findFirst().orElse("");
     }
     /** Incoming requests in one line: the soonest to time out, and how many are waiting. */
     public static String requests(List<ChatTpaRequests.Request> requests, long now) {

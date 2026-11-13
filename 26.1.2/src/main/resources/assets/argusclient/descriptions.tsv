@@ -2183,10 +2183,6 @@ ChatTools	Adaptive pacing	Learns the pace from the server's confirmations and ra
 ChatTools	Fastest interval	The fastest interval Adaptive pacing may use.
 ChatTools	Slowest interval	The slowest interval Adaptive pacing may use. A pause the server asks for can still be longer.
 ChatTools	Buffer limit	Maximum requests held at once. New players are turned away, visibly, when it's full.
-ChatTools	Awaiting replies	Maximum accept commands waiting for the server's reply while new requests keep buffering.
-ChatTools	Max attempts	Total tries for each request, including the first.
-ChatTools	Reply timeout	How long to wait for the server to confirm before retrying.
-ChatTools	Retry backoff	First wait before a retry. It doubles with each retry, up to 30 seconds.
 ChatTools	Highlight clan in chat	Colours clan members' names in chat. Friends and enemies keep BetterChat's colours.
 ChatTools	Clan chat colour	Colour of clan members' names in chat and in the window.
 ChatTools	Highlight clan in tab	Colours clan members' names in the tab list.
