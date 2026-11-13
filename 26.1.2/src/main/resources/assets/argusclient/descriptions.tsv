@@ -729,24 +729,6 @@ FakeLag	InteractEntity	Hold back entity interaction packets.
 FakeLag	Digging	Hold back block digging packets.
 FakeLag	Ping	Hold back keep-alive ping packets.
 FakeLag	All	Hold back every outgoing packet.
-StashFinder	Log	Save detected stashes to a log.
-StashFinder	Notify	Send a chat message when a stash is found.
-StashFinder	CensorCoords	Hide coordinates in stash notifications.
-StashFinder	Sound	Play a sound when a stash is found.
-StashFinder	Type	Sound played for stash alerts.
-StashFinder	Volume	Volume of the stash alert sound.
-StashFinder	IgnoreNatural	Skip stashes inside known natural structures.
-StashFinder	Dungeon	Ignore stashes found inside dungeons.
-StashFinder	Fortress	Ignore stashes inside nether fortresses.
-StashFinder	Bastion	Ignore stashes found inside bastions.
-StashFinder	AncientCity	Ignore stashes inside ancient cities.
-StashFinder	TrialChambers	Ignore stashes inside trial chambers.
-StashFinder	Shulkers	Treat shulker boxes as stash storage.
-StashFinder	ChestEntities	Treat chest-carrying entities as stashes.
-StashFinder	Chests	Count chests when detecting stashes.
-StashFinder	ChestCount	Minimum chests for a stash to count.
-StashFinder	StackedCarts	Detect stashes made of stacked minecarts.
-StashFinder	Minimum	Minimum minecarts for a cart stash.
 Notifications	Watermark	Color of the client name in chat.
 Notifications	Brackets	Color of the brackets around the prefix.
 Notifications	Commands	Notify in chat when commands are used.

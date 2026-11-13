@@ -15,6 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Notification removal must include its registrations, sender and compatibility aliases. */
 final class RemovedNotificationsTest {
+    /**
+     * BaseFinder's opt-in Discord alerts, added on request on 13 November 2026. They must post to a Discord webhook
+     * link, so this one class may mention them; everything else stays covered by the check below.
+     */
+    private static final Set<String> ALLOWED = Set.of("dev/argus/client/modules/basehunting/HuntDiscordAlerts.class");
+
     @Test void baseAndReleaseJarsContainNoNotificationImplementationOrReferences() throws Exception {
         List<Path> jars = new ArrayList<>(List.of(Path.of(System.getProperty("argus.release.jar"))));
         try (var releases = Files.newDirectoryStream(Path.of("."), "*.jar")) {
@@ -24,6 +30,10 @@ final class RemovedNotificationsTest {
             try (ZipFile jar = new ZipFile(path.toFile())) {
                 for (var entry : Collections.list(jar.entries())) {
                     String name = entry.getName();
+                    if (ALLOWED.contains(name)) {
+                        continue;
+                    }
+
                     assertFalse(removed(name), path + " still contains " + name);
                     if (name.endsWith(".class") || name.endsWith(".ini") || name.endsWith(".json")) {
                         String content = new String(jar.getInputStream(entry).readAllBytes(), StandardCharsets.ISO_8859_1);

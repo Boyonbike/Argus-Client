@@ -97,7 +97,7 @@ public final class MeteorMappings {
             speed Speed
             speed-mine SpeedMine
             sprint Sprint
-            stash-finder StashFinder
+            stash-finder BaseFinder
             step Step
             surround Blocker
             timer Timer
