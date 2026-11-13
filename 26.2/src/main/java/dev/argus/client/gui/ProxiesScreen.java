@@ -10,7 +10,8 @@ public final class ProxiesScreen extends ProfileManagerScreen {
     private static final long CONFIRM_NANOS = 3_000_000_000L;
     private final UiInput name = new UiInput(0, 0, 100, 12, "Optional"), host = new UiInput(0, 0, 100, 12, "Host or IP"), port = new UiInput(0, 0, 80, 12, "1080");
     private final UiInput user = new UiInput(0, 0, 100, 12, "Optional"), password = new UiInput(0, 0, 100, 12, "Optional");
-    private final Map<String, ProxyChecker.Result> results = new HashMap<>();
+    private final Map<String, ProxyChecker.Result> results = ProxyHealth.results();
+    private static final int CARD_Y = TOOLBAR_Y + 28, CARD_H = 30;
     private ProxyEntry.Type type = ProxyEntry.Type.SOCKS5;
     private boolean editing;
     private String editId, deleting;
@@ -20,8 +21,12 @@ public final class ProxiesScreen extends ProfileManagerScreen {
 
     // ---- header, footer, toolbar ---------------------------------------------------------------
 
-    @Override protected String status() { var a = profiles == null ? null : profiles.activeProxy(); return a == null ? "Direct connection" : "Via " + (a.name().isBlank() ? a.address() : a.name()); }
-    @Override protected boolean statusGood() { return profiles != null && profiles.activeProxy() != null; }
+    @Override protected String status() {
+        var a = profiles == null ? null : profiles.activeProxy();
+        if (a == null) return "Direct connection";
+        return (ProxyHealth.activeDead() ? "Dead: " : "Via ") + (a.name().isBlank() ? a.address() : a.name());
+    }
+    @Override protected boolean statusGood() { return profiles != null && profiles.activeProxy() != null && !ProxyHealth.activeDead(); }
     @Override protected String hint() { return "Switch a proxy on to route connections through it · Reconnect to apply"; }
     @Override protected String[] empty() { return new String[]{"shield", "No proxies yet", "Add a SOCKS proxy, import a text list, or paste one from the clipboard."}; }
 
@@ -47,6 +52,27 @@ public final class ProxiesScreen extends ProfileManagerScreen {
                 message = "Added " + added + " free proxies, checking them now. Free proxies are untrusted; they can see your traffic.";
             } catch (java.io.IOException e) { error("Couldn't save the free proxies. No entries were changed."); }
         });
+    }
+
+    // ---- keep-on-launch card ------------------------------------------------------------------------
+
+    @Override protected int listY() { return LIST_Y + CARD_H + 8; }
+    @Override protected void renderAboveList(GuiGraphicsExtractor g, int mx, int my) {
+        var t = GuiState.theme();
+        float x = left + 12, y = top + CARD_Y, w = panelWidth - 24;
+        boolean keep = profiles.keepProxy(), dead = ProxyHealth.activeDead();
+        String sub = dead ? ProxyHealth.warning()
+                : ProxyHealth.checking() ? "Checking saved proxies…"
+                : keep ? "Reconnects through the same proxy after a restart · all proxies are re-checked on launch"
+                : "Every launch starts on a direct connection";
+        UiDraw.card(g, x, y, w, CARD_H, dead ? "shield_off" : "shield", "Keep proxy on launch", dead ? "" : sub, 60, t);
+        if (dead) UiDraw.text(g, UiDraw.fit(sub, w - UiDraw.CARD_PAD * 2 - 80, 6f), x + UiDraw.CARD_PAD + 20, y + 21, 6f, t.red());
+        boolean hover = !busy && UiDraw.over(mx, my, x + w - 70, y + 6, 70, 18);
+        float on = UiAnim.smooth("px.keep", keep ? 1 : 0, 16);
+        UiDraw.right(g, keep ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        UiDraw.toggle(g, x + w - UiDraw.CARD_PAD - 18, y + 10, on, hover, t);
+        if (!busy) hit(x + w - 70, y + 6, 70, 18, () -> change(() -> profiles.setKeepProxy(!keep),
+                keep ? "The proxy will be switched off when the game restarts." : "The switched-on proxy will be kept and re-checked on launch."));
     }
 
     // ---- edit form ----------------------------------------------------------------------------
@@ -149,7 +175,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         float cx = textX + chip(g, p.type().toString(), textX, cy + 6.5f, t.blue()) + 4;
         var r = results.get(p.id());
         boolean tcpOnly = p.type() == ProxyEntry.Type.SOCKS4;
-        String state = r == null ? "Unchecked" : !r.alive() ? "Unreachable" : tcpOnly ? "TCP reachable" : r.latency() + " ms";
+        String state = r == null ? (ProxyHealth.checking() ? "Checking…" : "Unchecked") : !r.alive() ? (enabled ? "Dead" : "Unreachable") : tcpOnly ? "TCP reachable" : r.latency() + " ms";
         int tint = r == null ? t.muted() : shouldCleanUp(p, r) ? t.red() : r.latency() >= 500 ? t.yellow() : t.green();
         float sw = chip(g, state, cx, cy + 6.5f, tint);
         if (r != null && !r.alive() && UiDraw.over(mx, my, cx, cy + 2, sw, 9)) tooltip(key + ".err", "Unreachable", r.message());

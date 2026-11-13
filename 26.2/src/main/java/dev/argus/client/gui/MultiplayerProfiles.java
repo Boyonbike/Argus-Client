@@ -1,6 +1,7 @@
 package dev.argus.client.gui;
 
 import dev.argus.client.network.ProfileRuntime;
+import dev.argus.client.network.ProxyHealth;
 import dev.argus.client.network.SessionRecovery;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,19 +31,20 @@ public final class MultiplayerProfiles {
     private MultiplayerProfiles() {}
     public static void install(Minecraft client, Screen screen, int width, int height) {
         // Catch an expired launcher token as soon as the game reaches its menus, not only once you open Multiplayer.
-        if (screen instanceof TitleScreen) { SessionRecovery.checkSoon(client); return; }
+        if (screen instanceof TitleScreen) { SessionRecovery.checkSoon(client); ProxyHealth.checkOnLaunch(); return; }
         if (!(screen instanceof JoinMultiplayerScreen)) return;
         var buttons=Screens.getWidgets(screen);
         // Coming back to this screen (closing Accounts, or a resize such as entering fullscreen) only repositions
         // the existing widgets, so ours are still there from last time, at the old size. Swap them for fresh ones
         // placed for the current size rather than stacking a second pair on top.
         buttons.removeIf(b -> b instanceof UiStatusButton<?>);
+        ProxyHealth.checkOnLaunch();
         // The base client's "Vanilla" checkbox lives in the Accounts menu as "Appear as vanilla" now.
         buttons.removeIf(b -> b instanceof Checkbox && "Vanilla".equals(b.getMessage().getString()));
         buttons.add(new UiStatusButton<ProxyEntry>(PAD,PAD,SIZE,"proxy",ProfileRuntime::activeProxy,
                 MultiplayerProfiles::drawShield,
-                (proxy,t)->proxy==null?null:t.green(),
-                proxy->proxy==null?"Proxies (none active)":"Proxies (using "+proxy.address()+")",
+                (proxy,t)->proxy==null?null:ProxyHealth.activeDead()?t.red():t.green(),
+                proxy->proxy==null?"Proxies (none active)":"Proxies (using "+proxy.address()+(ProxyHealth.activeDead()?", dead":"")+")",
                 ()->client.gui.screen()==screen,
                 ()->client.gui.setScreen(new ProxiesScreen(screen))));
         buttons.add(new UiStatusButton<UUID>(width-PAD-SIZE,PAD,SIZE,"account",()->client.getUser().getProfileId(),
@@ -62,10 +64,12 @@ public final class MultiplayerProfiles {
             // Only problems get a line of text now; the buttons themselves show the account and proxy.
             String status = SessionRecovery.status(client);
             if (status.isEmpty() && !ProfileRuntime.error().isEmpty()) status = "Couldn't load accounts/proxies";
+            boolean proxyWarning = false;
+            if (status.isEmpty()) { status = ProxyHealth.warning(); proxyWarning = ProxyHealth.activeDead(); }
             if (status.isEmpty()) return;
             var theme=GuiState.theme();
             int textX=PAD+SIZE+5, available=Math.max(40,s.width-textX*2);
-            UiDraw.text(g,UiDraw.fit(status,available,UiDraw.SMALL),textX,PAD+SIZE/2f,UiDraw.SMALL,theme.muted());
+            UiDraw.text(g,UiDraw.fit(status,available,UiDraw.SMALL),textX,PAD+SIZE/2f,UiDraw.SMALL,proxyWarning?theme.red():theme.muted());
         });
     }
 
