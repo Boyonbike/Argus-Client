@@ -164,7 +164,7 @@ final class ColorPicker {
             checker(g, rx + 5, ty, 10, 10, t);
             UiDraw.rounded(g, rx + 5, ty, 10, 10, 3, original);
             UiDraw.text(g, "Undo", rx + 18, ty + 5, UiSpace.CAPTION, t.text());
-            if (revertHover) host().hostTooltip("cp.revert", "Revert", "Back to the colour it had when you opened this");
+            if (revertHover) host().hostTooltip("cp.revert", null, "Back to the colour it had when you opened this");
             // Rainbow and theme sync.
             float half = (sw - 8) / 2, gy = toggleY();
             switchRow(g, "Rainbow", setting.isRainbow(), sx, gy, half, mx, my, t, "cp.rainbow");
@@ -187,7 +187,7 @@ final class ColorPicker {
                     checker(g, cx, cy, SWATCH, SWATCH, t);
                     UiDraw.rounded(g, cx, cy, SWATCH, SWATCH, 3.5f, colour);
                     UiDraw.outline(g, cx, cy, SWATCH, SWATCH, 3.5f, hover ? 1f : .6f, hover ? t.on() : UiDraw.alpha(t.text(), .2f));
-                    if (hover) host().hostTooltip("cp.saved." + i, "#" + String.format("%08X", colour), "Click to use · right-click to remove");
+                    if (hover) host().hostTooltip("cp.saved." + i, "#" + String.format("%08X", colour), "Click to use, right-click to remove");
                 }
             }
         } finally {

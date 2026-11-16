@@ -25,7 +25,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
 
     @Override protected String status() { return "Logged in as " + minecraft.getUser().getName(); }
     @Override protected boolean statusGood() { return true; }
-    @Override protected String hint() { return "Switch accounts without restarting · Disconnect from a server first"; }
+    @Override protected String hint() { return "Disconnect from the server first, then switch accounts without restarting"; }
     @Override protected String[] empty() { return new String[]{"player", "No saved accounts", "Add one above to switch without restarting Minecraft."}; }
 
     @Override protected void buildToolbar(int x, int y, int w) {
@@ -70,11 +70,11 @@ public final class AccountsScreen extends ProfileManagerScreen {
             return;
         }
         if (passwordFor != null) {
-            UiDraw.card(g, x, y, w, 72, "shield", "Lobby password · " + passwordFor.username(), "AutoLobby sends /login with this when you play as this account", 120, t);
+            UiDraw.card(g, x, y, w, 72, "shield", "Lobby password for " + passwordFor.username(), "AutoLobby sends /login with this when you play as this account", 120, t);
             float right = x + w - 10;
             right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
             pill(g, "Save", right, y + 15, mx, my, t.on(), true, !busy, this::submitForm);
-            label(g, "Stored on this computer · leave empty and save to clear it", x + 10, y + 38);
+            label(g, "Stored on this computer. Save it empty to clear it.", x + 10, y + 38);
             return;
         }
         String title = switch (adding) { case OFFLINE -> "Add cracked account"; case SESSION -> "Add session account"; default -> "Add Altening account"; };
@@ -87,7 +87,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         float right = x + w - 10;
         right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
         pill(g, "Add & log in", right, y + 15, mx, my, t.on(), true, !busy, this::submitForm);
-        label(g, adding == AccountEntry.Type.OFFLINE ? "Username · 1–16 letters, digits or underscores" : "Account token · stored on this computer", x + 10, y + 38);
+        label(g, adding == AccountEntry.Type.OFFLINE ? "Username (1–16 letters, digits or underscores)" : "Account token (stored on this computer)", x + 10, y + 38);
     }
 
     private void passwordForm(AccountEntry account) {
@@ -112,7 +112,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         if (module == null) return;
         var t = GuiState.theme();
         float x = left + 12, y = top + CARD_Y, w = panelWidth - 24;
-        UiDraw.card(g, x, y, w, CARD_H, "shield", "Appear as vanilla", "Tells servers you're playing unmodded Minecraft · applies when you next join", 60, t);
+        UiDraw.card(g, x, y, w, CARD_H, "shield", "Appear as vanilla", "Tells servers you're playing unmodded Minecraft, from the next time you join", 60, t);
         boolean hover = UiDraw.over(mx, my, x + w - 70, y + 6, 70, 18);
         float on = UiAnim.smooth("acc.vanilla", module.isToggled() ? 1 : 0, 16);
         UiDraw.right(g, module.isToggled() ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.on(), on));

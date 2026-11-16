@@ -183,7 +183,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
             rows.add(new Row(Kind.MODULES, "Modules", modulesDetail(), null, -1));
             if (modulesOn) for (int i = 0; i < d.moduleSources().size(); i++) {
                 String err = scan.moduleErrors().get(i);
-                rows.add(new Row(Kind.SOURCE, d.moduleSources().get(i).label(), err == null ? enabledCount(i) : "Couldn’t read · " + err, null, i));
+                rows.add(new Row(Kind.SOURCE, d.moduleSources().get(i).label(), err == null ? enabledCount(i) : "Couldn’t read: " + err, null, i));
             }
         }
         for (DataKind kind : DataKind.values()) if (d.data().containsKey(kind)) rows.add(new Row(Kind.DATA, label(kind), dataDetail(kind), kind, -1));
@@ -198,7 +198,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
             for (var w : warnings) rows.add(new Row(Kind.WARNING, w.sourceId(), w.message(), null, -1));
         }
         if (!d.skipped().isEmpty()) {
-            rows.add(Row.header("Stays in Meteor · no Argus equivalent"));
+            rows.add(Row.header("Stays in Meteor (no Argus equivalent)"));
             for (String s : d.skipped()) rows.add(new Row(Kind.SKIPPED, s, "", null, -1));
         }
         updateButtons();
@@ -208,7 +208,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         if (!modulesOn) return "Not importing";
         if (preview == null) return moduleSource < 0 ? "Couldn’t read any module config" : "Couldn’t convert this config";
         long unsupported = preview.issues().stream().filter(i -> i.field().equals("module") && i.severity() == ConfigImportModel.Severity.WARNING).count();
-        return preview.enabledTargets().size() + " on in Argus" + (unsupported > 0 ? " · " + unsupported + " not in Argus" : "") + " · saved as a preset";
+        return preview.enabledTargets().size() + " on in Argus" + (unsupported > 0 ? ", " + unsupported + " not in Argus" : "") + ", saved as a preset";
     }
     private String enabledCount(int index) {
         var source = scan.modules().get(index);
@@ -224,13 +224,14 @@ final class MeteorInstanceImportScreen extends UiScreen {
         return switch (kind) { case FRIENDS -> plan.friends().size(); case ENEMIES -> plan.enemies().size(); case WAYPOINTS -> plan.waypoints().size(); case MACROS -> plan.macros().size(); case CHAT_TOOLS -> chatPlan.added(); };
     }
     private String dataDetail(DataKind kind) {
-        if (scan.errors().containsKey(kind)) return "Couldn’t read · " + scan.errors().get(kind);
+        if (scan.errors().containsKey(kind)) return "Couldn’t read: " + scan.errors().get(kind);
         int found = count(kind);
         if (found == 0) return "None saved";
-        if (!selected.contains(kind)) return found + " found · not importing";
+        if (!selected.contains(kind)) return found + " found, not importing";
         int add = planned(kind), skip = found - add;
-        String extra = kind == DataKind.WAYPOINTS ? " across " + scan.data().waypoints().stream().map(MeteorDataReader.SourceWaypoint::server).distinct().count() + " server(s)" : "";
-        return (add == 0 ? "Nothing new" : add + " to add" + extra) + (skip > 0 ? " · " + skip + " skipped" : "");
+        long servers = kind == DataKind.WAYPOINTS ? scan.data().waypoints().stream().map(MeteorDataReader.SourceWaypoint::server).distinct().count() : 0;
+        String extra = kind == DataKind.WAYPOINTS ? " across " + servers + (servers == 1 ? " server" : " servers") : "";
+        return (add == 0 ? "Nothing new" : add + " to add" + extra) + (skip > 0 ? ", " + skip + " skipped" : "");
     }
     private static String label(DataKind kind) {
         return switch (kind) { case FRIENDS -> "Friends"; case ENEMIES -> "Enemies"; case WAYPOINTS -> "Waypoints"; case MACROS -> "Macros"; case CHAT_TOOLS -> "Chat Tools data"; };
@@ -310,7 +311,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
         UiDraw.title(g, "Import from another instance", left + 36, top + 19, t.text());
         ProfileManagerScreen.chip(g, "Meteor", left + panelWidth - 12 - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
-        UiDraw.text(g, UiDraw.fit("Reads only · your Meteor files are never changed", panelWidth - 120, UiDraw.SMALL), left + 36, top + 31, UiDraw.SMALL, t.textDim());
+        UiDraw.text(g, UiDraw.fit("Your Meteor files are only read, never changed", panelWidth - 120, UiDraw.SMALL), left + 36, top + 31, UiDraw.SMALL, t.textDim());
         renderInstances(g, mx, my, t);
         renderPane(g, mx, my, t);
         // Footer.
@@ -329,9 +330,15 @@ final class MeteorInstanceImportScreen extends UiScreen {
     private String summaryLine() {
         List<String> parts = new ArrayList<>();
         if (modulesReady()) parts.add("saves “" + presetName.trim() + "” as a Modules preset");
-        if (plan != null && plan.total() > 0) parts.add("adds " + ArgusDataStore.summary(plan) + " · backs up first");
+        if (plan != null && plan.total() > 0) parts.add("adds " + ArgusDataStore.summary(plan) + " (after a backup)");
         if (!chatPlan.isEmpty()) parts.add("adds " + ChatToolsDataImport.summary(chatPlan));
-        return parts.isEmpty() ? "Nothing selected to import." : Character.toUpperCase(parts.getFirst().charAt(0)) + String.join(" · ", parts).substring(1);
+        return parts.isEmpty() ? "Nothing selected to import." : Character.toUpperCase(parts.getFirst().charAt(0)) + joinAnd(parts).substring(1);
+    }
+
+    /** "a", "a and b", "a, b and c". */
+    private static String joinAnd(List<String> parts) {
+        if (parts.size() <= 1) return String.join("", parts);
+        return String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.getLast();
     }
 
     private void renderInstances(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {

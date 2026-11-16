@@ -85,15 +85,15 @@ final class ConfigImportScreen extends UiScreen {
                 long warnings = preview.issues().stream().filter(i -> i.severity() == ConfigImportModel.Severity.WARNING).count();
                 if (warnings > 0) {
                     rows.add(new Row("Needs attention (" + warnings + ")", Kind.HEADER, null));
-                    for (var issue : preview.issues()) if (issue.severity() == ConfigImportModel.Severity.WARNING) rows.add(new Row(issue.sourceId() + " · " + issue.field() + " · " + issue.message(), Kind.WARNING, null));
+                    for (var issue : preview.issues()) if (issue.severity() == ConfigImportModel.Severity.WARNING) rows.add(new Row(issueLine(issue), Kind.WARNING, null));
                 }
                 rows.add(new Row("Modules to enable (" + preview.enabledTargets().size() + ")", Kind.HEADER, null));
                 preview.enabledTargets().stream().sorted().forEach(id -> rows.add(new Row(id, Kind.ENABLED, null)));
                 if (preview.issues().size() > warnings) {
                     rows.add(new Row("Settings and compatibility (" + (preview.issues().size() - warnings) + ")", Kind.HEADER, null));
-                    for (var issue : preview.issues()) if (issue.severity() != ConfigImportModel.Severity.WARNING) rows.add(new Row(issue.sourceId() + " · " + issue.field() + " · " + issue.message(), Kind.INFO, null));
+                    for (var issue : preview.issues()) if (issue.severity() != ConfigImportModel.Severity.WARNING) rows.add(new Row(issueLine(issue), Kind.INFO, null));
                 }
-                message = "Saves to Modules presets only · HUD and appearance stay as they are.";
+                message = "Saves to Modules presets only, so HUD and appearance stay as they are.";
                 if (name.equals("Imported config")) {
                     String n = source.getFileName().toString().replaceFirst("\\.[^.]+$", ""); if (n.equals("modules")) n = source.getParent().getFileName().toString();
                     n = n.replaceAll("[^A-Za-z0-9 _.\\-]", " ").trim(); if (n.length() > 32) n = n.substring(0, 32);
@@ -126,7 +126,7 @@ final class ConfigImportScreen extends UiScreen {
         ProfileManagerScreen.chip(g, "Meteor", right - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
         // Source card: path + preview, then name + binds.
         float cardY = top + CARD_Y;
-        UiDraw.card(g, left + 12, cardY, panelWidth - 24, CARD_H, "misc", "Source", "Preview first · nothing changes until you load the saved preset", 124, t);
+        UiDraw.card(g, left + 12, cardY, panelWidth - 24, CARD_H, "misc", "Source", "Nothing changes until you load the saved preset", 124, t);
         float bx = bindsX(), by = bindsY();
         boolean bindHover = UiDraw.over(mx, my, bx, by - 2, 112, 20);
         UiDraw.rounded(g, bx, by - 2, 112, 20, 7, UiDraw.mix(t.deep(), t.sunk(), bindHover ? .6f : 0));
@@ -137,7 +137,7 @@ final class ConfigImportScreen extends UiScreen {
         // Preview list.
         float headY = listTop - 12;
         UiDraw.bold(g, "Preview", left + 14, headY, UiDraw.TEXT, t.text());
-        if (preview != null) UiDraw.right(g, preview.enabledTargets().size() + " modules on · " + preview.copiedSettings() + " settings copied · " + preview.defaultedSettings() + " at defaults",
+        if (preview != null) UiDraw.right(g, preview.enabledTargets().size() + " modules on, " + preview.copiedSettings() + " settings copied, " + preview.defaultedSettings() + " at defaults",
                 left + panelWidth - 14, headY, UiDraw.SMALL, t.on());
         UiDraw.rect(g, left + 12, listTop - 4, panelWidth - 24, .6f, UiDraw.alpha(t.line(), .6f));
         scroll = Math.clamp(scroll, 0, maxScroll());
@@ -200,4 +200,10 @@ final class ConfigImportScreen extends UiScreen {
     }
     @Override public void onFilesDrop(List<Path> files) { if (files.size() == 1) pathInput.setValue(files.getFirst().toString()); }
     @Override public void removed() { session.close(); super.removed(); }
+
+    /** "KillAura range: clamped to 6"; the field is left out when it is just "module". */
+    private static String issueLine(ConfigImportModel.Issue issue) {
+        String field = issue.field() == null || issue.field().isBlank() || issue.field().equals("module") ? "" : " " + issue.field();
+        return issue.sourceId() + field + ": " + issue.message();
+    }
 }

@@ -161,7 +161,7 @@ final class PresetsPanel {
         UiDraw.rect(g, x, y + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
         UiDraw.card(g, x - 6, y + 46, w + 12, 112, "star", "Save current config", "Pick what the preset covers, name it and save", 0, t);
         UiDraw.card(g, x - 6, y + 164, w + 12, listHeight() + 34, "misc", "Saved presets",
-                Presets.names(category).size() + " saved · click a name to bind it to servers", 0, t);
+                Presets.names(category).size() + " saved", 0, t);
         // Category chips with a sliding highlight.
         float cx = x;
         for (PresetCategory c : Presets.categories()) {
@@ -237,7 +237,7 @@ final class PresetsPanel {
                 float chipX = x + 13, chipY = rowY + 23;
                 List<String> targets = new ArrayList<>();
                 bindings.forEach((where2, preset) -> { if (preset.equalsIgnoreCase(name)) targets.add(where2); });
-                if (targets.isEmpty()) UiDraw.text(g, "Not bound · loads only when you choose it", chipX, chipY, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
+                if (targets.isEmpty()) UiDraw.text(g, "Not bound, so it loads only when you choose it", chipX, chipY, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
                 for (String bound : targets) {
                     String label = Presets.label(bound);
                     float cw = UiDraw.width(label, UiSpace.CAPTION) + 22;
@@ -297,7 +297,7 @@ final class PresetsPanel {
         // Footer.
         boolean showStatus = !status.isEmpty() && (System.nanoTime() - statusAt) / 1e9f < 4.25f;
         var line = showStatus ? new UiMotion.Line(UiDraw.fit(status, w), statusError ? 1 : 2)
-                : new UiMotion.Line(UiDraw.fit("Each server or world loads one preset per type · Click a name to bind it to more servers", w), 0);
+                : new UiMotion.Line(UiDraw.fit("Click a name to bind it to servers or worlds (each loads one preset per type)", w), 0);
         float fy = y + h - 11;
         UiMotion.crossfade(g, "presets.footer", line, l -> UiDraw.text(g, l.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
     }

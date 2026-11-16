@@ -50,7 +50,7 @@ final class AutonavCard extends InlineCard {
     @Override String subtitle() {
         int saved = volytra.autonavWaypoints().size();
         String list = saved == 0 ? "No saved destinations" : saved + (saved == 1 ? " saved destination" : " saved destinations");
-        return volytra.autonavTripActive() ? "Trip in progress · " + list : volytra.autonavTripPaused() ? "Trip paused · " + list : list;
+        return volytra.autonavTripActive() ? "Trip in progress, " + list : volytra.autonavTripPaused() ? "Trip paused, " + list : list;
     }
     @Override boolean visible() { return volytra.autonavTripShown(); }
     @Override float bodyHeight() { return INPUTS + CONTROLS + LIST_HEAD + Math.max(1, volytra.autonavWaypoints().size()) * ROW + 4; }
@@ -149,7 +149,7 @@ final class AutonavCard extends InlineCard {
         LocalPlayer player = ClientAccess.argusclientMinecraft.player;
         if (player == null) return "";
         double blocks = Math.hypot(waypoint.x() + .5 - player.getX(), waypoint.z() + .5 - player.getZ());
-        return " · " + (blocks >= 10_000 ? String.format("%.1fk", blocks / 1000) : Long.toString(Math.round(blocks))) + " blocks away";
+        return " (" + (blocks >= 10_000 ? String.format("%.1fk", blocks / 1000) : Long.toString(Math.round(blocks))) + " blocks away)";
     }
 
     /** Places a field; a label, when given, sits just left of its box. */
@@ -205,10 +205,10 @@ final class AutonavCard extends InlineCard {
         float listTop = y + INPUTS + CONTROLS;
         UiDraw.rect(g, left + 4, listTop - .3f, w - 8, .6f, UiDraw.alpha(t.line(), .4f));
         List<AutonavWaypoint> saved = volytra.autonavWaypoints();
-        UiDraw.text(g, "Saved destinations" + (saved.isEmpty() ? "" : " · " + saved.size()), left + 4, listTop + LIST_HEAD / 2 + 1, UiDraw.SMALL, t.textDim());
+        UiDraw.text(g, "Saved destinations" + (saved.isEmpty() ? "" : " (" + saved.size() + ")"), left + 4, listTop + LIST_HEAD / 2 + 1, UiDraw.SMALL, t.textDim());
         float rowsTop = listTop + LIST_HEAD;
         if (saved.isEmpty()) {
-            UiDraw.text(g, UiDraw.fit("None yet · type a name and coordinates above, then Save", w - 8, UiDraw.SMALL), left + 4, rowsTop + ROW / 2, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
+            UiDraw.text(g, UiDraw.fit("None yet: type a name and coordinates above, then Save", w - 8, UiDraw.SMALL), left + 4, rowsTop + ROW / 2, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
             return;
         }
         int typedX = volytra.autonavTypedX(), typedZ = volytra.autonavTypedZ();

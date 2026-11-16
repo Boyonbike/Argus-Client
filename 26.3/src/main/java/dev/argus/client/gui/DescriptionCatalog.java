@@ -2,11 +2,7 @@ package dev.argus.client.gui;
 
 import dev.argus.client.ClientContext;
 import dev.argus.client.modules.Module;
-import dev.argus.client.settings.ColorSetting;
-import dev.argus.client.settings.NamedEntry;
-import dev.argus.client.settings.SetSetting;
 import dev.argus.client.settings.Setting;
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -65,35 +61,19 @@ final class DescriptionCatalog {
             if (!(value instanceof Module module)) continue;
             if (module.isDescriptionPresent()) continue;
             String description = MODULES.get(module.getConfigName());
-            if (description == null) description = "Controls how " + module.getName() + " behaves.";
+            if (description == null) description = "";
             module.setDescription(description);
         }
         modulesApplied = true;
     }
 
     /**
-     * Returns the curated description for a setting, or a type-aware fallback so a newly
-     * added setting never produces an empty popup.
+     * Returns the curated description for a setting, or an empty string when there isn't one: a description
+     * generated from the label would only repeat it.
      */
     static String setting(Module module, Setting<?> setting) {
         load();
         String description = SETTINGS.get(module.getConfigName() + "\t" + setting.getConfigName());
-        return description != null ? description : fallback(module, setting);
-    }
-
-    private static String fallback(Module module, Setting<?> setting) {
-        String name = setting.getName();
-        String moduleName = module.getName();
-        Object value = setting.getValue();
-        if (value instanceof Boolean) return "Turns " + name + " on or off for " + moduleName + ".";
-        if (value instanceof Color || setting instanceof ColorSetting) {
-            return "Color used for " + name + " in " + moduleName + ".";
-        }
-        if (setting instanceof SetSetting<?>) return "Chooses which " + name + " entries " + moduleName + " uses.";
-        if (value instanceof Number) return "Controls " + name + " for " + moduleName + ".";
-        if (value instanceof Enum<?> || value instanceof NamedEntry) {
-            return "Chooses the " + name + " used by " + moduleName + ".";
-        }
-        return "Text used for " + name + " in " + moduleName + ".";
+        return description != null ? description : "";
     }
 }

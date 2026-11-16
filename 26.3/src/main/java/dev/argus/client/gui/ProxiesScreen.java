@@ -27,7 +27,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         return (ProxyHealth.activeDead() ? "Dead: " : "Via ") + (a.name().isBlank() ? a.address() : a.name());
     }
     @Override protected boolean statusGood() { return profiles != null && profiles.activeProxy() != null && !ProxyHealth.activeDead(); }
-    @Override protected String hint() { return "Switch a proxy on to route connections through it · Reconnect to apply"; }
+    @Override protected String hint() { return "Switch a proxy on to route connections through it, then reconnect"; }
     @Override protected String[] empty() { return new String[]{"shield", "No proxies yet", "Add a SOCKS proxy, import a text list, or paste one from the clipboard."}; }
 
     @Override protected void buildToolbar(int x, int y, int w) {
@@ -63,7 +63,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         boolean keep = profiles.keepProxy(), dead = ProxyHealth.activeDead();
         String sub = dead ? ProxyHealth.warning()
                 : ProxyHealth.checking() ? "Checking saved proxies…"
-                : keep ? "Reconnects through the same proxy after a restart · all proxies are re-checked on launch"
+                : keep ? "Reconnects through the same proxy after a restart and re-checks every proxy on launch"
                 : "Every launch starts on a direct connection";
         UiDraw.card(g, x, y, w, CARD_H, dead ? "shield_off" : "shield", "Keep proxy on launch", dead ? "" : sub, 60, t);
         if (dead) UiDraw.text(g, UiDraw.fit(sub, w - UiDraw.CARD_PAD * 2 - 80, UiSpace.CAPTION), x + UiDraw.CARD_PAD + 20, y + 21, UiSpace.CAPTION, t.danger());
@@ -95,7 +95,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
 
     @Override protected void renderForm(GuiGraphicsExtractor g, int x, int y, int w, int mx, int my) {
         var t = GuiState.theme();
-        UiDraw.card(g, x, y, w, FORM_H, "shield", editId == null ? "New proxy" : "Edit proxy", "SOCKS4 or SOCKS5 · reconnect to apply changes", 100, t);
+        UiDraw.card(g, x, y, w, FORM_H, "shield", editId == null ? "New proxy" : "Edit proxy", "SOCKS4 or SOCKS5. Changes apply when you reconnect.", 100, t);
         float right = x + w - 10;
         right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, true, () -> { closeForm(); rebuildWidgets(); }) + 4;
         pill(g, "Save", right, y + 15, mx, my, t.on(), true, true, this::submitForm);
@@ -168,7 +168,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         right -= pill(g, "Check", right, cy, mx, my, t.info(), false, !busy,
                 () -> background("Checking " + p.address() + "…", () -> ProxyChecker.check(p, 5000), r -> {
                     results.put(p.id(), r);
-                    if (r.alive()) ok(r.message() + " · " + r.latency() + " ms"); else error(r.message());
+                    if (r.alive()) ok(r.message() + " (" + r.latency() + " ms)"); else error(r.message());
                 })) + 4;
         float textX = x + 36, room = right - textX - 6;
         UiDraw.bold(g, UiDraw.fit(p.name().isBlank() ? p.address() : p.name(), room), textX, cy - 5, UiDraw.TEXT, enabled ? t.on() : t.text());
@@ -178,7 +178,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         String state = r == null ? (ProxyHealth.checking() ? "Checking…" : "Unchecked") : !r.alive() ? (enabled ? "Dead" : "Unreachable") : tcpOnly ? "TCP reachable" : r.latency() + " ms";
         int tint = r == null ? t.textDim() : shouldCleanUp(p, r) ? t.danger() : r.latency() >= 500 ? t.warn() : t.ok();
         float sw = chip(g, state, cx, cy + 6.5f, tint);
-        if (r != null && !r.alive() && UiDraw.over(mx, my, cx, cy + 2, sw, 9)) tooltip(key + ".err", "Unreachable", r.message());
+        if (r != null && !r.alive() && UiDraw.over(mx, my, cx, cy + 2, sw, 9)) tooltip(key + ".err", null, r.message());
         cx += sw + 5;
         if (!p.name().isBlank()) UiDraw.text(g, UiDraw.fit(p.address(), right - cx - 6, UiSpace.CAPTION), cx, cy + 6.5f, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
     }
@@ -225,7 +225,7 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         }, checked -> {
             results.putAll(checked);
             long alive = checked.values().stream().filter(ProxyChecker.Result::alive).count();
-            ok("Checked " + checked.size() + " · " + alive + " responding. SOCKS4 checks TCP reachability.");
+            ok("Checked " + checked.size() + (checked.size() == 1 ? " proxy, " : " proxies, ") + alive + " responding (SOCKS4 only checks the port is reachable)");
         });
     }
     private void cleanup() {

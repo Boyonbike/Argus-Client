@@ -44,7 +44,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 public final class ChatToolsScreen extends UiScreen {
     enum Page {
         OVERVIEW("Overview", "modules", "What needs you, favourite homes and recent players"),
-        CHAT("Chat", "chat", "Chat on this server · newest at the bottom"),
+        CHAT("Chat", "chat", ""),
         MESSAGES("Messages", "player", "Private conversations this session"),
         PLAYERS("Players", "people", "Recent contacts, friends and who's online"),
         CLAN("Clan", "shield", "Members and roles from your Discord"),
@@ -52,7 +52,7 @@ public final class ChatToolsScreen extends UiScreen {
         TELEPORTS("Teleports", "compass", "Requests, warmups and cooldowns"),
         AUTO_TPY("Auto TPY", "check", "Accept teleport requests automatically, at the server's pace"),
         SERVER("Server", "sliders", "Your hotspot and this server's own settings"),
-        SETTINGS("Settings", "client", "Every Social and chat setting");
+        SETTINGS("Settings", "client", "");
         final String label, icon, subtitle;
         Page(String label, String icon, String subtitle) { this.label = label; this.icon = icon; this.subtitle = subtitle; }
     }
@@ -74,7 +74,7 @@ public final class ChatToolsScreen extends UiScreen {
     private Page page;
     private String recipient, selectedPlayer;
     private final Map<String, String> drafts = new HashMap<>();
-    private final UiInput composer = new UiInput(0, 0, 100, 12, "Message public chat · / for commands");
+    private final UiInput composer = new UiInput(0, 0, 100, 12, "Message public chat, or type / for a command");
     private final UiInput search = new UiInput(0, 0, 100, 12, "Find a player…").withIcon("search");
     private final UiInput listField = new UiInput(0, 0, 100, 12, "Usernames, separated by spaces or commas");
     private final UiInput dialogField = new UiInput(0, 0, 100, 12, "");
@@ -187,7 +187,7 @@ public final class ChatToolsScreen extends UiScreen {
             return;
         }
         if (hasComposer()) {
-            composer.placeholder(page == Page.MESSAGES && recipient != null ? "Message " + recipient + " · / for commands" : "Message public chat · / for commands");
+            composer.placeholder(page == Page.MESSAGES && recipient != null ? "Message " + recipient + ", or type / for a command" : "Message public chat, or type / for a command");
             composer.place(x, Math.round(composerY()) + 4, w - 58);
             hostAdd(composer);
         }
@@ -460,11 +460,18 @@ public final class ChatToolsScreen extends UiScreen {
     private void header(GuiGraphicsExtractor g, UiTheme t) {
         float x = contentX(), w = contentWidth();
         String title = page == Page.MESSAGES && recipient != null ? recipient : page.label;
-        String subtitle = page == Page.MESSAGES && recipient != null ? (online(recipient) ? "Online" : "Offline") + " · private messages" : page.subtitle;
+        String subtitle = page == Page.MESSAGES && recipient != null ? "Private messages (" + (online(recipient) ? "online" : "offline") + ")"
+            : page == Page.CHAT ? chatSubtitle() : page.subtitle;
         UiDraw.icon(g, page.icon, x, top + 13.5f, 9, t.textDim());
         UiDraw.title(g, UiDraw.fit(title, w - 20), x + 13, top + 18, t.text());
         UiDraw.text(g, UiDraw.fit(subtitle, w), x, top + 31, UiDraw.SMALL, t.textDim());
         UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
+    }
+
+    /** "Public chat on {server}" when connected to a server from the list; nothing otherwise. */
+    private String chatSubtitle() {
+        var server = minecraft.getCurrentServer();
+        return server == null || server.ip == null || server.ip.isBlank() ? "" : "Public chat on " + server.ip;
     }
 
     /** A page that scrolls as a whole, with edge fades and a slim scrollbar. */
@@ -495,14 +502,18 @@ public final class ChatToolsScreen extends UiScreen {
             return;
         }
         int picked = selectedLines().size();
-        String hint = picked > 0 ? "Ctrl+C copies " + picked + (picked == 1 ? " line" : " lines") + " · right-click a line to copy it · Esc clears" : switch (page) {
-            case CHAT -> "Drag over lines to select them · scroll to read older lines · Enter sends, / runs a command";
-            case OVERVIEW -> dockHeight() > 0 ? "Click the chat card to open Chat · drag over lines to select and copy them" : "Click a player's name in chat to open them here";
+        String hint = picked > 0 ? "Ctrl+C\tcopy " + picked + (picked == 1 ? " line" : " lines") + "\nEsc\tclear" : switch (page) {
+            case CHAT -> "Drag over lines to select them, or right-click one to copy it";
+            case OVERVIEW -> dockHeight() > 0 ? "Click the chat card to open Chat, or drag over lines to copy them" : "Click a player's name in chat to open them here";
             case MESSAGES -> recipient != null ? "Esc goes back to all conversations" : "Click a conversation to open it";
-            case SETTINGS -> "Changes apply instantly and are saved automatically";
+            case SETTINGS -> { String note = applyNote(); yield note == null ? "" : note; }
             default -> "Click a player's name in chat to open them here";
         };
-        UiMotion.crossfade(g, "chat.footer", new UiMotion.Line(UiDraw.fit(hint, w), 0), l -> UiDraw.text(g, l.text(), x, y, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
+        UiMotion.crossfade(g, "chat.footer", new UiMotion.Line(UiDraw.isLegend(hint) ? hint : UiDraw.fit(hint, w), 0), l -> {
+            int colour = UiMotion.footerColour(l.kind(), t);
+            if (UiDraw.isLegend(l.text())) UiDraw.legend(g, l.text(), x, y, t, colour, colour);
+            else UiDraw.text(g, l.text(), x, y, UiDraw.SMALL, colour);
+        });
     }
 
     // ---- composer and send tray -----------------------------------------------------------------------------------
@@ -519,9 +530,9 @@ public final class ChatToolsScreen extends UiScreen {
             float ry = y + i * 14;
             String who = item.whisper() ? "→ " + item.target() : "Chat";
             String when = item.eta() <= now ? "sending…" : "in " + ChatTeleportState.remaining(item.eta() - now);
-            String more = i == 1 && queued.size() > 2 ? " · +" + (queued.size() - 2) + " more" : "";
+            String more = i == 1 && queued.size() > 2 ? ", +" + (queued.size() - 2) + " more" : "";
             UiDraw.rounded(g, x, ry, w, 12, 4, UiDraw.alpha(t.on(), .08f));
-            UiDraw.text(g, UiDraw.fit(who + " · " + item.text(), w - 120), x + 6, ry + 6, UiDraw.SMALL, t.text());
+            UiDraw.text(g, UiDraw.fit(who + ": " + item.text(), w - 120), x + 6, ry + 6, UiDraw.SMALL, t.text());
             UiDraw.right(g, when + more, x + w - 18, ry + 6, UiDraw.SMALL, t.textDim());
             iconButton(g, t, "close", x + w - 14, ry, 12, t.textDim(), "Cancel this message", () -> tools.cancelOutgoing(item));
         }
@@ -703,8 +714,8 @@ public final class ChatToolsScreen extends UiScreen {
     // ---- shared rows ----------------------------------------------------------------------------------------------
 
     private String requestText(ChatTpaRequests.Request request) {
-        return (request.toThem() ? "Asks you to teleport to them" : "Wants to teleport to you") + " · "
-            + ChatTeleportState.remaining(request.expires() - ChatToolsModule.now());
+        return (request.toThem() ? "Asks you to teleport to them" : "Wants to teleport to you") + " ("
+            + ChatTeleportState.remaining(request.expires() - ChatToolsModule.now()) + " left)";
     }
 
     private void requestRow(GuiGraphicsExtractor g, UiTheme t, ChatTpaRequests.Request request) {
@@ -739,7 +750,7 @@ public final class ChatToolsScreen extends UiScreen {
                     notice(home ? "Home cancellation sent." : "Teleport cancellation sent.");
                 });
             String target = timer.target().isEmpty() ? "" : " " + timer.target();
-            UiDraw.text(g, UiDraw.fit((home ? "Home" : hotspot ? "Hotspot" : "Teleport to") + target + " · " + timer.status(now), actions.left() - GAP - x - 14), x + 14, y + h / 2, t.warn());
+            UiDraw.text(g, UiDraw.fit((home ? "Home" : hotspot ? "Hotspot" : "Teleport to") + target + ": " + timer.status(now), actions.left() - GAP - x - 14), x + 14, y + h / 2, t.warn());
         }
         if (!timers.isEmpty()) cursor += PAD;
     }
@@ -785,9 +796,9 @@ public final class ChatToolsScreen extends UiScreen {
         String detail;
         String roles = clanPage ? tools.discordRoleLabel(name) : "", discord = clanPage ? tools.discordUsername(name) : "";
         String countdown = ChatCountdowns.player(name, timers, requests, ChatToolsModule.now());
-        if (!discord.isEmpty() || !roles.isEmpty()) detail = (discord.isEmpty() ? "" : "@" + discord) + (roles.isEmpty() ? "" : (discord.isEmpty() ? "" : " · ") + roles);
+        if (!discord.isEmpty() || !roles.isEmpty()) detail = discord.isEmpty() ? roles : "@" + discord + (roles.isEmpty() ? "" : " (" + roles + ")");
         else if (!countdown.isEmpty()) detail = countdown;
-        else detail = (on ? "Online" : "Offline") + (friend(name) ? " · Friend" : enemy(name) ? " · Enemy" : "") + (!clanPage && clanMember(name) ? " · Clan" : "");
+        else detail = (on ? "Online" : "Offline") + (friend(name) ? ", friend" : enemy(name) ? ", enemy" : "") + (!clanPage && clanMember(name) ? ", clan member" : "");
         UiDraw.text(g, UiDraw.fit(detail, tw), tx, y + 20, UiDraw.SMALL, countdown.isEmpty() || !detail.equals(countdown) ? t.textDim() : t.warn());
     }
 
@@ -843,7 +854,7 @@ public final class ChatToolsScreen extends UiScreen {
             int count = tools.messages().unread(player);
             var messages = tools.messages().conversation(player).messages();
             float tw = actions.left() - GAP - (x + 22);
-            UiDraw.bold(g, UiDraw.fit(player + " · " + count + " new message" + (count == 1 ? "" : "s"), tw), x + 22, y + 9, UiDraw.TEXT, t.text());
+            UiDraw.bold(g, UiDraw.fit(player + " (" + count + " new)", tw), x + 22, y + 9, UiDraw.TEXT, t.text());
             if (!messages.isEmpty()) UiDraw.text(g, UiDraw.fit("“" + messages.getLast().text() + "”", tw), x + 22, y + 20, UiDraw.SMALL, t.textDim());
         }
         if (waiting.problem() != null) {
@@ -866,11 +877,11 @@ public final class ChatToolsScreen extends UiScreen {
         cursor += h + PAD;
         if (!visible(y, h)) return;
         var stats = tools.autoTpyStats();
-        tile(g, t, x, y, tw, h, "check", "Auto TPY", tools.autoTpyEnabled() ? "On · " + stats.live() + " buffered" : "Off", () -> select(Page.AUTO_TPY));
+        tile(g, t, x, y, tw, h, "check", "Auto TPY", tools.autoTpyEnabled() ? "On, " + stats.live() + " buffered" : "Off", () -> select(Page.AUTO_TPY));
         DiscordSyncModule sync = DiscordSyncModule.get();
-        String clan = sync == null ? "Unavailable" : !sync.isToggled() ? tools.clanMembers().size() + " members · sync off"
+        String clan = sync == null ? "Unavailable" : !sync.isToggled() ? tools.clanMembers().size() + " members, sync off"
             : sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed"
-            : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked · synced " + ago(sync.lastSuccessfulSync()) : "Not synced yet";
+            : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked, synced " + ago(sync.lastSuccessfulSync()) : "Not synced yet";
         tile(g, t, x + tw + 6, y, w - tw - 6, h, "shield", "Clan", clan, () -> select(Page.CLAN));
     }
     private void tile(GuiGraphicsExtractor g, UiTheme t, float x, float y, float w, float h, String icon, String title, String detail, Runnable action) {
@@ -1117,7 +1128,7 @@ public final class ChatToolsScreen extends UiScreen {
             .icon("sliders", t.textDim(), "More actions", () -> showPlayer(recipient));
         iconButton(g, t, "chevron_left", x, y, CONTROL, t.textDim(), "All conversations (Esc)", () -> { saveDraft(); recipient = null; composer.setValue(drafts.getOrDefault("", "")); placeInputs(); });
         String countdown = ChatCountdowns.player(recipient, timers, List.of(), ChatToolsModule.now());
-        String status = (on ? "Online" : "Offline") + (isFriend ? " · Friend" : enemy(recipient) ? " · Enemy" : "") + (clanMember(recipient) ? " · Clan" : "");
+        String status = (on ? "Online" : "Offline") + (isFriend ? ", friend" : enemy(recipient) ? ", enemy" : "") + (clanMember(recipient) ? ", clan member" : "");
         UiDraw.text(g, UiDraw.fit(countdown.isEmpty() ? status : countdown, actions.left() - GAP - x - 24), x + 24, y + CONTROL / 2, UiDraw.SMALL,
             countdown.isEmpty() ? t.textDim() : t.warn());
         float top = y + CONTROL + 6;
@@ -1154,7 +1165,7 @@ public final class ChatToolsScreen extends UiScreen {
                 for (int l = 0; l < bubble.lines().size(); l++)
                     UiDraw.text(g, bubble.lines().get(l), bx + 7, by + 8.5f + l * 9, bubble.pending() ? t.textDim() : t.text());
                 if (bubble.pending() && UiDraw.over(mouseX, mouseY, bx, by, bubble.width(), bh) && dialog == null)
-                    tooltip("ct.pending." + i, wait > 0 ? "Waiting for the message cooldown · sends in " + ChatTeleportState.remaining(wait) : "Waiting for the server to confirm");
+                    tooltip("ct.pending." + i, wait > 0 ? "Sends in " + ChatTeleportState.remaining(wait) + ", after the message cooldown" : "Waiting for the server to confirm");
             }
             by += bh;
         }
@@ -1223,7 +1234,7 @@ public final class ChatToolsScreen extends UiScreen {
             menuRow(g, t, option.label(), option.command().strip(), false, () -> {
                 if (tools.runsImmediately(option) || !Character.isWhitespace(option.command().charAt(option.command().length() - 1)))
                     tools.sendCommand(option.command().strip());
-                else request(option.label() + " · " + player, "Text to add", option.command(), "Send");
+                else request(option.label() + " " + player, "Text to add", option.command(), "Send");
             });
         }
         cursor += PAD;
@@ -1390,9 +1401,9 @@ public final class ChatToolsScreen extends UiScreen {
         actions = new Actions(g, t, valueRight - 40 - GAP, by)
             .add("−", null, Tone.SECONDARY, seconds > 0, () -> tools.manualCooldown(kind, ChatSavedCooldowns.step(seconds, false) * 1_000))
             .add(manual ? "Manual" : "Auto", null, manual ? Tone.PRIMARY : Tone.GHOST, true, () -> tools.manualCooldown(kind, manual ? null : length.effective()));
-        String source = manual ? "Manual · always used" + (length.learned() == null ? "" : " (server: " + ChatTeleportState.remaining(length.learned()) + ")")
-            : length.learned() != null ? "Auto · learned from the server"
-            : "Auto · learned from the server's next \"wait\" reply";
+        String source = manual ? "Always used" + (length.learned() == null ? "" : " (server says " + ChatTeleportState.remaining(length.learned()) + ")")
+            : length.learned() != null ? "Learned from the server"
+            : "Learned from the server's next \"wait\" reply";
         float tw = actions.left() - GAP - x - 4;
         UiDraw.text(g, UiDraw.fit(label, tw), x + 4, y + 10, t.text());
         UiDraw.text(g, UiDraw.fit(source, tw), x + 4, y + 21, UiDraw.SMALL, t.textDim());
@@ -1413,8 +1424,8 @@ public final class ChatToolsScreen extends UiScreen {
             UiDraw.icon(g, "check", x + 4, y + h / 2 - 4, 8, on ? t.on() : t.textDim());
             UiDraw.bold(g, "Accept automatically", x + 18, y + 11, UiDraw.TEXT, t.text());
             int roles = tools.autoTpyRoleIds().size();
-            String rule = !on ? "Off · requests wait for you in Teleports" : roles > 0 ? "On · accepting synced players with " + roles + " selected role" + (roles == 1 ? "" : "s")
-                : tools.autoTpyWhitelistOnly() ? "On · accepting the whitelist" + (tools.autoTpyAllowsFriends() ? " and friends" : "") : "On · accepting anyone who isn't blocklisted";
+            String rule = !on ? "Requests wait for you in Teleports" : roles > 0 ? "Accepting synced players with " + roles + " selected role" + (roles == 1 ? "" : "s")
+                : tools.autoTpyWhitelistOnly() ? "Accepting the whitelist" + (tools.autoTpyAllowsFriends() ? " and friends" : "") : "Accepting anyone who isn't blocklisted";
             UiDraw.text(g, UiDraw.fit(rule, w - 50), x + 18, y + 23, UiDraw.SMALL, t.textDim());
             UiDraw.toggle(g, x + w - 22, y + h / 2 - 5, UiAnim.smooth("ct.auto.on", on ? 1 : 0, 16), hover, t);
             hit(x - 4, y, w + 8, h, () -> tools.autoTpyEnabled(!tools.autoTpyEnabled()));
@@ -1450,7 +1461,7 @@ public final class ChatToolsScreen extends UiScreen {
         var live = tools.autoTpyEntries().stream().limit(64).toList();
         if (live.isEmpty()) emptyRow(g, t, "No requests waiting", stats.latest().isEmpty() ? "Eligible requests appear here while they're accepted." : stats.latest());
         for (var entry : live) {
-            menuRow(g, t, entry.player() + (entry.friend() ? " · Friend" : ""), "Queued · click to cancel", false,
+            menuRow(g, t, entry.player() + (entry.friend() ? " (friend)" : ""), "Queued, click to cancel", false,
                 () -> tools.cancelAutoTpy(entry.player()));
         }
         if (stats.live() > 64) emptyRow(g, t, "Showing the first 64 live requests", stats.live() + " requests are still tracked.");
@@ -1460,7 +1471,7 @@ public final class ChatToolsScreen extends UiScreen {
     private void autoRoles(GuiGraphicsExtractor g, UiTheme t) {
         var roles = tools.autoTpyAvailableRoles();
         var selected = tools.autoTpyRoleIds();
-        caption(g, t, "Discord roles", selected.isEmpty() ? "no filter" : selected.size() + " selected · " + tools.autoTpyRoleMemberCount() + " players",
+        caption(g, t, "Discord roles", selected.isEmpty() ? "no filter" : selected.size() + " selected, " + tools.autoTpyRoleMemberCount() + " players",
             selected.isEmpty() ? null : "Clear filter", tools::clearAutoTpyRoles);
         if (roles.isEmpty()) {
             emptyRow(g, t, "No Discord roles yet", "Sync Discord (Clan → Sync now) to choose roles that may use Auto TPY.");
@@ -1478,7 +1489,7 @@ public final class ChatToolsScreen extends UiScreen {
         toggleRow(g, t, "Whitelist only", "Off accepts anyone who isn't blocklisted", tools.autoTpyWhitelistOnly(), tools::toggleAutoTpyWhitelistOnly);
         toggleRow(g, t, "Always accept friends", "Argus friends skip the whitelist; the blocklist always wins", tools.autoTpyAllowsFriends(), tools::toggleAutoTpyFriends);
         cursor += PAD;
-        segmented(g, t, "ct.auto.list", new String[] {"Whitelist · " + tools.autoTpyWhitelist().size(), "Blocklist · " + tools.autoTpyBlocklist().size()},
+        segmented(g, t, "ct.auto.list", new String[] {"Whitelist (" + tools.autoTpyWhitelist().size() + ")", "Blocklist (" + tools.autoTpyBlocklist().size() + ")"},
             blocklistEditing ? 1 : 0, choice -> { blocklistEditing = choice == 1; importRevision++; listField.setValue(""); scroll = 0; });
         float y = cursor;
         cursor += 20 + PAD;

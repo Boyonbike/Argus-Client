@@ -94,7 +94,7 @@ final class CollectionSettingScreen extends UiScreen {
         g.disableScissor();
         UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
         UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + viewHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
-        UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click an entry to add or remove it · Enter adds what you typed" : message, panelWidth - 24),
+        UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click an entry to add or remove it, or press Enter to add what you typed" : message, panelWidth - 24),
                 left + 14, top + panelHeight - 11, UiDraw.SMALL, message.isEmpty() ? UiDraw.alpha(t.textDim(), .8f) : t.danger());
     }
 

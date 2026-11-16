@@ -346,7 +346,7 @@ public abstract class UiScreen extends Screen {
                 float size = Math.min(11, tabWidth[i] - 8);
                 UiDraw.icon(g, tabIcons[i], tx + (tabWidth[i] - size) / 2, ty + (TAB_HEIGHT - size) / 2, size, colour);
             } else UiDraw.center(g, tabLabels[i], tx, ty + TAB_HEIGHT / 2, tabWidth[i], colour);
-            if (hover && !draggingTab) tooltip("tab." + tabEntries[i], tabLabels[i], "Drag to reorder · right-click to remove");
+            if (hover && !draggingTab && iconTabs) tooltip("tab." + tabEntries[i], tabLabels[i]);
         }
         UiRender.opacity = before;
         g.disableScissor();
@@ -354,9 +354,10 @@ public abstract class UiScreen extends Screen {
 
     private void footer(GuiGraphicsExtractor g) {
         UiTheme t = GuiState.theme();
-        boolean error = !GuiState.saveError.isEmpty();
-        UiDraw.circle(g, 12, height - 10, 2, error ? t.danger() : t.textDim());
-        UiDraw.text(g, error ? GuiState.saveError : "Argus Client", 18, height - 10, UiDraw.SMALL, error ? t.danger() : t.textDim());
+        // The slot is only for save errors; the version lives at the bottom of the Settings sidebar.
+        if (GuiState.saveError.isEmpty()) return;
+        UiDraw.circle(g, 12, height - 10, 2, t.danger());
+        UiDraw.text(g, GuiState.saveError, 18, height - 10, UiDraw.SMALL, t.danger());
     }
 
     /** Requests a tooltip for this frame; it fades in after the pointer rests on {@code owner}. */
@@ -369,18 +370,22 @@ public abstract class UiScreen extends Screen {
         float shown = UiAnim.enabled() ? UiAnim.easeOutCubic(rested * UiAnim.speed() / .14f) : rested >= 0 ? 1 : 0;
         if (shown <= 0) return;
         UiTheme t = GuiState.theme();
+        // A null first line means a body-only tooltip: no bold title, just the dim body lines.
+        int first = tooltipLines.length > 0 && tooltipLines[0] == null ? 1 : 0;
+        if (tooltipLines.length - first <= 0) return;
         float w = 0;
-        for (int i = 0; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
+        for (int i = first; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
         w = Math.min(width - 12, w + 16);
-        float lineH = 11, h = 8 + tooltipLines.length * lineH;
+        float lineH = 11, h = 8 + (tooltipLines.length - first) * lineH;
         float x = Math.clamp(mouseX + 12, 6, Math.max(6, width - w - 6)), y = Math.min(mouseY + 14, height - h - 6) + (1 - shown) * 3;
         float before = UiRender.opacity;
         UiRender.opacity = before * shown;
         UiDraw.panel(g, x, y, w, h, t);
-        for (int i = 0; i < tooltipLines.length; i++) {
+        for (int i = first; i < tooltipLines.length; i++) {
             String line = UiDraw.fit(tooltipLines[i], w - 16, i == 0 ? UiDraw.TEXT : UiDraw.SMALL);
-            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.on());
-            else UiDraw.text(g, line, x + 8, y + 4 + lineH * i + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
+            float row = i - first;
+            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.text());
+            else UiDraw.text(g, line, x + 8, y + 4 + lineH * row + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
         }
         UiRender.opacity = before;
     }
@@ -530,6 +535,23 @@ public abstract class UiScreen extends Screen {
         return super.keyPressed(event);
     }
     @Override public void onClose() { beginClose(parent); }
-    @Override public void removed() { ColorPicker.closeNow(); GuiState.save(); super.removed(); }
+    @Override public void removed() {
+        ColorPicker.closeNow();
+        if (applyNoteShown) GuiState.preferences().applyNoteSeen = true;
+        GuiState.save();
+        super.removed();
+    }
+
+    private boolean applyNoteShown;
+
+    /**
+     * The autosave note for settings pages: shown only until the screen it first appears on closes, then never again.
+     * Returns null once it has been seen.
+     */
+    protected final String applyNote() {
+        if (GuiState.preferences().applyNoteSeen) return null;
+        applyNoteShown = true;
+        return "Changes apply instantly and are saved automatically";
+    }
     @Override public boolean isPauseScreen() { return false; }
 }

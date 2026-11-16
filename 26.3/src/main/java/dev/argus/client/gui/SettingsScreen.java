@@ -227,6 +227,10 @@ final class SettingsScreen extends UiScreen {
             if (i >= FIXED && sectionOn(modules.get(i - FIXED)))
                 UiDraw.circle(g, left + SIDE - 4, iy + ITEM / 2f, 2, UiDraw.alpha(t.on(), active ? 1 : .7f));
         }
+        // The client version, at the foot of the sidebar when there is room below the last section.
+        float versionY = top + panelHeight - 14;
+        if (itemY(sections()) <= versionY - 6)
+            UiDraw.text(g, UiDraw.fit("Argus " + dev.argus.client.ArgusClient.VERSION, SIDE - 8, UiSpace.CAPTION), left + 16, versionY, UiSpace.CAPTION, t.textDim());
         // ---- content, which fades and slides when the section changes
         float change = UiAnim.eased(sectionChanged, .22f);
         float before = UiRender.opacity;
@@ -288,12 +292,12 @@ final class SettingsScreen extends UiScreen {
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
         if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.danger());
-        else UiDraw.text(g, "Changes apply instantly and are saved automatically", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
+        else { String note = applyNote(); if (note != null) UiDraw.text(g, note, x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f)); }
     }
 
     private static String syncStatus(DiscordSyncModule sync) {
         if (!sync.isToggled()) return "Keeps the clan list and Auto TPY whitelist in step with your Discord's #ign channel";
-        return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed · details are in chat"
+        return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed, see chat for details"
                 : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked accounts" : "Not synced yet";
     }
     private static String syncLabel(DiscordSyncModule sync) { return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Try again" : "Sync now"; }
@@ -309,7 +313,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.outline(g, bx, y, bw, bh, 8, 1, UiDraw.mix(t.line(), t.textDim(), hv));
         UiDraw.icon(g, "reset", bx + 7, y + 5, 8, t.on());
         UiDraw.text(g, label, bx + 19, y + bh / 2, UiDraw.SMALL, t.on());
-        if (hover) tooltip("discord.sync", "Sync now", "Read Discord now and update the clan list and Auto TPY whitelist. Details appear in chat.");
+        if (hover) tooltip("discord.sync", null, "Updates the clan list and Auto TPY whitelist from Discord. Details appear in chat.");
         hits.add(new Hit(bx, y, bw, bh, sync::syncNow));
     }
 
@@ -398,7 +402,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.outline(g, cx, y, cw, ch, 8, .6f, bindingMenuKey ? UiDraw.alpha(t.on(), .5f + pulse * .5f) : UiDraw.alpha(t.line(), .5f + hv * .3f));
         UiDraw.icon(g, "keyboard", cx + 7, y + 5, 8, bindingMenuKey ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv));
         UiDraw.text(g, label, cx + 19, y + ch / 2, UiDraw.SMALL, bindingMenuKey ? t.on() : t.text());
-        if (hover && !bindingMenuKey) tooltip("app.menukey", "Open key", "Click, then press a key or mouse button (middle/side) · Backspace resets to Right Shift");
+        if (hover && !bindingMenuKey) tooltip("app.menukey", null, "Click, then press a key or mouse button, or Backspace to reset to Right Shift");
         hits.add(new Hit(cx, y, cw, ch, () -> { for (SettingsList card : appearanceLists) card.stopEditing(); bindingMenuKey = !bindingMenuKey; }));
     }
 
@@ -430,7 +434,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.text(g, label, x, y + 9, UiDraw.SMALL, t.text());
         UiDraw.toggle(g, x + w - 18, y + 4, UiAnim.smooth(key, on ? 1 : 0, 16), hover, t);
         hits.add(new Hit(x - 4, y, w + 8, 18, flip));
-        if (hover) tooltip(key, label, hint);
+        if (hover) tooltip(key, null, hint);
     }
 
     private void appearance(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
@@ -510,12 +514,12 @@ final class SettingsScreen extends UiScreen {
                 UiAnim.smooth("app.speed.h", overSpeed || "speed".equals(sliding) ? 1 : 0, 18), t);
         UiDraw.right(g, speedLabel(p.animationSpeed), ix + iw, row + 9, UiDraw.SMALL, "speed".equals(sliding) ? t.on() : t.text());
         UiRender.opacity = speedBefore;
-        if (overSpeed) tooltip("app.speed", "Animation speed", "How fast menu motion plays · 1x is normal, higher is snappier");
+        if (overSpeed) tooltip("app.speed", null, "How fast menu motion plays, where 1x is normal and higher is snappier");
         if (p.animations) hits.add(new Hit(speedTrackX - 4, row + 1, speedTrackW + 8, 16, () -> startSlider("speed", speedTrackX, speedTrackW)));
         y += themeH + CARD_GAP;
 
         // Top bar: which tabs sit between the face and the settings circle, and their style.
-        card(g, x, y, w, barH, "modules", "Top bar", "Click a tab to add or remove it · drag tabs in the bar to reorder · right-click to remove", null, mx, my, t);
+        card(g, x, y, w, barH, "modules", "Top bar", "Click a tab to add or remove it, or drag tabs in the bar to reorder them", null, mx, my, t);
         row = y + CARD_HEAD + 4;
         UiDraw.text(g, "Tab style", ix, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.tabstyle", new String[]{"Names", "Icons"}, p.tabStyle == GuiPreferences.TabStyle.ICONS ? 1 : 0, ix + 50, row, 110, mx, my, t,
@@ -527,7 +531,7 @@ final class SettingsScreen extends UiScreen {
         segmented(g, "app.hudtab", new String[]{"Editor", "Settings"}, p.hudTab == GuiPreferences.HudTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
                 i -> { p.hudTab = i == 1 ? GuiPreferences.HudTab.SETTINGS : GuiPreferences.HudTab.EDITOR; GuiState.save(); layoutTabs(); });
         if (UiDraw.over(mx, my, hudLabelX, row, ix + iw - hudLabelX, 18))
-            tooltip("app.hudtab.tip", "HUD tab", "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
+            tooltip("app.hudtab.tip", null, "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
         // What the Social tab opens, under the HUD choice.
         row += 22;
         float socialLabelX = hudSegX - UiDraw.width("Social tab opens", UiDraw.SMALL) - 8;
@@ -535,7 +539,7 @@ final class SettingsScreen extends UiScreen {
         segmented(g, "app.socialtab", new String[]{"Menu", "Settings"}, p.socialTab == GuiPreferences.SocialTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
                 i -> { p.socialTab = i == 1 ? GuiPreferences.SocialTab.SETTINGS : GuiPreferences.SocialTab.MENU; GuiState.save(); layoutTabs(); });
         if (UiDraw.over(mx, my, socialLabelX, row, ix + iw - socialLabelX, 18))
-            tooltip("app.socialtab.tip", "Social tab", "Choose whether the Social tab in the top bar opens the Social menu or the Social settings page");
+            tooltip("app.socialtab.tip", null, "Choose whether the Social tab in the top bar opens the Social menu or the Social settings page");
         float cx = ix, cy = row + 26;
         for (String entry : barCandidates()) {
             float cw = UiDraw.width(chipLabel(entry), UiDraw.SMALL) + 26;
@@ -571,7 +575,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.slider(g, gapTrackX, row + 9, gapTrackW, "gap".equals(sliding) ? gapValue : UiAnim.smooth("app.gap", gapValue, 18),
                 UiAnim.smooth("app.gap.h", overGap || "gap".equals(sliding) ? 1 : 0, 18), t);
         UiDraw.right(g, p.gap == 0 ? "Off" : Integer.toString(p.gap), ix + half, row + 9, UiDraw.SMALL, p.gap == 0 ? t.textDim() : "gap".equals(sliding) ? t.on() : t.text());
-        if (overGap) tooltip("app.gap", "Auto gap", "Keeps dragged windows at least this far from each other");
+        if (overGap) tooltip("app.gap", null, "Keeps dragged windows at least this far from each other");
         hits.add(new Hit(gapTrackX - 4, row + 1, gapTrackW + 8, 16, () -> startSlider("gap", gapTrackX, gapTrackW)));
         float hudRow = row + 22;
         UiDraw.text(g, "HUD gap", ix, hudRow + 9, UiDraw.SMALL, t.text());
@@ -580,7 +584,7 @@ final class SettingsScreen extends UiScreen {
         UiDraw.slider(g, gapTrackX, hudRow + 9, gapTrackW, "hudGap".equals(sliding) ? hudValue : UiAnim.smooth("app.hudgap", hudValue, 18),
                 UiAnim.smooth("app.hudgap.h", overHud || "hudGap".equals(sliding) ? 1 : 0, 18), t);
         UiDraw.right(g, p.hudGap == 0 ? "Off" : Integer.toString(p.hudGap), ix + half, hudRow + 9, UiDraw.SMALL, p.hudGap == 0 ? t.textDim() : "hudGap".equals(sliding) ? t.on() : t.text());
-        if (overHud) tooltip("app.hudgap", "HUD gap", "Keeps HUD elements at least this far from each other while you drag them in the HUD editor");
+        if (overHud) tooltip("app.hudgap", null, "Keeps HUD elements at least this far from each other while you drag them in the HUD editor");
         hits.add(new Hit(gapTrackX - 4, hudRow + 1, gapTrackW + 8, 16, () -> startSlider("hudGap", gapTrackX, gapTrackW)));
         toggleRow(g, "Fit HUD to grid", "HUD element sizes and spacing round to whole grid steps", p.hudFitGrid, "app.hudgrid", ix + half + 16, hudRow, half, mx, my, t,
                 () -> { p.hudFitGrid = !p.hudFitGrid; GuiState.save(); });
@@ -636,7 +640,7 @@ final class SettingsScreen extends UiScreen {
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
         if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.danger());
-        else UiDraw.text(g, "Changes apply instantly and are saved automatically · scroll for more", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
+        else { String note = applyNote(); if (note != null) UiDraw.text(g, note, x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f)); }
     }
 
     /** Appearance and Discord: a scrolling stack of module cards with clickable regions recorded while drawing. */

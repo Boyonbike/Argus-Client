@@ -74,8 +74,13 @@ final class SettingsCards {
         addBetterChat(host);
         assignTabs();
         // A folded card starts folded rather than shrinking into place, so jumping to a setting lands where it should.
-        for (Section section : sections) section.body = section.open() ? section.list.contentHeight() + 6 : 0;
+        for (Section section : sections) section.body = section.open() ? section.list.contentHeight() + 6 + noteHeight(section) : 0;
     }
+
+    /** A group's note is a caption line at the top of its card's body, above the settings. */
+    private static final float NOTE_H = 12;
+    private static String note(Section s) { return s.group != null && s.group.groupNote != null && !s.group.groupNote.isBlank() ? s.group.groupNote : null; }
+    private static float noteHeight(Section s) { return note(s) != null ? NOTE_H : 0; }
 
     /**
      * Adds a card of the module's own tools.
@@ -271,7 +276,7 @@ final class SettingsCards {
             Section s = item instanceof Section section ? section : null;
             InlineCard card = item instanceof InlineCard c ? c : null;
             boolean open = s != null ? s.open() : card.open;
-            if (s != null) s.body = UiAnim.approach(s.body, open ? s.list.contentHeight() + 6 : 0, 16);
+            if (s != null) s.body = UiAnim.approach(s.body, open ? s.list.contentHeight() + 6 + noteHeight(s) : 0, 16);
             else card.animate(open);
             tops.put(item, y);
             float body = bodyOf(item), h = UiDraw.CARD_HEAD + body;
@@ -279,10 +284,8 @@ final class SettingsCards {
             String subtitle;
             if (s != null) {
                 int count = open ? s.list.rowCount() : s.size, changed = changed(sections.indexOf(s));
-                subtitle = count + (count == 1 ? " setting" : " settings") + (changed > 0 ? " · " + changed + " changed" : "");
-                if (s.group != null && s.group.groupNote != null) subtitle += " · " + s.group.groupNote;
+                subtitle = count + (count == 1 ? " setting" : " settings") + (changed > 0 ? ", " + changed + " changed" : "");
             } else subtitle = card.subtitle();
-            if (!open) subtitle += " · click to show";
             String icon = s != null ? icon(sections.indexOf(s)) : card.icon();
             // Cards rise into place one after another when the page opens.
             float appear = host.appear(index + 3), opacity = UiRender.opacity;
@@ -307,7 +310,9 @@ final class SettingsCards {
                     float bottom = Math.min(clipBottom, y + h);
                     g.enableScissor((int) x, (int) Math.max(clipTop, y + UiDraw.CARD_HEAD - 2), (int) (x + w), (int) bottom);
                     if (s != null) {
-                        s.list.embed(x + UiDraw.CARD_PAD - 4, y + UiDraw.CARD_HEAD, w - UiDraw.CARD_PAD * 2 + 8, clipTop, bottom);
+                        float note = noteHeight(s);
+                        if (note > 0) UiDraw.text(g, UiDraw.fit(note(s), w - UiDraw.CARD_PAD * 2, UiSpace.CAPTION), x + UiDraw.CARD_PAD, y + UiDraw.CARD_HEAD + note / 2 - 2, UiSpace.CAPTION, t.textDim());
+                        s.list.embed(x + UiDraw.CARD_PAD - 4, y + UiDraw.CARD_HEAD + note, w - UiDraw.CARD_PAD * 2 + 8, clipTop, bottom);
                         s.list.render(g, mx, my, delta, t);
                     } else card.render(g, mx, my, t, x + UiDraw.CARD_PAD, y + UiDraw.CARD_HEAD, w - UiDraw.CARD_PAD * 2, clipTop, Math.min(clipBottom, bottom));
                     g.disableScissor();

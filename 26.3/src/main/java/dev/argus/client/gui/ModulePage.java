@@ -95,7 +95,7 @@ final class ModulePage {
 
     private List<String> descriptionLines() {
         String description = UiText.stripFormatting(module.getDescription());
-        if (description == null || description.isBlank()) description = "No description";
+        if (description == null || description.isBlank()) return List.of();
         List<String> lines = UiDraw.wrap(description, w - 150, UiDraw.SMALL);
         if (lines.size() > 2) lines = List.of(lines.get(0), UiDraw.fit(lines.get(1) + "…", w - 150, UiDraw.SMALL));
         return lines;
@@ -195,7 +195,7 @@ final class ModulePage {
         UiDraw.text(g, UiDraw.fit(label, kwShown - 22, UiDraw.SMALL), cx + 19, cy + CHIP / 2, UiDraw.SMALL, binding ? t.on() : t.text());
         hits.add(new Hit(cx, cy, kwShown, CHIP, 0, () -> { cards.stopEditing(); binding = true; }));
         hits.add(new Hit(cx, cy, kwShown, CHIP, 1, () -> { module.setKeybind(Keybind.UNBOUND); binding = false; }));
-        if (kHover && !binding) host.tooltip(key + "bind", "Keybind", "Click to set · Right-click to clear");
+        if (kHover && !binding) host.tooltip(key + "bind", "Keybind", "Click to set a key, or right-click to clear it");
         cx += kwShown + 6;
 
         // Bind mode, only meaningful once a key is bound.
@@ -215,7 +215,7 @@ final class ModulePage {
                 UiDraw.center(g, MODE_LABELS[i], cx + i * seg, cy + CHIP / 2, seg, UiSpace.CAPTION, colour);
                 Keybind.Mode mode = MODES[i];
                 if (modeShow > .5f) hits.add(new Hit(cx + i * seg, cy, seg, CHIP, 0, () -> module.setKeybind(module.getKeybind().withMode(mode))));
-                if (hover && modeShow > .5f) host.tooltip(key + "mode" + i, MODE_LABELS[i], MODE_HINTS[i]);
+                if (hover && modeShow > .5f) host.tooltip(key + "mode" + i, null, MODE_HINTS[i]);
             }
             UiRender.opacity = before;
             cx += (mw + 6) * modeShow;
@@ -232,7 +232,7 @@ final class ModulePage {
             UiDraw.text(g, dl, cx + 8, cy + CHIP / 2, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.text(), Math.max(hv, drawn * .7f)));
             UiDraw.toggle(g, cx + dw - 24, cy + 3, drawn, hover, t);
             hits.add(new Hit(cx, cy, dw, CHIP, 0, () -> module.setDrawn(!module.isDrawn())));
-            if (hover) host.tooltip(key + "drawn", "HUD list", "Show this module in the on-screen module list while it is on");
+            if (hover) host.tooltip(key + "drawn", null, "Show this module in the on-screen module list while it is on");
         }
 
         // Right side: reset all.
@@ -261,8 +261,8 @@ final class ModulePage {
             int count = cards.resetAll();
             notice("Restored " + count + (count == 1 ? " setting" : " settings") + " to default");
         }));
-        if (rHover) host.tooltip(key + "reset", "Reset all", changed == 0 ? "Nothing changed from the defaults"
-                : changed + (changed == 1 ? " setting differs" : " settings differ") + " from default · click twice to restore");
+        if (rHover) host.tooltip(key + "reset", null, changed == 0 ? "Nothing changed from the defaults"
+                : "Click twice to restore " + (changed == 1 ? "the changed setting" : "the " + changed + " changed settings"));
 
         // Copy and paste this module's settings, to share them with another client.
         rx -= 6 + CHIP;
@@ -284,7 +284,7 @@ final class ModulePage {
     private void copyConfig() {
         cards.stopEditing();
         net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(ModuleClipboard.copy(module));
-        notice("Copied " + GuiState.title(module.getName()) + " config · paste it with Ctrl+V on this module in another client");
+        notice("Copied " + GuiState.title(module.getName()) + " config to paste with Ctrl+V in another client");
     }
 
     private void pasteConfig() {
@@ -326,14 +326,18 @@ final class ModulePage {
         boolean fresh = !notice.isEmpty() && System.nanoTime() - noticeAt < 3_500_000_000L;
         String text; int kind;
         if (!error.isEmpty()) { text = error; kind = 1; }
-        else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; kind = 3; }
+        else if (binding) { text = "Press a key or mouse button\nEsc\tcancel\nBackspace\tclear"; kind = 3; }
         else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); kind = 2; }
         else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; kind = 1; }
         else if (fresh) { text = notice; kind = noticeError ? 1 : 2; }
-        else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; kind = 0; }
+        else { text = "Hover a setting for details, or click a card's title to fold it"; kind = 0; }
         // Each change of message crossfades, including the notice ending and the hint coming back.
         float fy = y + h - 9;
-        UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.fit(text, w), kind), line -> UiDraw.text(g, line.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(line.kind(), t)));
+        UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.isLegend(text) ? text : UiDraw.fit(text, w), kind), line -> {
+            int colour = UiMotion.footerColour(line.kind(), t);
+            if (UiDraw.isLegend(line.text())) UiDraw.legend(g, line.text(), x, fy, t, colour, colour);
+            else UiDraw.text(g, line.text(), x, fy, UiDraw.SMALL, colour);
+        });
     }
 
     // ---- input -------------------------------------------------------------------------------

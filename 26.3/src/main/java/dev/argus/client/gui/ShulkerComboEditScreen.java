@@ -164,7 +164,7 @@ final class ShulkerComboEditScreen extends UiScreen {
         } else {
             ShulkerIconRenderer.drawPixels(g, pixels, previewX, top + 88, 1);
         }
-        UiDraw.text(g, "Required items · click to remove", left + 12, requiredTop - 10, UiDraw.SMALL, t.textDim());
+        UiDraw.text(g, "Required items (click one to remove it)", left + 12, requiredTop - 10, UiDraw.SMALL, t.textDim());
         if (required.isEmpty()) UiDraw.text(g, "Add items or enter a shulker name.", left + 12, requiredTop + 8, UiDraw.SMALL, t.textDim());
         int start = itemPage * itemsPerPage();
         for (int i = start; i < Math.min(required.size(), start + itemsPerPage()); i++) {

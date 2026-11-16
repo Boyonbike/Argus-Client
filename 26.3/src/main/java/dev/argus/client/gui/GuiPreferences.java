@@ -51,6 +51,8 @@ public final class GuiPreferences {
     public int hudGap = 0;
     /** Round every HUD element's size up to whole grid steps, so sizes and spacing line up with the grid. */
     public boolean hudFitGrid = true;
+    /** Whether the "Changes apply instantly and are saved automatically" note has been shown once; it isn't shown again. */
+    public boolean applyNoteSeen = false;
     // ---- Style trials (Appearance → Style trials). Each is an A/B test of the GUI rework; the defaults are the plain look.
     /** Page titles drawn in Minecraft's own pixel font at a whole-pixel scale. */
     public boolean pixelTitles = false;
@@ -109,6 +111,7 @@ public final class GuiPreferences {
         try { result.gap = Math.clamp(Integer.parseInt(values.getProperty("gap", "0")), 0, MAX_GAP); } catch (IllegalArgumentException ignored) {}
         try { result.hudGap = Math.round(Math.clamp(Integer.parseInt(values.getProperty("hudGap", "0")), 0, MAX_GAP) / (float) HUD_GAP_STEP) * HUD_GAP_STEP; } catch (IllegalArgumentException ignored) {}
         result.hudFitGrid = Boolean.parseBoolean(values.getProperty("hudFitGrid", "true"));
+        result.applyNoteSeen = Boolean.parseBoolean(values.getProperty("applyNoteSeen", "false"));
         result.pixelTitles = Boolean.parseBoolean(values.getProperty("pixelTitles", "false"));
         result.grain = Boolean.parseBoolean(values.getProperty("grain", "false"));
         result.bevels = Boolean.parseBoolean(values.getProperty("bevels", "false"));
@@ -155,6 +158,7 @@ public final class GuiPreferences {
         values.setProperty("animations", Boolean.toString(animations));
         values.setProperty("animationSpeed", Double.toString(animationSpeed));
         values.setProperty("savedColours", String.join(",", savedColours.stream().map(c -> String.format("%08X", c)).toList())); values.setProperty("gap", Integer.toString(gap)); values.setProperty("hudGap", Integer.toString(hudGap)); values.setProperty("hudFitGrid", Boolean.toString(hudFitGrid));
+        values.setProperty("applyNoteSeen", Boolean.toString(applyNoteSeen));
         values.setProperty("pixelTitles", Boolean.toString(pixelTitles)); values.setProperty("grain", Boolean.toString(grain));
         values.setProperty("bevels", Boolean.toString(bevels)); values.setProperty("corner", Integer.toString(corner));
         for (String module : favourites) values.setProperty("favourite." + module, "true");

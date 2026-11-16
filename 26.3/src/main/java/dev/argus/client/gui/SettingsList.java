@@ -104,8 +104,8 @@ final class SettingsList {
     boolean editing() { return editing != null; }
     String hint() {
         if (!message.isEmpty() && (System.nanoTime() - messageAt) / 1e9f < 4.5f) return null;
-        if (capturing != null) return "Press a key or mouse button · Esc cancels · Delete restores the default";
-        return editing != null ? "Enter or Esc saves · Click away saves" : "Click to change · Drag sliders · The reset icon restores the default";
+        if (capturing != null) return "Press a key or mouse button\nEsc\tcancel\nDelete\tdefault";
+        return editing != null ? "Enter, Esc or clicking away saves" : "Click a setting to change it, or drag a slider";
     }
     String message() { return message.isEmpty() || (System.nanoTime() - messageAt) / 1e9f >= 4.5f ? "" : message; }
 
@@ -141,7 +141,7 @@ final class SettingsList {
         if (setting.shouldDisplayBoundaryLabel()) return setting.getBoundaryLabel();
         Object value = setting.getValue();
         if (value instanceof NamedEntry named) return named.getName();
-        if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" · %d%%", Math.round(colour.getAlpha() / 2.55)) : "");
+        if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" (%d%%)", Math.round(colour.getAlpha() / 2.55)) : "");
         if (setting instanceof SetSetting<?> collection) return collection.getValue().size() + (collection.getValue().size() == 1 ? " entry" : " entries");
         if (value instanceof Double || value instanceof Float) {
             double number = ((Number) value).doubleValue();
@@ -258,7 +258,8 @@ final class SettingsList {
                 UiDraw.outline(g, sx, cy - 6, 12, 12, 3.5f, .6f, UiDraw.alpha(t.text(), .25f));
             } else if (setting instanceof SetSetting<?>) {
                 // A list is edited on its own screen, so the row is a labelled button rather than a bare chevron.
-                String text = UiDraw.fit(value(setting), half - 60) + "  ·  Edit";
+                int entries = ((SetSetting<?>) setting).getValue().size();
+                String text = UiDraw.fit("Edit " + entries + (entries == 1 ? " entry" : " entries"), half - 40);
                 float pw = UiDraw.width(text, UiDraw.SMALL) + 22, px = right - pw;
                 UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.alpha(t.on(), .1f), UiDraw.alpha(t.on(), .22f), hv));
                 UiDraw.outline(g, px, cy - 7, pw, 14, 7, .6f, UiDraw.alpha(t.on(), .3f + hv * .3f));
@@ -621,7 +622,12 @@ final class SettingsList {
     /** Draws the hint or the latest error message at the given footer line. */
     void footer(GuiGraphicsExtractor g, float fx, float cy, float width, UiTheme t, String override) {
         String error = message();
-        var line = error.isEmpty() ? new UiMotion.Line(UiDraw.fit(override != null ? override : hint(), width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
-        UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
+        String text = override != null ? override : hint();
+        var line = error.isEmpty() ? new UiMotion.Line(UiDraw.isLegend(text) ? text : UiDraw.fit(text, width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
+        UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> {
+            int colour = UiMotion.footerColour(l.kind(), t);
+            if (UiDraw.isLegend(l.text())) UiDraw.legend(g, l.text(), fx, cy, t, colour, colour);
+            else UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, colour);
+        });
     }
 }

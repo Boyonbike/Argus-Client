@@ -199,7 +199,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     private static String description(Module module) {
         String text = module.getDescription();
-        return text == null || text.isBlank() ? "HUD element" : text;
+        return text == null || text.isBlank() ? "" : text;
     }
 
     /** A recognisable icon for each element, falling back to the HUD icon. */
@@ -341,7 +341,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             if (side == Side.LEFT || side == Side.RIGHT) UiDraw.rect(g, lx - .5f, 0, 1, lh(), edge);
             else UiDraw.rect(g, 0, ly - .5f, lw(), 1, edge);
             if (!focus) continue;
-            String label = sideName(side) + " safe zone · " + HudSafeZones.get(side);
+            String label = sideName(side) + " safe zone: " + HudSafeZones.get(side);
             float pw = UiDraw.width(label, UiDraw.SMALL) + 14, ph = 14;
             float px = side == Side.LEFT ? lx + 6 : side == Side.RIGHT ? lx - pw - 6 : (lw() - pw) / 2;
             float py = side == Side.TOP ? ly + 6 : side == Side.BOTTOM ? ly - ph - 6 : (lh() - ph) / 2;
@@ -462,10 +462,10 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             if (i == B_HUD) UiDraw.toggle(g, x + buttonW[i] - 27, cy - 5, UiAnim.smooth("hud.btn.switch", hudOn ? 1 : 0, 16), hover, t);
             if (hover) switch (i) {
                 case B_HUD -> tooltip("hud.btn.hud", hudOn ? "HUD is on" : "HUD is off", hudOn ? "Click to hide every HUD element in game" : "Click to show your HUD in game again");
-                case B_ELEMENTS -> tooltip("hud.btn.1", panelHidden ? "Show elements" : "Hide elements", "The list of HUD elements you can add · Ctrl+F searches it");
-                case B_MIRROR -> tooltip("hud.btn.2", "Mirror", "Flip every element to the other side of the screen (I)");
-                case B_SETTINGS -> tooltip("hud.btn.3", "HUD settings", "Colours, text, safe zones and the rest of the HUD's options");
-                default -> tooltip("hud.btn.4", "Done", "Leave the editor (Esc)");
+                case B_ELEMENTS -> tooltip("hud.btn.1", panelHidden ? "Show elements" : "Hide elements", "The list of HUD elements you can add (Ctrl+F to search)");
+                case B_MIRROR -> tooltip("hud.btn.2", null, "Flip every element to the other side of the screen (I)");
+                case B_SETTINGS -> tooltip("hud.btn.3", null, "Colours, text, safe zones and the rest of the HUD's options");
+                default -> tooltip("hud.btn.4", null, "Leave the editor (Esc)");
             }
             x += buttonW[i];
         }
@@ -498,7 +498,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             if (ch > 0) UiDraw.circle(g, x + PANEL_W - 13, y + 14, 7, UiDraw.alpha(t.fill(), ch));
             UiDraw.icon(g, "close", x + PANEL_W - 17, y + 10, 8, UiDraw.alpha(UiDraw.mix(t.textDim(), t.text(), ch), .5f + hh * .5f));
             if (closeHover) tooltip("hud.panel.close", "Hide elements", "Show them again with Elements in the toolbar");
-            else if (headHover) tooltip("hud.panel.head", "Elements", "Drag the header to move this panel");
+            else if (headHover) tooltip("hud.panel.head", null, "Drag the header to move this panel");
             UiDraw.rect(g, x + 1, y + PANEL_HEAD, PANEL_W - 2, .6f, UiDraw.alpha(t.line(), .45f));
             // Search.
             float sx = x + 10, sy = y + PANEL_HEAD + 7, sw = PANEL_W - 20, sh = 18;
@@ -568,8 +568,9 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (hv > .01f) UiDraw.rounded(g, x, y, w, ROW_H, 2, UiDraw.alpha(t.fill(), hv));
         float cy = y + ROW_H / 2;
         float textX = x + UiSpace.S2, reserve = 24 + (hv > .01f ? 14 : 0);
-        UiDraw.text(g, UiDraw.fit(GuiState.title(module.getName()), w - (textX - x) - reserve, UiSpace.BODY), textX, y + 11, UiSpace.BODY, t.text());
-        UiDraw.text(g, UiDraw.fit(description(module), w - (textX - x) - reserve, UiSpace.CAPTION), textX, y + 21, UiSpace.CAPTION, t.textDim());
+        String description = description(module);
+        UiDraw.text(g, UiDraw.fit(GuiState.title(module.getName()), w - (textX - x) - reserve, UiSpace.BODY), textX, description.isEmpty() ? cy : y + 11, UiSpace.BODY, t.text());
+        if (!description.isEmpty()) UiDraw.text(g, UiDraw.fit(description, w - (textX - x) - reserve, UiSpace.CAPTION), textX, y + 21, UiSpace.CAPTION, t.textDim());
         float tx = x + w - 24, ty = cy - 5;
         UiDraw.toggle(g, tx, ty, on, hover && UiDraw.over(mx, my, tx - 2, ty - 3, 22, 16), t);
         if (hv > .01f) {
@@ -581,7 +582,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             UiDraw.icon(g, "sliders", gx, cy - 4, 8, gearHover ? t.text() : t.textDim());
             UiRender.opacity = before;
             if (gearHover) tooltip(key + ".gear", GuiState.title(module.getName()) + " settings", "Or right-click the element on screen");
-            else if (hover) tooltip(key, GuiState.title(module.getName()), module.isToggled() ? "Click to select it on screen · the switch removes it" : "Click to add it to your screen");
+            else if (hover) tooltip(key, null, module.isToggled() ? "Click to select it on screen, or use the switch to remove it" : "Click to add it to your screen");
         }
     }
 
@@ -592,61 +593,26 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
      */
     private void hints(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         var p = GuiState.preferences();
-        String text = edgeDrag != null ? "Drag to set the " + sideName(edgeDrag).toLowerCase(Locale.ROOT) + " safe zone · each edge has its own"
-                : boxing ? "Drag over elements to select them · Shift adds to the selection"
-                : lineOwner != null ? "Moves just this line · drop it on the rest of the element to put it back"
+        String text = edgeDrag != null ? "Drag to set the " + sideName(edgeDrag).toLowerCase(Locale.ROOT) + " safe zone"
+                : boxing ? "Drag over elements to select them, holding Shift to add to the selection"
+                : lineOwner != null ? "Drop this line on the rest of its element to put it back"
                 : !groupStart.isEmpty() ? (p.snap ? "Moving " + groupStart.size() + " elements together on the grid" : "Moving " + groupStart.size() + " elements together")
-                : dragged != null ? (p.snap ? "Snaps to the grid" + (p.hudGap > 0 ? " · keeps a " + p.hudGap + " gap" : "") : "Snapping is off in Appearance") + " · drop in a corner to stack"
-                : !hud().isToggled() ? "The HUD is off, so nothing shows in game · switch it on in the toolbar"
+                : dragged != null ? "Drop in a corner to stack (" + (p.snap ? "snaps to the grid" + (p.hudGap > 0 ? " with a " + p.hudGap + " gap" : "") : "snapping is off in Appearance") + ")"
+                : !hud().isToggled() ? "The HUD is off. Switch it on in the toolbar to see it in game."
                 : !picked.isEmpty() ? picked.size() + " selected\nDrag\tmove together\nDel\tremove\nArrows\tnudge\nEsc\tclear"
                 : "Drag\tmove\nDrag space\tselect\nR\trestack\nRight-click\tsettings\n?\tmore";
         boolean legend = text.indexOf('\t') >= 0;
         if (!legend) text = UiDraw.fit(text, lw() - 40, UiSpace.CAPTION);
-        float target = (legend ? legendWidth(text) : UiDraw.width(text, UiSpace.CAPTION)) + UiSpace.S4;
+        float target = (legend ? UiDraw.legendWidth(text) : UiDraw.width(text, UiSpace.CAPTION)) + UiSpace.S4;
         float w = UiAnim.smooth("hud.hints.w", target, target, 18), h = 17, x = (lw() - w) / 2, y = lh() - h - 8;
         UiDraw.rounded(g, x, y, w, h, 2, t.sunk());
         UiDraw.outline(g, x, y, w, h, 2, 1, t.line());
         UiMotion.text(g, "hud.hints", text, l -> {
             if (l.indexOf('\t') < 0) { UiDraw.center(g, l, x, y + h / 2, w, UiSpace.CAPTION, t.textDim()); return; }
-            drawLegend(g, l, x + (w - legendWidth(l)) / 2, y + h / 2, t);
+            UiDraw.legend(g, l, x + (w - UiDraw.legendWidth(l)) / 2, y + h / 2, t);
         });
         if (legend && text.contains("?\t") && UiDraw.over(mx, my, x, y, w, h))
             tooltip("hud.hints.more", "More", "Lines of an element move on their own", "Drag a screen edge to set its safe zone");
-    }
-
-    private static final float CAP_PAD = 3, CAP_GAP = 4, ENTRY_GAP = 10;
-
-    private static float legendWidth(String legend) {
-        float w = 0;
-        String[] entries = legend.split("\n");
-        for (int i = 0; i < entries.length; i++) {
-            String[] parts = entries[i].split("\t", 2);
-            if (i > 0) w += ENTRY_GAP;
-            w += parts.length == 1 ? UiDraw.width(parts[0], UiSpace.CAPTION)
-                    : UiDraw.width(parts[0], UiSpace.CAPTION) + CAP_PAD * 2 + CAP_GAP + UiDraw.width(parts[1], UiSpace.CAPTION);
-        }
-        return w;
-    }
-
-    /** Keycaps in a raised fill with the verb after each; a line without a tab (e.g. "3 selected") is a plain label. */
-    private static void drawLegend(GuiGraphicsExtractor g, String legend, float x, float cy, UiTheme t) {
-        String[] entries = legend.split("\n");
-        for (int i = 0; i < entries.length; i++) {
-            String[] parts = entries[i].split("\t", 2);
-            if (i > 0) x += ENTRY_GAP;
-            if (parts.length == 1) {
-                UiDraw.text(g, parts[0], x, cy, UiSpace.CAPTION, t.text());
-                x += UiDraw.width(parts[0], UiSpace.CAPTION);
-                continue;
-            }
-            float capW = UiDraw.width(parts[0], UiSpace.CAPTION) + CAP_PAD * 2;
-            UiDraw.box(g, x, cy - 5.5f, capW, 11, UiSpace.CHAMFER_SMALL, t.fill());
-            UiDraw.rect(g, x + 1, cy + 4.5f, capW - 2, 1, t.line());
-            UiDraw.text(g, parts[0], x + CAP_PAD, cy - .5f, UiSpace.CAPTION, t.text());
-            x += capW + CAP_GAP;
-            UiDraw.text(g, parts[1], x, cy, UiSpace.CAPTION, t.textDim());
-            x += UiDraw.width(parts[1], UiSpace.CAPTION);
-        }
     }
 
     private void tooltip(Object owner, String... lines) { tooltipOwner = owner; tooltipLines = lines; }
@@ -658,18 +624,22 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         float rested = (System.nanoTime() - tooltipSince) / 1e9f - .35f;
         float shownT = UiAnim.enabled() ? UiAnim.easeOutCubic(rested * UiAnim.speed() / .14f) : rested >= 0 ? 1 : 0;
         if (shownT <= 0) return;
+        // A null first line means a body-only tooltip: no bold title, just the dim body lines.
+        int first = tooltipLines.length > 0 && tooltipLines[0] == null ? 1 : 0;
+        if (tooltipLines.length - first <= 0) return;
         float w = 0;
-        for (int i = 0; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
+        for (int i = first; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
         w = Math.min(lw() - 12, w + 16);
-        float lineH = 11, h = 8 + tooltipLines.length * lineH;
+        float lineH = 11, h = 8 + (tooltipLines.length - first) * lineH;
         float x = Math.clamp(mouseX + 12, 6, Math.max(6, lw() - w - 6)), y = Math.min(mouseY + 14, lh() - h - 6) + (1 - shownT) * 3;
         float before = UiRender.opacity;
         UiRender.opacity = before * shownT;
         UiDraw.panel(g, x, y, w, h, t);
-        for (int i = 0; i < tooltipLines.length; i++) {
+        for (int i = first; i < tooltipLines.length; i++) {
             String line = UiDraw.fit(tooltipLines[i], w - 16, i == 0 ? UiDraw.TEXT : UiDraw.SMALL);
-            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.on());
-            else UiDraw.text(g, line, x + 8, y + 4 + lineH * i + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
+            float row = i - first;
+            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.text());
+            else UiDraw.text(g, line, x + 8, y + 4 + lineH * row + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
         }
         UiRender.opacity = before;
     }

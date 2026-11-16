@@ -40,7 +40,7 @@ public final class ProxyHealth {
         if (active == null) return "";
         if (launchRunning && !RESULTS.containsKey(active.id())) return "Checking proxy " + label(active) + "…";
         var r = RESULTS.get(active.id());
-        return r != null && !r.alive() ? "Proxy " + label(active) + " is dead (" + r.message().toLowerCase(java.util.Locale.ROOT) + ") · joins will fail until you switch it off" : "";
+        return r != null && !r.alive() ? "Proxy " + label(active) + " is dead (" + r.message().toLowerCase(java.util.Locale.ROOT) + "), so joins will fail until you switch it off" : "";
     }
 
     private static String label(ProxyEntry p) { return p.name().isBlank() ? p.address() : p.name(); }

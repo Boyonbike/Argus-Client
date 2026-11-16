@@ -91,6 +91,53 @@ final class UiDraw {
     }
     static void right(GuiGraphicsExtractor g, String text, float right, float centreY, int colour) { right(g, text, right, centreY, TEXT, colour); }
 
+    // ---- key legend -------------------------------------------------------------------------
+    // A key legend is one string of "cap\tverb" lines joined with "\n"; a line without a tab is a plain label.
+    // Encoding it as a string lets it crossfade like plain hint sentences do.
+
+    private static final float LEGEND_CAP_PAD = 3, LEGEND_CAP_GAP = 4, LEGEND_ENTRY_GAP = 10;
+
+    /** True if {@code text} is a key legend rather than a plain sentence. */
+    static boolean isLegend(String text) { return text != null && text.indexOf('\t') >= 0; }
+
+    static float legendWidth(String legend) {
+        float w = 0;
+        String[] entries = legend.split("\n");
+        for (int i = 0; i < entries.length; i++) {
+            String[] parts = entries[i].split("\t", 2);
+            if (i > 0) w += LEGEND_ENTRY_GAP;
+            w += parts.length == 1 ? width(parts[0], UiSpace.CAPTION)
+                    : width(parts[0], UiSpace.CAPTION) + LEGEND_CAP_PAD * 2 + LEGEND_CAP_GAP + width(parts[1], UiSpace.CAPTION);
+        }
+        return w;
+    }
+
+    /** Keycaps in a raised fill with the verb after each; plain labels in the primary text colour. */
+    static void legend(GuiGraphicsExtractor g, String legend, float x, float centreY, UiTheme t) {
+        legend(g, legend, x, centreY, t, t.text(), t.textDim());
+    }
+
+    /** As {@link #legend(GuiGraphicsExtractor, String, float, float, UiTheme)} with explicit label and verb colours. */
+    static void legend(GuiGraphicsExtractor g, String legend, float x, float centreY, UiTheme t, int labelColour, int verbColour) {
+        String[] entries = legend.split("\n");
+        for (int i = 0; i < entries.length; i++) {
+            String[] parts = entries[i].split("\t", 2);
+            if (i > 0) x += LEGEND_ENTRY_GAP;
+            if (parts.length == 1) {
+                text(g, parts[0], x, centreY, UiSpace.CAPTION, labelColour);
+                x += width(parts[0], UiSpace.CAPTION);
+                continue;
+            }
+            float capW = width(parts[0], UiSpace.CAPTION) + LEGEND_CAP_PAD * 2;
+            box(g, x, centreY - 5.5f, capW, 11, UiSpace.CHAMFER_SMALL, t.fill());
+            rect(g, x + 1, centreY + 4.5f, capW - 2, 1, t.line());
+            text(g, parts[0], x + LEGEND_CAP_PAD, centreY - .5f, UiSpace.CAPTION, t.text());
+            x += capW + LEGEND_CAP_GAP;
+            text(g, parts[1], x, centreY, UiSpace.CAPTION, verbColour);
+            x += width(parts[1], UiSpace.CAPTION);
+        }
+    }
+
     // ---- colour -----------------------------------------------------------------------------
 
     static int alpha(int colour, int alpha) { return (colour & 0x00ffffff) | (Math.clamp(alpha, 0, 255) << 24); }

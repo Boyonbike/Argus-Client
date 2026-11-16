@@ -74,10 +74,9 @@ final class TargetsCard extends InlineCard {
     @Override String icon() { return "search"; }
     @Override String subtitle() {
         List<SpecificRules.Rule> all = targets.rules().all();
-        if (all.isEmpty()) return "Search, tick what to show, then Add · each group gets its own settings";
+        if (all.isEmpty()) return "Search, tick what to show, then click Add";
         long linked = all.stream().filter(rule -> rule.mirror).count();
-        return all.size() + (all.size() == 1 ? " group" : " groups") + (linked > 0 ? " · " + linked + " linked with " + other : "")
-                + " · left-click on/off · right-click settings";
+        return all.size() + (all.size() == 1 ? " group" : " groups") + (linked > 0 ? ", " + linked + " linked with " + other : "");
     }
 
     // ---- sizes -------------------------------------------------------------------------------------------------
@@ -258,7 +257,7 @@ final class TargetsCard extends InlineCard {
         px += UiDraw.width("Presets", UiDraw.SMALL) + 8;
         for (DefaultTargets.Preset preset : DefaultTargets.presets()) {
             boolean done = DefaultTargets.missing(targets.rules(), preset) == 0;
-            String label = done ? preset.name() + " · added" : preset.name();
+            String label = done ? preset.name() + " (added)" : preset.name();
             float bw = buttonWidth(label);
             button(g, mx, my, t, "preset." + preset.name(), px, pcy - 8, bw, 16, label, false,
                     done ? "Everything in this preset is already in the list."
@@ -329,9 +328,9 @@ final class TargetsCard extends InlineCard {
         float h = panelHeight() - 4;
         UiDraw.rounded(g, x, y, w, h, 6, t.deep());
         UiDraw.outline(g, x, y, w, h, 6, 1, t.line());
-        String head = selected.isEmpty() ? "Click to tick · tick several to add them as one group"
+        String head = selected.isEmpty() ? "Tick one or more to add them as a group"
                 : selected.size() + " ticked" + (field.getValue().isBlank() && selected.size() > 10 ? " (first 10 shown)" : "")
-                + " · Enter or Add puts them in one group";
+                + ": press Enter or Add to group them";
         UiDraw.text(g, UiDraw.fit(head, w - 60, UiDraw.SMALL), x + 8, y + 9, UiDraw.SMALL, t.textDim());
         if (!selected.isEmpty()) {
             float cw = UiDraw.width("Clear", UiDraw.SMALL) + 14;
@@ -361,7 +360,7 @@ final class TargetsCard extends InlineCard {
                 ShulkerIconRenderer.drawAt(g, icon, null, tx, ry + (MATCH - 16) / 2, 1);
             }
             tx += 20;
-            String detail = added ? candidate.kind() + " · already added" : candidate.kind();
+            String detail = added ? candidate.kind() + " (already added)" : candidate.kind();
             float dw = UiDraw.width(detail, UiDraw.SMALL);
             int colour = added ? t.textDim() : ticked || hover ? t.on() : t.text();
             UiDraw.text(g, UiDraw.fit(candidate.name(), x + w - tx - dw - 16), tx, cy, colour);
@@ -428,10 +427,10 @@ final class TargetsCard extends InlineCard {
         // When there are more matching blocks than the scanner keeps (netherrack, stone), only the nearest are shown.
         boolean capped = on && dev.argus.client.modules.render.targets.BlockTargetIndex.get().capped()
                 && rule.members().stream().anyMatch(member -> member.type() == SpecificRules.Type.BLOCK);
-        String state = (espOnly ? "Shown by ESP only · " : (on ? "On" : "Off") + " · " + settings.rangeLabel() + " · ")
-                + (capped ? "too many to show all, nearest shown · " : "")
+        String state = (espOnly ? "Shown by ESP only, " : (on ? "On" : "Off") + ", " + settings.rangeLabel() + (capped ? " (nearest only)" : "") + ", ")
                 + (linked ? "linked with " + other : inOther ? "also on in " + other : "this page only");
-        String hint = hover ? (on ? "Click: turn off · Right-click: settings" : "Click: turn on · Right-click: settings") : state;
+        String hint = hover ? (on ? "Click to turn off, right-click for settings" : "Click to turn on, right-click for settings") : state;
+        if (hover && capped) host.tooltip(rowKey + ".capped", null, "Too many to show all, so only the nearest are shown");
         UiDraw.text(g, UiDraw.fit(label, right - tx - 18), tx, cy - 5, UiDraw.mix(t.textDim(), t.text(), lit));
         float hintX = tx, hintRoom = right - tx - 18;
         UiMotion.text(g, rowKey + ".hint", UiDraw.fit(hint, hintRoom, UiDraw.SMALL), l -> UiDraw.text(g, l, hintX, cy + 6, UiDraw.SMALL, t.textDim()));

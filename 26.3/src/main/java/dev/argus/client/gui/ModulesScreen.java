@@ -226,17 +226,30 @@ public final class ModulesScreen extends UiScreen {
         }
         g.disableScissor();
         drawCompactHint(g, theme);
+        drawLegend(g, theme);
         searchInput.active = searchInput.visible;
         if (!searchInput.visible && getFocused() == searchInput) setFocused(null);
     }
 
     private float gridFade;
 
+    private static final String LEGEND = "Left\ttoggle\nRight\tsettings\nMiddle\tpin";
+
+    /** The mouse actions for module rows, as a key legend at the bottom right; it gives way to the compact-view pill. */
+    private void drawLegend(GuiGraphicsExtractor g, UiTheme theme) {
+        float shown = 1 - UiAnim.smooth("modules.legend", compact() ? 1 : 0, 7);
+        if (shown <= .01f) return;
+        float base = UiRender.opacity;
+        UiRender.opacity = base * shown;
+        try { UiDraw.legend(g, LEGEND, width - 12 - UiDraw.legendWidth(LEGEND), height - 10, theme); }
+        finally { UiRender.opacity = base; }
+    }
+
     /** A small pill at the bottom while the arrangement is squeezed, so it's clear nothing was lost. */
     private void drawCompactHint(GuiGraphicsExtractor g, UiTheme theme) {
         float shown = UiAnim.smooth("modules.compact", compact() ? 1 : 0, 7);
         if (shown <= .01f) return;
-        String text = UiDraw.fit("Compact view · moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
+        String text = UiDraw.fit("Compact view: moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
         float w = UiDraw.width(text, UiDraw.SMALL) + 22, h = 14, x = (width - w) / 2f, y = height - 16 + (1 - UiAnim.easeOutCubic(shown)) * 6;
         float base = UiRender.opacity;
         UiRender.opacity = base * shown;
@@ -328,8 +341,9 @@ public final class ModulesScreen extends UiScreen {
         if (hovered != null) {
             String description = UiText.stripFormatting(hovered.getDescription());
             var bind = hovered.getKeybind();
-            tooltip(hovered, GuiState.title(hovered.getName()), description.isBlank() ? "No description" : description,
-                    (bind.isUnbound() ? "Not bound" : "Bind: " + bind.getDisplayName()) + "   ·   Left toggle  ·  Right settings  ·  Middle pin");
+            String bindLine = bind.isUnbound() ? "Not bound" : "Bind: " + bind.getDisplayName();
+            if (description.isBlank()) tooltip(hovered, null, bindLine);
+            else tooltip(hovered, null, description, bindLine);
         }
     }
 
@@ -384,7 +398,7 @@ public final class ModulesScreen extends UiScreen {
                 String message = b ? "Type to search" : UiDraw.fit("No matches for \u201c" + searchInput.getValue().strip() + "\u201d", w - 16);
                 UiDraw.center(g, message, x, cy + 6, w, theme.textDim());
             });
-            UiDraw.center(g, "Modules · Aliases", x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.textDim(), .7f));
+            UiDraw.center(g, UiDraw.fit("Searches module names and aliases", w - 12, UiDraw.SMALL), x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.textDim(), .7f));
             UiRender.opacity = before;
         }
         g.disableScissor();

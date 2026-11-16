@@ -51,9 +51,9 @@ final class PresetLoadConfirmationScreen extends UiScreen {
         if(imported) {
             if(!ImportedPresetStore.isRecovery(fingerprint))body.add("Settings without a supported match will use Argus defaults.");
             int on=0,off=0;for(var e:fingerprint.entrySet())if(e.getValue().isJsonObject() && e.getValue().getAsJsonObject().has("enabled")){if(e.getValue().getAsJsonObject().get("enabled").getAsBoolean())on++;else off++;}
-            body.add(on+" modules on · "+off+" modules off");
+            body.add(on+" modules on and "+off+" off");
             var meta=fingerprint.getAsJsonObject("argusImport");
-            if(meta.has("copiedSettings") && meta.has("defaultedSettings"))body.add(meta.get("copiedSettings").getAsInt()+" settings copied · "+meta.get("defaultedSettings").getAsInt()+" at Argus defaults");
+            if(meta.has("copiedSettings") && meta.has("defaultedSettings"))body.add(meta.get("copiedSettings").getAsInt()+" settings copied and "+meta.get("defaultedSettings").getAsInt()+" left at Argus defaults");
             body.add("An automatic recovery backup is also created before loading imported configs.");
         }
     }
