@@ -92,8 +92,8 @@ final class CollectionSettingScreen extends UiScreen {
         }
         if (entries.isEmpty()) UiDraw.center(g, query.getValue().isBlank() ? "Nothing to show." : "No matches. Press Enter to add it as typed.", left, start + 14, panelWidth, t.textDim());
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + viewHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start, panelWidth - 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start + viewHeight, panelWidth - 8, false, t));
         UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click an entry to add or remove it, or press Enter to add what you typed" : message, panelWidth - 24),
                 left + 14, top + panelHeight - 11, UiDraw.SMALL, message.isEmpty() ? UiDraw.alpha(t.textDim(), .8f) : t.danger());
     }

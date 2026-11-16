@@ -118,9 +118,15 @@ final class UiRender {
         chamfer(g, x, y, width, height, steps, top, bottom, mode, false);
     }
 
+    /** Logical radius per chamfer step when smooth corners are on. */
+    static final float SMOOTH_RADIUS_PER_STEP = 2;
+
     /** As above; {@code grain} adds a faint fixed noise per GUI pixel (the grain style trial). */
     static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int top, int bottom, float mode, boolean grain) {
         if (steps <= 0 && !grain) { shape(g, x, y, width, height, 0, top, bottom, Math.max(0, mode)); return; }
+        // Smooth corners setting: the same shape with an anti-aliased round corner, two units of radius per step.
+        // Grain is a per-GUI-pixel effect of the stepped path, so it is not drawn on smooth shapes.
+        if (steps > 0 && GuiState.preferences().smoothCorners) { shape(g, x, y, width, height, steps * SMOOTH_RADIUS_PER_STEP, top, bottom, Math.max(0, mode)); return; }
         int cell = Math.max(1, Math.round(pixelsPerUnit(g)));
         // Code layout: bits 0-3 steps, bit 4 grain, bits 5+ cell size in eighths of a pixel.
         emit(g, x, y, width, height, -(Math.min(steps, 15) | (grain ? 16 : 0) | (cell * 8) << 5), top, bottom, Math.max(0, mode));

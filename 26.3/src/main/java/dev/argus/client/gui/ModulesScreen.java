@@ -233,7 +233,8 @@ public final class ModulesScreen extends UiScreen {
 
     private float gridFade;
 
-    private static final String LEGEND = "Left\ttoggle\nRight\tsettings\nMiddle\tpin";
+    /** Left-click to toggle is the one thing everyone tries first; the legend spends its room on what isn't obvious. */
+    private static final String LEGEND = "Ctrl F\tsearch\nRight-click\tsettings\nMiddle-click\tpin";
 
     /** The mouse actions for module rows, as a key legend at the bottom right; it gives way to the compact-view pill. */
     private void drawLegend(GuiGraphicsExtractor g, UiTheme theme) {
@@ -319,8 +320,11 @@ public final class ModulesScreen extends UiScreen {
             String key = "row." + window.name + "." + module.getName();
             float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20);
             float on = UiAnim.smooth(key + ".on", module.isToggled() ? 1 : 0, 14);
-            // On/off is the name's colour alone: accent when enabled, secondary text when not.
-            if (hv > 0) UiDraw.rounded(g, x + 3, rowY + 1, w - 6, ROW - 2, 2, UiDraw.alpha(theme.fill(), hv));
+            // Enabled rows carry the accent twice: a faint accent wash behind the row and the name in the accent,
+            // so a window's live modules read at a glance, not just on close inspection of text colour.
+            if (on > .01f) UiDraw.rounded(g, x + 3, rowY + 1, w - 6, ROW - 2, 2, UiDraw.alpha(theme.on(), .12f * on));
+            if (hv > 0) UiDraw.rounded(g, x + 3, rowY + 1, w - 6, ROW - 2, 2, UiDraw.alpha(theme.fill(), hv * (1 - .5f * on)));
+            if (on > .01f) UiDraw.rect(g, x + 3, rowY + ROW / 2f - 2, 1, 4, UiDraw.alpha(theme.on(), on));
             boolean favourite = window.kind != Kind.FAVOURITES && GuiState.preferences().favourites.contains(module.getName());
             // The star pops in with a small overshoot and the name makes room for it gradually.
             float fav = UiAnim.smooth(key + ".fav", favourite ? 1 : 0, 14);
@@ -337,6 +341,9 @@ public final class ModulesScreen extends UiScreen {
         if (modules.isEmpty()) UiDraw.center(g, UiDraw.fit(window.kind == Kind.FAVOURITES ? "Middle-click a module to pin it" : "No modules", w - 12),
                 x, start + (ROW + 2) / 2f, w, UiDraw.SMALL, theme.textDim());
         g.disableScissor();
+        // A hard rule where the list is cut off, so a long category never looks like it simply ends.
+        if (contentHeight(window) - view - window.shownScroll > .5f) UiDraw.scrollEdge(g, x + 2, clipBottom, w - 4, false, theme);
+        if (window.shownScroll > .5f) UiDraw.scrollEdge(g, x + 2, start, w - 4, true, theme);
         scrollbar(g, window, start, view, contentHeight(window), over, theme);
         if (hovered != null) {
             String description = UiText.stripFormatting(hovered.getDescription());
@@ -398,12 +405,14 @@ public final class ModulesScreen extends UiScreen {
                 String message = b ? "Type to search" : UiDraw.fit("No matches for \u201c" + searchInput.getValue().strip() + "\u201d", w - 16);
                 UiDraw.center(g, message, x, cy + 6, w, theme.textDim());
             });
-            UiDraw.center(g, UiDraw.fit("Searches module names and aliases", w - 12, UiDraw.SMALL), x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.textDim(), .7f));
+            if (blankHelp()) UiDraw.center(g, UiDraw.fit("Modules, settings, aliases", w - 12, UiDraw.SMALL), x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.textDim(), .7f));
             UiRender.opacity = before;
         }
         g.disableScissor();
         scrollbar(g, window, start, view, contentHeight(window), over, theme);
     }
+
+    private boolean blankHelp() { return searchInput.getValue().isBlank(); }
 
     private void scrollbar(GuiGraphicsExtractor g, Window window, float start, int view, int total, boolean over, UiTheme theme) {
         boolean scrolling = Math.abs(window.shownScroll - window.scroll) > .5f;

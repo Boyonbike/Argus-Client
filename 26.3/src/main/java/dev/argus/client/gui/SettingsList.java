@@ -280,8 +280,8 @@ final class SettingsList {
         if (pointed != hovered) { hovered = pointed; hoverSince = System.nanoTime(); }
         labelsRight = labelEdge; controlsLeft = controlEdge;
         hoveredY = pointedY;
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, y - 2, w + 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, x - 4, y + h - 8, w + 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, x - 4, y - 2, w + 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, x - 4, y + h, w + 8, false, t));
         if (maxScroll() > 0) {
             float track = Math.max(14, h * (float) h / (visible.size() * ROW)), offset = (h - track) * shownScroll / maxScroll();
             // The scrollbar rests faint and brightens while the list is hovered or scrolling.

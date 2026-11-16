@@ -53,7 +53,7 @@ import net.minecraft.client.input.MouseButtonEvent;
  * Minecraft's GUI coordinates: {@code logical = raw / renderScale}.
  */
 public final class ArgusHudEditorScreen extends HudEditorScreen {
-    private static final float BAR_Y = 7, BAR_H = 28, BTN_H = 21, PANEL_W = 182, PANEL_HEAD = 30, ROW_H = 30, ROW_GAP = 3, MIN_Y = 6;
+    private static final float BAR_TOP = 7, BAR_H = 28, BTN_H = 21, PANEL_W = 182, PANEL_HEAD = 30, ROW_H = 30, ROW_GAP = 3, MIN_Y = 6;
     private static final int GRID = ModulesScreen.GRID;
     /** Saved like a Modules window; {@code collapsed} records whether the panel is hidden. */
     private static final String PANEL_KEY = "HUD Elements";
@@ -341,15 +341,17 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             if (side == Side.LEFT || side == Side.RIGHT) UiDraw.rect(g, lx - .5f, 0, 1, lh(), edge);
             else UiDraw.rect(g, 0, ly - .5f, lw(), 1, edge);
             if (!focus) continue;
-            String label = sideName(side) + " safe zone: " + HudSafeZones.get(side);
-            float pw = UiDraw.width(label, UiDraw.SMALL) + 14, ph = 14;
+            // Name in text colour, the value as a tabular number in the accent, on a tag pinned to the zone's edge.
+            String label = sideName(side) + " safe zone", value = Integer.toString(HudSafeZones.get(side));
+            float pw = UiDraw.width(label, UiDraw.SMALL) + UiDraw.numberWidth(value, UiDraw.SMALL) + 19, ph = 14;
             float px = side == Side.LEFT ? lx + 6 : side == Side.RIGHT ? lx - pw - 6 : (lw() - pw) / 2;
             float py = side == Side.TOP ? ly + 6 : side == Side.BOTTOM ? ly - ph - 6 : (lh() - ph) / 2;
             float before = UiRender.opacity;
             UiRender.opacity = before * a;
-            UiDraw.rounded(g, px, py, pw, ph, ph / 2, UiDraw.alpha(t.sunk(), .92f));
-            UiDraw.outline(g, px, py, pw, ph, ph / 2, .6f, UiDraw.alpha(t.on(), .6f));
-            UiDraw.text(g, label, px + 7, py + ph / 2, UiDraw.SMALL, t.text());
+            UiDraw.box(g, px, py, pw, ph, UiSpace.CHAMFER_SMALL, t.sunk());
+            UiDraw.frame(g, px, py, pw, ph, UiSpace.CHAMFER_SMALL, UiDraw.alpha(t.on(), .8f));
+            UiDraw.text(g, label, px + 7, py + ph / 2, UiDraw.SMALL, t.textDim());
+            UiDraw.numberRight(g, value, px + pw - 7, py + ph / 2, UiDraw.SMALL, t.on());
             UiRender.opacity = before;
         }
     }
@@ -428,6 +430,25 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
     }
 
     /** A pill like the navigation bar: title, live count, then the editor's buttons. */
+    /** Toolbar top; it steps down past HUD elements sitting under it (a watermark, say) instead of covering them. */
+    private float barY = BAR_TOP;
+
+    private float clearBarY() {
+        float y = BAR_TOP;
+        for (int pass = 0; pass < 4; pass++) {
+            boolean moved = false;
+            for (HudWidgetRenderer widget : widgets()) {
+                if (!widget.isEnabled() || widget == dragged || picked.contains(widget)) continue;
+                float[] b = bounds(widget);
+                boolean overlaps = b[0] < barX + barW + 4 && b[0] + b[2] > barX - 4 && b[1] < y + BAR_H + 4 && b[1] + b[3] > y - 4;
+                if (overlaps && b[1] + b[3] + 6 > y) { y = b[1] + b[3] + 6; moved = true; }
+            }
+            if (!moved) break;
+        }
+        // Past a third of the screen the cure is worse than the overlap: stay at the top.
+        return y > lh() / 3f ? BAR_TOP : y;
+    }
+
     private void toolbar(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         String title = "HUD editor";
         int on = 0, total = 0;
@@ -437,18 +458,19 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         for (int i = 0; i < BUTTONS.length; i++) { buttonW[i] = Math.max(34, UiDraw.width(BUTTONS[i]) + 30 + (i == B_HUD ? 20 : 0)); buttons += buttonW[i]; }
         barW = 10 + titleW + countW + buttons + 4;
         barX = (lw() - barW) / 2;
+        if (dragged == null && edgeDrag == null) barY = UiAnim.approach(barY, clearBarY(), 16);
         float prior = UiRender.opacity;
         UiRender.opacity = prior * (busy() ? .35f : 1);
-        UiDraw.panel(g, barX, BAR_Y, barW, BAR_H, t);
-        float x = barX + 12, cy = BAR_Y + BAR_H / 2;
+        UiDraw.panel(g, barX, barY, barW, BAR_H, t);
+        float x = barX + 12, cy = barY + BAR_H / 2;
         UiDraw.icon(g, "hud", x, cy - 4.5f, 9, t.on());
         UiDraw.bold(g, title, x + 14, cy, UiDraw.TEXT, t.text());
         x = barX + 10 + titleW;
-        UiDraw.rect(g, x - 6, BAR_Y + 8, .6f, BAR_H - 16, UiDraw.alpha(t.line(), .7f));
+        UiDraw.rect(g, x - 6, barY + 8, .6f, BAR_H - 16, UiDraw.alpha(t.line(), .7f));
         UiDraw.text(g, count, x, cy, UiDraw.SMALL, t.textDim());
         x += countW;
         for (int i = 0; i < BUTTONS.length; i++) {
-            float by = BAR_Y + (BAR_H - BTN_H) / 2;
+            float by = barY + (BAR_H - BTN_H) / 2;
             buttonX[i] = x;
             boolean hover = !busy() && UiDraw.over(mx, my, x, by, buttonW[i], BTN_H);
             boolean hudOn = hud().isToggled();
@@ -547,8 +569,8 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                     row(g, shown.get(i), x + 8, ry, PANEL_W - 16, mx, my, t);
                 }
             } finally { g.disableScissor(); }
-            if (scroll > .5f) UiDraw.gradient(g, x + 1, listTop, PANEL_W - 2, 10, 0, t.bg(), UiDraw.alpha(t.bg(), 0));
-            if (scroll < max - .5f) UiDraw.gradient(g, x + 1, listBottom - 10, PANEL_W - 2, 10, 0, UiDraw.alpha(t.bg(), 0), t.bg());
+            if (scroll > .5f) UiDraw.scrollEdge(g, x + 1, listTop, PANEL_W - 2, true, t);
+            if (scroll < max - .5f) UiDraw.scrollEdge(g, x + 1, listBottom, PANEL_W - 2, false, t);
             if (max > 0) {
                 float track = listBottom - listTop, thumb = Math.max(16, track * track / content);
                 UiDraw.rounded(g, x + PANEL_W - 5, listTop + (track - thumb) * (scroll / max), 2, thumb, 1, UiDraw.alpha(t.line(), .8f));
@@ -940,7 +962,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
 
     // ---- input --------------------------------------------------------------------------------
 
-    private boolean overToolbar(double x, double y) { return UiDraw.over(x, y, barX, BAR_Y, barW, BAR_H); }
+    private boolean overToolbar(double x, double y) { return UiDraw.over(x, y, barX, barY, barW, BAR_H); }
     private boolean overPanel(double x, double y) { return !panelHidden && panelVisible > .5f && UiDraw.over(x, y, panelShownX, panelShownY, PANEL_W, panelHeight()); }
     private boolean overUi(double x, double y) { return !busy() && (overToolbar(x, y) || overPanel(x, y)); }
 
@@ -1034,7 +1056,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         if (overToolbar(mx, my)) {
             searchFocused = false;
             if (button != 0) return;
-            for (int i = 0; i < BUTTONS.length; i++) if (UiDraw.over(mx, my, buttonX[i], BAR_Y, buttonW[i], BAR_H)) {
+            for (int i = 0; i < BUTTONS.length; i++) if (UiDraw.over(mx, my, buttonX[i], barY, buttonW[i], BAR_H)) {
                 switch (i) {
                     case B_HUD -> hud().toggle();
                     case B_ELEMENTS -> setPanelHidden(!panelHidden);

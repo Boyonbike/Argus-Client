@@ -283,8 +283,9 @@ final class SettingsCards {
             String title = s != null ? s.title() : card.title();
             String subtitle;
             if (s != null) {
-                int count = open ? s.list.rowCount() : s.size, changed = changed(sections.indexOf(s));
-                subtitle = count + (count == 1 ? " setting" : " settings") + (changed > 0 ? ", " + changed + " changed" : "");
+                // Only a change from default is worth a line; the count of rows is visible by looking.
+                int changed = changed(sections.indexOf(s));
+                subtitle = changed > 0 ? changed + " changed" : null;
             } else subtitle = card.subtitle();
             String icon = s != null ? icon(sections.indexOf(s)) : card.icon();
             // Cards rise into place one after another when the page opens.

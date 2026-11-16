@@ -170,8 +170,8 @@ final class ConfigImportScreen extends UiScreen {
             UiDraw.center(g, busy ? "This only reads the file." : "Choose a source above, then press Preview.", left, cy + 16, panelWidth, UiSpace.CAPTION, t.textDim());
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, listTop, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, listTop + listHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, left + 4, listTop, panelWidth - 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, left + 4, listTop + listHeight, panelWidth - 8, false, t));
         // Footer: status on the left, actions on the right.
         float fy = top + panelHeight - 21, room = panelWidth - 28 - 180;
         String shown = UiDraw.fit(message, room, UiDraw.SMALL);

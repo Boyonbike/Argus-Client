@@ -137,9 +137,11 @@ final class ModulePage {
         float on = UiAnim.smooth(key + "on", module.isToggled() ? 1 : 0, 14);
         // No icon badge here: icons belong to the sidebar and top bar only. The category is plain text.
         float textX = x, right = x + w;
-        String name = UiDraw.fit(GuiState.title(module.getName()), w - 170, UiSpace.ROW_TITLE);
-        UiDraw.text(g, name, textX, y + 8, UiSpace.ROW_TITLE, t.text());
-        float titleEnd = textX + UiDraw.width(name, UiSpace.ROW_TITLE);
+        // The module name is the page's title, so it takes the pixel display face like every other page title.
+        String name = GuiState.title(module.getName());
+        while (name.length() > 4 && UiDraw.titleWidth(g, name) > w - 170) name = name.substring(0, name.length() - 2) + "…";
+        UiDraw.title(g, name, textX, y + 8, t.text());
+        float titleEnd = textX + UiDraw.titleWidth(g, name);
         String category = GuiState.title(module.getCategory().getName());
         float tagW = UiDraw.width(category, UiSpace.CAPTION) + 8;
         UiDraw.text(g, category, titleEnd + 8, y + 8.5f, UiSpace.CAPTION, t.textDim());
@@ -305,8 +307,8 @@ final class ModulePage {
         if (cards.isEmpty()) empty(g, cx, top, cw, t);
         else cards.render(g, mx, my, delta, t, cx, top - shownScroll, cw, top, bottom);
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, cx - 3, top, cw + 6, 12, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, cx - 3, bottom - 12, cw + 6, 12, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, cx - 3, top, cw + 6, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.scrollEdge(g, cx - 3, bottom, cw + 6, false, t));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownScroll / Math.max(1, total - view);
             float shown = UiAnim.smooth(key + "bar", UiDraw.over(mx, my, cx, top, cw + 8, view) ? 1 : .5f, 10);
@@ -330,7 +332,7 @@ final class ModulePage {
         else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); kind = 2; }
         else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; kind = 1; }
         else if (fresh) { text = notice; kind = noticeError ? 1 : 2; }
-        else { text = "Hover a setting for details, or click a card's title to fold it"; kind = 0; }
+        else { text = ""; kind = 0; }
         // Each change of message crossfades, including the notice ending and the hint coming back.
         float fy = y + h - 9;
         UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.isLegend(text) ? text : UiDraw.fit(text, w), kind), line -> {

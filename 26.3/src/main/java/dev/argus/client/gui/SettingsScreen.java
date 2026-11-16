@@ -263,10 +263,8 @@ final class SettingsScreen extends UiScreen {
     private void discord(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2;
-        UiDraw.icon(g, icon("discord"), x, top + 13.5f, 9, t.textDim());
-        UiDraw.title(g, "Discord", x + 13, top + 18, t.text());
-        UiDraw.text(g, "Rich Presence and the clan's IGN sync, each with its own switch", x, top + 31, UiDraw.SMALL, t.textDim());
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
+        UiDraw.title(g, "Discord", x, top + 18, t.text());
+        UiDraw.rect(g, x, top + 32, w, 1, UiDraw.alpha(t.line(), .6f));
         List<Float> heights = new ArrayList<>();
         float total = 0;
         for (SettingsList card : appearanceLists) { float h = CARD_HEAD + card.contentHeight() + 6f; heights.add(h); total += h + CARD_GAP; }
@@ -281,14 +279,14 @@ final class SettingsScreen extends UiScreen {
             if (card.module() instanceof DiscordSyncModule sync) {
                 card(g, x, y, w, h, "people", "IGN Sync", syncStatus(sync), sync, 70 + syncButtonWidth(sync) + 6, mx, my, t);
                 syncButton(g, sync, x + w - PAD - 74, y + 6, mx, my, t);
-            } else card(g, x, y, w, h, icon("discord"), "Rich Presence", "Show Argus Client as your Discord activity", card.module(), mx, my, t);
+            } else card(g, x, y, w, h, icon("discord"), "Rich Presence", null, card.module(), mx, my, t);
             card.embed(ix - 4, y + CARD_HEAD, iw + 8, pageTop(), pageBottom());
             card.render(g, mx, my, delta, t);
             y += h + CARD_GAP;
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageTop(), w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageBottom(), w + 8, false, t));
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
         if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.danger());
@@ -442,13 +440,11 @@ final class SettingsScreen extends UiScreen {
         var p = GuiState.preferences();
         boolean light = p.mode == GuiPreferences.Mode.LIGHT;
         float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2, half = (iw - 16) / 2;
-        UiDraw.icon(g, "palette", x, top + 13.5f, 9, t.textDim());
-        UiDraw.title(g, APPEARANCE, x + 13, top + 18, t.text());
-        UiDraw.text(g, "Theme, top bar, window placement, and the menu, colour and font options", x, top + 31, UiDraw.SMALL, t.textDim());
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
+        UiDraw.title(g, APPEARANCE, x, top + 18, t.text());
+        UiDraw.rect(g, x, top + 32, w, 1, UiDraw.alpha(t.line(), .6f));
 
         // Card heights, so the page knows how far it can scroll.
-        float themeH = CARD_HEAD + 74, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68, trialsH = CARD_HEAD + 46;
+        float themeH = CARD_HEAD + 96, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68, trialsH = CARD_HEAD + 46;
         List<Float> listHeights = new ArrayList<>();
         for (SettingsList card : appearanceLists) listHeights.add(CARD_HEAD + card.contentHeight() + 6f);
         float total = themeH + barH + windowsH + trialsH + CARD_GAP * 4;
@@ -470,7 +466,7 @@ final class SettingsScreen extends UiScreen {
         float y = pageTop() - shownPageScroll;
 
         // Theme: mode, scale and accent.
-        card(g, x, y, w, themeH, "palette", "Theme", "Dark or light, accent colour, how large the menu is drawn and its motion", null, mx, my, t);
+        card(g, x, y, w, themeH, "palette", "Theme", null, null, mx, my, t);
         float row = y + CARD_HEAD + 4;
         UiDraw.text(g, "Mode", ix, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.mode", new String[]{"Dark", "Light"}, light ? 1 : 0, ix + 34, row, half - 34, mx, my, t,
@@ -494,7 +490,7 @@ final class SettingsScreen extends UiScreen {
             boolean chosen = p.accent == accent, hover = UiDraw.over(mx, my, ix + 34 + i * cell, row - 2, cell, 22);
             float hv = UiAnim.smooth("app.acc.h" + i, hover ? 1 : 0, 18), ring = UiAnim.smooth("app.acc." + i, chosen ? 1 : 0, 14);
             int colour = accentColour(accent, light);
-            if (ring > 0) UiDraw.outline(g, cx - 9.5f, cy - 9.5f, 19, 19, 9.5f, 1.3f, UiDraw.alpha(colour, ring));
+            if (ring > 0) UiDraw.frame(g, cx - 9.5f, cy - 9.5f, 19, 19, 4, UiDraw.alpha(colour, ring)); // stepped like the swatch
             UiDraw.circle(g, cx, cy, 6.5f + hv * .8f, colour);
             if (ring > .02f) UiDraw.icon(g, "check", cx - 4, cy - 4, 8, UiDraw.alpha(t.deep(), ring));
             if (hover) tooltip("app.acc." + i, GuiState.title(accent.name().toLowerCase(Locale.ROOT)));
@@ -516,10 +512,14 @@ final class SettingsScreen extends UiScreen {
         UiRender.opacity = speedBefore;
         if (overSpeed) tooltip("app.speed", null, "How fast menu motion plays, where 1x is normal and higher is snappier");
         if (p.animations) hits.add(new Hit(speedTrackX - 4, row + 1, speedTrackW + 8, 16, () -> startSlider("speed", speedTrackX, speedTrackW)));
+        row += 22;
+        toggleRow(g, "HUD uses accent", "HUD text and highlights take the accent colour and follow Light and Dark. Turn off to pick HUD colours yourself",
+                p.hudFollowsAccent, "app.hudaccent", ix, row, half, mx, my, t,
+                () -> { p.hudFollowsAccent = !p.hudFollowsAccent; GuiState.save(); GuiState.syncHudColours(); });
         y += themeH + CARD_GAP;
 
         // Top bar: which tabs sit between the face and the settings circle, and their style.
-        card(g, x, y, w, barH, "modules", "Top bar", "Click a tab to add or remove it, or drag tabs in the bar to reorder them", null, mx, my, t);
+        card(g, x, y, w, barH, "modules", "Top bar", null, null, mx, my, t);
         row = y + CARD_HEAD + 4;
         UiDraw.text(g, "Tab style", ix, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.tabstyle", new String[]{"Names", "Icons"}, p.tabStyle == GuiPreferences.TabStyle.ICONS ? 1 : 0, ix + 50, row, 110, mx, my, t,
@@ -561,7 +561,7 @@ final class SettingsScreen extends UiScreen {
         y += barH + CARD_GAP;
 
         // Windows: snapping, grid, auto gap and reset.
-        card(g, x, y, w, windowsH, "misc", "Windows", "How module windows and HUD elements snap and space out while you drag them", null, mx, my, t);
+        card(g, x, y, w, windowsH, "misc", "Windows", null, null, mx, my, t);
         row = y + CARD_HEAD + 2;
         toggleRow(g, "Snap to grid", "Windows land on a fine grid when you let go", p.snap, "app.snap", ix, row, half, mx, my, t,
                 () -> { p.snap = !p.snap; GuiState.save(); });
@@ -598,19 +598,20 @@ final class SettingsScreen extends UiScreen {
         hits.add(new Hit(rx, row + 1, rw, 16, () -> { p.windows.clear(); GuiState.save(); minecraft.gui.setScreen(new ModulesScreen(rootParent())); }));
         y += windowsH + CARD_GAP;
 
-        // Style trials: A/B switches for parts of the GUI rework that are still being judged in game.
-        card(g, x, y, w, trialsH, "misc", "Style trials", "Try-outs for the menu's look. Each switches back the same way", null, mx, my, t);
+        // Surface: how window and button faces are drawn. Page titles are always in the pixel face.
+        card(g, x, y, w, trialsH, "misc", "Surface", null, null, mx, my, t);
         row = y + CARD_HEAD + 2;
-        toggleRow(g, "Pixel titles", "Page titles in Minecraft's own font", p.pixelTitles, "app.pixtitles", ix, row, half, mx, my, t,
-                () -> { p.pixelTitles = !p.pixelTitles; GuiState.save(); });
+        UiDraw.text(g, "Corners", ix, row + 9, UiDraw.SMALL, t.textDim());
+        String[] cornerLabels = p.smoothCorners ? new String[]{"Small", "Medium", "Large"} : new String[]{"1 step", "2 steps", "3 steps"};
+        segmented(g, "app.corner", cornerLabels, p.corner - GuiPreferences.MIN_CORNER, ix + 44, row, half - 44, mx, my, t,
+                i -> { p.corner = i + GuiPreferences.MIN_CORNER; GuiState.save(); });
         toggleRow(g, "Grain", "A faint pixel grain on window backgrounds, dark mode only", p.grain, "app.grain", ix + half + 16, row, half, mx, my, t,
                 () -> { p.grain = !p.grain; GuiState.save(); });
         row += 22;
-        UiDraw.text(g, "Corners", ix, row + 9, UiDraw.SMALL, t.textDim());
-        segmented(g, "app.corner", new String[]{"1 step", "2 steps", "3 steps"}, p.corner - GuiPreferences.MIN_CORNER, ix + 44, row, half - 44, mx, my, t,
-                i -> { p.corner = i + GuiPreferences.MIN_CORNER; GuiState.save(); });
-        toggleRow(g, "Bevelled buttons", "Light top and dark bottom edges, like vanilla buttons", p.bevels, "app.bevels", ix + half + 16, row, half, mx, my, t,
+        toggleRow(g, "Bevelled buttons", "Light top and dark bottom edges, like vanilla buttons", p.bevels, "app.bevels", ix, row, half, mx, my, t,
                 () -> { p.bevels = !p.bevels; GuiState.save(); });
+        toggleRow(g, "Smooth corners", "Round, anti-aliased corners instead of stepped pixel ones. Corners above sets how round", p.smoothCorners, "app.smooth", ix + half + 16, row, half, mx, my, t,
+                () -> { p.smoothCorners = !p.smoothCorners; GuiState.save(); });
         y += trialsH + CARD_GAP;
 
         // The folded-in modules, each as a card holding its own settings.
@@ -619,9 +620,7 @@ final class SettingsScreen extends UiScreen {
             Module module = card.module();
             boolean ui = module instanceof UIModule;
             String title = ui ? "Menu" : module instanceof ColorsModule ? "Colours" : "Fonts";
-            String subtitle = ui ? "Options for this menu and the classic click GUI"
-                    : module instanceof ColorsModule ? "The client's colour scheme for HUD, ESP and other visuals"
-                    : "The client's custom font renderer";
+            String subtitle = null;
             float h = listHeights.get(i);
             card(g, x, y, w, h, icon(module.getName()), title, subtitle, ui ? null : module, ui ? 130 : 70, mx, my, t);
             if (ui) menuKeyChip(g, x + w - PAD, y + 6, mx, my, t);
@@ -631,8 +630,8 @@ final class SettingsScreen extends UiScreen {
         }
         g.disableScissor();
         // Edge fades and a slim scrollbar hint that the page scrolls.
-        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageTop(), w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageBottom(), w + 8, false, t));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownPageScroll / Math.max(1, total - view);
             UiDraw.rounded(g, x + w + 3, pageTop() + offset, 2, track, 1, UiDraw.alpha(t.line(), .8f));

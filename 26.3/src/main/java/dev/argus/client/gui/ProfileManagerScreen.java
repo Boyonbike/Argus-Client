@@ -264,8 +264,8 @@ abstract class ProfileManagerScreen extends UiScreen {
             UiDraw.center(g, UiDraw.fit(e[2], panelWidth - 40, UiDraw.SMALL), left, start + 52, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .7f));
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + view - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start, panelWidth - 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start + view, panelWidth - 8, false, t));
     }
 
     /** Row card background, shared by both lists; {@code highlight} outlines it in the accent. */

@@ -169,6 +169,13 @@ final class UiDraw {
     static void rect(GuiGraphicsExtractor g, float x, float y, float w, float h, int colour) { UiRender.shape(g, x, y, w, h, 0, colour, colour, 0); }
     static void rounded(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int colour) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), colour, 0); }
     static void gradient(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int top, int bottom) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), top, bottom, 0); }
+    /**
+     * Marks a scrolled-off edge of a clipped list: a 1px rule exactly at the clip line, so rows end on a hard
+     * pane edge instead of dissolving mid-line under a fade. {@code top} draws it on the line's lower side.
+     */
+    static void scrollEdge(GuiGraphicsExtractor g, float x, float y, float w, boolean top, UiTheme t) {
+        rect(g, x, top ? y : y - 1, w, 1, t.line());
+    }
     /** Stepped outline; thickness is rounded to whole GUI pixels (at least one). */
     static void outline(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float thickness, int colour) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), colour, Math.max(1, Math.round(thickness))); }
     /**
@@ -176,7 +183,16 @@ final class UiDraw {
      * the soft shadows it used to draw are gone.
      */
     static void shadow(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float blur, int colour) { UiRender.chamfer(g, x + 1, y + 1, w, h, steps(radius, w, h), colour, 0); }
-    static void circle(GuiGraphicsExtractor g, float cx, float cy, float r, int colour) { UiRender.shape(g, cx - r, cy - r, r * 2, r * 2, r, colour, colour, 0); }
+    /**
+     * Pixel disc: a square with a stepped cut deep enough to read as round at GUI scale. Nothing in the menu is
+     * drawn smooth-round any more, so dots, knobs, swatches and hover discs share the stepped corners.
+     */
+    static void circle(GuiGraphicsExtractor g, float cx, float cy, float r, int colour) {
+        if (GuiState.preferences().smoothCorners) { UiRender.shape(g, cx - r, cy - r, r * 2, r * 2, r, colour, colour, 0); return; }
+        // Below 3 units a cut corner reads as a plus sign, so small dots stay plain squares.
+        int steps = r < 3 ? 0 : Math.max(1, Math.round(r * .45f));
+        UiRender.chamfer(g, cx - r, cy - r, r * 2, r * 2, Math.min(steps, (int) (r * 2 / 3)), colour, 0);
+    }
 
     static void icon(GuiGraphicsExtractor g, String name, float x, float y, float size, int colour) { UiIcons.draw(g, name, x, y, size, colour); }
 
@@ -202,15 +218,15 @@ final class UiDraw {
         return skin;
     }
 
-    /** The signed-in player's face (with hat layer) clipped to a circle. */
+    /** The signed-in player's face (with hat layer), square like the skin it comes from. */
     static void face(GuiGraphicsExtractor g, float x, float y, float size) { face(g, skin(), x, y, size, 1); }
 
-    /** A player's face (with hat layer) clipped to a circle, faded by {@code opacity}. */
+    /** A player's face (with hat layer), faded by {@code opacity}. */
     static void face(GuiGraphicsExtractor g, java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> lookup,
                      float x, float y, float size, float opacity) {
         if (opacity <= 0 || size <= 0) return;
         var texture = net.minecraft.client.Minecraft.getInstance().getTextureManager().getTexture(lookup.get().body().texturePath());
-        float r = size / 2, s = 1 / 64f;
+        float r = 0, s = 1 / 64f;
         int colour = alpha(0xffffffff, opacity);
         UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 8 * s, 8 * s, 16 * s, 16 * s, colour);
         UiRender.image(g, texture.getTextureView(), texture.getSampler(), x, y, size, size, r, 40 * s, 8 * s, 48 * s, 16 * s, colour);
@@ -220,28 +236,31 @@ final class UiDraw {
     static final float CARD_HEAD = 30, CARD_PAD = 10;
 
     /**
-     * Settings group. No box, badge or icon: the group is a header (uppercase caption) and, while copy is
-     * still being trimmed, an optional one-line subtitle. Groups are separated by space, not borders.
+     * Settings group. No box, badge or icon: a heading, a 1px rule running from its end to the right edge, and
+     * an optional status line (live state such as "Syncing…", never a description of what is below).
      * {@code icon} is ignored and goes once every caller stops passing it.
      */
     static void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, float reserveRight, UiTheme t) {
         float available = w - CARD_PAD * 2 - reserveRight;
         boolean sub = subtitle != null && !subtitle.isBlank();
-        header(g, fit(title, available, UiSpace.CAPTION), x + CARD_PAD, y + (sub ? 10 : 15), t);
+        String shown = fit(title, available, UiSpace.BODY);
+        float cy = y + (sub ? 10 : 15);
+        header(g, shown, x + CARD_PAD, cy, t);
+        float ruleX = x + CARD_PAD + width(shown, UiSpace.BODY) + 6, ruleEnd = x + w - CARD_PAD - reserveRight;
+        if (ruleEnd - ruleX > 8) rect(g, ruleX, Math.round(cy), ruleEnd - ruleX, 1, alpha(t.line(), .7f));
         if (sub) text(g, fit(subtitle, available, UiSpace.CAPTION), x + CARD_PAD, y + 20, UiSpace.CAPTION, t.textDim());
     }
 
-    /** Group header: uppercase caption in the secondary text colour, the same on every screen. */
+    /** Group header: sentence case, bold, primary text colour. The same on every screen. */
     static void header(GuiGraphicsExtractor g, String title, float x, float centreY, UiTheme t) {
-        text(g, title.toUpperCase(java.util.Locale.ROOT), x, centreY, UiSpace.CAPTION, t.textDim());
+        bold(g, title, x, centreY, UiSpace.BODY, t.text());
     }
 
     /**
-     * Page title. Normally Lexend at the page-title size; with the pixel-title trial on, Minecraft's own font at a
-     * whole number of framebuffer pixels per font pixel, with vanilla's shadow, so it stays crisp.
+     * Page title, in Minecraft's own font at a whole number of framebuffer pixels per font pixel, with vanilla's
+     * shadow, so it stays crisp. This is the menu's display voice: Lexend is for reading, the pixel face for naming.
      */
     static void title(GuiGraphicsExtractor g, String text, float x, float centreY, int colour) {
-        if (!GuiState.preferences().pixelTitles) { text(g, text, x, centreY, UiSpace.PAGE_TITLE, colour); return; }
         var font = net.minecraft.client.Minecraft.getInstance().font;
         float k = UiRender.pixelsPerUnit(g);
         // Vanilla capitals are 7 font pixels tall; pick the whole-pixel scale closest to the page-title cap height.
@@ -250,7 +269,8 @@ final class UiDraw {
         g.pose().pushMatrix();
         g.pose().translate(x, centreY - 3.5f * s);
         g.pose().scale(s, s);
-        g.text(font, Component.literal(text), 0, 0, UiRender.fade(colour), true);
+        // Vanilla's shadow reads as depth on dark glass but as a smudge under dark text on the light theme.
+        g.text(font, Component.literal(text), 0, 0, UiRender.fade(colour), GuiState.preferences().mode == GuiPreferences.Mode.DARK);
         g.pose().popMatrix();
     }
 
@@ -270,7 +290,6 @@ final class UiDraw {
 
     /** Width of {@link #title} for the current title style. */
     static float titleWidth(GuiGraphicsExtractor g, String text) {
-        if (!GuiState.preferences().pixelTitles) return width(text, UiSpace.PAGE_TITLE);
         float k = UiRender.pixelsPerUnit(g);
         int perPixel = Math.max(1, Math.round(UiSpace.PAGE_TITLE * .72f / 7f * k));
         return net.minecraft.client.Minecraft.getInstance().font.width(text) * perPixel / k;
@@ -313,12 +332,17 @@ final class UiDraw {
     // ---- controls ---------------------------------------------------------------------------
     // Controls carry state through colour alone: no glows, halos or shadows.
 
-    /** Switch; {@code on} animates 0…1. Stepped track, round knob. */
+    /**
+     * Switch; {@code on} animates 0…1. A sunken stepped track with an edge, so it reads on the window body and
+     * inside a filled chip alike, and a square knob that slides on whole pixels. The one on/off control.
+     */
     static void toggle(GuiGraphicsExtractor g, float x, float y, float on, boolean hover, UiTheme theme) {
-        float w = 18, h = 10;
-        box(g, x, y, w, h, UiSpace.CHAMFER_SMALL, mix(hover ? theme.line() : theme.fill(), theme.on(), on));
-        float knob = h - 4, travel = w - h;
-        circle(g, x + h / 2 + travel * on, y + h / 2, knob / 2, mix(theme.textDim(), theme.deep(), on));
+        float w = 18, h = 10, knob = 6, travel = w - knob - 4;
+        box(g, x, y, w, h, UiSpace.CHAMFER_SMALL, mix(theme.deep(), theme.on(), on));
+        frame(g, x, y, w, h, UiSpace.CHAMFER_SMALL, mix(hover ? theme.textDim() : theme.line(), theme.on(), on));
+        int knobColour = mix(hover ? theme.text() : theme.textDim(), theme.deep(), on);
+        if (GuiState.preferences().smoothCorners) circle(g, x + 2 + Math.round(travel * on) + knob / 2f, y + 2 + knob / 2f, knob / 2f, knobColour);
+        else rect(g, x + 2 + Math.round(travel * on), y + 2, knob, knob, knobColour);
     }
 
     /** Checkbox with an animated tick. */
@@ -333,8 +357,9 @@ final class UiDraw {
         float track = 2, cy = y;
         rect(g, x, cy - track / 2, w, track, theme.fill());
         rect(g, x, cy - track / 2, Math.max(track, w * value), track, theme.on());
-        float r = 3.5f + hover * .5f;
-        circle(g, x + w * value, cy, r, theme.on());
-        circle(g, x + w * value, cy, r - 1.5f, theme.deep());
+        // Square thumb with a sunken core; grows by one pixel on hover rather than easing.
+        float r = hover > .5f ? 4 : 3.5f, tx = x + w * value;
+        box(g, tx - r, cy - r, r * 2, r * 2, UiSpace.CHAMFER_SMALL, theme.on());
+        rect(g, tx - r + 2, cy - r + 2, r * 2 - 4, r * 2 - 4, theme.deep());
     }
 }

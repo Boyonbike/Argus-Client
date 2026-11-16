@@ -55,7 +55,8 @@ final class PresetsPanel {
     private void status(String text, boolean error) { status = text; statusError = error; statusAt = System.nanoTime(); }
 
     private int listTop() { return y + 194; }
-    private int listHeight() { return Math.max(30, h - 194 - 30); }
+    /** The list fills what's left above the footer line; on a short window it can be empty, never past the edge. */
+    private int listHeight() { return Math.max(0, h - 194 - 18); }
 
     // ---- actions ----------------------------------------------------------------------------
 
@@ -149,24 +150,27 @@ final class PresetsPanel {
 
     void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
-        UiDraw.icon(g, "star", x, y + 13.5f, 9, t.textDim());
-        UiDraw.title(g, "Presets", x + 13, y + 18, t.text());
+        UiDraw.title(g, "Presets", x, y + 18, t.text());
         float importWidth = pill(g, "Import config", x + w, y + 14, mx, my, t.on(), true, this::importConfig);
         if (recoveryName != null && Presets.exists(PresetCategory.MODULES, recoveryName))
             pill(g, "Restore backup", x + w - importWidth - 5, y + 14, mx, my, t.ok(), false, () -> {
                 PresetCategory previous = category; category = PresetCategory.MODULES;
                 load(recoveryName); category = previous;
             });
-        UiDraw.text(g, "Save configs and bind them to servers or worlds to load them automatically", x, y + 31, UiDraw.SMALL, t.textDim());
-        UiDraw.rect(g, x, y + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
-        UiDraw.card(g, x - 6, y + 46, w + 12, 112, "star", "Save current config", "Pick what the preset covers, name it and save", 0, t);
+        UiDraw.rect(g, x, y + 32, w, 1, UiDraw.alpha(t.line(), .6f));
+        UiDraw.card(g, x - 6, y + 46, w + 12, 112, "star", "Save current config", null, 0, t);
+        int saved = Presets.names(category).size();
         UiDraw.card(g, x - 6, y + 164, w + 12, listHeight() + 34, "misc", "Saved presets",
-                Presets.names(category).size() + " saved", 0, t);
-        // Category chips with a sliding highlight.
+                saved > 0 ? saved + " saved" : listHeight() < 16 ? "None yet" : null, 0, t);
+        // Category chips with a sliding highlight. Padding shrinks so the row always fits the panel.
+        float labels = 0;
+        int chipCount = Presets.categories().size();
+        for (PresetCategory c : Presets.categories()) labels += UiDraw.width(label(c), UiDraw.SMALL);
+        float chipPad = Math.clamp((w - labels - 4 * (chipCount - 1)) / chipCount, 4, 16);
         float cx = x;
         for (PresetCategory c : Presets.categories()) {
             String label = label(c);
-            float cw = UiDraw.width(label, UiDraw.SMALL) + 16;
+            float cw = UiDraw.width(label, UiDraw.SMALL) + chipPad;
             boolean active = c == category, hover = UiDraw.over(mx, my, cx, y + 78, cw, 15);
             if (active) {
                 if (Float.isNaN(chipIndicator)) { chipIndicator = cx; chipIndicatorW = cw; }
@@ -180,7 +184,7 @@ final class PresetsPanel {
         cx = x;
         for (PresetCategory c : Presets.categories()) {
             String label = label(c);
-            float cw = UiDraw.width(label, UiDraw.SMALL) + 16;
+            float cw = UiDraw.width(label, UiDraw.SMALL) + chipPad;
             UiDraw.center(g, label, cx, y + 85.5f, cw, UiDraw.SMALL, c == category ? t.on() : t.textDim());
             PresetCategory chosen = c;
             hits.add(new Hit(cx, y + 78, cw, 15, () -> { if (category != chosen) { category = chosen; select(null); scroll = 0; } }));
@@ -287,17 +291,19 @@ final class PresetsPanel {
             flowY += rowH;
         }
         if (selected != null) addressInput.visible = addressShown;
-        if (names.isEmpty()) {
-            UiDraw.center(g, "No " + (category == PresetCategory.ALL ? "" : (category == PresetCategory.HUD ? "HUD" : category.getName().toLowerCase(Locale.ROOT)) + " ") + "presets yet", x, top + 20, w, t.textDim());
-            UiDraw.center(g, "Name your current config above and press Save current.", x, top + 32, w, UiSpace.CAPTION, t.textDim());
+        if (names.isEmpty() && view >= 16) {
+            // Centred in whatever room the list has; the second line only when it fits.
+            boolean both = view >= 40;
+            float mid = top + Math.min(26, view / 2f) - (both ? 6 : 0);
+            UiDraw.center(g, "No " + (category == PresetCategory.ALL ? "" : (category == PresetCategory.HUD ? "HUD" : category.getName().toLowerCase(Locale.ROOT)) + " ") + "presets yet", x, mid, w, t.textDim());
+            if (both) UiDraw.center(g, "Name your current config above and press Save current", x, mid + 12, w, UiSpace.CAPTION, t.textDim());
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, top, w + 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, x - 4, top + view - 8, w + 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, x - 4, top, w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.scrollEdge(g, x - 4, top + view, w + 8, false, t));
         // Footer.
         boolean showStatus = !status.isEmpty() && (System.nanoTime() - statusAt) / 1e9f < 4.25f;
-        var line = showStatus ? new UiMotion.Line(UiDraw.fit(status, w), statusError ? 1 : 2)
-                : new UiMotion.Line(UiDraw.fit("Click a name to bind it to servers or worlds (each loads one preset per type)", w), 0);
+        var line = showStatus ? new UiMotion.Line(UiDraw.fit(status, w), statusError ? 1 : 2) : new UiMotion.Line("", 0);
         float fy = y + h - 11;
         UiMotion.crossfade(g, "presets.footer", line, l -> UiDraw.text(g, l.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
     }

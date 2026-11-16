@@ -280,8 +280,8 @@ public abstract class UiScreen extends Screen {
         if (strength <= 0) return;
         float face = centredPx(FACE), gap = Math.round(1.6f * pxPerUnit), size = face + gap * 2, inset = (barPx - size) / 2;
         float rx = lx(g, cellPx + inset), ry = ly(g, barPxTop + inset), rs = size / pxPerUnit;
-        // The face is the one round thing in the bar, so its hover ring stays round, and neutral.
-        UiRender.shape(g, rx, ry, rs, rs, rs / 2, UiDraw.alpha(t.line(), strength), UiDraw.alpha(t.line(), strength), 1);
+        // The face is drawn square like the skin, so its hover ring is a square frame too, and neutral.
+        UiDraw.frame(g, rx, ry, rs, rs, UiSpace.CHAMFER_SMALL, UiDraw.alpha(t.line(), strength));
     }
 
     private void tabs(GuiGraphicsExtractor g, int mx, int my) {
@@ -310,8 +310,10 @@ public abstract class UiScreen extends Screen {
             boolean gearHover = closingAt == 0 && overGear(mx, my);
             float gh = UiAnim.smooth("bar.gear", gearHover ? 1 : 0, 18), ga = UiAnim.smooth("bar.gear.on", settingsActive() ? 1 : 0, 16);
             float gs = facePx / pxPerUnit;
-            UiDraw.box(g, lx(g, gearCellPx + faceInset), ly(g, barPxTop + faceInset), gs, gs, UiSpace.CHAMFER_SMALL,
-                    UiDraw.mix(t.fill(), t.line(), Math.max(gh, ga) * .7f));
+            // At rest the gear is a bare icon like the tabs beside it; the cell only appears on hover or while open.
+            float cell = Math.max(gh, ga);
+            if (cell > .01f) UiDraw.box(g, lx(g, gearCellPx + faceInset), ly(g, barPxTop + faceInset), gs, gs, UiSpace.CHAMFER_SMALL,
+                    UiDraw.alpha(UiDraw.mix(t.fill(), t.line(), gh * .5f), cell));
             int colour = UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), gh), t.on(), ga);
             float iconPx = centredPx(GEAR), iconInset = (barPx - iconPx) / 2;
             UiDraw.icon(g, "client", lx(g, gearCellPx + iconInset), ly(g, barPxTop + iconInset), iconPx / pxPerUnit, colour);

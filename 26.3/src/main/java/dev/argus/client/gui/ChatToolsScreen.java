@@ -461,11 +461,11 @@ public final class ChatToolsScreen extends UiScreen {
         float x = contentX(), w = contentWidth();
         String title = page == Page.MESSAGES && recipient != null ? recipient : page.label;
         String subtitle = page == Page.MESSAGES && recipient != null ? "Private messages (" + (online(recipient) ? "online" : "offline") + ")"
-            : page == Page.CHAT ? chatSubtitle() : page.subtitle;
-        UiDraw.icon(g, page.icon, x, top + 13.5f, 9, t.textDim());
-        UiDraw.title(g, UiDraw.fit(title, w - 20), x + 13, top + 18, t.text());
-        UiDraw.text(g, UiDraw.fit(subtitle, w), x, top + 31, UiDraw.SMALL, t.textDim());
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
+            : page == Page.CHAT ? chatSubtitle() : null;
+        UiDraw.title(g, UiDraw.fit(title, w - 20), x, top + 18, t.text());
+        // Only live state (who you're messaging, the chat's status) earns a line under the title.
+        if (subtitle != null && !subtitle.isBlank()) UiDraw.text(g, UiDraw.fit(subtitle, w), x, top + 31, UiDraw.SMALL, t.textDim());
+        UiDraw.rect(g, x, top + 40, w, 1, UiDraw.alpha(t.line(), .6f));
     }
 
     /** "Public chat on {server}" when connected to a server from the list; nothing otherwise. */
@@ -487,8 +487,8 @@ public final class ChatToolsScreen extends UiScreen {
         contentHeight = cursor - start + 4;
         g.disableScissor();
         clipTop = -Float.MAX_VALUE; clipBottom = Float.MAX_VALUE;
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, bodyTop(), w + 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
-        UiMotion.faded(UiMotion.edge((contentHeight - view) - shownScroll), () -> UiDraw.gradient(g, x - 4, bodyBottom() - 8, w + 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, x - 4, bodyTop(), w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((contentHeight - view) - shownScroll), () -> UiDraw.scrollEdge(g, x - 4, bodyBottom(), w + 8, false, t));
         if (contentHeight > view) {
             float track = Math.max(16, view * view / contentHeight), offset = (view - track) * shownScroll / Math.max(1, contentHeight - view);
             UiDraw.rounded(g, x + w + 3, bodyTop() + offset, 2, track, 1, UiDraw.alpha(t.line(), .8f));
@@ -1044,7 +1044,7 @@ public final class ChatToolsScreen extends UiScreen {
             return;
         }
         dockScroll = transcript(g, t, lines, x + 2, w - 4, top, bottom, dockScroll, false);
-        UiMotion.faded(UiMotion.edge(dockScroll), () -> UiDraw.gradient(g, x - 3, top, w + 6, 6, 0, UiDraw.alpha(t.sunk(), .8f), UiDraw.alpha(t.sunk(), 0)));
+        UiMotion.faded(UiMotion.edge(dockScroll), () -> UiDraw.scrollEdge(g, x - 3, top, w + 6, true, t));
     }
 
     private void openChatPage() { clearSelection(); chatScroll = 0; select(Page.CHAT); }
