@@ -93,7 +93,7 @@ final class ShulkerIconPickerScreen extends UiScreen {
         UiTheme t = GuiState.theme();
         refilter();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
-        UiDraw.bold(g, multi ? "Add required item" : solid ? "Select solid icon shape" : "Select icon", left + 62, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.title(g, multi ? "Add required item" : solid ? "Select solid icon shape" : "Select icon", left + 62, top + 19, t.text());
         scroll = Math.clamp(scroll, 0, Math.max(0, shown.size() - visibleRows()));
         int listTop = top + 70;
         for (int row = 0; row < visibleRows() && scroll + row < shown.size(); row++) {

@@ -51,6 +51,16 @@ public final class GuiPreferences {
     public int hudGap = 0;
     /** Round every HUD element's size up to whole grid steps, so sizes and spacing line up with the grid. */
     public boolean hudFitGrid = true;
+    // ---- Style trials (Appearance → Style trials). Each is an A/B test of the GUI rework; the defaults are the plain look.
+    /** Page titles drawn in Minecraft's own pixel font at a whole-pixel scale. */
+    public boolean pixelTitles = false;
+    /** A faint per-GUI-pixel grain on window bodies, dark mode only. */
+    public boolean grain = false;
+    /** How many GUI pixels each window corner steps in. */
+    public int corner = 2;
+    public static final int MIN_CORNER = 1, MAX_CORNER = 3;
+    /** Buttons drawn with vanilla's bevel: light top/left edge, dark bottom/right, inverted while pressed. */
+    public boolean bevels = false;
     public static final int MAX_GAP = 24;
     /** The HUD gap moves in whole grid steps. */
     public static final int HUD_GAP_STEP = ModulesScreen.GRID;
@@ -99,6 +109,10 @@ public final class GuiPreferences {
         try { result.gap = Math.clamp(Integer.parseInt(values.getProperty("gap", "0")), 0, MAX_GAP); } catch (IllegalArgumentException ignored) {}
         try { result.hudGap = Math.round(Math.clamp(Integer.parseInt(values.getProperty("hudGap", "0")), 0, MAX_GAP) / (float) HUD_GAP_STEP) * HUD_GAP_STEP; } catch (IllegalArgumentException ignored) {}
         result.hudFitGrid = Boolean.parseBoolean(values.getProperty("hudFitGrid", "true"));
+        result.pixelTitles = Boolean.parseBoolean(values.getProperty("pixelTitles", "false"));
+        result.grain = Boolean.parseBoolean(values.getProperty("grain", "false"));
+        result.bevels = Boolean.parseBoolean(values.getProperty("bevels", "false"));
+        try { result.corner = Math.clamp(Integer.parseInt(values.getProperty("corner", "2")), MIN_CORNER, MAX_CORNER); } catch (IllegalArgumentException ignored) {}
         try { double scale=Double.parseDouble(values.getProperty("uiScale","1")); if(Double.isFinite(scale))result.uiScale=Math.clamp(scale,.65,1.4); } catch(IllegalArgumentException ignored) {}
         if (values.containsKey("barTabs")) {
             result.barTabs.clear();
@@ -141,6 +155,8 @@ public final class GuiPreferences {
         values.setProperty("animations", Boolean.toString(animations));
         values.setProperty("animationSpeed", Double.toString(animationSpeed));
         values.setProperty("savedColours", String.join(",", savedColours.stream().map(c -> String.format("%08X", c)).toList())); values.setProperty("gap", Integer.toString(gap)); values.setProperty("hudGap", Integer.toString(hudGap)); values.setProperty("hudFitGrid", Boolean.toString(hudFitGrid));
+        values.setProperty("pixelTitles", Boolean.toString(pixelTitles)); values.setProperty("grain", Boolean.toString(grain));
+        values.setProperty("bevels", Boolean.toString(bevels)); values.setProperty("corner", Integer.toString(corner));
         for (String module : favourites) values.setProperty("favourite." + module, "true");
         values.setProperty("barTabs", String.join(",", barTabs));
         values.setProperty("tabStyle", tabStyle.name());

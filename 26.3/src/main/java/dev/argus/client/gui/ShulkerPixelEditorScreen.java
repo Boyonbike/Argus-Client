@@ -81,7 +81,7 @@ final class ShulkerPixelEditorScreen extends UiScreen {
     @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme theme = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, height - top - 10, theme);
-        UiDraw.bold(g, "Pixel icon editor", left + 62, top + 17, UiDraw.TITLE, theme.text());
+        UiDraw.title(g, "Pixel icon editor", left + 62, top + 17, theme.text());
         for (int i = 0; i < PALETTE.length; i++) {
             int x = controls + i * 18;
             g.fill(x, gridY - 14, x + 14, gridY - 2, PALETTE[i]);

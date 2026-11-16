@@ -32,9 +32,10 @@ float steppedBox(vec2 point, vec2 halfSize, float cell, float steps) {
 void main() {
     vec2 halfSize = shapeParams.xy;
     if (shapeParams.z < 0.0) {
-        // Chamfer: radius slot carries -(steps | cellPixels*8 << 4) / 8.
+        // Chamfer: radius slot carries -(steps | grain << 4 | cellPixels*8 << 5) / 8.
         int code = int(round(-shapeParams.z * 8.0));
-        float steps = float(code & 15), cell = float(code >> 4) / 8.0;
+        float steps = float(code & 15), cell = float(code >> 5) / 8.0;
+        bool grain = (code & 16) != 0;
         float coverage = steppedBox(localPos, halfSize, cell, steps);
         if (shapeParams.w > 0.0) {
             // Outline: the stepped ring between the shape and the same shape inset by whole cells.
@@ -42,6 +43,12 @@ void main() {
             coverage -= steppedBox(localPos, halfSize - inset * cell, cell, max(steps - inset, 0.0));
         }
         vec4 color = vertexColor;
+        if (grain) {
+            // Fixed hash per GUI pixel (not per framebuffer pixel), ±2% brightness: a pixel-art grain, not film noise.
+            vec2 cellIndex = floor(gl_FragCoord.xy / cell);
+            float n = fract(sin(dot(cellIndex, vec2(12.9898, 78.233))) * 43758.5453);
+            color.rgb *= 1.0 + (n - 0.5) * 0.04;
+        }
         color.a *= coverage;
         if (color.a <= 0.0) {
             discard;

@@ -115,9 +115,15 @@ final class UiRender {
 
     /** As above with a vertical gradient from {@code top} to {@code bottom}. */
     static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int top, int bottom, float mode) {
-        if (steps <= 0) { shape(g, x, y, width, height, 0, top, bottom, Math.max(0, mode)); return; }
+        chamfer(g, x, y, width, height, steps, top, bottom, mode, false);
+    }
+
+    /** As above; {@code grain} adds a faint fixed noise per GUI pixel (the grain style trial). */
+    static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int top, int bottom, float mode, boolean grain) {
+        if (steps <= 0 && !grain) { shape(g, x, y, width, height, 0, top, bottom, Math.max(0, mode)); return; }
         int cell = Math.max(1, Math.round(pixelsPerUnit(g)));
-        emit(g, x, y, width, height, -(Math.min(steps, 15) | (cell * 8) << 4), top, bottom, Math.max(0, mode));
+        // Code layout: bits 0-3 steps, bit 4 grain, bits 5+ cell size in eighths of a pixel.
+        emit(g, x, y, width, height, -(Math.min(steps, 15) | (grain ? 16 : 0) | (cell * 8) << 5), top, bottom, Math.max(0, mode));
     }
 
     private static void emit(GuiGraphicsExtractor g, float x, float y, float width, float height, int radiusCode,

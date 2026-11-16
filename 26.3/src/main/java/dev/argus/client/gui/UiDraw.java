@@ -114,7 +114,7 @@ final class UiDraw {
      */
     static int steps(float radius, float w, float h) {
         if (radius <= 0) return 0;
-        int steps = radius < 2.5f ? 1 : UiSpace.CHAMFER;
+        int steps = radius < 2.5f ? 1 : UiSpace.chamfer();
         // A cut deeper than a third of the short side reads as a blob, not a corner.
         return Math.max(0, Math.min(steps, (int) (Math.min(w, h) / 3)));
     }
@@ -189,6 +189,46 @@ final class UiDraw {
         text(g, title.toUpperCase(java.util.Locale.ROOT), x, centreY, UiSpace.CAPTION, t.textDim());
     }
 
+    /**
+     * Page title. Normally Lexend at the page-title size; with the pixel-title trial on, Minecraft's own font at a
+     * whole number of framebuffer pixels per font pixel, with vanilla's shadow, so it stays crisp.
+     */
+    static void title(GuiGraphicsExtractor g, String text, float x, float centreY, int colour) {
+        if (!GuiState.preferences().pixelTitles) { text(g, text, x, centreY, UiSpace.PAGE_TITLE, colour); return; }
+        var font = net.minecraft.client.Minecraft.getInstance().font;
+        float k = UiRender.pixelsPerUnit(g);
+        // Vanilla capitals are 7 font pixels tall; pick the whole-pixel scale closest to the page-title cap height.
+        int perPixel = Math.max(1, Math.round(UiSpace.PAGE_TITLE * .72f / 7f * k));
+        float s = perPixel / k;
+        g.pose().pushMatrix();
+        g.pose().translate(x, centreY - 3.5f * s);
+        g.pose().scale(s, s);
+        g.text(font, Component.literal(text), 0, 0, UiRender.fade(colour), true);
+        g.pose().popMatrix();
+    }
+
+    /**
+     * Vanilla-style bevelled face (the bevel style trial): a 1px light edge top and left, a dark edge bottom and
+     * right, swapped while {@code pressed}. Corners are left out, which reads as a one-step chamfer.
+     */
+    static void bevel(GuiGraphicsExtractor g, float x, float y, float w, float h, boolean pressed, int fill) {
+        int light = mix(fill, alpha(0xffffffff, fill >>> 24), .14f), dark = mix(fill, alpha(0xff000000, fill >>> 24), .35f);
+        int topLeft = pressed ? dark : light, bottomRight = pressed ? light : dark;
+        box(g, x, y, w, h, UiSpace.CHAMFER_SMALL, fill);
+        rect(g, x + 1, y, w - 2, 1, topLeft);
+        rect(g, x, y + 1, 1, h - 2, topLeft);
+        rect(g, x + 1, y + h - 1, w - 2, 1, bottomRight);
+        rect(g, x + w - 1, y + 1, 1, h - 2, bottomRight);
+    }
+
+    /** Width of {@link #title} for the current title style. */
+    static float titleWidth(GuiGraphicsExtractor g, String text) {
+        if (!GuiState.preferences().pixelTitles) return width(text, UiSpace.PAGE_TITLE);
+        float k = UiRender.pixelsPerUnit(g);
+        int perPixel = Math.max(1, Math.round(UiSpace.PAGE_TITLE * .72f / 7f * k));
+        return net.minecraft.client.Minecraft.getInstance().font.width(text) * perPixel / k;
+    }
+
     /** A number or other changing value: tabular digits so it doesn't jitter as it changes. */
     static void number(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour) {
         UiFont.drawCentred(g, text, x, centreY, size, colour, false, true);
@@ -215,9 +255,11 @@ final class UiDraw {
      */
     static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme, float lift) {
         float offset = 1 + Math.round(Math.clamp(lift, 0, 1));
-        box(g, x + offset, y + offset, w, h, UiSpace.CHAMFER, shade(theme.bg()));
-        box(g, x, y, w, h, UiSpace.CHAMFER, theme.bg());
-        frame(g, x, y, w, h, UiSpace.CHAMFER, theme.line());
+        int steps = UiSpace.chamfer();
+        boolean grain = GuiState.preferences().grain && GuiState.preferences().mode == GuiPreferences.Mode.DARK;
+        box(g, x + offset, y + offset, w, h, steps, shade(theme.bg()));
+        UiRender.chamfer(g, x, y, w, h, steps, theme.bg(), theme.bg(), 0, grain);
+        frame(g, x, y, w, h, steps, theme.line());
     }
     static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme) { panel(g, x, y, w, h, theme, 0); }
 

@@ -149,8 +149,8 @@ final class PresetsPanel {
 
     void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
-        UiDraw.icon(g, "star", x, y + 13.5f, 9, t.on());
-        UiDraw.bold(g, "Presets", x + 13, y + 18, UiDraw.TITLE, t.text());
+        UiDraw.icon(g, "star", x, y + 13.5f, 9, t.textDim());
+        UiDraw.title(g, "Presets", x + 13, y + 18, t.text());
         float importWidth = pill(g, "Import config", x + w, y + 14, mx, my, t.on(), true, this::importConfig);
         if (recoveryName != null && Presets.exists(PresetCategory.MODULES, recoveryName))
             pill(g, "Restore backup", x + w - importWidth - 5, y + 14, mx, my, t.ok(), false, () -> {

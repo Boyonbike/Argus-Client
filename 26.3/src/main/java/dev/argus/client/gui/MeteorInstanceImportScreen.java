@@ -308,7 +308,7 @@ final class MeteorInstanceImportScreen extends UiScreen {
         float bh = UiAnim.smooth("mii.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
         UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
         UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
-        UiDraw.bold(g, "Import from another instance", left + 36, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.title(g, "Import from another instance", left + 36, top + 19, t.text());
         ProfileManagerScreen.chip(g, "Meteor", left + panelWidth - 12 - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
         UiDraw.text(g, UiDraw.fit("Reads only · your Meteor files are never changed", panelWidth - 120, UiDraw.SMALL), left + 36, top + 31, UiDraw.SMALL, t.textDim());
         renderInstances(g, mx, my, t);

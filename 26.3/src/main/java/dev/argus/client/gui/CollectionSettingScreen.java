@@ -61,7 +61,7 @@ final class CollectionSettingScreen extends UiScreen {
         float bh = UiAnim.smooth("col.back", backHover ? 1 : 0, 18);
         UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
         UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
-        UiDraw.bold(g, UiDraw.fit(GuiState.title(setting.getName()), panelWidth - 170), left + 36, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.title(g, UiDraw.fit(GuiState.title(setting.getName()), panelWidth - 170), left + 36, top + 19, t.text());
         String filter = onlySelected ? "Showing selected" : "Showing all";
         float fw = UiDraw.width(filter, UiDraw.SMALL) + 14, fx = left + panelWidth - 12 - fw;
         boolean fh = UiDraw.over(mx, my, fx, top + 12, fw, 14);

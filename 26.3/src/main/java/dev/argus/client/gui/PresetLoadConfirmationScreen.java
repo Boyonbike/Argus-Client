@@ -96,7 +96,7 @@ final class PresetLoadConfirmationScreen extends UiScreen {
     @Override protected void renderUi(GuiGraphicsExtractor g,int mx,int my,float delta){
         UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,panelHeight,t,1);
         UiDraw.circle(g,left+26,top+24,12,UiDraw.alpha(t.warn(),.15f));UiDraw.center(g,"!",left+14,top+24,24,UiDraw.TITLE,t.warn());
-        UiDraw.bold(g,"Replace current config?",left+46,top+24,UiDraw.TITLE,t.text());
+        UiDraw.title(g, "Replace current config?", left + 46, top + 24, t.text());
         List<String> lines=new ArrayList<>();List<Integer> starts=new ArrayList<>();for(String text:body){starts.add(lines.size());lines.addAll(UiDraw.wrap(text,panelWidth-36,UiDraw.SMALL));}
         int max=Math.max(0,lines.size()*13-bodyHeight);scroll=Math.clamp(scroll,0,max);
         g.enableScissor(left+12,bodyTop-4,left+panelWidth-12,bodyTop+bodyHeight);

@@ -31,15 +31,22 @@ final class UiButton extends Button {
         UiTheme t = GuiState.theme();
         hover = UiAnim.approach(hover, isHoveredOrFocused() && active ? 1 : 0, 18);
         press = 1 - UiAnim.progress(pressedAt, .18f);
-        float x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        boolean bevel = GuiState.preferences().bevels, pushed = bevel && press > .5f;
+        // With the bevel trial the label sinks 1px while pressed, like vanilla buttons.
+        float x = getX(), y = getY() + (pushed ? 1 : 0), w = getWidth(), h = getHeight();
         float r = Math.min(7, h / 2);
         long at = armedAt == null ? 0 : armedAt.getAsLong();
         boolean armed = at != 0 && System.nanoTime() - at < armWindow;
         arm = UiAnim.approach(arm, armed ? 1 : 0, 16);
         int fill = selected ? UiDraw.alpha(t.on(), .2f + hover * .08f) : UiDraw.mix(t.fill(), t.line(), hover * .8f);
-        UiDraw.rounded(g, x, y, w, h, r, UiDraw.mix(fill, UiDraw.alpha(t.danger(), .22f + hover * .1f), arm));
-        if (press > 0) UiDraw.rounded(g, x, y, w, h, r, UiDraw.alpha(armed ? t.danger() : t.on(), press * .22f));
-        UiDraw.outline(g, x, y, w, h, r, .6f, UiDraw.mix(selected ? UiDraw.alpha(t.on(), .55f) : UiDraw.alpha(t.line(), .5f + hover * .3f), UiDraw.alpha(t.danger(), .6f), arm));
+        if (bevel) {
+            // Style trial: vanilla's bevel instead of a flat fill and outline; the label sinks 1px while pressed.
+            UiDraw.bevel(g, x, getY(), w, h, pushed, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hover * .6f), UiDraw.alpha(t.danger(), .35f), arm));
+        } else {
+            UiDraw.rounded(g, x, y, w, h, r, UiDraw.mix(fill, UiDraw.alpha(t.danger(), .22f + hover * .1f), arm));
+            if (press > 0) UiDraw.rounded(g, x, y, w, h, r, UiDraw.alpha(armed ? t.danger() : t.on(), press * .22f));
+            UiDraw.outline(g, x, y, w, h, r, .6f, UiDraw.mix(selected ? UiDraw.alpha(t.on(), .55f) : UiDraw.alpha(t.line(), .5f + hover * .3f), UiDraw.alpha(t.danger(), .6f), arm));
+        }
         if (armed) UiMotion.drain(g, x + 6, y + h - 3, w - 12, at, armWindow, UiDraw.alpha(t.danger(), .8f));
         String label = armed ? armedLabel : getMessage().getString();
         int colour = UiDraw.mix(!active ? t.textDim() : selected ? t.on() : UiDraw.mix(t.text(), 0xffffffff, hover * .15f), t.danger(), arm);

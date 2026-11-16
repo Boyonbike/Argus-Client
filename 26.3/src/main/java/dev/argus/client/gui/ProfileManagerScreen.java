@@ -203,8 +203,8 @@ abstract class ProfileManagerScreen extends UiScreen {
         UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
         UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
         String title = getTitle().getString();
-        UiDraw.bold(g, title, left + 36, top + 19, UiDraw.TITLE, t.text());
-        float room = panelWidth - 36 - UiDraw.width(title, UiDraw.TITLE) - 34;
+        UiDraw.title(g, title, left + 36, top + 19, t.text());
+        float room = panelWidth - 36 - UiDraw.titleWidth(g, title) - 34;
         String status = UiDraw.fit(status(), room - 20, UiDraw.SMALL);
         float sw = UiDraw.width(status, UiDraw.SMALL) + 20, sx = left + panelWidth - 12 - sw;
         int dot = statusGood() ? t.ok() : t.textDim();

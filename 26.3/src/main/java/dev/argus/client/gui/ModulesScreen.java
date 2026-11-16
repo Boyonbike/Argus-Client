@@ -271,7 +271,7 @@ public final class ModulesScreen extends UiScreen {
         float hh = UiAnim.smooth("hdr." + window.name, headerHover ? 1 : 0, 18);
         // Header well sits inside the window's 1px edge; its stepped top corners nest in the window's.
         int headerFill = UiDraw.mix(theme.sunk(), theme.fill(), hh * .5f);
-        UiDraw.box(g, x + 1, top + 1, w - 2, HEADER - 1, UiSpace.CHAMFER - 1, headerFill);
+        UiDraw.box(g, x + 1, top + 1, w - 2, HEADER - 1, UiSpace.chamfer() - 1, headerFill);
         if (window.open > .01f) UiDraw.rect(g, x + 1, top + HEADER - 4, w - 2, 4, headerFill);
         if (window.open > .01f) UiDraw.rect(g, x + 1, top + HEADER - 1, w - 2, 1, UiDraw.alpha(theme.line(), window.open));
         UiDraw.text(g, UiDraw.fit(window.name, w - 40, UiSpace.BODY), x + UiSpace.S2, top + HEADER / 2f, UiSpace.BODY, theme.text());

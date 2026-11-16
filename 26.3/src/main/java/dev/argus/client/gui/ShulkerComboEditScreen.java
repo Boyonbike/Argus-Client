@@ -147,7 +147,7 @@ final class ShulkerComboEditScreen extends UiScreen {
     @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
-        UiDraw.bold(g, "Edit combo", left + 62, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.title(g, "Edit combo", left + 62, top + 19, t.text());
         UiDraw.text(g, "Rule name", left + 12, top + 33, UiDraw.SMALL, t.textDim());
         UiDraw.text(g, "Min count", left + 98, top + 123, UiDraw.SMALL, t.textDim());
         if (UiDraw.over(mx, my, left + 12, top + 113, 82, 20)) {

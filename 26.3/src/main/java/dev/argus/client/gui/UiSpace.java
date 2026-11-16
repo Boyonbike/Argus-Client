@@ -16,8 +16,11 @@ final class UiSpace {
     /** Inside a window, between groups, from a label to its control, inside a control. */
     static final float WINDOW_PAD = S3, GROUP_GAP = S4, LABEL_GAP = S2, CONTROL_PAD = S1;
 
-    /** Corner chamfer of windows and large controls, in GUI pixels (stepped, Minecraft style). */
-    static final int CHAMFER = 2, CHAMFER_SMALL = 1;
+    /** Corner chamfer of small controls, in GUI pixels (stepped, Minecraft style). */
+    static final int CHAMFER_SMALL = 1;
+
+    /** Corner chamfer of windows and large controls; a style trial, 2 unless changed in Appearance. */
+    static int chamfer() { return GuiState.preferences().corner; }
 
     // ---- type scale ----
     /** Captions and hints. Nothing in the GUI is drawn smaller than this. */

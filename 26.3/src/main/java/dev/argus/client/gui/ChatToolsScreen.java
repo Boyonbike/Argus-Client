@@ -410,8 +410,8 @@ public final class ChatToolsScreen extends UiScreen {
 
     private void sidebar(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         UiDraw.rounded(g, left + 4, top + 4, SIDE + 8, panelHeight - 8, 5, UiDraw.alpha(t.sunk(), .7f));
-        UiDraw.icon(g, "chat", left + 12, top + 13, 10, t.on());
-        UiDraw.text(g, "Social", left + 27, top + 18, UiSpace.PAGE_TITLE, t.text());
+        UiDraw.icon(g, "chat", left + 12, top + 13, 10, t.textDim());
+        UiDraw.title(g, "Social", left + 27, top + 18, t.text());
         List<Page> shown = pages();
         int selected = Math.max(0, shown.indexOf(page));
         float targetY = itemY(selected);
@@ -461,8 +461,8 @@ public final class ChatToolsScreen extends UiScreen {
         float x = contentX(), w = contentWidth();
         String title = page == Page.MESSAGES && recipient != null ? recipient : page.label;
         String subtitle = page == Page.MESSAGES && recipient != null ? (online(recipient) ? "Online" : "Offline") + " · private messages" : page.subtitle;
-        UiDraw.icon(g, page.icon, x, top + 13.5f, 9, t.on());
-        UiDraw.bold(g, UiDraw.fit(title, w - 20), x + 13, top + 18, UiDraw.TITLE, t.text());
+        UiDraw.icon(g, page.icon, x, top + 13.5f, 9, t.textDim());
+        UiDraw.title(g, UiDraw.fit(title, w - 20), x + 13, top + 18, t.text());
         UiDraw.text(g, UiDraw.fit(subtitle, w), x, top + 31, UiDraw.SMALL, t.textDim());
         UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
     }
@@ -1605,7 +1605,7 @@ public final class ChatToolsScreen extends UiScreen {
             g.pose().translate(-width / 2f, -height / 2f);
             UiDraw.panel(g, x, y, w, h, t);
             float cy = y + 18;
-            UiDraw.bold(g, UiDraw.fit(dialog.title(), w - 28), x + 14, cy, UiDraw.TITLE, t.text());
+            UiDraw.title(g, UiDraw.fit(dialog.title(), w - 28), x + 14, cy, t.text());
             cy += 14;
             for (String line : description) { UiDraw.text(g, line, x + 14, cy, UiDraw.SMALL, t.textDim()); cy += 9; }
             if (dialog.field() != null) {

@@ -120,7 +120,7 @@ final class ConfigImportScreen extends UiScreen {
         float bh = UiAnim.smooth("imp.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
         UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
         UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
-        UiDraw.bold(g, "Import config", left + 36, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.title(g, "Import config", left + 36, top + 19, t.text());
         float right = left + panelWidth - 12;
         right -= ProfileManagerScreen.chip(g, "Argus JSON", right - UiDraw.width("Argus JSON", UiSpace.CAPTION) - 10, top + 19, t.on()) + 4;
         ProfileManagerScreen.chip(g, "Meteor", right - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
