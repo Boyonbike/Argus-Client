@@ -89,7 +89,7 @@ public final class DiscordRoles {
         var roles = roster.get(key(player));
         if (roles == null) return "";
         if (roles.isEmpty()) return "No role";
-        return String.join(" · ", roles.stream().map(Role::name).toList());
+        return String.join(", ", roles.stream().map(Role::name).toList());
     }
 
     /** Friends preserve their online-first ordering; everyone else follows Discord's role hierarchy. */

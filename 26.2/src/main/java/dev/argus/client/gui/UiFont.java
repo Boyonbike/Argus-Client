@@ -128,8 +128,21 @@ final class UiFont {
         return value;
     }
 
+    private static int digitAdvance = UNSET;
+
+    /** The widest digit's advance; tabular digits all take this much room so changing numbers don't jitter. */
+    private static int digitAdvance() {
+        if (digitAdvance == UNSET) { int widest = 0; for (int d = '0'; d <= '9'; d++) widest = Math.max(widest, advance(d)); digitAdvance = widest; }
+        return digitAdvance;
+    }
+
+    private static boolean digit(int codepoint) { return codepoint >= '0' && codepoint <= '9'; }
+
     /** Logical width of {@code text} at {@code size}, at the given pixel density. */
-    static float width(String text, float size, float pixelsPerUnit) {
+    static float width(String text, float size, float pixelsPerUnit) { return width(text, size, pixelsPerUnit, false); }
+
+    /** As {@link #width(String, float, float)}; with {@code tabular} every digit has the same advance. */
+    static float width(String text, float size, float pixelsPerUnit, boolean tabular) {
         if (!available()) return fallbackWidth(text) * size / 8f;
         int em = emPixels(size, pixelsPerUnit);
         float s = scale(em), pen = 0;
@@ -137,8 +150,9 @@ final class UiFont {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i); i += Character.charCount(cp);
             if (!known(cp)) cp = '?';
-            if (previous >= 0) pen += kern(previous, cp) * s;
-            pen += advance(cp) * s;
+            boolean fixed = tabular && digit(cp);
+            if (previous >= 0 && !fixed && !(tabular && digit(previous))) pen += kern(previous, cp) * s;
+            pen += (fixed ? digitAdvance() : advance(cp)) * s;
             previous = cp;
         }
         return pen / pixelsPerUnit;
@@ -153,6 +167,11 @@ final class UiFont {
      * optically centred in rows regardless of font size or density.
      */
     static void drawCentred(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour, boolean bold) {
+        drawCentred(g, text, x, centreY, size, colour, bold, false);
+    }
+
+    /** As above; with {@code tabular} every digit takes the same advance and is centred in it. */
+    static void drawCentred(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour, boolean bold, boolean tabular) {
         if (text.isEmpty()) return;
         if (!available()) { fallback(g, text, x, centreY - size * .55f, size, colour); return; }
         float k = UiRender.pixelsPerUnit(g);
@@ -166,7 +185,10 @@ final class UiFont {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i); i += Character.charCount(cp);
             if (!known(cp)) cp = '?';
-            if (previous >= 0) pen += kern(previous, cp) * s;
+            boolean fixed = tabular && digit(cp);
+            if (previous >= 0 && !fixed && !(tabular && digit(previous))) pen += kern(previous, cp) * s;
+            float inset = fixed ? (digitAdvance() - advance(cp)) * s / 2 : 0;
+            pen += inset;
             if (cp != ' ') {
                 int whole = (int) Math.floor(pen);
                 int sub = Math.min(SUBPIXELS - 1, (int) ((pen - whole) * SUBPIXELS));
@@ -179,7 +201,7 @@ final class UiFont {
                     scratch[o + 4] = glyph.u0; scratch[o + 5] = glyph.v0; scratch[o + 6] = glyph.u1; scratch[o + 7] = glyph.v1;
                 }
             }
-            pen += advance(cp) * s + (bold ? .35f : 0);
+            pen += (fixed ? digitAdvance() * s - inset : advance(cp) * s) + (bold ? .35f : 0);
             previous = cp;
         }
         flush();

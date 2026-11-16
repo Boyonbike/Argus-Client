@@ -120,20 +120,36 @@ final class ModuleTools {
         ClientContext.configurationManager.saveAsync();
     }
 
+    /**
+     * " in the Nether" for the dimensions Argus knows (stored as "overworld", "nether", "end" or as ids such as
+     * "minecraft:the_nether"); anything else is shown as it is after a comma.
+     */
+    private static String dimensionPhrase(String dimension) {
+        if (dimension == null || dimension.isBlank()) return "";
+        String key = dimension.toLowerCase(Locale.ROOT);
+        if (key.startsWith("minecraft:")) key = key.substring("minecraft:".length());
+        return switch (key) {
+            case "overworld" -> " in the Overworld";
+            case "nether", "the_nether" -> " in the Nether";
+            case "end", "the_end" -> " in the End";
+            default -> ", " + dimension;
+        };
+    }
+
     private static InlineCard waypoints(UiScreen host) {
         return new InlineCard.Items(host, "Waypoints", "compass",
                 () -> {
                     int n = shownWaypoints().size();
                     String count = n == 0 ? "No waypoints" : n + (n == 1 ? " waypoint" : " waypoints");
-                    String sync = dev.argus.client.integrations.xaero.XaeroWaypointSync.enabled() ? " · synced with Xaero" : "";
-                    return (inWorld() ? count + " on " + WaypointRegistry.currentServerKey() : count + " on all servers · join a world to add one") + sync;
+                    String sync = dev.argus.client.integrations.xaero.XaeroWaypointSync.enabled() ? ", synced with Xaero" : "";
+                    return inWorld() ? count + " on " + WaypointRegistry.currentServerKey() + sync : count + " on all servers" + sync + " (join a world to add one)";
                 },
                 inWorld() ? "No waypoints on this server yet." : "No waypoints yet.",
                 () -> {
                     boolean inWorld = inWorld();
                     List<InlineCard.Items.Entry> entries = new ArrayList<>();
                     for (Waypoint w : shownWaypoints()) {
-                        String detail = coords(w) + " · " + w.getDimension() + (inWorld ? "" : " · " + w.getServer());
+                        String detail = coords(w) + dimensionPhrase(w.getDimension()) + (inWorld ? "" : " on " + w.getServer());
                         entries.add(new InlineCard.Items.Entry(w.getName(), detail, false, null, null, null, List.of(
                                 InlineCard.Items.Action.on(w.isToggled() ? "Shown" : "Hidden", "Show or hide this waypoint", w.isToggled(), () -> {
                                     w.setToggled(!w.isToggled());
@@ -192,9 +208,9 @@ final class ModuleTools {
     private static InlineCard autoLobbyPresets(UiScreen host, AutoLobbyModule module) {
         String name = AutoLobbyModule.PRESET_6B6T;
         return new InlineCard.Items(host, "AutoLobby presets", "star",
-                () -> (module.matches6b6tPreset() ? "In use: " + name : "Click a preset to apply it") + " · " + lobbyPasswords(),
+                () -> module.matches6b6tPreset() ? "In use: " + name + ", " + lobbyPasswords() : "Click a preset to apply it (" + lobbyPasswords() + ")",
                 "No presets.",
-                () -> List.of(new InlineCard.Items.Entry(name, "Comet's defaults · 6b6t.org · AutoReconnect 3.5s", module.matches6b6tPreset(), null,
+                () -> List.of(new InlineCard.Items.Entry(name, "Comet's defaults for 6b6t.org, AutoReconnect 3.5s", module.matches6b6tPreset(), null,
                         module::apply6b6tPreset, "Applied the " + name + " preset. Account passwords are unchanged.", List.of())))
                 .hint("Each cracked account's /login password is set in Accounts")
                 .header(InlineCard.Items.Action.of("Accounts", "Set a lobby password for each cracked account; AutoLobby uses the one you are playing as",
@@ -203,14 +219,15 @@ final class ModuleTools {
 
     private static String lobbyPasswords() {
         int n = AutoLobbyModule.accountsWithLobbyPassword();
-        return n == 0 ? "no account passwords" : n + (n == 1 ? " account password" : " account passwords");
+        return n == 0 ? "no account passwords set" : n + (n == 1 ? " account password set" : " account passwords set");
     }
 
     // ---- Tooltips: shulker icon combos -------------------------------------------------------
 
     private static InlineCard shulkerCombos(UiScreen host, TooltipsModule module) {
         return new InlineCard.Items(host, "Shulker icon combos", "star",
-                () -> { int n = module.getIconRules().size(); return (n == 0 ? "No combos yet" : n + (n == 1 ? " combo" : " combos")) + " · first match wins · needs Overlay on"; },
+                () -> { int n = module.getIconRules().size(); return (n == 0 ? "No combos yet" : n + (n == 1 ? " combo" : " combos") + ", first match wins")
+                        + (module.shulkerIconsSetting.getValue() ? "" : ". Needs Overlay on"); },
                 "No combos yet. Without one, the most common item is shown.",
                 () -> {
                     List<Rule<Item>> rules = module.getIconRules();
@@ -273,14 +290,14 @@ final class ModuleTools {
     private static InlineCard discordSync(UiScreen host, DiscordSyncModule sync) {
         return new InlineCard.Rows(host, "Sync", "people", "Keep the clan list and Auto TPY whitelist up to date")
                 .open("Read Discord now", "Updates the clan list and Auto TPY whitelist. Details appear in chat.",
-                        () -> sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Failed · try again"
-                                : sync.lastSuccessfulSync() > 0 ? "Synced " + sync.syncedAccounts() + " · again" : "Sync now", sync::syncNow);
+                        () -> sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Try again"
+                                : sync.lastSuccessfulSync() > 0 ? "Sync again" : "Sync now", sync::syncNow);
     }
 
     // ---- HUD ---------------------------------------------------------------------------------
 
     private static InlineCard hud(UiScreen host, Hooks hooks) {
-        return new InlineCard.Rows(host, "HUD editor", "hud", "Arrange HUD elements on your screen")
+        return new InlineCard.Rows(host, "HUD editor", "hud", "")
                 .open("HUD editor", "Add, remove and arrange HUD elements on your screen",
                         () -> hooks.inHudEditor() ? "Back to editor" : "Open editor", hooks::openHudEditor)
                 .choice("HUD tab opens", "What the HUD tab in the top bar shows", new String[]{"Editor", "Settings"},

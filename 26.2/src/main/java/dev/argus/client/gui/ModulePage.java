@@ -15,7 +15,7 @@ import net.minecraft.client.input.MouseButtonEvent;
  *
  * <pre>
  *  ┌─────────────────────────────────────────────────────────────┐
- *  │ (icon) Module name                ☆        Enabled  [●──]   │  hero: identity and the main switch
+ *  │ Module name                       ☆        Enabled  [●──]   │  hero: identity and the main switch
  *  │        Description, up to two lines                         │
  *  │ [⌨ R] [Toggle|Hold|Release] [HUD list]   [⧉][📋] [↺ Reset]   │  controls: keybind, mode, extras, copy/paste config
  *  ├─────────────────────────────────────────────────────────────┤
@@ -93,7 +93,7 @@ final class ModulePage {
 
     private List<String> descriptionLines() {
         String description = UiText.stripFormatting(module.getDescription());
-        if (description == null || description.isBlank()) description = "No description";
+        if (description == null || description.isBlank()) return List.of();
         List<String> lines = UiDraw.wrap(description, w - 150, UiDraw.SMALL);
         if (lines.size() > 2) lines = List.of(lines.get(0), UiDraw.fit(lines.get(1) + "…", w - 150, UiDraw.SMALL));
         return lines;
@@ -117,7 +117,7 @@ final class ModulePage {
         float base = UiRender.opacity;
         stage(g, 0, base, () -> hero(g, mx, my, t));
         stage(g, 1, base, () -> controls(g, mx, my, t));
-        UiDraw.rect(g, x, bodyTop() - 6, w, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.rect(g, x, bodyTop() - 6, w, .6f, UiDraw.alpha(t.line(), .6f));
         body(g, mx, my, delta, t);
         footer(g, t);
     }
@@ -133,24 +133,18 @@ final class ModulePage {
 
     private void hero(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         float on = UiAnim.smooth(key + "on", module.isToggled() ? 1 : 0, 14);
-        // Icon badge: glows with the accent while enabled, and sends out a ring when switched.
-        float bx = x + 11, by = y + 13;
-        float ring = UiAnim.smooth(key + "ring", 0, 5);
-        if (ring > .01f) UiDraw.outline(g, bx - 11 - (1 - ring) * 7, by - 11 - (1 - ring) * 7, 22 + (1 - ring) * 14, 22 + (1 - ring) * 14,
-                11 + (1 - ring) * 7, 1, UiDraw.alpha(t.accent(), ring * .7f));
-        if (on > .01f) UiDraw.shadow(g, bx - 11, by - 11, 22, 22, 11, 6, UiDraw.alpha(t.accent(), .22f * on));
-        UiDraw.circle(g, bx, by, 11, UiDraw.mix(UiDraw.alpha(t.surface(), .9f), UiDraw.alpha(t.accent(), .24f), on));
-        UiDraw.icon(g, icon, bx - 5, by - 5, 10, UiDraw.mix(t.muted(), t.accent(), .45f + on * .55f));
-
-        float textX = x + 30, right = x + w;
-        UiDraw.bold(g, UiDraw.fit(GuiState.title(module.getName()), w - 170), textX, y + 8, UiDraw.TITLE, t.text());
-        float titleEnd = textX + UiDraw.width(UiDraw.fit(GuiState.title(module.getName()), w - 170), UiDraw.TITLE);
+        // No icon badge here: icons belong to the sidebar and top bar only. The category is plain text.
+        float textX = x, right = x + w;
+        // The module name is the page's title, so it takes the pixel display face like every other page title.
+        String name = GuiState.title(module.getName());
+        while (name.length() > 4 && UiDraw.titleWidth(g, name) > w - 170) name = name.substring(0, name.length() - 2) + "…";
+        UiDraw.title(g, name, textX, y + 8, t.text());
+        float titleEnd = textX + UiDraw.titleWidth(g, name);
         String category = GuiState.title(module.getCategory().getName());
-        float tagW = UiDraw.width(category, 6f) + 10;
-        UiDraw.rounded(g, titleEnd + 6, y + 3, tagW, 10, 5, UiDraw.alpha(t.surface(), .9f));
-        UiDraw.text(g, category, titleEnd + 11, y + 8, 6f, t.muted());
+        float tagW = UiDraw.width(category, UiSpace.CAPTION) + 8;
+        UiDraw.text(g, category, titleEnd + 8, y + 8.5f, UiSpace.CAPTION, t.textDim());
         float lineY = y + 21;
-        for (String line : descriptionLines()) { UiDraw.text(g, line, textX, lineY, UiDraw.SMALL, t.muted()); lineY += 9; }
+        for (String line : descriptionLines()) { UiDraw.text(g, line, textX, lineY, UiSpace.CAPTION, t.textDim()); lineY += 9; }
 
         // Favourite star.
         if (favouritable) {
@@ -159,9 +153,9 @@ final class ModulePage {
             boolean hover = UiDraw.over(mx, my, sx, sy, 14, 14);
             float hv = UiAnim.smooth(key + "fav.h", hover ? 1 : 0, 20), fv = UiAnim.smooth(key + "fav", favourite ? 1 : 0, 14);
             float pop = UiAnim.smooth(key + "fav.pop", 0, 9);
-            if (hv > 0) UiDraw.circle(g, sx + 7, sy + 7, 7, UiDraw.alpha(t.surface(), hv));
+            if (hv > 0) UiDraw.circle(g, sx + 7, sy + 7, 7, UiDraw.alpha(t.fill(), hv));
             float size = 8 + pop * 3;
-            UiDraw.icon(g, "star", sx + 7 - size / 2, sy + 7 - size / 2, size, UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), t.yellow(), fv));
+            UiDraw.icon(g, "star", sx + 7 - size / 2, sy + 7 - size / 2, size, UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), hv), t.warn(), fv));
             hits.add(new Hit(sx, sy, 14, 14, 0, () -> {
                 var favourites = GuiState.preferences().favourites;
                 boolean added = favourites.add(module.getName());
@@ -172,19 +166,18 @@ final class ModulePage {
             if (hover) host.tooltip(key + "fav", favourite ? "Remove from Favourites" : "Add to Favourites");
         }
 
-        // Main switch: a wide pill with the state written in it.
+        // Main switch: the state in words beside the toggle. Only the toggle itself carries the accent.
         float pw = 72, ph = 18, px = right - pw, py = y;
         boolean hover = UiDraw.over(mx, my, px, py, pw, ph);
         float hv = UiAnim.smooth(key + "sw.h", hover ? 1 : 0, 18);
-        UiDraw.rounded(g, px, py, pw, ph, 9, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .6f), UiDraw.alpha(t.accent(), .2f + hv * .06f), on));
-        UiDraw.outline(g, px, py, pw, ph, 9, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f), UiDraw.alpha(t.accent(), .55f), on));
+        UiDraw.box(g, px, py, pw, ph, UiSpace.CHAMFER_SMALL, UiDraw.mix(t.fill(), t.line(), hv * .6f));
         // The HUD module's switch shows or hides the whole HUD, so say that rather than "Enabled".
         boolean hudSwitch = module instanceof dev.argus.client.modules.client.HUDModule;
         String state = hudSwitch ? (module.isToggled() ? "HUD on" : "HUD off") : module.isToggled() ? "Enabled" : "Disabled";
-        UiDraw.text(g, state, px + 9, py + ph / 2, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        UiDraw.text(g, state, px + 8, py + ph / 2, UiSpace.CAPTION, UiDraw.mix(t.textDim(), t.text(), on));
         if (hover && hudSwitch) host.tooltip(key + "sw.hud", module.isToggled() ? "HUD is on" : "HUD is off", "Shows or hides every HUD element in game");
         UiDraw.toggle(g, px + pw - 25, py + 4, on, hover, t);
-        hits.add(new Hit(px, py, pw, ph, 0, () -> { module.toggle(); UiAnim.set(key + "ring", 1); }));
+        hits.add(new Hit(px, py, pw, ph, 0, module::toggle));
     }
 
     private void controls(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
@@ -195,14 +188,14 @@ final class ModulePage {
         float kwShown = UiAnim.smooth(key + "kw", kw, 18);
         boolean kHover = UiDraw.over(mx, my, cx, cy, kwShown, CHIP);
         float kh = UiAnim.smooth(key + "kh", kHover || binding ? 1 : 0, 18);
-        float pulse = binding ? UiAnim.pulse(1.5e8) : 0;
-        UiDraw.rounded(g, cx, cy, kwShown, CHIP, 8, binding ? UiDraw.alpha(t.accent(), .16f + pulse * .12f) : UiDraw.mix(t.surface(), t.overlay(), kh * .7f));
-        UiDraw.outline(g, cx, cy, kwShown, CHIP, 8, .6f, binding ? UiDraw.alpha(t.accent(), .5f + pulse * .5f) : UiDraw.alpha(t.overlay(), .5f + kh * .3f));
-        UiDraw.icon(g, "keyboard", cx + 7, cy + 4, 8, binding ? t.accent() : UiDraw.mix(t.muted(), t.text(), kh));
-        UiDraw.text(g, UiDraw.fit(label, kwShown - 22, UiDraw.SMALL), cx + 19, cy + CHIP / 2, UiDraw.SMALL, binding ? t.accent() : t.text());
+        float pulse = binding ? 1 : 0;
+        UiDraw.rounded(g, cx, cy, kwShown, CHIP, 8, binding ? UiDraw.alpha(t.on(), .16f + pulse * .12f) : UiDraw.mix(t.fill(), t.line(), kh * .7f));
+        UiDraw.outline(g, cx, cy, kwShown, CHIP, 8, .6f, binding ? UiDraw.alpha(t.on(), .5f + pulse * .5f) : UiDraw.alpha(t.line(), .5f + kh * .3f));
+        UiDraw.icon(g, "keyboard", cx + 7, cy + 4, 8, binding ? t.on() : UiDraw.mix(t.textDim(), t.text(), kh));
+        UiDraw.text(g, UiDraw.fit(label, kwShown - 22, UiDraw.SMALL), cx + 19, cy + CHIP / 2, UiDraw.SMALL, binding ? t.on() : t.text());
         hits.add(new Hit(cx, cy, kwShown, CHIP, 0, () -> { cards.stopEditing(); binding = true; }));
         hits.add(new Hit(cx, cy, kwShown, CHIP, 1, () -> { module.setKeybind(Keybind.UNBOUND); binding = false; }));
-        if (kHover && !binding) host.tooltip(key + "bind", "Keybind", "Click to set · Right-click to clear");
+        if (kHover && !binding) host.tooltip(key + "bind", "Keybind", "Click to set a key, or right-click to clear it");
         cx += kwShown + 6;
 
         // Bind mode, only meaningful once a key is bound.
@@ -213,16 +206,16 @@ final class ModulePage {
             UiRender.opacity = before * modeShow;
             int chosen = 0;
             for (int i = 0; i < MODES.length; i++) if (MODES[i] == module.getKeybind().mode()) chosen = i;
-            UiDraw.rounded(g, cx, cy, mw, CHIP, 8, t.crust());
+            UiDraw.rounded(g, cx, cy, mw, CHIP, 8, t.deep());
             float thumb = UiAnim.smooth(key + "mode.t", chosen, 16);
-            UiDraw.rounded(g, cx + 2 + thumb * seg, cy + 2, seg - 4, CHIP - 4, 6, UiDraw.alpha(t.accent(), .22f));
+            UiDraw.rounded(g, cx + 2 + thumb * seg, cy + 2, seg - 4, CHIP - 4, 6, t.fill());
             for (int i = 0; i < MODES.length; i++) {
                 boolean hover = UiDraw.over(mx, my, cx + i * seg, cy, seg, CHIP);
-                int colour = i == chosen ? t.accent() : UiDraw.mix(t.muted(), t.text(), UiAnim.smooth(key + "mode.h" + i, hover ? 1 : 0, 18));
-                UiDraw.center(g, MODE_LABELS[i], cx + i * seg, cy + CHIP / 2, seg, 6f, colour);
+                int colour = i == chosen ? t.on() : UiDraw.mix(t.textDim(), t.text(), UiAnim.smooth(key + "mode.h" + i, hover ? 1 : 0, 18));
+                UiDraw.center(g, MODE_LABELS[i], cx + i * seg, cy + CHIP / 2, seg, UiSpace.CAPTION, colour);
                 Keybind.Mode mode = MODES[i];
                 if (modeShow > .5f) hits.add(new Hit(cx + i * seg, cy, seg, CHIP, 0, () -> module.setKeybind(module.getKeybind().withMode(mode))));
-                if (hover && modeShow > .5f) host.tooltip(key + "mode" + i, MODE_LABELS[i], MODE_HINTS[i]);
+                if (hover && modeShow > .5f) host.tooltip(key + "mode" + i, null, MODE_HINTS[i]);
             }
             UiRender.opacity = before;
             cx += (mw + 6) * modeShow;
@@ -235,11 +228,11 @@ final class ModulePage {
         if (cx + dw < right - 130) {
             boolean hover = UiDraw.over(mx, my, cx, cy, dw, CHIP);
             float hv = UiAnim.smooth(key + "drawn.h", hover ? 1 : 0, 18);
-            UiDraw.rounded(g, cx, cy, dw, CHIP, 8, UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
-            UiDraw.text(g, dl, cx + 8, cy + CHIP / 2, UiDraw.SMALL, UiDraw.mix(t.muted(), t.text(), Math.max(hv, drawn * .7f)));
+            UiDraw.rounded(g, cx, cy, dw, CHIP, 8, UiDraw.mix(t.fill(), t.line(), hv * .7f));
+            UiDraw.text(g, dl, cx + 8, cy + CHIP / 2, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.text(), Math.max(hv, drawn * .7f)));
             UiDraw.toggle(g, cx + dw - 24, cy + 3, drawn, hover, t);
             hits.add(new Hit(cx, cy, dw, CHIP, 0, () -> module.setDrawn(!module.isDrawn())));
-            if (hover) host.tooltip(key + "drawn", "HUD list", "Show this module in the on-screen module list while it is on");
+            if (hover) host.tooltip(key + "drawn", null, "Show this module in the on-screen module list while it is on");
         }
 
         // Right side: reset all.
@@ -253,14 +246,14 @@ final class ModulePage {
         boolean rHover = UiDraw.over(mx, my, rx, cy, rwShown, CHIP);
         float rh = UiAnim.smooth(key + "rh", rHover ? 1 : 0, 18), ra = UiAnim.smooth(key + "ra", armed ? 1 : 0, 16);
         float usable = changed > 0 ? 1 : .45f;
-        int rFill = UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), rh * .7f * usable), UiDraw.alpha(t.red(), .2f), ra);
+        int rFill = UiDraw.mix(UiDraw.mix(t.fill(), t.line(), rh * .7f * usable), UiDraw.alpha(t.danger(), .2f), ra);
         UiDraw.rounded(g, rx, cy, rwShown, CHIP, 8, rFill);
-        if (ra > .01f) UiDraw.outline(g, rx, cy, rwShown, CHIP, 8, .6f, UiDraw.alpha(t.red(), .6f * ra));
-        int rColour = UiDraw.mix(UiDraw.alpha(UiDraw.mix(t.muted(), t.text(), rh), usable), t.red(), ra);
+        if (ra > .01f) UiDraw.outline(g, rx, cy, rwShown, CHIP, 8, .6f, UiDraw.alpha(t.danger(), .6f * ra));
+        int rColour = UiDraw.mix(UiDraw.alpha(UiDraw.mix(t.textDim(), t.text(), rh), usable), t.danger(), ra);
         UiDraw.icon(g, "reset", rx + 7, cy + 4, 8, rColour);
         final float labelX = rx + 19, labelRoom = rwShown - 22;
         UiMotion.crossfade(g, key + "rl", rl, l -> UiDraw.text(g, UiDraw.fit(l, labelRoom, UiDraw.SMALL), labelX, cy + CHIP / 2, UiDraw.SMALL, rColour));
-        if (armed) UiMotion.drain(g, rx + 8, cy + CHIP - 2.5f, rwShown - 16, resetArmedAt, 3_000_000_000L, UiDraw.alpha(t.red(), .8f));
+        if (armed) UiMotion.drain(g, rx + 8, cy + CHIP - 2.5f, rwShown - 16, resetArmedAt, 3_000_000_000L, UiDraw.alpha(t.danger(), .8f));
         hits.add(new Hit(rx, cy, rwShown, CHIP, 0, () -> {
             if (cards.changed() == 0) { notice("Everything is already at its default"); return; }
             if (!resetArmed()) { resetArmedAt = System.nanoTime(); return; }
@@ -268,8 +261,8 @@ final class ModulePage {
             int count = cards.resetAll();
             notice("Restored " + count + (count == 1 ? " setting" : " settings") + " to default");
         }));
-        if (rHover) host.tooltip(key + "reset", "Reset all", changed == 0 ? "Nothing changed from the defaults"
-                : changed + (changed == 1 ? " setting differs" : " settings differ") + " from default · click twice to restore");
+        if (rHover) host.tooltip(key + "reset", null, changed == 0 ? "Nothing changed from the defaults"
+                : "Click twice to restore " + (changed == 1 ? "the changed setting" : "the " + changed + " changed settings"));
 
         // Copy and paste this module's settings, to share them with another client.
         rx -= 6 + CHIP;
@@ -282,8 +275,8 @@ final class ModulePage {
         boolean hover = UiDraw.over(mx, my, cx, cy, CHIP, CHIP);
         float hv = UiAnim.smooth(key + icon + ".h", hover ? 1 : 0, 18);
         float flash = UiAnim.smooth(key + icon + ".done", 0, 6);
-        UiDraw.rounded(g, cx, cy, CHIP, CHIP, 8, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .7f), UiDraw.alpha(t.accent(), .25f), flash));
-        UiDraw.icon(g, icon, cx + 4, cy + 4, 8, UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), t.accent(), flash));
+        UiDraw.rounded(g, cx, cy, CHIP, CHIP, 8, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hv * .7f), UiDraw.alpha(t.on(), .25f), flash));
+        UiDraw.icon(g, icon, cx + 4, cy + 4, 8, UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), hv), t.on(), flash));
         hits.add(new Hit(cx, cy, CHIP, CHIP, 0, () -> { action.run(); UiAnim.set(key + icon + ".done", 1); }));
         if (hover) host.tooltip(key + icon, title, hint);
     }
@@ -291,7 +284,7 @@ final class ModulePage {
     private void copyConfig() {
         cards.stopEditing();
         net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(ModuleClipboard.copy(module));
-        notice("Copied " + GuiState.title(module.getName()) + " config · paste it with Ctrl+V on this module in another client");
+        notice("Copied " + GuiState.title(module.getName()) + " config to paste with Ctrl+V in another client");
     }
 
     private void pasteConfig() {
@@ -312,22 +305,20 @@ final class ModulePage {
         if (cards.isEmpty()) empty(g, cx, top, cw, t);
         else cards.render(g, mx, my, delta, t, cx, top - shownScroll, cw, top, bottom);
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, cx - 3, top, cw + 6, 12, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, cx - 3, bottom - 12, cw + 6, 12, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, cx - 3, top, cw + 6, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.scrollEdge(g, cx - 3, bottom, cw + 6, false, t));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownScroll / Math.max(1, total - view);
             float shown = UiAnim.smooth(key + "bar", UiDraw.over(mx, my, cx, top, cw + 8, view) ? 1 : .5f, 10);
-            UiDraw.rounded(g, cx + cw + 3, top + offset, 2, track, 1, UiDraw.alpha(t.overlay(), shown));
+            UiDraw.rounded(g, cx + cw + 3, top + offset, 2, track, 1, UiDraw.alpha(t.line(), shown));
         }
         cards.popup(g, t, host.width, host.height);
     }
 
     private void empty(GuiGraphicsExtractor g, float cx, float top, float cw, UiTheme t) {
         float cy = top + 40;
-        UiDraw.circle(g, cx + cw / 2, cy, 14, UiDraw.alpha(t.surface(), .8f));
-        UiDraw.icon(g, "sliders", cx + cw / 2 - 6, cy - 6, 12, t.muted());
-        UiDraw.center(g, "Nothing to configure", cx, cy + 24, cw, t.text());
-        UiDraw.center(g, "This module only needs switching on or off.", cx, cy + 35, cw, UiDraw.SMALL, t.muted());
+        UiDraw.center(g, "Nothing to configure", cx, cy, cw, t.text());
+        UiDraw.center(g, "This module only needs switching on or off.", cx, cy + 11, cw, UiSpace.CAPTION, t.textDim());
     }
 
     private void footer(GuiGraphicsExtractor g, UiTheme t) {
@@ -335,14 +326,18 @@ final class ModulePage {
         boolean fresh = !notice.isEmpty() && System.nanoTime() - noticeAt < 3_500_000_000L;
         String text; int kind;
         if (!error.isEmpty()) { text = error; kind = 1; }
-        else if (binding) { text = "Press a key or mouse button · Esc cancels · Backspace clears"; kind = 3; }
+        else if (binding) { text = "Press a key or mouse button\nEsc\tcancel\nBackspace\tclear"; kind = 3; }
         else if (!cards.notice().isEmpty() && !fresh) { text = cards.notice(); kind = 2; }
         else if (resetArmed()) { text = "Click Reset again to restore " + cards.changed() + " settings to default"; kind = 1; }
         else if (fresh) { text = notice; kind = noticeError ? 1 : 2; }
-        else { text = "Click a card's title to fold it · hover a setting for details · the reset icon restores one setting"; kind = 0; }
+        else { text = ""; kind = 0; }
         // Each change of message crossfades, including the notice ending and the hint coming back.
         float fy = y + h - 9;
-        UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.fit(text, w), kind), line -> UiDraw.text(g, line.text(), x, fy, UiDraw.SMALL, UiMotion.footerColour(line.kind(), t)));
+        UiMotion.crossfade(g, "mp.footer", new UiMotion.Line(UiDraw.isLegend(text) ? text : UiDraw.fit(text, w), kind), line -> {
+            int colour = UiMotion.footerColour(line.kind(), t);
+            if (UiDraw.isLegend(line.text())) UiDraw.legend(g, line.text(), x, fy, t, colour, colour);
+            else UiDraw.text(g, line.text(), x, fy, UiDraw.SMALL, colour);
+        });
     }
 
     // ---- input -------------------------------------------------------------------------------

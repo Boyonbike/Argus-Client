@@ -206,26 +206,29 @@ final class SettingsScreen extends UiScreen {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         // ---- sidebar
-        UiDraw.rounded(g, left + 4, top + 4, SIDE + 8, panelHeight - 8, 5, UiDraw.alpha(t.mantle(), .7f));
-        UiDraw.icon(g, "client", left + 12, top + 13, 10, t.accent());
-        UiDraw.bold(g, "Settings", left + 27, top + 18, UiDraw.TITLE, t.text());
+        UiDraw.rounded(g, left + 4, top + 4, SIDE + 8, panelHeight - 8, 5, UiDraw.alpha(t.sunk(), .7f));
+        UiDraw.icon(g, "client", left + 12, top + 13, 10, t.text());
+        UiDraw.title(g, "Settings", left + 27, top + 18, t.text());
         int selected = 0;
         for (int i = 0; i < sections(); i++) if (sectionName(i).equals(section)) selected = i;
         float targetY = itemY(selected);
         indicatorY = Float.isNaN(indicatorY) ? targetY : UiAnim.approach(indicatorY, targetY, 18);
-        UiDraw.rounded(g, left + 8, indicatorY + 1, SIDE, ITEM - 2, 6, UiDraw.alpha(t.accent(), .2f));
-        UiDraw.rounded(g, left + 8, indicatorY + 5, 2, ITEM - 10, 1, t.accent());
+        UiDraw.rounded(g, left + 8, indicatorY + 1, SIDE, ITEM - 2, 6, t.fill());
         for (int i = 0; i < sections(); i++) {
             float iy = itemY(i);
             boolean active = i == selected, hover = UiDraw.over(mx, my, left + 8, iy, SIDE, ITEM);
             float hv = UiAnim.smooth("side." + sectionName(i), hover && !active ? 1 : 0, 20);
-            if (hv > 0) UiDraw.rounded(g, left + 8, iy + 1, SIDE, ITEM - 2, 6, UiDraw.alpha(t.surface(), hv * .8f));
-            int colour = active ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv);
+            if (hv > 0) UiDraw.rounded(g, left + 8, iy + 1, SIDE, ITEM - 2, 6, UiDraw.alpha(t.fill(), hv * .5f));
+            int colour = active ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv);
             UiDraw.icon(g, icon(sectionName(i)), left + 16, iy + ITEM / 2f - 4, 8, colour);
             UiDraw.text(g, UiDraw.fit(sectionLabel(sectionName(i)), SIDE - 36), left + 29, iy + ITEM / 2f, colour);
             if (i >= FIXED && sectionOn(modules.get(i - FIXED)))
-                UiDraw.circle(g, left + SIDE - 4, iy + ITEM / 2f, 2, UiDraw.alpha(t.accent(), active ? 1 : .7f));
+                UiDraw.circle(g, left + SIDE - 4, iy + ITEM / 2f, 2, UiDraw.alpha(t.on(), active ? 1 : .7f));
         }
+        // The client version, at the foot of the sidebar when there is room below the last section.
+        float versionY = top + panelHeight - 14;
+        if (itemY(sections()) <= versionY - 6)
+            UiDraw.text(g, UiDraw.fit("Argus " + dev.argus.client.ArgusClient.VERSION, SIDE - 8, UiSpace.CAPTION), left + 16, versionY, UiSpace.CAPTION, t.textDim());
         // ---- content, which fades and slides when the section changes
         float change = UiAnim.eased(sectionChanged, .22f);
         float before = UiRender.opacity;
@@ -258,10 +261,8 @@ final class SettingsScreen extends UiScreen {
     private void discord(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
         float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2;
-        UiDraw.icon(g, icon("discord"), x, top + 13.5f, 9, t.accent());
-        UiDraw.bold(g, "Discord", x + 13, top + 18, UiDraw.TITLE, t.text());
-        UiDraw.text(g, "Rich Presence and the clan's IGN sync, each with its own switch", x, top + 31, UiDraw.SMALL, t.muted());
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.title(g, "Discord", x, top + 18, t.text());
+        UiDraw.rect(g, x, top + 32, w, 1, UiDraw.alpha(t.line(), .6f));
         List<Float> heights = new ArrayList<>();
         float total = 0;
         for (SettingsList card : appearanceLists) { float h = CARD_HEAD + card.contentHeight() + 6f; heights.add(h); total += h + CARD_GAP; }
@@ -276,23 +277,23 @@ final class SettingsScreen extends UiScreen {
             if (card.module() instanceof DiscordSyncModule sync) {
                 card(g, x, y, w, h, "people", "IGN Sync", syncStatus(sync), sync, 70 + syncButtonWidth(sync) + 6, mx, my, t);
                 syncButton(g, sync, x + w - PAD - 74, y + 6, mx, my, t);
-            } else card(g, x, y, w, h, icon("discord"), "Rich Presence", "Show Argus Client as your Discord activity", card.module(), mx, my, t);
+            } else card(g, x, y, w, h, icon("discord"), "Rich Presence", null, card.module(), mx, my, t);
             card.embed(ix - 4, y + CARD_HEAD, iw + 8, pageTop(), pageBottom());
             card.render(g, mx, my, delta, t);
             y += h + CARD_GAP;
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageTop(), w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageBottom(), w + 8, false, t));
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
-        if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.red());
-        else UiDraw.text(g, "Changes apply instantly and are saved automatically", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+        if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.danger());
+        else { String note = applyNote(); if (note != null) UiDraw.text(g, note, x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f)); }
     }
 
     private static String syncStatus(DiscordSyncModule sync) {
         if (!sync.isToggled()) return "Keeps the clan list and Auto TPY whitelist in step with your Discord's #ign channel";
-        return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed · details are in chat"
+        return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Last sync failed, see chat for details"
                 : sync.lastSuccessfulSync() > 0 ? sync.syncedAccounts() + " linked accounts" : "Not synced yet";
     }
     private static String syncLabel(DiscordSyncModule sync) { return sync.syncBusy() ? "Syncing…" : sync.syncFailed() ? "Try again" : "Sync now"; }
@@ -304,11 +305,11 @@ final class SettingsScreen extends UiScreen {
         float bw = syncButtonWidth(sync), bx = right - bw, bh = 18;
         boolean hover = UiDraw.over(mx, my, bx, y, bw, bh);
         float hv = UiAnim.smooth("discord.sync.h", hover ? 1 : 0, 18);
-        UiDraw.rounded(g, bx, y, bw, bh, 8, UiDraw.alpha(t.accent(), .14f + hv * .1f));
-        UiDraw.outline(g, bx, y, bw, bh, 8, .6f, UiDraw.alpha(t.accent(), .35f + hv * .3f));
-        UiDraw.icon(g, "reset", bx + 7, y + 5, 8, t.accent());
-        UiDraw.text(g, label, bx + 19, y + bh / 2, UiDraw.SMALL, t.accent());
-        if (hover) tooltip("discord.sync", "Sync now", "Read Discord now and update the clan list and Auto TPY whitelist. Details appear in chat.");
+        UiDraw.rounded(g, bx, y, bw, bh, 8, UiDraw.alpha(t.on(), .14f + hv * .1f));
+        UiDraw.outline(g, bx, y, bw, bh, 8, 1, UiDraw.mix(t.line(), t.textDim(), hv));
+        UiDraw.icon(g, "reset", bx + 7, y + 5, 8, t.on());
+        UiDraw.text(g, label, bx + 19, y + bh / 2, UiDraw.SMALL, t.on());
+        if (hover) tooltip("discord.sync", null, "Updates the clan list and Auto TPY whitelist from Discord. Details appear in chat.");
         hits.add(new Hit(bx, y, bw, bh, sync::syncNow));
     }
 
@@ -352,8 +353,7 @@ final class SettingsScreen extends UiScreen {
     }
 
     private int accentColour(GuiPreferences.Accent accent, boolean light) {
-        var preview = new GuiPreferences(); preview.accent = accent; preview.mode = light ? GuiPreferences.Mode.LIGHT : GuiPreferences.Mode.DARK;
-        return UiTheme.of(preview).accent();
+        return 0xff000000 | UiTheme.accent(accent, light);
     }
 
     /** Height of the chip area for a given inner width (chips wrap onto new lines). */
@@ -367,23 +367,18 @@ final class SettingsScreen extends UiScreen {
         return rows * (CHIP_H + 4) - 4;
     }
 
-    /** Card frame with an icon badge, title, subtitle and an optional enable switch on the right. */
+    /** Settings group (header and subtitle) with an optional enable switch on the right. */
     private void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, int mx, int my, UiTheme t) {
         card(g, x, y, w, h, icon, title, subtitle, toggle, toggle != null ? 70 : 0, mx, my, t);
     }
 
     /** As above, keeping {@code reserve} pixels of the header's right side clear of the subtitle. */
     private void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, Module toggle, float reserve, int mx, int my, UiTheme t) {
-        UiDraw.rounded(g, x, y, w, h, 8, UiDraw.alpha(t.mantle(), .6f));
-        UiDraw.outline(g, x, y, w, h, 8, .6f, UiDraw.alpha(t.overlay(), .4f));
-        UiDraw.circle(g, x + PAD + 7, y + 15, 8, UiDraw.alpha(t.accent(), .16f));
-        UiDraw.icon(g, icon, x + PAD + 3, y + 11, 8, t.accent());
-        UiDraw.bold(g, title, x + PAD + 20, y + 11, UiDraw.TEXT, t.text());
-        UiDraw.text(g, UiDraw.fit(subtitle, w - PAD * 2 - 20 - reserve), x + PAD + 20, y + 21, 6f, t.muted());
+        UiDraw.card(g, x, y, w, h, icon, title, subtitle, reserve, t);
         if (toggle != null) {
             boolean hover = UiDraw.over(mx, my, x + w - PAD - 70, y + 6, 70, 18);
             float on = UiAnim.smooth("card.on." + toggle.getName(), toggle.isToggled() ? 1 : 0, 16);
-            UiDraw.right(g, toggle.isToggled() ? "On" : "Off", x + w - PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+            UiDraw.right(g, toggle.isToggled() ? "On" : "Off", x + w - PAD - 24, y + 15, UiSpace.CAPTION, UiDraw.mix(t.textDim(), t.text(), on));
             UiDraw.toggle(g, x + w - PAD - 18, y + 10, on, hover, t);
             hits.add(new Hit(x + w - PAD - 70, y + 6, 70, 18, toggle::toggle));
         }
@@ -398,12 +393,12 @@ final class SettingsScreen extends UiScreen {
         float cw = UiDraw.width(label, UiDraw.SMALL) + 26, cx = right - cw, ch = 18;
         boolean hover = UiDraw.over(mx, my, cx, y, cw, ch);
         float hv = UiAnim.smooth("app.menukey.h", hover || bindingMenuKey ? 1 : 0, 18);
-        float pulse = bindingMenuKey ? UiAnim.pulse(1.5e8) : 0;
-        UiDraw.rounded(g, cx, y, cw, ch, 8, bindingMenuKey ? UiDraw.alpha(t.accent(), .16f + pulse * .12f) : UiDraw.mix(t.surface(), t.overlay(), hv * .7f));
-        UiDraw.outline(g, cx, y, cw, ch, 8, .6f, bindingMenuKey ? UiDraw.alpha(t.accent(), .5f + pulse * .5f) : UiDraw.alpha(t.overlay(), .5f + hv * .3f));
-        UiDraw.icon(g, "keyboard", cx + 7, y + 5, 8, bindingMenuKey ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv));
-        UiDraw.text(g, label, cx + 19, y + ch / 2, UiDraw.SMALL, bindingMenuKey ? t.accent() : t.text());
-        if (hover && !bindingMenuKey) tooltip("app.menukey", "Open key", "Click, then press a key or mouse button (middle/side) · Backspace resets to Right Shift");
+        float pulse = bindingMenuKey ? 1 : 0;
+        UiDraw.rounded(g, cx, y, cw, ch, 8, bindingMenuKey ? UiDraw.alpha(t.on(), .16f + pulse * .12f) : UiDraw.mix(t.fill(), t.line(), hv * .7f));
+        UiDraw.outline(g, cx, y, cw, ch, 8, .6f, bindingMenuKey ? UiDraw.alpha(t.on(), .5f + pulse * .5f) : UiDraw.alpha(t.line(), .5f + hv * .3f));
+        UiDraw.icon(g, "keyboard", cx + 7, y + 5, 8, bindingMenuKey ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv));
+        UiDraw.text(g, label, cx + 19, y + ch / 2, UiDraw.SMALL, bindingMenuKey ? t.on() : t.text());
+        if (hover && !bindingMenuKey) tooltip("app.menukey", null, "Click, then press a key or mouse button, or Backspace to reset to Right Shift");
         hits.add(new Hit(cx, y, cw, ch, () -> { for (SettingsList card : appearanceLists) card.stopEditing(); bindingMenuKey = !bindingMenuKey; }));
     }
 
@@ -412,12 +407,12 @@ final class SettingsScreen extends UiScreen {
     /** A two-option segmented control with a sliding thumb. */
     private void segmented(GuiGraphicsExtractor g, String key, String[] labels, int chosen, float x, float y, float w, int mx, int my, UiTheme t, java.util.function.IntConsumer pick) {
         float seg = w / 2;
-        UiDraw.rounded(g, x, y, w, 18, 7, t.crust());
+        UiDraw.rounded(g, x, y, w, 18, 7, t.deep());
         float thumb = UiAnim.smooth(key, chosen, 16);
-        UiDraw.rounded(g, x + 2 + thumb * seg, y + 2, seg - 4, 14, 5.5f, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, x + 2 + thumb * seg, y + 2, seg - 4, 14, 5.5f, t.fill());
         for (int i = 0; i < 2; i++) {
             boolean hover = UiDraw.over(mx, my, x + i * seg, y, seg, 18);
-            int colour = i == chosen ? t.accent() : UiDraw.mix(t.muted(), t.text(), UiAnim.smooth(key + ".h" + i, hover ? 1 : 0, 18));
+            int colour = i == chosen ? t.on() : UiDraw.mix(t.textDim(), t.text(), UiAnim.smooth(key + ".h" + i, hover ? 1 : 0, 18));
             UiDraw.center(g, labels[i], x + i * seg, y + 9, seg, UiDraw.SMALL, colour);
             int index = i;
             hits.add(new Hit(x + i * seg, y, seg, 18, () -> pick.accept(index)));
@@ -431,11 +426,11 @@ final class SettingsScreen extends UiScreen {
     private void toggleRow(GuiGraphicsExtractor g, String label, String hint, boolean on, String key, float x, float y, float w, int mx, int my, UiTheme t, Runnable flip) {
         boolean hover = UiDraw.over(mx, my, x - 4, y, w + 8, 18);
         float h = UiAnim.smooth(key + ".h", hover ? 1 : 0, 18);
-        if (h > 0) UiDraw.rounded(g, x - 4, y, w + 8, 18, 6, UiDraw.alpha(t.surface(), h * .8f));
+        if (h > 0) UiDraw.rounded(g, x - 4, y, w + 8, 18, 6, UiDraw.alpha(t.fill(), h * .8f));
         UiDraw.text(g, label, x, y + 9, UiDraw.SMALL, t.text());
         UiDraw.toggle(g, x + w - 18, y + 4, UiAnim.smooth(key, on ? 1 : 0, 16), hover, t);
         hits.add(new Hit(x - 4, y, w + 8, 18, flip));
-        if (hover) tooltip(key, label, hint);
+        if (hover) tooltip(key, null, hint);
     }
 
     private void appearance(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
@@ -443,21 +438,19 @@ final class SettingsScreen extends UiScreen {
         var p = GuiState.preferences();
         boolean light = p.mode == GuiPreferences.Mode.LIGHT;
         float x = contentX(), w = contentWidth(), ix = x + PAD, iw = w - PAD * 2, half = (iw - 16) / 2;
-        UiDraw.icon(g, "palette", x, top + 13.5f, 9, t.accent());
-        UiDraw.bold(g, APPEARANCE, x + 13, top + 18, UiDraw.TITLE, t.text());
-        UiDraw.text(g, "Theme, top bar, window placement, and the menu, colour and font options", x, top + 31, UiDraw.SMALL, t.muted());
-        UiDraw.rect(g, x, top + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.title(g, APPEARANCE, x, top + 18, t.text());
+        UiDraw.rect(g, x, top + 32, w, 1, UiDraw.alpha(t.line(), .6f));
 
         // Card heights, so the page knows how far it can scroll.
-        float themeH = CARD_HEAD + 74, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68;
+        float themeH = CARD_HEAD + 96, barH = CARD_HEAD + 48 + chipsHeight(iw) + PAD, windowsH = CARD_HEAD + 68, trialsH = CARD_HEAD + 46;
         List<Float> listHeights = new ArrayList<>();
         for (SettingsList card : appearanceLists) listHeights.add(CARD_HEAD + card.contentHeight() + 6f);
-        float total = themeH + barH + windowsH + CARD_GAP * 3;
+        float total = themeH + barH + windowsH + trialsH + CARD_GAP * 4;
         for (float h : listHeights) total += h + CARD_GAP;
         float view = pageBottom() - pageTop();
         if (focusModule != null) {
             // Opened for one of the folded-in modules: scroll its card into view.
-            float offset = themeH + barH + windowsH + CARD_GAP * 3;
+            float offset = themeH + barH + windowsH + trialsH + CARD_GAP * 4;
             for (int i = 0; i < appearanceLists.size(); i++) {
                 if (appearanceLists.get(i).module().getName().equals(focusModule)) { pageScroll = offset; break; }
                 offset += listHeights.get(i) + CARD_GAP;
@@ -471,22 +464,22 @@ final class SettingsScreen extends UiScreen {
         float y = pageTop() - shownPageScroll;
 
         // Theme: mode, scale and accent.
-        card(g, x, y, w, themeH, "palette", "Theme", "Dark or light, accent colour, how large the menu is drawn and its motion", null, mx, my, t);
+        card(g, x, y, w, themeH, "palette", "Theme", null, null, mx, my, t);
         float row = y + CARD_HEAD + 4;
-        UiDraw.text(g, "Mode", ix, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Mode", ix, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.mode", new String[]{"Dark", "Light"}, light ? 1 : 0, ix + 34, row, half - 34, mx, my, t,
                 i -> { p.mode = i == 1 ? GuiPreferences.Mode.LIGHT : GuiPreferences.Mode.DARK; GuiState.save(); });
         double scale = Double.isNaN(pendingScale) ? p.uiScale : pendingScale;
         float sx = ix + half + 16, scaleTrackX = sx + 34, scaleTrackW = ix + iw - 32 - scaleTrackX;
-        UiDraw.text(g, "Scale", sx, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Scale", sx, row + 9, UiDraw.SMALL, t.textDim());
         float scaleValue = (float) ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE));
         boolean overScale = UiDraw.over(mx, my, scaleTrackX - 4, row + 1, scaleTrackW + 8, 16);
         UiDraw.slider(g, scaleTrackX, row + 9, scaleTrackW, "scale".equals(sliding) ? scaleValue : UiAnim.smooth("app.scale", scaleValue, 18),
                 UiAnim.smooth("app.scale.h", overScale || "scale".equals(sliding) ? 1 : 0, 18), t);
-        UiDraw.right(g, Math.round(scale * 100) + "%", ix + iw, row + 9, UiDraw.SMALL, "scale".equals(sliding) ? t.accent() : t.text());
+        UiDraw.right(g, Math.round(scale * 100) + "%", ix + iw, row + 9, UiDraw.SMALL, "scale".equals(sliding) ? t.on() : t.text());
         hits.add(new Hit(scaleTrackX - 4, row + 1, scaleTrackW + 8, 16, () -> startSlider("scale", scaleTrackX, scaleTrackW)));
         row += 26;
-        UiDraw.text(g, "Accent", ix, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Accent", ix, row + 9, UiDraw.SMALL, t.textDim());
         var accents = GuiPreferences.Accent.values();
         float cell = (iw - 34) / accents.length;
         for (int i = 0; i < accents.length; i++) {
@@ -495,9 +488,9 @@ final class SettingsScreen extends UiScreen {
             boolean chosen = p.accent == accent, hover = UiDraw.over(mx, my, ix + 34 + i * cell, row - 2, cell, 22);
             float hv = UiAnim.smooth("app.acc.h" + i, hover ? 1 : 0, 18), ring = UiAnim.smooth("app.acc." + i, chosen ? 1 : 0, 14);
             int colour = accentColour(accent, light);
-            if (ring > 0) UiDraw.outline(g, cx - 9.5f, cy - 9.5f, 19, 19, 9.5f, 1.3f, UiDraw.alpha(colour, ring));
+            if (ring > 0) UiDraw.frame(g, cx - 9.5f, cy - 9.5f, 19, 19, 4, UiDraw.alpha(colour, ring)); // stepped like the swatch
             UiDraw.circle(g, cx, cy, 6.5f + hv * .8f, colour);
-            if (ring > .02f) UiDraw.icon(g, "check", cx - 4, cy - 4, 8, UiDraw.alpha(t.crust(), ring));
+            if (ring > .02f) UiDraw.icon(g, "check", cx - 4, cy - 4, 8, UiDraw.alpha(t.deep(), ring));
             if (hover) tooltip("app.acc." + i, GuiState.title(accent.name().toLowerCase(Locale.ROOT)));
             hits.add(new Hit(ix + 34 + i * cell, row - 2, cell, 22, () -> { p.accent = accent; GuiState.save(); }));
         }
@@ -510,46 +503,50 @@ final class SettingsScreen extends UiScreen {
         boolean overSpeed = p.animations && UiDraw.over(mx, my, speedTrackX - 4, row + 1, speedTrackW + 8, 16);
         float speedBefore = UiRender.opacity;
         UiRender.opacity = speedBefore * UiAnim.smooth("app.speed.on", p.animations ? 1 : .4f, 16);
-        UiDraw.text(g, "Speed", speedX, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Speed", speedX, row + 9, UiDraw.SMALL, t.textDim());
         UiDraw.slider(g, speedTrackX, row + 9, speedTrackW, "speed".equals(sliding) ? speedValue : UiAnim.smooth("app.speed", speedValue, 18),
                 UiAnim.smooth("app.speed.h", overSpeed || "speed".equals(sliding) ? 1 : 0, 18), t);
-        UiDraw.right(g, speedLabel(p.animationSpeed), ix + iw, row + 9, UiDraw.SMALL, "speed".equals(sliding) ? t.accent() : t.text());
+        UiDraw.right(g, speedLabel(p.animationSpeed), ix + iw, row + 9, UiDraw.SMALL, "speed".equals(sliding) ? t.on() : t.text());
         UiRender.opacity = speedBefore;
-        if (overSpeed) tooltip("app.speed", "Animation speed", "How fast menu motion plays · 1x is normal, higher is snappier");
+        if (overSpeed) tooltip("app.speed", null, "How fast menu motion plays, where 1x is normal and higher is snappier");
         if (p.animations) hits.add(new Hit(speedTrackX - 4, row + 1, speedTrackW + 8, 16, () -> startSlider("speed", speedTrackX, speedTrackW)));
+        row += 22;
+        toggleRow(g, "HUD uses accent", "HUD text and highlights take the accent colour and follow Light and Dark. Turn off to pick HUD colours yourself",
+                p.hudFollowsAccent, "app.hudaccent", ix, row, half, mx, my, t,
+                () -> { p.hudFollowsAccent = !p.hudFollowsAccent; GuiState.save(); GuiState.syncHudColours(); });
         y += themeH + CARD_GAP;
 
         // Top bar: which tabs sit between the face and the settings circle, and their style.
-        card(g, x, y, w, barH, "modules", "Top bar", "Click a tab to add or remove it · drag tabs in the bar to reorder · right-click to remove", null, mx, my, t);
+        card(g, x, y, w, barH, "modules", "Top bar", null, null, mx, my, t);
         row = y + CARD_HEAD + 4;
-        UiDraw.text(g, "Tab style", ix, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Tab style", ix, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.tabstyle", new String[]{"Names", "Icons"}, p.tabStyle == GuiPreferences.TabStyle.ICONS ? 1 : 0, ix + 50, row, 110, mx, my, t,
                 i -> { p.tabStyle = i == 1 ? GuiPreferences.TabStyle.ICONS : GuiPreferences.TabStyle.NAMES; GuiState.save(); layoutTabs(); });
         // What the HUD tab opens, next to the tab style since it changes what a tab does.
         float hudSegW = 110, hudSegX = ix + iw - hudSegW, hudLabelX = hudSegX - UiDraw.width("HUD tab opens", UiDraw.SMALL) - 8;
-        UiDraw.text(g, UiDraw.fit("Names switch to icons when they don't fit", Math.max(0, hudLabelX - ix - 176), 6f), ix + 168, row + 9, 6f, UiDraw.alpha(t.muted(), .7f));
-        UiDraw.text(g, "HUD tab opens", hudLabelX, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, UiDraw.fit("Names switch to icons when they don't fit", Math.max(0, hudLabelX - ix - 176), UiSpace.CAPTION), ix + 168, row + 9, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
+        UiDraw.text(g, "HUD tab opens", hudLabelX, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.hudtab", new String[]{"Editor", "Settings"}, p.hudTab == GuiPreferences.HudTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
                 i -> { p.hudTab = i == 1 ? GuiPreferences.HudTab.SETTINGS : GuiPreferences.HudTab.EDITOR; GuiState.save(); layoutTabs(); });
         if (UiDraw.over(mx, my, hudLabelX, row, ix + iw - hudLabelX, 18))
-            tooltip("app.hudtab.tip", "HUD tab", "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
+            tooltip("app.hudtab.tip", null, "Choose whether the HUD tab in the top bar opens the on-screen editor or the HUD settings page");
         // What the Social tab opens, under the HUD choice.
         row += 22;
         float socialLabelX = hudSegX - UiDraw.width("Social tab opens", UiDraw.SMALL) - 8;
-        UiDraw.text(g, "Social tab opens", socialLabelX, row + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Social tab opens", socialLabelX, row + 9, UiDraw.SMALL, t.textDim());
         segmented(g, "app.socialtab", new String[]{"Menu", "Settings"}, p.socialTab == GuiPreferences.SocialTab.SETTINGS ? 1 : 0, hudSegX, row, hudSegW, mx, my, t,
                 i -> { p.socialTab = i == 1 ? GuiPreferences.SocialTab.SETTINGS : GuiPreferences.SocialTab.MENU; GuiState.save(); layoutTabs(); });
         if (UiDraw.over(mx, my, socialLabelX, row, ix + iw - socialLabelX, 18))
-            tooltip("app.socialtab.tip", "Social tab", "Choose whether the Social tab in the top bar opens the Social menu or the Social settings page");
+            tooltip("app.socialtab.tip", null, "Choose whether the Social tab in the top bar opens the Social menu or the Social settings page");
         float cx = ix, cy = row + 26;
         for (String entry : barCandidates()) {
             float cw = UiDraw.width(chipLabel(entry), UiDraw.SMALL) + 26;
             if (cx + cw > ix + iw && cx > ix) { cx = ix; cy += CHIP_H + 4; }
             boolean shown = p.barTabs.contains(entry), hover = UiDraw.over(mx, my, cx, cy, cw, CHIP_H);
             float on = UiAnim.smooth("chip.on." + entry, shown ? 1 : 0, 16), hv = UiAnim.smooth("chip.h." + entry, hover ? 1 : 0, 20);
-            UiDraw.rounded(g, cx, cy, cw, CHIP_H, CHIP_H / 2, UiDraw.mix(UiDraw.mix(t.crust(), t.surface(), hv), UiDraw.alpha(t.accent(), .22f + hv * .08f), on));
-            if (on < 1) UiDraw.outline(g, cx, cy, cw, CHIP_H, CHIP_H / 2, .6f, UiDraw.alpha(t.overlay(), (1 - on) * (.6f + hv * .3f)));
-            int colour = UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), t.accent(), on);
+            UiDraw.rounded(g, cx, cy, cw, CHIP_H, CHIP_H / 2, UiDraw.mix(UiDraw.mix(t.deep(), t.fill(), hv), UiDraw.alpha(t.on(), .22f + hv * .08f), on));
+            if (on < 1) UiDraw.outline(g, cx, cy, cw, CHIP_H, CHIP_H / 2, .6f, UiDraw.alpha(t.line(), (1 - on) * (.6f + hv * .3f)));
+            int colour = UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), hv), t.on(), on);
             UiDraw.icon(g, tabIcon(entry), cx + 7, cy + CHIP_H / 2 - 3.5f, 7, colour);
             UiDraw.text(g, chipLabel(entry), cx + 18, cy + CHIP_H / 2, UiDraw.SMALL, colour);
             if (hover) tooltip("chip." + entry, shown ? "Remove from the top bar" : "Add to the top bar");
@@ -562,7 +559,7 @@ final class SettingsScreen extends UiScreen {
         y += barH + CARD_GAP;
 
         // Windows: snapping, grid, auto gap and reset.
-        card(g, x, y, w, windowsH, "misc", "Windows", "How module windows and HUD elements snap and space out while you drag them", null, mx, my, t);
+        card(g, x, y, w, windowsH, "misc", "Windows", null, null, mx, my, t);
         row = y + CARD_HEAD + 2;
         toggleRow(g, "Snap to grid", "Windows land on a fine grid when you let go", p.snap, "app.snap", ix, row, half, mx, my, t,
                 () -> { p.snap = !p.snap; GuiState.save(); });
@@ -575,8 +572,8 @@ final class SettingsScreen extends UiScreen {
         boolean overGap = UiDraw.over(mx, my, gapTrackX - 4, row + 1, gapTrackW + 8, 16);
         UiDraw.slider(g, gapTrackX, row + 9, gapTrackW, "gap".equals(sliding) ? gapValue : UiAnim.smooth("app.gap", gapValue, 18),
                 UiAnim.smooth("app.gap.h", overGap || "gap".equals(sliding) ? 1 : 0, 18), t);
-        UiDraw.right(g, p.gap == 0 ? "Off" : Integer.toString(p.gap), ix + half, row + 9, UiDraw.SMALL, p.gap == 0 ? t.muted() : "gap".equals(sliding) ? t.accent() : t.text());
-        if (overGap) tooltip("app.gap", "Auto gap", "Keeps dragged windows at least this far from each other");
+        UiDraw.right(g, p.gap == 0 ? "Off" : Integer.toString(p.gap), ix + half, row + 9, UiDraw.SMALL, p.gap == 0 ? t.textDim() : "gap".equals(sliding) ? t.on() : t.text());
+        if (overGap) tooltip("app.gap", null, "Keeps dragged windows at least this far from each other");
         hits.add(new Hit(gapTrackX - 4, row + 1, gapTrackW + 8, 16, () -> startSlider("gap", gapTrackX, gapTrackW)));
         float hudRow = row + 22;
         UiDraw.text(g, "HUD gap", ix, hudRow + 9, UiDraw.SMALL, t.text());
@@ -584,8 +581,8 @@ final class SettingsScreen extends UiScreen {
         boolean overHud = UiDraw.over(mx, my, gapTrackX - 4, hudRow + 1, gapTrackW + 8, 16);
         UiDraw.slider(g, gapTrackX, hudRow + 9, gapTrackW, "hudGap".equals(sliding) ? hudValue : UiAnim.smooth("app.hudgap", hudValue, 18),
                 UiAnim.smooth("app.hudgap.h", overHud || "hudGap".equals(sliding) ? 1 : 0, 18), t);
-        UiDraw.right(g, p.hudGap == 0 ? "Off" : Integer.toString(p.hudGap), ix + half, hudRow + 9, UiDraw.SMALL, p.hudGap == 0 ? t.muted() : "hudGap".equals(sliding) ? t.accent() : t.text());
-        if (overHud) tooltip("app.hudgap", "HUD gap", "Keeps HUD elements at least this far from each other while you drag them in the HUD editor");
+        UiDraw.right(g, p.hudGap == 0 ? "Off" : Integer.toString(p.hudGap), ix + half, hudRow + 9, UiDraw.SMALL, p.hudGap == 0 ? t.textDim() : "hudGap".equals(sliding) ? t.on() : t.text());
+        if (overHud) tooltip("app.hudgap", null, "Keeps HUD elements at least this far from each other while you drag them in the HUD editor");
         hits.add(new Hit(gapTrackX - 4, hudRow + 1, gapTrackW + 8, 16, () -> startSlider("hudGap", gapTrackX, gapTrackW)));
         toggleRow(g, "Fit HUD to grid", "HUD element sizes and spacing round to whole grid steps", p.hudFitGrid, "app.hudgrid", ix + half + 16, hudRow, half, mx, my, t,
                 () -> { p.hudFitGrid = !p.hudFitGrid; GuiState.save(); });
@@ -593,11 +590,27 @@ final class SettingsScreen extends UiScreen {
         float rw = UiDraw.width(resetLabel, UiDraw.SMALL) + 24, rx = ix + iw - rw;
         boolean resetHover = UiDraw.over(mx, my, rx, row + 1, rw, 16);
         float rh = UiAnim.smooth("app.resetpos", resetHover ? 1 : 0, 18);
-        UiDraw.rounded(g, rx, row + 1, rw, 16, 8, UiDraw.mix(t.surface(), t.overlay(), rh * .8f));
-        UiDraw.icon(g, "reset", rx + 7, row + 5, 8, UiDraw.mix(t.muted(), t.accent(), rh));
+        UiDraw.rounded(g, rx, row + 1, rw, 16, 8, UiDraw.mix(t.fill(), t.line(), rh * .8f));
+        UiDraw.icon(g, "reset", rx + 7, row + 5, 8, UiDraw.mix(t.textDim(), t.on(), rh));
         UiDraw.text(g, resetLabel, rx + 18, row + 9, UiDraw.SMALL, t.text());
         hits.add(new Hit(rx, row + 1, rw, 16, () -> { p.windows.clear(); GuiState.save(); minecraft.gui.setScreen(new ModulesScreen(rootParent())); }));
         y += windowsH + CARD_GAP;
+
+        // Surface: how window and button faces are drawn. Page titles are always in the pixel face.
+        card(g, x, y, w, trialsH, "misc", "Surface", null, null, mx, my, t);
+        row = y + CARD_HEAD + 2;
+        UiDraw.text(g, "Corners", ix, row + 9, UiDraw.SMALL, t.textDim());
+        String[] cornerLabels = p.smoothCorners ? new String[]{"Small", "Medium", "Large"} : new String[]{"1 step", "2 steps", "3 steps"};
+        segmented(g, "app.corner", cornerLabels, p.corner - GuiPreferences.MIN_CORNER, ix + 44, row, half - 44, mx, my, t,
+                i -> { p.corner = i + GuiPreferences.MIN_CORNER; GuiState.save(); });
+        toggleRow(g, "Grain", "A faint pixel grain on window backgrounds, dark mode only", p.grain, "app.grain", ix + half + 16, row, half, mx, my, t,
+                () -> { p.grain = !p.grain; GuiState.save(); });
+        row += 22;
+        toggleRow(g, "Bevelled buttons", "Light top and dark bottom edges, like vanilla buttons", p.bevels, "app.bevels", ix, row, half, mx, my, t,
+                () -> { p.bevels = !p.bevels; GuiState.save(); });
+        toggleRow(g, "Smooth corners", "Round, anti-aliased corners instead of stepped pixel ones. Corners above sets how round", p.smoothCorners, "app.smooth", ix + half + 16, row, half, mx, my, t,
+                () -> { p.smoothCorners = !p.smoothCorners; GuiState.save(); });
+        y += trialsH + CARD_GAP;
 
         // The folded-in modules, each as a card holding its own settings.
         for (int i = 0; i < appearanceLists.size(); i++) {
@@ -605,9 +618,7 @@ final class SettingsScreen extends UiScreen {
             Module module = card.module();
             boolean ui = module instanceof UIModule;
             String title = ui ? "Menu" : module instanceof ColorsModule ? "Colours" : "Fonts";
-            String subtitle = ui ? "Options for this menu and the classic click GUI"
-                    : module instanceof ColorsModule ? "The client's colour scheme for HUD, ESP and other visuals"
-                    : "The client's custom font renderer";
+            String subtitle = null;
             float h = listHeights.get(i);
             card(g, x, y, w, h, icon(module.getName()), title, subtitle, ui ? null : module, ui ? 130 : 70, mx, my, t);
             if (ui) menuKeyChip(g, x + w - PAD, y + 6, mx, my, t);
@@ -617,16 +628,16 @@ final class SettingsScreen extends UiScreen {
         }
         g.disableScissor();
         // Edge fades and a slim scrollbar hint that the page scrolls.
-        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageTop(), w + 8, 10, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.gradient(g, x - 4, pageBottom() - 10, w + 8, 10, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageTop(), w + 8, true, t));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownPageScroll), () -> UiDraw.scrollEdge(g, x - 4, pageBottom(), w + 8, false, t));
         if (total > view) {
             float track = Math.max(16, view * view / total), offset = (view - track) * shownPageScroll / Math.max(1, total - view);
-            UiDraw.rounded(g, x + w + 3, pageTop() + offset, 2, track, 1, UiDraw.alpha(t.overlay(), .8f));
+            UiDraw.rounded(g, x + w + 3, pageTop() + offset, 2, track, 1, UiDraw.alpha(t.line(), .8f));
         }
         for (SettingsList card : appearanceLists) card.popup(g, t, width, height);
         String message = appearanceLists.stream().map(SettingsList::message).filter(m -> !m.isEmpty()).findFirst().orElse("");
-        if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.red());
-        else UiDraw.text(g, "Changes apply instantly and are saved automatically · scroll for more", x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+        if (!message.isEmpty()) UiDraw.text(g, UiDraw.fit(message, w), x, top + panelHeight - 11, UiDraw.SMALL, t.danger());
+        else { String note = applyNote(); if (note != null) UiDraw.text(g, note, x, top + panelHeight - 11, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f)); }
     }
 
     /** Appearance and Discord: a scrolling stack of module cards with clickable regions recorded while drawing. */

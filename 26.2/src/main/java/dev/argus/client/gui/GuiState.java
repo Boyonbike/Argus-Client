@@ -26,9 +26,28 @@ final class GuiState {
     /** The palette, cross-faded for a quarter second whenever mode or accent changes. */
     static UiTheme theme() {
         UiTheme target = UiTheme.of(preferences());
-        if (targetTheme == null) { targetTheme = shownTheme = target; }
-        if (!target.equals(targetTheme)) { shownTheme = blendedTheme(); targetTheme = target; themeChanged = System.nanoTime(); }
+        if (targetTheme == null) { targetTheme = shownTheme = target; syncHudColours(); }
+        if (!target.equals(targetTheme)) { shownTheme = blendedTheme(); targetTheme = target; themeChanged = System.nanoTime(); syncHudColours(); }
         return blendedTheme();
+    }
+
+    /**
+     * While "HUD uses accent" is on, copies the menu accent (for the current Light/Dark mode) into the colour
+     * settings the HUD draws with: the HUD text colour and its fade partner, the client theme colour that synced
+     * colour settings follow, and the HUD editor's selection colour. Called whenever mode or accent change.
+     */
+    static void syncHudColours() {
+        GuiPreferences p = preferences();
+        if (!p.hudFollowsAccent) return;
+        int on = UiTheme.of(p).on();
+        java.awt.Color accent = new java.awt.Color(on, false);
+        java.awt.Color partner = new java.awt.Color(UiDraw.mix(on, 0xff000000, .45f), false);
+        var hud = ClientContext.getModule(dev.argus.client.modules.client.HUDModule.class);
+        if (hud != null) { hud.colorSetting.setValue(accent); hud.secondColorSetting.setValue(partner); }
+        var colours = ClientContext.getModule(dev.argus.client.modules.client.ColorsModule.class);
+        if (colours != null) colours.themeColorSetting.setValue(accent);
+        var ui = dev.argus.client.modules.client.UIModule.INSTANCE;
+        if (ui != null) ui.colorSetting.setValue(accent);
     }
     private static UiTheme blendedTheme() {
         float t = UiAnim.eased(themeChanged, .25f);

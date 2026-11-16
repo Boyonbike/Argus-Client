@@ -61,7 +61,7 @@ final class DiscordIgnClientTest {
         }, role("10", "Clan Member"), role("20", "Ally")), RELAY, 4, 4, 4, 4, millis -> {});
         var sync = client.fetch();
         assertEquals(List.of("Alice", "Bob", "Carl"), sync.result().names());
-        assertEquals("Clan Member · Ally", DiscordRoles.label(sync.roles(), "Alice"));
+        assertEquals("Clan Member, Ally", DiscordRoles.label(sync.roles(), "Alice"));
         assertEquals("Ally", DiscordRoles.label(sync.roles(), "Bob"));
         assertEquals("No role", DiscordRoles.label(sync.roles(), "Carl"));
     }
