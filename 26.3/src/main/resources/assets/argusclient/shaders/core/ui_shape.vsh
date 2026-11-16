@@ -16,7 +16,7 @@ layout(location = 0) in vec3 Position;
 layout(location = 1) in vec2 UV0;     // fragment offset from the shape centre, in physical pixels
 layout(location = 2) in vec4 Color;
 layout(location = 3) in ivec2 UV1;    // half size, physical pixels * 8
-layout(location = 4) in ivec2 UV2;    // corner radius * 8, mode parameter * 8
+layout(location = 4) in ivec2 UV2;    // corner radius * 8 (negative: chamfer code), mode parameter * 8
 
 layout(location = 0) out vec2 localPos;
 layout(location = 1) out vec4 vertexColor;

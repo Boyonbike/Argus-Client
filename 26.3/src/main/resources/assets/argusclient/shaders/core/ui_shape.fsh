@@ -21,8 +21,34 @@ float roundedBox(vec2 point, vec2 halfSize, float radius) {
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
 }
 
+// Pixel-art corner: a staircase of `steps` cells, each `cell` physical pixels square. Returns 1 inside, 0 outside.
+float steppedBox(vec2 point, vec2 halfSize, float cell, float steps) {
+    vec2 inward = halfSize - abs(point);
+    if (inward.x <= 0.0 || inward.y <= 0.0) return 0.0;
+    vec2 index = floor(inward / cell);
+    return index.x + index.y >= steps ? 1.0 : 0.0;
+}
+
 void main() {
     vec2 halfSize = shapeParams.xy;
+    if (shapeParams.z < 0.0) {
+        // Chamfer: radius slot carries -(steps | cellPixels*8 << 4) / 8.
+        int code = int(round(-shapeParams.z * 8.0));
+        float steps = float(code & 15), cell = float(code >> 4) / 8.0;
+        float coverage = steppedBox(localPos, halfSize, cell, steps);
+        if (shapeParams.w > 0.0) {
+            // Outline: the stepped ring between the shape and the same shape inset by whole cells.
+            float inset = max(1.0, round(shapeParams.w / cell));
+            coverage -= steppedBox(localPos, halfSize - inset * cell, cell, max(steps - inset, 0.0));
+        }
+        vec4 color = vertexColor;
+        color.a *= coverage;
+        if (color.a <= 0.0) {
+            discard;
+        }
+        fragColor = color * ColorModulator;
+        return;
+    }
     float radius = min(shapeParams.z, min(halfSize.x, halfSize.y));
     float parameter = shapeParams.w;
     float distance = roundedBox(localPos, halfSize, radius);

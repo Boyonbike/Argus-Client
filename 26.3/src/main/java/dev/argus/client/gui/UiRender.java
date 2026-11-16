@@ -101,6 +101,22 @@ final class UiRender {
      */
     static void shape(GuiGraphicsExtractor g, float x, float y, float width, float height, float radius,
                       int top, int bottom, float mode) {
+        emit(g, x, y, width, height, Math.round(Math.max(0, radius * pixelsPerUnit(g)) * 8), top, bottom, mode);
+    }
+
+    /**
+     * Rectangle with stepped pixel-art corners: {@code steps} GUI pixels cut diagonally from each corner, drawn
+     * on whole framebuffer pixels so the staircase stays crisp. {@code mode} 0 = fill, &gt;0 = outline of that
+     * logical thickness (rounded to whole GUI pixels). Soft shadows are not supported.
+     */
+    static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int colour, float mode) {
+        if (steps <= 0) { shape(g, x, y, width, height, 0, colour, colour, Math.max(0, mode)); return; }
+        int cell = Math.max(1, Math.round(pixelsPerUnit(g)));
+        emit(g, x, y, width, height, -(Math.min(steps, 15) | (cell * 8) << 4), colour, colour, Math.max(0, mode));
+    }
+
+    private static void emit(GuiGraphicsExtractor g, float x, float y, float width, float height, int radiusCode,
+                             int top, int bottom, float mode) {
         if (width <= 0 || height <= 0) return;
         top = fade(top); bottom = fade(bottom);
         if ((top >>> 24) == 0 && (bottom >>> 24) == 0) return;
@@ -118,7 +134,7 @@ final class UiRender {
         if (bounds == null) return;
         g.guiRenderState.addGuiElement(new ShapeState(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale,
                 qx0 - cx, qy0 - cy, qx1 - cx, qy1 - cy,
-                Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), Math.round(Math.max(0, radius * k) * 8),
+                Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), radiusCode,
                 Math.round(physicalMode * 8), top, bottom, scissor, bounds));
     }
 

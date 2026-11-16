@@ -155,50 +155,80 @@ final class UiDraw {
     /** Height of a card's title area. */
     static final float CARD_HEAD = 30, CARD_PAD = 10;
 
-    /** Settings card: soft panel with an icon badge, a title and a one-line subtitle. */
+    /**
+     * Settings group. No box, badge or icon: the group is a header (uppercase caption) and, while copy is
+     * still being trimmed, an optional one-line subtitle. Groups are separated by space, not borders.
+     * {@code icon} is ignored and goes once every caller stops passing it.
+     */
     static void card(GuiGraphicsExtractor g, float x, float y, float w, float h, String icon, String title, String subtitle, float reserveRight, UiTheme t) {
-        rounded(g, x, y, w, h, 8, alpha(t.mantle(), .6f));
-        outline(g, x, y, w, h, 8, .6f, alpha(t.overlay(), .4f));
-        circle(g, x + CARD_PAD + 7, y + 15, 8, alpha(t.accent(), .16f));
-        icon(g, icon, x + CARD_PAD + 3, y + 11, 8, t.accent());
-        bold(g, fit(title, w - CARD_PAD * 2 - 20 - reserveRight), x + CARD_PAD + 20, y + 11, TEXT, t.text());
-        text(g, fit(subtitle, w - CARD_PAD * 2 - 20 - reserveRight), x + CARD_PAD + 20, y + 21, 6f, t.muted());
+        float available = w - CARD_PAD * 2 - reserveRight;
+        boolean sub = subtitle != null && !subtitle.isBlank();
+        header(g, fit(title, available, UiSpace.CAPTION), x + CARD_PAD, y + (sub ? 10 : 15), t);
+        if (sub) text(g, fit(subtitle, available, UiSpace.CAPTION), x + CARD_PAD, y + 20, UiSpace.CAPTION, t.textDim());
     }
 
-    /** Floating window: soft shadow, base fill and a hairline edge. {@code lift} deepens the shadow. */
+    /** Group header: uppercase caption in the secondary text colour, the same on every screen. */
+    static void header(GuiGraphicsExtractor g, String title, float x, float centreY, UiTheme t) {
+        text(g, title.toUpperCase(java.util.Locale.ROOT), x, centreY, UiSpace.CAPTION, t.textDim());
+    }
+
+    /** A number or other changing value: tabular digits so it doesn't jitter as it changes. */
+    static void number(GuiGraphicsExtractor g, String text, float x, float centreY, float size, int colour) {
+        UiFont.drawCentred(g, text, x, centreY, size, colour, false, true);
+    }
+    static float numberWidth(String text, float size) { return UiFont.width(text, size, density, true); }
+    static void numberRight(GuiGraphicsExtractor g, String text, float right, float centreY, float size, int colour) {
+        number(g, text, right - numberWidth(text, size), centreY, size, colour);
+    }
+
+    /** Box with stepped pixel corners. */
+    static void box(GuiGraphicsExtractor g, float x, float y, float w, float h, int steps, int colour) { UiRender.chamfer(g, x, y, w, h, steps, colour, 0); }
+    /** One-pixel outline of a {@link #box}. */
+    static void frame(GuiGraphicsExtractor g, float x, float y, float w, float h, int steps, int colour) { UiRender.chamfer(g, x, y, w, h, steps, colour, 1); }
+
+    /** Minecraft's shadow colour for something drawn in {@code colour}: the same hue at a quarter of the brightness. */
+    static int shade(int colour) {
+        int r = ((colour >> 16) & 255) / 4, gr = ((colour >> 8) & 255) / 4, b = (colour & 255) / 4;
+        return (colour & 0xff000000) | r << 16 | gr << 8 | b;
+    }
+
+    /**
+     * Window: opaque body with stepped corners, a 1px edge and a hard 1-unit shadow down and right, coloured
+     * the way vanilla shades text. {@code lift} (0…1, e.g. while dragged) pushes the shadow one unit further.
+     */
     static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme, float lift) {
-        boolean dark = GuiState.preferences().mode == GuiPreferences.Mode.DARK;
-        shadow(g, x, y + 2 + lift * 3, w, h, 7, 9 + lift * 8, dark ? alpha(0xff000000, .42f + lift * .2f) : alpha(0xff4c4f69, .16f + lift * .12f));
-        rounded(g, x, y, w, h, 7, theme.base());
-        outline(g, x, y, w, h, 7, .6f, alpha(theme.overlay(), dark ? .55f : .7f));
+        float offset = 1 + Math.round(Math.clamp(lift, 0, 1));
+        box(g, x + offset, y + offset, w, h, UiSpace.CHAMFER, shade(theme.bg()));
+        box(g, x, y, w, h, UiSpace.CHAMFER, theme.bg());
+        frame(g, x, y, w, h, UiSpace.CHAMFER, theme.line());
     }
     static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, UiTheme theme) { panel(g, x, y, w, h, theme, 0); }
 
     // ---- controls ---------------------------------------------------------------------------
+    // Controls carry state through colour alone: no glows, halos or shadows.
 
-    /** Pill switch; {@code on} animates 0…1. */
+    /** Switch; {@code on} animates 0…1. Stepped track, round knob. */
     static void toggle(GuiGraphicsExtractor g, float x, float y, float on, boolean hover, UiTheme theme) {
         float w = 18, h = 10;
-        rounded(g, x, y, w, h, h / 2, mix(hover ? theme.overlay() : theme.surface(), theme.accent(), on));
-        float knob = h - 3.4f, travel = w - h;
-        circle(g, x + h / 2 + travel * on, y + h / 2, knob / 2, mix(theme.muted(), theme.crust(), on));
+        box(g, x, y, w, h, UiSpace.CHAMFER_SMALL, mix(hover ? theme.line() : theme.fill(), theme.on(), on));
+        float knob = h - 4, travel = w - h;
+        circle(g, x + h / 2 + travel * on, y + h / 2, knob / 2, mix(theme.textDim(), theme.deep(), on));
     }
 
-    /** Rounded checkbox with an animated tick. */
+    /** Checkbox with an animated tick. */
     static void checkbox(GuiGraphicsExtractor g, float x, float y, float size, float on, UiTheme theme) {
-        rounded(g, x, y, size, size, 2.5f, mix(theme.surface(), theme.accent(), on));
-        if (on < 1) outline(g, x, y, size, size, 2.5f, .7f, alpha(theme.overlay(), 1 - on));
-        if (on > .02f) icon(g, "check", x + 1, y + 1, size - 2, alpha(theme.crust(), on));
+        box(g, x, y, size, size, UiSpace.CHAMFER_SMALL, mix(theme.fill(), theme.on(), on));
+        if (on < 1) frame(g, x, y, size, size, UiSpace.CHAMFER_SMALL, alpha(theme.line(), 1 - on));
+        if (on > .02f) icon(g, "check", x + 1, y + 1, size - 2, alpha(theme.deep(), on));
     }
 
-    /** Horizontal value slider; {@code value} 0…1, {@code hover}/{@code active} animate the thumb. */
+    /** Horizontal value slider; {@code value} 0…1, {@code hover} 0…1 grows the thumb slightly. */
     static void slider(GuiGraphicsExtractor g, float x, float y, float w, float value, float hover, UiTheme theme) {
-        float track = 3, cy = y;
-        rounded(g, x, cy - track / 2, w, track, track / 2, theme.surface());
-        rounded(g, x, cy - track / 2, Math.max(track, w * value), track, track / 2, theme.accent());
-        float r = 3.4f + hover * .8f;
-        if (hover > 0) circle(g, x + w * value, cy, r + 2.5f, alpha(theme.accent(), .18f * hover));
-        circle(g, x + w * value, cy, r, theme.accent());
-        circle(g, x + w * value, cy, r - 1.6f, theme.crust());
+        float track = 2, cy = y;
+        rect(g, x, cy - track / 2, w, track, theme.fill());
+        rect(g, x, cy - track / 2, Math.max(track, w * value), track, theme.on());
+        float r = 3.5f + hover * .5f;
+        circle(g, x + w * value, cy, r, theme.on());
+        circle(g, x + w * value, cy, r - 1.5f, theme.deep());
     }
 }
