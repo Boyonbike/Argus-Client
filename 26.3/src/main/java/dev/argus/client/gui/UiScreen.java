@@ -507,7 +507,7 @@ public abstract class UiScreen extends Screen {
         boolean dark = GuiState.preferences().mode == GuiPreferences.Mode.DARK;
         // Keep the world visible through the blur; the previous 48–63% dark overlay
         // made the blurred background look almost black on opening the GUI.
-        UiDraw.gradient(g, 0, 0, width, height, 0, dark ? 0x3007070d : 0x28000000, dark ? 0x5009090f : 0x40000000);
+        UiDraw.gradient(g, 0, 0, width, height, 0, dark ? 0x300c0c0b : 0x28000000, dark ? 0x500d0d0c : 0x40000000);
     }
 
     @Override public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {

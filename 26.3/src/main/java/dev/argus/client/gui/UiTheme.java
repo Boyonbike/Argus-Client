@@ -1,28 +1,58 @@
 package dev.argus.client.gui;
 
-/** Catppuccin-inspired colours, exposed as Light/Dark and an independent accent. */
-public record UiTheme(int base, int mantle, int crust, int surface, int overlay, int text,
-                      int muted, int accent, int green, int blue, int yellow, int red) {
+/**
+ * Argus colour roles. Every colour is named for its job, not its hue:
+ * <ul>
+ *   <li>{@code bg} window body, {@code sunk} wells and sidebars, {@code deep} the darkest step (and the
+ *       colour drawn on top of {@code on}, e.g. a toggle knob or tick)</li>
+ *   <li>{@code fill} control tracks and hover rows, {@code line} 1px dividers and outlines</li>
+ *   <li>{@code text} primary copy, {@code textDim} secondary copy (≥4.5:1 on bg, sunk and fill)</li>
+ *   <li>{@code on} the accent: enabled, selected and focused state only, never decoration</li>
+ *   <li>{@code ok}, {@code info}, {@code warn}, {@code danger} status only</li>
+ * </ul>
+ * Neutrals are warm graphite rather than tinted blue-black so the accent stays the only hue on screen.
+ */
+public record UiTheme(int bg, int sunk, int deep, int fill, int line, int text,
+                      int textDim, int on, int ok, int info, int warn, int danger) {
     public static UiTheme of(GuiPreferences preferences) {
         boolean light = preferences.mode == GuiPreferences.Mode.LIGHT;
-        int accent = switch (preferences.accent) {
-            case LAVENDER -> light ? 0x8839ef : 0xcba6f7;
-            case BLUE -> light ? 0x1e66f5 : 0x89b4fa;
-            case GREEN -> light ? 0x40a02b : 0xa6e3a1;
-            case PEACH -> light ? 0xfe640b : 0xfab387;
-            case PINK -> light ? 0xea76cb : 0xf5c2e7;
-            case RED -> light ? 0xd20f39 : 0xf38ba8;
+        int on = 0xff000000 | accent(preferences.accent, light);
+        return light
+                ? new UiTheme(0xfff2f1ee, 0xffe8e6e1, 0xffdedbd4, 0xffdcd9d2, 0xffc4c0b7, 0xff1f1f1d,
+                        0xff5d5b55, on, 0xff3d7a24, 0xff2a64a3, 0xff8f5f0a, 0xffb23a2c)
+                : new UiTheme(0xff1b1c1e, 0xff161719, 0xff111213, 0xff2a2c30, 0xff3a3d42, 0xffe6e4df,
+                        0xffa19e97, on, 0xff8cc26e, 0xff7db3e0, 0xffd9a54a, 0xffe07a6a);
+    }
+
+    /** Accents share one lightness band per mode so switching never changes the UI's contrast. */
+    static int accent(GuiPreferences.Accent accent, boolean light) {
+        return switch (accent) {
+            case TEAL -> light ? 0x1d7a6d : 0x6db8ab;
+            case AMBER -> light ? 0x8f5f0a : 0xd9a54a;
+            case LEAF -> light ? 0x3d7a24 : 0x8cc26e;
+            case SKY -> light ? 0x2a64a3 : 0x7db3e0;
+            case ROSE -> light ? 0xa83a52 : 0xe08a9a;
+            case STONE -> light ? 0x5f5a50 : 0xb8b2a6;
         };
-        return light ? new UiTheme(0xffeff1f5,0xffe6e9ef,0xffdce0e8,0xffccd0da,0xffbcc0cc,0xff4c4f69,
-                0xff6c6f85,0xff000000|accent,0xff40a02b,0xff1e66f5,0xffdf8e1d,0xffd20f39)
-                : new UiTheme(0xff1e1e2e,0xff181825,0xff11111b,0xff313244,0xff45475a,0xffcdd6f4,
-                0xffa6adc8,0xff000000|accent,0xffa6e3a1,0xff89b4fa,0xfff9e2af,0xfff38ba8);
     }
 
     static UiTheme blend(UiTheme a, UiTheme b, float t) {
-        return new UiTheme(UiDraw.mix(a.base, b.base, t), UiDraw.mix(a.mantle, b.mantle, t), UiDraw.mix(a.crust, b.crust, t),
-                UiDraw.mix(a.surface, b.surface, t), UiDraw.mix(a.overlay, b.overlay, t), UiDraw.mix(a.text, b.text, t),
-                UiDraw.mix(a.muted, b.muted, t), UiDraw.mix(a.accent, b.accent, t), UiDraw.mix(a.green, b.green, t),
-                UiDraw.mix(a.blue, b.blue, t), UiDraw.mix(a.yellow, b.yellow, t), UiDraw.mix(a.red, b.red, t));
+        return new UiTheme(UiDraw.mix(a.bg, b.bg, t), UiDraw.mix(a.sunk, b.sunk, t), UiDraw.mix(a.deep, b.deep, t),
+                UiDraw.mix(a.fill, b.fill, t), UiDraw.mix(a.line, b.line, t), UiDraw.mix(a.text, b.text, t),
+                UiDraw.mix(a.textDim, b.textDim, t), UiDraw.mix(a.on, b.on, t), UiDraw.mix(a.ok, b.ok, t),
+                UiDraw.mix(a.info, b.info, t), UiDraw.mix(a.warn, b.warn, t), UiDraw.mix(a.danger, b.danger, t));
     }
+
+    // ---- Old palette names, kept so screens compile while phase 3 moves them to the roles above. ----
+    @Deprecated public int base() { return bg; }
+    @Deprecated public int mantle() { return sunk; }
+    @Deprecated public int crust() { return deep; }
+    @Deprecated public int surface() { return fill; }
+    @Deprecated public int overlay() { return line; }
+    @Deprecated public int muted() { return textDim; }
+    @Deprecated public int accent() { return on; }
+    @Deprecated public int green() { return ok; }
+    @Deprecated public int blue() { return info; }
+    @Deprecated public int yellow() { return warn; }
+    @Deprecated public int red() { return danger; }
 }

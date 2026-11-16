@@ -354,8 +354,7 @@ final class SettingsScreen extends UiScreen {
     }
 
     private int accentColour(GuiPreferences.Accent accent, boolean light) {
-        var preview = new GuiPreferences(); preview.accent = accent; preview.mode = light ? GuiPreferences.Mode.LIGHT : GuiPreferences.Mode.DARK;
-        return UiTheme.of(preview).accent();
+        return 0xff000000 | UiTheme.accent(accent, light);
     }
 
     /** Height of the chip area for a given inner width (chips wrap onto new lines). */

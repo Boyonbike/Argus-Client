@@ -7,7 +7,21 @@ import java.util.*;
 /** User-facing labels deliberately use Light/Dark and accent colours, not palette flavour names. */
 public final class GuiPreferences {
     public enum Mode { DARK, LIGHT }
-    public enum Accent { LAVENDER, BLUE, GREEN, PEACH, PINK, RED }
+    public enum Accent {
+        TEAL, AMBER, LEAF, SKY, ROSE, STONE;
+
+        /** Reads a saved accent, mapping the pre-2.6 palette names onto their nearest replacement. */
+        static Accent parse(String saved) {
+            return switch (saved) {
+                case "LAVENDER" -> TEAL;
+                case "BLUE" -> SKY;
+                case "GREEN" -> LEAF;
+                case "PEACH" -> AMBER;
+                case "PINK", "RED" -> ROSE;
+                default -> valueOf(saved);
+            };
+        }
+    }
     /**
      * A saved window. {@code layoutWidth} is the screen width it was arranged on, so a smaller
      * screen can show it squeezed without changing it ({@link WindowFit}); -1 follows the
@@ -20,7 +34,7 @@ public final class GuiPreferences {
         public Window(int x, int y, boolean collapsed, int scroll, int layoutWidth) { this(x, y, collapsed, scroll, layoutWidth, 0, 0, 0); }
     }
     public Mode mode = Mode.DARK;
-    public Accent accent = Accent.LAVENDER;
+    public Accent accent = Accent.TEAL;
     public boolean snap = true;
     /** Menu motion: page fades, window entrances, hover easing and the like. Off makes every change instant. */
     public boolean animations = true;
@@ -69,7 +83,7 @@ public final class GuiPreferences {
         try (Reader reader = Files.newBufferedReader(path)) { values.load(reader); }
         catch (IOException | IllegalArgumentException failure) { return result; }
         try { result.mode = Mode.valueOf(values.getProperty("mode", "DARK")); } catch (IllegalArgumentException ignored) {}
-        try { result.accent = Accent.valueOf(values.getProperty("accent", "LAVENDER")); } catch (IllegalArgumentException ignored) {}
+        try { result.accent = Accent.parse(values.getProperty("accent", "TEAL")); } catch (IllegalArgumentException ignored) {}
         try { result.tabStyle = TabStyle.valueOf(values.getProperty("tabStyle", "NAMES")); } catch (IllegalArgumentException ignored) {}
         try { result.hudTab = HudTab.valueOf(values.getProperty("hudTab", "EDITOR")); } catch (IllegalArgumentException ignored) {}
         try { result.socialTab = SocialTab.valueOf(values.getProperty("socialTab", "MENU")); } catch (IllegalArgumentException ignored) {}
