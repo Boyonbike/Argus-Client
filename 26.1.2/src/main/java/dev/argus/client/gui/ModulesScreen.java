@@ -13,7 +13,7 @@ import java.util.*;
 
 /** Category, favourites and search panels share the same draggable dropdown-menu canvas. */
 public final class ModulesScreen extends UiScreen {
-    private static final int WIDTH = 112, HEADER = 20, ROW = 15, SEARCH_ROW = 24, SEARCH_INPUT = 28, TOP = 0;
+    private static final int WIDTH = 112, HEADER = 20, ROW = (int) UiSpace.ROW, SEARCH_ROW = 24, SEARCH_INPUT = 28, TOP = 0;
     /** Windows may sit anywhere below this, including beside the navigation bar. */
     private static final int MIN_Y = 6;
     /** Snap grid spacing in GUI units. */
@@ -219,30 +219,43 @@ public final class ModulesScreen extends UiScreen {
         if (boxing) {
             // The selection box, drawn in screen space.
             float bx = Math.min(boxX0, boxX1), by = Math.min(boxY0, boxY1) - canvasShown, bw = Math.abs(boxX1 - boxX0), bh = Math.abs(boxY1 - boxY0);
-            UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(theme.accent(), .08f));
-            UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(theme.accent(), .7f));
+            UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(theme.on(), .08f));
+            UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(theme.on(), .7f));
         }
         g.disableScissor();
         drawCompactHint(g, theme);
+        drawLegend(g, theme);
         searchInput.active = searchInput.visible;
         if (!searchInput.visible && getFocused() == searchInput) setFocused(null);
     }
 
     private float gridFade;
 
+    /** Left-click to toggle is the one thing everyone tries first; the legend spends its room on what isn't obvious. */
+    private static final String LEGEND = "Ctrl F\tsearch\nRight-click\tsettings\nMiddle-click\tpin";
+
+    /** The mouse actions for module rows, as a key legend at the bottom right; it gives way to the compact-view pill. */
+    private void drawLegend(GuiGraphicsExtractor g, UiTheme theme) {
+        float shown = 1 - UiAnim.smooth("modules.legend", compact() ? 1 : 0, 7);
+        if (shown <= .01f) return;
+        float base = UiRender.opacity;
+        UiRender.opacity = base * shown;
+        try { UiDraw.legend(g, LEGEND, width - 12 - UiDraw.legendWidth(LEGEND), height - 10, theme); }
+        finally { UiRender.opacity = base; }
+    }
+
     /** A small pill at the bottom while the arrangement is squeezed, so it's clear nothing was lost. */
     private void drawCompactHint(GuiGraphicsExtractor g, UiTheme theme) {
         float shown = UiAnim.smooth("modules.compact", compact() ? 1 : 0, 7);
         if (shown <= .01f) return;
-        String text = UiDraw.fit("Compact view · moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
-        float w = UiDraw.width(text, UiDraw.SMALL) + 22, h = 13, x = (width - w) / 2f, y = height - 16 + (1 - UiAnim.easeOutCubic(shown)) * 6;
+        String text = UiDraw.fit("Compact view: moves here don't change your full-size layout", Math.max(40, width - 140), UiDraw.SMALL);
+        float w = UiDraw.width(text, UiDraw.SMALL) + 22, h = 14, x = (width - w) / 2f, y = height - 16 + (1 - UiAnim.easeOutCubic(shown)) * 6;
         float base = UiRender.opacity;
         UiRender.opacity = base * shown;
         try {
-            UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(theme.mantle(), .92f));
-            UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.alpha(theme.accent(), .45f));
-            UiDraw.circle(g, x + 8, y + h / 2, 1.8f, theme.accent());
-            UiDraw.text(g, text, x + 14, y + h / 2, UiDraw.SMALL, theme.muted());
+            UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(theme.sunk(), .92f));
+            UiDraw.outline(g, x, y, w, h, h / 2, 1, theme.line());
+            UiDraw.text(g, text, x + 11, y + h / 2, UiDraw.SMALL, theme.textDim());
         } finally { UiRender.opacity = base; }
     }
 
@@ -251,7 +264,7 @@ public final class ModulesScreen extends UiScreen {
         var p = GuiState.preferences();
         gridFade = UiAnim.approach(gridFade, dragging != null && p.showGrid ? 1 : 0, dragging != null ? 12 : 8);
         if (gridFade <= .01f) return;
-        int minor = UiDraw.alpha(theme.overlay(), .16f * gridFade), major = UiDraw.alpha(theme.overlay(), .38f * gridFade);
+        int minor = UiDraw.alpha(theme.line(), .16f * gridFade), major = UiDraw.alpha(theme.line(), .38f * gridFade);
         for (int x = 0, i = 0; x <= width; x += GRID, i++) UiDraw.rect(g, x, TOP, .5f, height - TOP, i % 4 == 0 ? major : minor);
         float offset = canvasShown % GRID;
         int first = (int) Math.floor(canvasShown / GRID);
@@ -264,26 +277,26 @@ public final class ModulesScreen extends UiScreen {
         if (top + ph < TOP || top > height - 19) return;
         UiDraw.panel(g, x, top, w, ph, theme, window.lift);
         float pick = UiAnim.smooth("pick." + window.name, picked.contains(window) ? 1 : 0, 18);
-        if (pick > 0) UiDraw.outline(g, x - 1.5f, top - 1.5f, w + 3, ph + 3, 8.5f, 1.2f, UiDraw.alpha(theme.accent(), pick));
+        if (pick > 0) UiDraw.outline(g, x - 1.5f, top - 1.5f, w + 3, ph + 3, 8.5f, 1.2f, UiDraw.alpha(theme.on(), pick));
         // Header
         boolean headerHover = over && my < top + HEADER;
         float hh = UiAnim.smooth("hdr." + window.name, headerHover ? 1 : 0, 18);
-        UiDraw.rounded(g, x, top, w, HEADER, 7, UiDraw.mix(theme.mantle(), theme.surface(), hh * .5f));
-        if (window.open > .01f) UiDraw.rect(g, x, top + HEADER - 7, w, 7, UiDraw.mix(theme.mantle(), theme.surface(), hh * .5f));
-        if (window.open > .01f) UiDraw.rect(g, x, top + HEADER - .6f, w, .6f, UiDraw.alpha(theme.overlay(), .6f * window.open));
-        String icon = window.kind == Kind.SEARCH ? "search" : window.kind == Kind.FAVOURITES ? "favourites" : window.category.name().toLowerCase(Locale.ROOT);
-        UiDraw.icon(g, icon, x + 7, top + (HEADER - 9) / 2f, 9, theme.accent());
-        UiDraw.bold(g, UiDraw.fit(window.name, w - 46), x + 21, top + HEADER / 2f, UiDraw.TEXT, theme.text());
+        // Header well sits inside the window's 1px edge; its stepped top corners nest in the window's.
+        int headerFill = UiDraw.mix(theme.sunk(), theme.fill(), hh * .5f);
+        UiDraw.box(g, x + 1, top + 1, w - 2, HEADER - 1, UiSpace.chamfer() - 1, headerFill);
+        if (window.open > .01f) UiDraw.rect(g, x + 1, top + HEADER - 4, w - 2, 4, headerFill);
+        if (window.open > .01f) UiDraw.rect(g, x + 1, top + HEADER - 1, w - 2, 1, UiDraw.alpha(theme.line(), window.open));
+        UiDraw.text(g, UiDraw.fit(window.name, w - 40, UiSpace.BODY), x + UiSpace.S2, top + HEADER / 2f, UiSpace.BODY, theme.text());
         if (window.kind != Kind.SEARCH) {
             List<Module> list = modules(window);
             long enabled = list.stream().filter(Module::isToggled).count();
             String count = enabled > 0 ? enabled + "/" + list.size() : Integer.toString(list.size());
-            // The count rolls to its new value and flashes the accent when a module in the window changes.
+            // The count rolls to its new value and brightens briefly when a module in the window changes.
             float flash = UiMotion.flash("cnt.flash." + window.name, count), countRight = x + w - 19, countY = top + HEADER / 2f;
-            int countColour = UiDraw.mix(enabled > 0 ? UiDraw.alpha(theme.accent(), .85f) : UiDraw.alpha(theme.muted(), .7f), theme.accent(), flash);
-            UiMotion.text(g, "cnt." + window.name, count, c -> UiDraw.right(g, c, countRight, countY, UiDraw.SMALL, countColour));
+            int countColour = UiDraw.mix(theme.textDim(), theme.text(), flash);
+            UiMotion.text(g, "cnt." + window.name, count, c -> UiDraw.numberRight(g, c, countRight, countY, UiSpace.CAPTION, countColour));
         }
-        int chevron = UiDraw.mix(theme.muted(), theme.text(), hh);
+        int chevron = UiDraw.mix(theme.textDim(), theme.text(), hh);
         UiDraw.icon(g, "chevron_down", x + w - 15, top + (HEADER - 9) / 2f, 9, UiDraw.alpha(chevron, window.open));
         UiDraw.icon(g, "chevron_right", x + w - 15, top + (HEADER - 9) / 2f, 9, UiDraw.alpha(chevron, 1 - window.open));
         if (window.open < .01f) return;
@@ -305,31 +318,37 @@ public final class ModulesScreen extends UiScreen {
             String key = "row." + window.name + "." + module.getName();
             float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20);
             float on = UiAnim.smooth(key + ".on", module.isToggled() ? 1 : 0, 14);
-            if (on > 0) UiDraw.rounded(g, x + 4, rowY + 1, w - 8, ROW - 2, 4, UiDraw.alpha(theme.accent(), .16f * on));
-            if (hv > 0) UiDraw.rounded(g, x + 4, rowY + 1, w - 8, ROW - 2, 4, UiDraw.alpha(theme.text(), .07f * hv));
-            if (on > 0) UiDraw.rounded(g, x + 6, rowY + ROW / 2f - 3.5f * on, 2, 7 * on, 1, UiDraw.alpha(theme.accent(), on));
+            // Enabled rows carry the accent twice: a faint accent wash behind the row and the name in the accent,
+            // so a window's live modules read at a glance, not just on close inspection of text colour.
+            if (on > .01f) UiDraw.rounded(g, x + 3, rowY + 1, w - 6, ROW - 2, 2, UiDraw.alpha(theme.on(), .12f * on));
+            if (hv > 0) UiDraw.rounded(g, x + 3, rowY + 1, w - 6, ROW - 2, 2, UiDraw.alpha(theme.fill(), hv * (1 - .5f * on)));
+            if (on > .01f) UiDraw.rect(g, x + 3, rowY + ROW / 2f - 2, 1, 4, UiDraw.alpha(theme.on(), on));
             boolean favourite = window.kind != Kind.FAVOURITES && GuiState.preferences().favourites.contains(module.getName());
             // The star pops in with a small overshoot and the name makes room for it gradually.
             float fav = UiAnim.smooth(key + ".fav", favourite ? 1 : 0, 14);
-            float side = 18 + 4 * fav;
-            String name = UiDraw.fit(GuiState.title(module.getName()), w - side * 2);
-            UiDraw.center(g, name, x, rowY + ROW / 2f, w, UiDraw.mix(UiDraw.mix(theme.text(), 0xffffffff, hv * .12f), theme.accent(), on));
+            float side = 8 + 10 * fav;
+            String name = UiDraw.fit(GuiState.title(module.getName()), w - UiSpace.S2 - side, UiSpace.BODY);
+            UiDraw.text(g, name, x + UiSpace.S2, rowY + ROW / 2f, UiSpace.BODY, UiDraw.mix(UiDraw.mix(theme.textDim(), theme.text(), hv), theme.on(), on));
             if (fav > .01f) {
                 float size = 6 * (.4f + .6f * UiAnim.easeOutBack(fav));
-                UiDraw.icon(g, "star", x + w - 10 - size / 2, rowY + ROW / 2f - size / 2, size, UiDraw.alpha(theme.yellow(), .75f * Math.min(1, fav * 1.5f)));
+                UiDraw.icon(g, "star", x + w - 10 - size / 2, rowY + ROW / 2f - size / 2, size, UiDraw.alpha(theme.warn(), .75f * Math.min(1, fav * 1.5f)));
             }
             UiRender.opacity = rowBefore;
             if (hover) hovered = module;
         }
         if (modules.isEmpty()) UiDraw.center(g, UiDraw.fit(window.kind == Kind.FAVOURITES ? "Middle-click a module to pin it" : "No modules", w - 12),
-                x, start + (ROW + 2) / 2f, w, UiDraw.SMALL, theme.muted());
+                x, start + (ROW + 2) / 2f, w, UiDraw.SMALL, theme.textDim());
         g.disableScissor();
+        // A hard rule where the list is cut off, so a long category never looks like it simply ends.
+        if (contentHeight(window) - view - window.shownScroll > .5f) UiDraw.scrollEdge(g, x + 2, clipBottom, w - 4, false, theme);
+        if (window.shownScroll > .5f) UiDraw.scrollEdge(g, x + 2, start, w - 4, true, theme);
         scrollbar(g, window, start, view, contentHeight(window), over, theme);
         if (hovered != null) {
             String description = UiText.stripFormatting(hovered.getDescription());
             var bind = hovered.getKeybind();
-            tooltip(hovered, GuiState.title(hovered.getName()), description.isBlank() ? "No description" : description,
-                    (bind.isUnbound() ? "Not bound" : "Bind: " + bind.getDisplayName()) + "   ·   Left toggle  ·  Right settings  ·  Middle pin");
+            String bindLine = bind.isUnbound() ? "Not bound" : "Bind: " + bind.getDisplayName();
+            if (description.isBlank()) tooltip(hovered, null, bindLine);
+            else tooltip(hovered, null, description, bindLine);
         }
     }
 
@@ -361,20 +380,17 @@ public final class ModulesScreen extends UiScreen {
             UiRender.opacity = before * appear;
             float sel = UiAnim.smooth("sr." + i + "." + hit.module() + hit.setting() + hit.alias(), i == selected ? 1 : 0, 22);
             float ry = rowY + (1 - appear) * 4;
-            if (sel > 0) UiDraw.rounded(g, x + 4, ry + 1, w - 8, SEARCH_ROW - 2, 5, UiDraw.alpha(theme.surface(), sel));
-            int colour = hit.isSetting() ? theme.blue() : hit.alias() != null ? theme.yellow() : theme.green();
-            UiDraw.rounded(g, x + 8, ry + 5, 14, 14, 4, UiDraw.alpha(colour, .18f));
+            if (sel > 0) UiDraw.rounded(g, x + 4, ry + 1, w - 8, SEARCH_ROW - 2, 5, UiDraw.alpha(theme.fill(), sel));
+            // No type icon: the second line already says whether it's a module, setting or alias.
             Module module = GuiState.module(hit.module());
-            String icon = hit.isSetting() ? "client" : module != null ? module.getCategory().name().toLowerCase(Locale.ROOT) : hit.category().toLowerCase(Locale.ROOT);
-            UiDraw.icon(g, icon, x + 10.5f, ry + 7.5f, 9, colour);
             String title = GuiState.title(hit.isSetting() ? hit.setting() : hit.alias() != null ? hit.alias() : hit.module());
             boolean toggled = !hit.isSetting() && module != null && module.isToggled();
             float lit = UiAnim.smooth("sr.on." + hit.module() + hit.setting() + hit.alias(), toggled ? 1 : 0, 14);
-            UiDraw.text(g, UiDraw.fit(title, w - 44), x + 27, ry + 8.5f, UiDraw.mix(theme.text(), theme.accent(), lit));
+            UiDraw.text(g, UiDraw.fit(title, w - 30), x + UiSpace.S2 + 2, ry + 8.5f, UiDraw.mix(theme.text(), theme.on(), lit));
             boolean client = module != null && module.getCategory() == ModuleCategory.CLIENT;
             String path = hit.isSetting() ? "Setting in " + GuiState.title(hit.module()) : hit.alias() != null ? "Alias of " + GuiState.title(hit.module()) : client ? "Settings tab" : GuiState.title(hit.category());
-            UiDraw.text(g, UiDraw.fit(path, w - 44), x + 27, ry + 17, UiDraw.SMALL, theme.muted());
-            if (lit > .01f) UiDraw.circle(g, x + w - 12, ry + SEARCH_ROW / 2f, 2 * (.5f + .5f * UiAnim.easeOutBack(lit)), UiDraw.alpha(theme.accent(), lit));
+            UiDraw.text(g, UiDraw.fit(path, w - 30, UiSpace.CAPTION), x + UiSpace.S2 + 2, ry + 17, UiSpace.CAPTION, theme.textDim());
+            if (lit > .01f) UiDraw.circle(g, x + w - 12, ry + SEARCH_ROW / 2f, 2 * (.5f + .5f * UiAnim.easeOutBack(lit)), UiDraw.alpha(theme.on(), lit));
             UiRender.opacity = before;
         }
         float emptyShown = UiAnim.smooth("search.empty", results.isEmpty() ? 1 : 0, 14);
@@ -384,22 +400,24 @@ public final class ModulesScreen extends UiScreen {
             UiRender.opacity = before * emptyShown;
             boolean blank = searchInput.getValue().isBlank();
             UiMotion.crossfade(g, "search.empty.state", blank, b -> {
-                UiDraw.icon(g, b ? "search" : "close", x + w / 2 - 6, cy - 14, 12, UiDraw.alpha(theme.muted(), .55f));
-                UiDraw.center(g, b ? "Type to search" : "No matches", x, cy + 6, w, theme.muted());
+                String message = b ? "Type to search" : UiDraw.fit("No matches for \u201c" + searchInput.getValue().strip() + "\u201d", w - 16);
+                UiDraw.center(g, message, x, cy + 6, w, theme.textDim());
             });
-            UiDraw.center(g, "Modules · Aliases", x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.muted(), .7f));
+            if (blankHelp()) UiDraw.center(g, UiDraw.fit("Modules, settings, aliases", w - 12, UiDraw.SMALL), x, cy + 17, w, UiDraw.SMALL, UiDraw.alpha(theme.textDim(), .7f));
             UiRender.opacity = before;
         }
         g.disableScissor();
         scrollbar(g, window, start, view, contentHeight(window), over, theme);
     }
 
+    private boolean blankHelp() { return searchInput.getValue().isBlank(); }
+
     private void scrollbar(GuiGraphicsExtractor g, Window window, float start, int view, int total, boolean over, UiTheme theme) {
         boolean scrolling = Math.abs(window.shownScroll - window.scroll) > .5f;
         window.scrollbar = UiAnim.approach(window.scrollbar, total > view && (over || scrolling) ? 1 : 0, 10);
         if (total <= view || window.scrollbar <= 0) return;
         float track = Math.max(10, view * (float) view / total), offset = (view - track) * window.shownScroll / Math.max(1, total - view);
-        UiDraw.rounded(g, window.shownX + window.width - 4.5f, start + offset, 2, track * window.open, 1, UiDraw.alpha(theme.overlay(), window.scrollbar));
+        UiDraw.rounded(g, window.shownX + window.width - 4.5f, start + offset, 2, track * window.open, 1, UiDraw.alpha(theme.line(), window.scrollbar));
     }
 
     private void activate(GuiSearch.Hit hit, int button) {

@@ -79,7 +79,7 @@ final class UiMotion {
 
     /** Footer colours by kind: 0 hint, 1 error, 2 success, 3 waiting for input. */
     static int footerColour(int kind, UiTheme t) {
-        return switch (kind) { case 1 -> t.red(); case 2 -> t.green(); case 3 -> t.accent(); default -> UiDraw.alpha(t.muted(), .8f); };
+        return switch (kind) { case 1 -> t.danger(); case 2 -> t.ok(); case 3 -> t.on(); default -> UiDraw.alpha(t.textDim(), .8f); };
     }
 
     /** Eased y for a list row identified by {@code id}, so rows glide when others are added or removed. */

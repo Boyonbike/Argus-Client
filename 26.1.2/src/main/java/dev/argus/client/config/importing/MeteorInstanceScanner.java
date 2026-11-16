@@ -59,7 +59,7 @@ public final class MeteorInstanceScanner {
         Path profiles = meteor.resolve("profiles");
         if (Files.isDirectory(profiles)) try (var dirs = Files.list(profiles)) {
             for (Path dir : dirs.filter(Files::isDirectory).sorted().limit(MAX_LISTED).toList())
-                if (Files.isRegularFile(dir.resolve("modules.nbt"))) modules.add(new ModuleSource("Profile · " + dir.getFileName(), dir.resolve("modules.nbt")));
+                if (Files.isRegularFile(dir.resolve("modules.nbt"))) modules.add(new ModuleSource("Profile: " + dir.getFileName(), dir.resolve("modules.nbt")));
         }
         Map<DataKind, Path> data = new EnumMap<>(DataKind.class);
         if (Files.isRegularFile(meteor.resolve("friends.nbt"))) data.put(DataKind.FRIENDS, meteor.resolve("friends.nbt"));

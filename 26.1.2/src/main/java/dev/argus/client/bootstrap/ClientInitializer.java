@@ -136,6 +136,7 @@ public final class ClientInitializer {
          // Only registry-backed sets whose registry fills on world join (AutoEat food) wait, see RegistrySetSetting.
          ClientContext.configurationManager.load();
          ClientTickEvents.END_CLIENT_TICK.register(this::finishClientInitialization);
+         dev.argus.client.gui.GuiCaptureRun.installIfRequested();
       }
    }
 

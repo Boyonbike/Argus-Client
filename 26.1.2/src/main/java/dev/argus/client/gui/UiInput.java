@@ -83,23 +83,22 @@ final class UiInput extends EditBox {
         focus = UiAnim.approach(focus, isFocused() ? 1 : 0, 16);
         boolean hover = isMouseOver(mx, my);
         float x = left(), y = getY() - 4, fw = getWidth() + (getX() - x) + PAD, fh = getHeight() + 8, r = Math.min(7, fh / 2);
-        UiDraw.rounded(g, x, y, fw, fh, r, UiDraw.mix(t.crust(), t.mantle(), hover && !isFocused() ? .6f : 0));
-        UiDraw.outline(g, x, y, fw, fh, r, .7f, UiDraw.mix(UiDraw.alpha(t.overlay(), .7f), t.accent(), focus));
-        if (focus > 0) UiDraw.outline(g, x - 1.5f, y - 1.5f, fw + 3, fh + 3, r + 1.5f, 1.2f, UiDraw.alpha(t.accent(), focus * .18f));
-        if (icon != null) UiDraw.icon(g, icon, x + PAD - 1, getY() + (getHeight() - 9) / 2f, 9, UiDraw.mix(t.muted(), t.accent(), focus));
+        UiDraw.rounded(g, x, y, fw, fh, r, UiDraw.mix(t.deep(), t.sunk(), hover && !isFocused() ? .6f : 0));
+        UiDraw.outline(g, x, y, fw, fh, r, .7f, UiDraw.mix(UiDraw.alpha(t.line(), .7f), t.on(), focus));
+        if (icon != null) UiDraw.icon(g, icon, x + PAD - 1, getY() + (getHeight() - 9) / 2f, 9, UiDraw.mix(t.textDim(), t.on(), focus));
         float cy = getY() + getHeight() / 2f;
         g.enableScissor(getX() - 1, getY() - 2, getX() + getWidth() + 2, getY() + getHeight() + 2);
         // The placeholder fades and drifts aside as typing starts, and back when the box is cleared.
         placeholderShown = UiAnim.approach(placeholderShown, text.isEmpty() ? 1 : 0, text.isEmpty() ? 14 : 24);
-        if (placeholderShown > .01f) UiDraw.text(g, UiDraw.fit(placeholder, getWidth()), getX() + (1 - placeholderShown) * 6, cy, UiDraw.alpha(t.muted(), .85f * placeholderShown));
+        if (placeholderShown > .01f) UiDraw.text(g, UiDraw.fit(placeholder, getWidth()), getX() + (1 - placeholderShown) * 6, cy, UiDraw.alpha(t.textDim(), .85f * placeholderShown));
         if (!text.isEmpty()) {
             int highlight = ((EditBoxAccessor) (Object) this).argusclient$getHighlightPosition();
             int first = Math.max(displayStart, Math.min(getCursorPosition(), highlight)), last = Math.min(end, Math.max(getCursorPosition(), highlight));
             if (isFocused() && first < last) {
                 float sx = getX() + w(text.substring(displayStart, first)), sw = w(text.substring(first, last));
-                UiDraw.rounded(g, sx - .5f, cy - 5.5f, sw + 1, 11, 2, UiDraw.alpha(t.accent(), .32f));
+                UiDraw.rounded(g, sx - .5f, cy - 5.5f, sw + 1, 11, 2, UiDraw.alpha(t.on(), .32f));
             }
-            UiDraw.text(g, text.substring(displayStart, end), getX(), cy, active ? t.text() : t.muted());
+            UiDraw.text(g, text.substring(displayStart, end), getX(), cy, active ? t.text() : t.textDim());
         }
         if (isFocused()) {
             // Solid while typing, then a soft pulse instead of a hard blink.
@@ -108,7 +107,7 @@ final class UiInput extends EditBox {
             int cursor = Math.clamp(getCursorPosition(), displayStart, end);
             float target = w(text.substring(displayStart, cursor));
             caret = Math.abs(caret - target) > 40 ? target : UiAnim.approach(caret, target, 30);
-            UiDraw.rounded(g, getX() + caret - .3f, cy - 5, 1, 10, .5f, UiDraw.alpha(t.accent(), pulse * focus));
+            UiDraw.rounded(g, getX() + caret - .3f, cy - 5, 1, 10, .5f, UiDraw.alpha(t.on(), pulse * focus));
         }
         g.disableScissor();
     }

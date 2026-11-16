@@ -16,7 +16,7 @@ final class DiscordRolesTest {
 
     @Test void allRoleNamesFollowHierarchyAndEveryoneIsExcluded() throws Exception {
         var roles = DiscordRoles.bind(Map.of("Alice", List.of("10", "20", "1"), "Bob", List.of()), "1", ROLES);
-        assertEquals("Officer · Member", DiscordRoles.label(roles, "ALICE"));
+        assertEquals("Officer, Member", DiscordRoles.label(roles, "ALICE"));
         assertEquals("No role", DiscordRoles.label(roles, "Bob"));
         assertEquals("", DiscordRoles.label(roles, "Unknown"));
     }
@@ -38,7 +38,7 @@ final class DiscordRolesTest {
     @Test void metadataSurvivesRestartAndKeepsRoleOrdering() throws Exception {
         var roles = DiscordRoles.bind(Map.of("Alice", List.of("10", "20")), "1", ROLES);
         var restored = DiscordRoles.decode(DiscordRoles.encode(roles));
-        assertEquals("Officer · Member", DiscordRoles.label(restored, "alice"));
+        assertEquals("Officer, Member", DiscordRoles.label(restored, "alice"));
         assertEquals(roles, restored);
         assertEquals(Map.of(), DiscordRoles.decode("not valid JSON"));
     }

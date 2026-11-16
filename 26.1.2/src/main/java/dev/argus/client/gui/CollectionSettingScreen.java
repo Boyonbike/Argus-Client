@@ -57,22 +57,22 @@ final class CollectionSettingScreen extends UiScreen {
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         boolean backHover = UiDraw.over(mx, my, left + 10, top + 10, 18, 18);
         float bh = UiAnim.smooth("col.back", backHover ? 1 : 0, 18);
-        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.surface(), t.overlay(), bh));
-        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.muted(), t.text(), bh));
-        UiDraw.bold(g, UiDraw.fit(GuiState.title(setting.getName()), panelWidth - 170), left + 36, top + 19, UiDraw.TITLE, t.text());
+        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
+        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
+        UiDraw.title(g, UiDraw.fit(GuiState.title(setting.getName()), panelWidth - 170), left + 36, top + 19, t.text());
         String filter = onlySelected ? "Showing selected" : "Showing all";
         float fw = UiDraw.width(filter, UiDraw.SMALL) + 14, fx = left + panelWidth - 12 - fw;
         boolean fh = UiDraw.over(mx, my, fx, top + 12, fw, 14);
-        UiDraw.rounded(g, fx, top + 12, fw, 14, 7, onlySelected ? UiDraw.alpha(t.accent(), .2f) : UiDraw.mix(t.surface(), t.overlay(), fh ? .7f : 0));
-        UiDraw.center(g, filter, fx, top + 19, fw, UiDraw.SMALL, onlySelected ? t.accent() : t.muted());
+        UiDraw.rounded(g, fx, top + 12, fw, 14, 7, onlySelected ? UiDraw.alpha(t.on(), .2f) : UiDraw.mix(t.fill(), t.line(), fh ? .7f : 0));
+        UiDraw.center(g, filter, fx, top + 19, fw, UiDraw.SMALL, onlySelected ? t.on() : t.textDim());
         String count = selected.size() + " selected";
-        UiDraw.right(g, count, fx - 8, top + 19, UiDraw.SMALL, t.accent());
+        UiDraw.right(g, count, fx - 8, top + 19, UiDraw.SMALL, t.on());
         float rx = resetX();
         boolean atDefault = java.util.Objects.equals(setting.getValue(), setting.getDefaultValue());
         boolean rh = UiDraw.over(mx, my, rx - 3, top + 12, 16, 14);
         float rha = UiAnim.smooth("col.reset", rh ? 1 : 0, 20);
-        if (rha > 0 && !atDefault) UiDraw.circle(g, rx + 5, top + 19, 7, UiDraw.alpha(t.accent(), .16f * rha));
-        UiDraw.icon(g, "reset", rx, top + 14, 10, atDefault ? UiDraw.alpha(t.muted(), .3f) : UiDraw.mix(UiDraw.alpha(t.muted(), .8f), t.accent(), rha));
+        if (rha > 0 && !atDefault) UiDraw.circle(g, rx + 5, top + 19, 7, UiDraw.alpha(t.on(), .16f * rha));
+        UiDraw.icon(g, "reset", rx, top + 14, 10, atDefault ? UiDraw.alpha(t.textDim(), .3f) : UiDraw.mix(UiDraw.alpha(t.textDim(), .8f), t.on(), rha));
         if (rh) tooltip("col.reset", atDefault ? "Already at default" : "Reset to default");
         scroll = Math.clamp(scroll, 0, maxScroll());
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
@@ -84,16 +84,16 @@ final class CollectionSettingScreen extends UiScreen {
             boolean on = selected.contains(entry), hover = UiDraw.over(mx, my, left + 8, y, panelWidth - 16, ROW) && my >= start && my < start + viewHeight;
             String key = "col." + setting.getName() + "." + entry;
             float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), sel = UiAnim.smooth(key + ".on", on ? 1 : 0, 16);
-            if (hv > 0) UiDraw.rounded(g, left + 8, y + 1, panelWidth - 16, ROW - 2, 5, UiDraw.alpha(t.surface(), hv * .8f));
+            if (hv > 0) UiDraw.rounded(g, left + 8, y + 1, panelWidth - 16, ROW - 2, 5, UiDraw.alpha(t.fill(), hv * .8f));
             UiDraw.checkbox(g, left + 15, y + ROW / 2f - 5, 10, sel, t);
-            UiDraw.text(g, UiDraw.fit(entry, panelWidth - 52), left + 32, y + ROW / 2f, UiDraw.mix(t.text(), t.accent(), sel));
+            UiDraw.text(g, UiDraw.fit(entry, panelWidth - 52), left + 32, y + ROW / 2f, UiDraw.mix(t.text(), t.on(), sel));
         }
-        if (entries.isEmpty()) UiDraw.center(g, query.getValue().isBlank() ? "Nothing to show." : "No matches. Press Enter to add it as typed.", left, start + 14, panelWidth, t.muted());
+        if (entries.isEmpty()) UiDraw.center(g, query.getValue().isBlank() ? "Nothing to show." : "No matches. Press Enter to add it as typed.", left, start + 14, panelWidth, t.textDim());
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + viewHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
-        UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click an entry to add or remove it · Enter adds what you typed" : message, panelWidth - 24),
-                left + 14, top + panelHeight - 11, UiDraw.SMALL, message.isEmpty() ? UiDraw.alpha(t.muted(), .8f) : t.red());
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start, panelWidth - 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, left + 4, start + viewHeight, panelWidth - 8, false, t));
+        UiDraw.text(g, UiDraw.fit(message.isEmpty() ? "Click an entry to add or remove it, or press Enter to add what you typed" : message, panelWidth - 24),
+                left + 14, top + panelHeight - 11, UiDraw.SMALL, message.isEmpty() ? UiDraw.alpha(t.textDim(), .8f) : t.danger());
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {

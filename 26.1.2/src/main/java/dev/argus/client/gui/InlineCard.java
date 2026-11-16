@@ -112,10 +112,10 @@ abstract class InlineCard {
                                 String label, boolean accent, String tip, Runnable run) {
         boolean hover = hovering(mx, my, x, y, w, h);
         float hv = UiAnim.smooth("ic." + title() + "." + key, hover ? 1 : 0, 18), ac = UiAnim.smooth("ic." + title() + "." + key + ".acc", accent ? 1 : 0, 16);
-        int fill = UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .7f), UiDraw.alpha(t.accent(), .16f + hv * .1f), ac);
+        int fill = UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hv * .7f), UiDraw.alpha(t.on(), .16f + hv * .1f), ac);
         UiDraw.rounded(g, x, y, w, h, h / 2, fill);
-        UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .5f + hv * .3f), UiDraw.alpha(t.accent(), .4f + hv * .3f), ac));
-        int colour = UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), t.accent(), ac);
+        UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.mix(UiDraw.alpha(t.line(), .5f + hv * .3f), UiDraw.alpha(t.on(), .4f + hv * .3f), ac));
+        int colour = UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), hv), t.on(), ac);
         // Label changes (e.g. to Confirm) crossfade rather than swap.
         UiMotion.crossfade(g, "ic." + title() + "." + key + ".label", label, l -> UiDraw.center(g, UiDraw.fit(l, w - 8, UiDraw.SMALL), x, y + h / 2, w, UiDraw.SMALL, colour));
         hit(x, y, w, h, run);
@@ -127,12 +127,12 @@ abstract class InlineCard {
     /** A segmented choice with a sliding thumb. */
     protected final void segmented(GuiGraphicsExtractor g, int mx, int my, UiTheme t, String key, String[] labels, int chosen,
                                    float x, float y, float segment, float h, IntConsumer pick) {
-        UiDraw.rounded(g, x, y, segment * labels.length, h, h / 2, t.crust());
+        UiDraw.rounded(g, x, y, segment * labels.length, h, h / 2, t.deep());
         float thumb = UiAnim.smooth("ic." + title() + "." + key, chosen, 16);
-        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, h - 4, (h - 4) / 2, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, h - 4, (h - 4) / 2, t.fill());
         for (int i = 0; i < labels.length; i++) {
             boolean hover = hovering(mx, my, x + i * segment, y, segment, h);
-            int colour = i == chosen ? t.accent() : UiDraw.mix(t.muted(), t.text(), UiAnim.smooth("ic." + title() + "." + key + i, hover ? 1 : 0, 18));
+            int colour = i == chosen ? t.on() : UiDraw.mix(t.textDim(), t.text(), UiAnim.smooth("ic." + title() + "." + key + i, hover ? 1 : 0, 18));
             UiDraw.center(g, labels[i], x + i * segment, y + h / 2, segment, UiDraw.SMALL, colour);
             int index = i;
             hit(x + i * segment, y, segment, h, () -> pick.accept(index));
@@ -186,14 +186,14 @@ abstract class InlineCard {
                 float control = row.choices() != null ? row.choices().length * 56f : buttonWidth(buttonLabel) + 14;
                 UiDraw.text(g, UiDraw.fit(row.label(), w - control - 24), x + 4, cy - 6, t.text());
                 String detail = row.detail().get();
-                UiDraw.text(g, UiDraw.fit(detail, w - control - 24, UiDraw.SMALL), x + 4, cy + 7, UiDraw.SMALL, t.muted());
+                UiDraw.text(g, UiDraw.fit(detail, w - control - 24, UiDraw.SMALL), x + 4, cy + 7, UiDraw.SMALL, t.textDim());
                 if (row.choices() != null) {
                     int chosen = Math.clamp(row.chosen().getAsInt(), 0, row.choices().length - 1);
                     segmented(g, mx, my, t, "row" + i, row.choices(), chosen, x + w - control - 4, cy - 9, 56, 18, row.pick());
                 } else {
                     button(g, mx, my, t, "row" + i, x + w - control - 4, cy - 9, control, 18, buttonLabel, true, detail, row.run());
                 }
-                if (i < rows.size() - 1) UiDraw.rect(g, x + 4, ry + ROW - .3f, w - 8, .6f, UiDraw.alpha(t.overlay(), .3f));
+                if (i < rows.size() - 1) UiDraw.rect(g, x + 4, ry + ROW - .3f, w - 8, .6f, UiDraw.alpha(t.line(), .3f));
             }
         }
     }
@@ -283,7 +283,7 @@ abstract class InlineCard {
                 armed = "";
                 attempt(a.run(), a.done() == null ? "" : a.done());
             });
-            if (waiting) UiMotion.drain(g, right - bw + 6, cy + 6, bw - 12, System.nanoTime() - (System.currentTimeMillis() - armedAt) * 1_000_000L, 4_000_000_000L, UiDraw.alpha(t.accent(), .8f));
+            if (waiting) UiMotion.drain(g, right - bw + 6, cy + 6, bw - 12, System.nanoTime() - (System.currentTimeMillis() - armedAt) * 1_000_000L, 4_000_000_000L, UiDraw.alpha(t.on(), .8f));
             return right - bw - 4;
         }
 
@@ -299,12 +299,12 @@ abstract class InlineCard {
                     field.place(Math.round(x), Math.round(cy - 8), Math.round(fieldW));
                     field.visible = inView(cy - 8, 16);
                     if (field.visible) field.extractRenderState(g, mx, my, 0); else field.setFocused(false);
-                } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.muted());
+                } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.textDim());
                 top = 26;
             }
             List<Entry> list = entries.get();
             float rh = rowHeight(list);
-            if (list.isEmpty()) UiDraw.text(g, empty, x + 4, y + top + rh / 2, UiDraw.SMALL, t.muted());
+            if (list.isEmpty()) UiDraw.text(g, empty, x + 4, y + top + rh / 2, UiDraw.SMALL, t.textDim());
             for (int i = 0; i < list.size(); i++) {
                 Entry e = list.get(i);
                 // Rows are keyed by their entry, so they fade in when added, glide up when one above is
@@ -318,21 +318,20 @@ abstract class InlineCard {
                 float rowW = right - x;
                 boolean hover = e.select() != null && hovering(mx, my, x, ry, rowW, rh - 2);
                 float hv = UiAnim.smooth(rowKey + ".h", hover ? 1 : 0, 18), act = UiAnim.smooth(rowKey + ".act", e.active() ? 1 : 0, 16);
-                int idle = hv > 0 ? UiDraw.alpha(t.surface(), hv * .8f) : i % 2 == 0 ? UiDraw.alpha(t.surface(), .3f) : UiDraw.alpha(t.surface(), 0f);
-                UiDraw.rounded(g, x, ry + 1, rowW, rh - 2, 6, UiDraw.mix(idle, UiDraw.alpha(t.accent(), .14f + hv * .06f), act));
-                if (act > .01f) UiDraw.rounded(g, x + 2, ry + 6 + (rh - 12) * (1 - act) / 2, 2, (rh - 12) * act, 1, t.accent());
+                int idle = hv > 0 ? UiDraw.alpha(t.fill(), hv * .8f) : i % 2 == 0 ? UiDraw.alpha(t.fill(), .3f) : UiDraw.alpha(t.fill(), 0f);
+                UiDraw.rounded(g, x, ry + 1, rowW, rh - 2, 6, UiDraw.mix(idle, UiDraw.alpha(t.on(), .14f + hv * .06f), act));
                 float tx = x + 10;
                 if (e.icon() != null) { e.icon().draw(g, x + 6, ry + (rh - 16) / 2); tx = x + 30; }
-                int colour = UiDraw.mix(t.text(), t.accent(), act);
+                int colour = UiDraw.mix(t.text(), t.on(), act);
                 String tag = e.active() ? "In use" : hover && e.select() != null ? "Click to use" : "";
                 float tagW = tag.isEmpty() ? 0 : UiDraw.width(tag, UiDraw.SMALL) + 10;
                 if (e.detail().isEmpty()) UiDraw.text(g, UiDraw.fit(e.label(), x + rowW - tx - tagW - 6), tx, cy, colour);
                 else {
                     UiDraw.text(g, UiDraw.fit(e.label(), x + rowW - tx - tagW - 6), tx, cy - 5, colour);
-                    UiDraw.text(g, UiDraw.fit(e.detail(), x + rowW - tx - 6, UiDraw.SMALL), tx, cy + 6, UiDraw.SMALL, t.muted());
+                    UiDraw.text(g, UiDraw.fit(e.detail(), x + rowW - tx - 6, UiDraw.SMALL), tx, cy + 6, UiDraw.SMALL, t.textDim());
                 }
                 float tagRight = x + rowW - 8, tagY = e.detail().isEmpty() ? cy : cy - 5;
-                UiMotion.text(g, rowKey + ".tag", tag, l -> UiDraw.right(g, l, tagRight, tagY, UiDraw.SMALL, l.equals("In use") ? t.accent() : t.muted()));
+                UiMotion.text(g, rowKey + ".tag", tag, l -> UiDraw.right(g, l, tagRight, tagY, UiDraw.SMALL, l.equals("In use") ? t.on() : t.textDim()));
                 UiRender.opacity = rowBefore;
                 if (e.select() != null) hit(x, ry, rowW, rh - 2, () -> attempt(e.select(), e.selectDone() == null ? "" : e.selectDone()));
             }
