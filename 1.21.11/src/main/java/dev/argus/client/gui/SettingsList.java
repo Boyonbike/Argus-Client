@@ -102,8 +102,8 @@ final class SettingsList {
     boolean editing() { return editing != null; }
     String hint() {
         if (!message.isEmpty() && (System.nanoTime() - messageAt) / 1e9f < 4.5f) return null;
-        if (capturing != null) return "Press a key or mouse button · Esc cancels · Delete restores the default";
-        return editing != null ? "Enter or Esc saves · Click away saves" : "Click to change · Drag sliders · The reset icon restores the default";
+        if (capturing != null) return "Press a key or mouse button\nEsc\tcancel\nDelete\tdefault";
+        return editing != null ? "Enter, Esc or clicking away saves" : "Click a setting to change it, or drag a slider";
     }
     String message() { return message.isEmpty() || (System.nanoTime() - messageAt) / 1e9f >= 4.5f ? "" : message; }
 
@@ -139,7 +139,7 @@ final class SettingsList {
         if (setting.shouldDisplayBoundaryLabel()) return setting.getBoundaryLabel();
         Object value = setting.getValue();
         if (value instanceof NamedEntry named) return named.getName();
-        if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" · %d%%", Math.round(colour.getAlpha() / 2.55)) : "");
+        if (value instanceof Color colour) return String.format("#%06X", colour.getRGB() & 0xffffff) + ((colour.getAlpha() < 255) ? String.format(" (%d%%)", Math.round(colour.getAlpha() / 2.55)) : "");
         if (setting instanceof SetSetting<?> collection) return collection.getValue().size() + (collection.getValue().size() == 1 ? " entry" : " entries");
         if (value instanceof Double || value instanceof Float) {
             double number = ((Number) value).doubleValue();
@@ -186,18 +186,18 @@ final class SettingsList {
             boolean focus = editing == setting || sliding == setting;
             float highlight = Objects.equals(focusSetting, setting.getName()) ? Math.max(0, 1 - (System.nanoTime() - createdAt) / 1.6e9f) : 0;
             float flash = UiAnim.smooth(key + ".reset", 0, 6);
-            if (hv > 0 || focus) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.surface(), focus ? 1 : hv * .8f));
-            if (highlight > 0) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.accent(), .25f * highlight));
-            if (flash > .01f) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.accent(), .22f * flash));
+            if (hv > 0 || focus) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.fill(), focus ? 1 : hv * .8f));
+            if (highlight > 0) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.on(), .25f * highlight));
+            if (flash > .01f) UiDraw.rounded(g, x, rowY + 1, w, ROW - 2, 5, UiDraw.alpha(t.on(), .22f * flash));
             float cy = rowY + ROW / 2f;
             float labelX = x + 8;
             int half = (w - 12) / 2;
             String label = UiDraw.fit(GuiState.title(setting.getName()), half - 12);
             if (setting.isGroupOnly()) {
-                UiDraw.bold(g, label, labelX, cy, UiDraw.TEXT, t.accent());
+                UiDraw.bold(g, label, labelX, cy, UiDraw.TEXT, t.on());
                 UiRender.opacity = before; continue;
             }
-            UiDraw.text(g, label, labelX, cy, setting.isVisible() ? UiDraw.mix(t.text(), 0xffffffff, hv * .1f) : t.muted());
+            UiDraw.text(g, label, labelX, cy, setting.isVisible() ? UiDraw.mix(t.text(), 0xffffffff, hv * .1f) : t.textDim());
             labelEdge = Math.max(labelEdge, labelX + UiDraw.width(label));
             controlEdge = Math.min(controlEdge, controlLeft(setting));
             // Reset to default: always present, dimmed while the value is already the default.
@@ -205,8 +205,8 @@ final class SettingsList {
             boolean resetHover = hover && UiDraw.over(mx, my, resetX() - 3, rowY + 3, 16, ROW - 6);
             if (hover && !resetHover) { pointed = setting; pointedY = rowY; }
             float rh = UiAnim.smooth(key + ".rh", resetHover ? 1 : 0, 20);
-            if (rh > 0 && !atDefault) UiDraw.circle(g, resetX() + 5, cy, 7, UiDraw.alpha(t.accent(), .16f * rh));
-            int resetColour = atDefault ? UiDraw.alpha(t.muted(), .22f + hv * .13f) : UiDraw.mix(UiDraw.alpha(t.muted(), .55f + hv * .3f), t.accent(), rh);
+            if (rh > 0 && !atDefault) UiDraw.circle(g, resetX() + 5, cy, 7, UiDraw.alpha(t.on(), .16f * rh));
+            int resetColour = atDefault ? UiDraw.alpha(t.textDim(), .22f + hv * .13f) : UiDraw.mix(UiDraw.alpha(t.textDim(), .55f + hv * .3f), t.on(), rh);
             UiDraw.icon(g, "reset", resetX(), cy - 5, 10, resetColour);
             if (resetHover) host.hostTooltip(key + ".rt", atDefault ? "Already at default" : "Reset to default", "Default: " + defaultText(setting));
             Object current = setting.getValue();
@@ -214,7 +214,7 @@ final class SettingsList {
             // Switching between the control, the inline editor and "Unavailable" fades the new one in.
             UiRender.opacity *= UiMotion.sinceChange(key + ".state", (setting.isVisible() ? 1 : 0) + (editing == setting ? 2 : 0));
             if (!setting.isVisible()) {
-                UiDraw.right(g, "Unavailable", right, cy, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+                UiDraw.right(g, "Unavailable", right, cy, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .7f));
             } else if (editing == setting && editor != null) {
                 editor.place(Math.round(x + w / 2f), Math.round(cy - 6), Math.round(right - (x + w / 2f)));
                 editor.visible = rowY >= clipTop() - 2 && rowY + ROW <= clipBottom() + 2;
@@ -223,12 +223,12 @@ final class SettingsList {
             } else if (setting instanceof KeyBindSetting bind) {
                 boolean listening = capturing == bind;
                 String text = listening ? "Press a key…" : UiDraw.fit(bind.displayName(), half - 40);
-                float pulse = listening ? UiAnim.pulse(1.5e8) : 0;
+                float pulse = listening ? 1 : 0;
                 float pw = UiDraw.width(text, UiDraw.SMALL) + 23, px = right - pw;
-                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, listening ? UiDraw.alpha(t.accent(), .18f + pulse * .12f) : UiDraw.mix(t.mantle(), t.overlay(), hv * .6f));
-                if (listening) UiDraw.outline(g, px, cy - 7, pw, 14, 7, .7f, UiDraw.alpha(t.accent(), .5f + pulse * .5f));
-                UiDraw.icon(g, "keyboard", px + 6, cy - 4, 8, listening ? t.accent() : t.muted());
-                UiDraw.text(g, text, px + 17, cy, UiDraw.SMALL, listening ? t.accent() : t.text());
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, listening ? UiDraw.alpha(t.on(), .18f + pulse * .12f) : UiDraw.mix(t.sunk(), t.line(), hv * .6f));
+                if (listening) UiDraw.outline(g, px, cy - 7, pw, 14, 7, .7f, UiDraw.alpha(t.on(), .5f + pulse * .5f));
+                UiDraw.icon(g, "keyboard", px + 6, cy - 4, 8, listening ? t.on() : t.textDim());
+                UiDraw.text(g, text, px + 17, cy, UiDraw.SMALL, listening ? t.on() : t.text());
             } else if (current instanceof Boolean enabled) {
                 UiDraw.toggle(g, right - 18, cy - 5, UiAnim.smooth(key + ".on", enabled ? 1 : 0, 16), hover && !resetHover, t);
             } else if (slider(setting)) {
@@ -236,54 +236,55 @@ final class SettingsList {
                 float shown = sliding == setting ? target : UiAnim.smooth(key + ".v", target, 18);
                 boolean over = hover && UiDraw.over(mx, my, sliderX() - 4, rowY, SLIDER + 8, ROW);
                 UiDraw.slider(g, sliderX(), cy, SLIDER, shown, UiAnim.smooth(key + ".sh", over || sliding == setting ? 1 : 0, 18), t);
-                UiDraw.right(g, value(setting), right, cy, focus ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv));
+                UiDraw.right(g, value(setting), right, cy, focus ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv));
             } else if (current instanceof Enum<?> || current instanceof NamedEntry) {
                 // The pill eases to the new value's width and the value slides in from the side that was clicked.
                 String text = UiDraw.fit(value(setting), half - 40);
                 float target = UiDraw.width(text) + 30, pw = UiAnim.smooth(key + ".pw", target, target, 20), px = right - pw;
-                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(t.mantle(), t.overlay(), hv * .6f));
-                UiDraw.icon(g, "chevron_left", px + 3, cy - 3.5f, 7, UiDraw.alpha(t.muted(), .5f + hv * .5f));
-                UiDraw.icon(g, "chevron_right", px + pw - 10, cy - 3.5f, 7, UiDraw.alpha(t.muted(), .5f + hv * .5f));
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(t.sunk(), t.line(), hv * .6f));
+                UiDraw.icon(g, "chevron_left", px + 3, cy - 3.5f, 7, UiDraw.alpha(t.textDim(), .5f + hv * .5f));
+                UiDraw.icon(g, "chevron_right", px + pw - 10, cy - 3.5f, 7, UiDraw.alpha(t.textDim(), .5f + hv * .5f));
                 g.enableScissor((int) Math.floor(px + 10), (int) Math.floor(cy - 7), (int) Math.ceil(px + pw - 10), (int) Math.ceil(cy + 7));
                 try { UiMotion.crossfade(g, key + ".enum", text, cycleDir * 8, 0, v -> UiDraw.center(g, v, px, cy, pw, t.text())); }
                 finally { g.disableScissor(); }
             } else if (current instanceof Color colour) {
                 String text = value(setting);
                 float tw = UiDraw.width(text, UiDraw.SMALL);
-                UiDraw.right(g, text, right, cy, UiDraw.SMALL, UiDraw.mix(t.muted(), t.text(), hv));
+                UiDraw.right(g, text, right, cy, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.text(), hv));
                 float sx = right - tw - 18;
                 UiDraw.rounded(g, sx, cy - 6, 12, 12, 3.5f, colour.getRGB() | 0xff000000);
                 UiDraw.outline(g, sx, cy - 6, 12, 12, 3.5f, .6f, UiDraw.alpha(t.text(), .25f));
             } else if (setting instanceof SetSetting<?>) {
                 // A list is edited on its own screen, so the row is a labelled button rather than a bare chevron.
-                String text = UiDraw.fit(value(setting), half - 60) + "  ·  Edit";
+                int entries = ((SetSetting<?>) setting).getValue().size();
+                String text = UiDraw.fit("Edit " + entries + (entries == 1 ? " entry" : " entries"), half - 40);
                 float pw = UiDraw.width(text, UiDraw.SMALL) + 22, px = right - pw;
-                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.alpha(t.accent(), .1f), UiDraw.alpha(t.accent(), .22f), hv));
-                UiDraw.outline(g, px, cy - 7, pw, 14, 7, .6f, UiDraw.alpha(t.accent(), .3f + hv * .3f));
-                UiDraw.text(g, text, px + 8, cy, UiDraw.SMALL, t.accent());
-                UiDraw.icon(g, "chevron_right", px + pw - 12, cy - 3.5f, 7, t.accent());
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.alpha(t.on(), .1f), UiDraw.alpha(t.on(), .22f), hv));
+                UiDraw.outline(g, px, cy - 7, pw, 14, 7, .6f, UiDraw.alpha(t.on(), .3f + hv * .3f));
+                UiDraw.text(g, text, px + 8, cy, UiDraw.SMALL, t.on());
+                UiDraw.icon(g, "chevron_right", px + pw - 12, cy - 3.5f, 7, t.on());
             } else {
                 String text = UiDraw.fit(value(setting), half - 20);
                 float pw = Math.max(40, UiDraw.width(text) + 14), px = right - pw;
-                UiDraw.rounded(g, px, cy - 7, pw, 14, 4, UiDraw.mix(t.mantle(), t.crust(), hv));
-                UiDraw.outline(g, px, cy - 7, pw, 14, 4, .6f, UiDraw.alpha(t.overlay(), .4f + hv * .4f));
-                UiDraw.text(g, text, px + 7, cy, UiDraw.mix(t.muted(), t.text(), hv));
+                UiDraw.rounded(g, px, cy - 7, pw, 14, 4, UiDraw.mix(t.sunk(), t.deep(), hv));
+                UiDraw.outline(g, px, cy - 7, pw, 14, 4, .6f, UiDraw.alpha(t.line(), .4f + hv * .4f));
+                UiDraw.text(g, text, px + 7, cy, UiDraw.mix(t.textDim(), t.text(), hv));
             }
             UiRender.opacity = before;
         }
         if (editor != null) editor.visible = editorShown;
-        if (visible.isEmpty()) UiDraw.center(g, "This module has no settings.", x, y + 14, w, t.muted());
+        if (visible.isEmpty()) UiDraw.center(g, "This module has no settings.", x, y + 14, w, t.textDim());
         g.disableScissor();
         if (pointed != hovered) { hovered = pointed; hoverSince = System.nanoTime(); }
         labelsRight = labelEdge; controlsLeft = controlEdge;
         hoveredY = pointedY;
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, y - 2, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, x - 4, y + h - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.scrollEdge(g, x - 4, y - 2, w + 8, true, t));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.scrollEdge(g, x - 4, y + h, w + 8, false, t));
         if (maxScroll() > 0) {
             float track = Math.max(14, h * (float) h / (visible.size() * ROW)), offset = (h - track) * shownScroll / maxScroll();
             // The scrollbar rests faint and brightens while the list is hovered or scrolling.
             boolean active = UiDraw.over(mx, my, x - 4, y, w + 10, h) || Math.abs(shownScroll - scroll) > .5f;
-            UiDraw.rounded(g, x + w + 2, y + offset, 2, track, 1, UiDraw.alpha(t.overlay(), UiAnim.smooth("sl.bar." + System.identityHashCode(this), active ? .8f : .3f, 10)));
+            UiDraw.rounded(g, x + w + 2, y + offset, 2, track, 1, UiDraw.alpha(t.line(), UiAnim.smooth("sl.bar." + System.identityHashCode(this), active ? .8f : .3f, 10)));
         }
     }
 
@@ -417,32 +418,30 @@ final class SettingsList {
         float before = UiRender.opacity;
         UiRender.opacity = before * popupFade;
         py += (1 - popupFade) * 3;
-        UiDraw.shadow(g, px, py + 2, pw, ph, 7, 10, UiDraw.alpha(0xff000000, .35f));
-        UiDraw.rounded(g, px, py, pw, ph, 7, t.mantle());
-        UiDraw.outline(g, px, py, pw, ph, 7, .6f, UiDraw.alpha(t.accent(), .45f));
+        UiDraw.panel(g, px, py, pw, ph, t);
         // A small notch points back at the row when the popup sits beside the panel.
         if (beside) {
             float ny = Math.clamp(rowY + ROW / 2f, py + 8, py + ph - 8);
             float nx = px < x ? px + pw - 1.5f : px - 1.5f;
-            UiDraw.rounded(g, nx, ny - 4, 3, 8, 1.5f, UiDraw.alpha(t.accent(), .7f));
+            UiDraw.rect(g, nx, ny - 4, 3, 8, t.line());
         }
         float cy = py + 8 + 5;
         String kind = kind(setting);
-        float kw = UiDraw.width(kind, 5.5f) + 10;
+        float kw = UiDraw.width(kind, UiSpace.CAPTION) + 10;
         UiDraw.bold(g, UiDraw.fit(GuiState.title(setting.getName()), inner - kw - 6), px + 8, cy, UiDraw.TEXT, t.text());
-        UiDraw.rounded(g, px + pw - 8 - kw, cy - 4.5f, kw, 9, 4.5f, UiDraw.alpha(t.accent(), .16f));
-        UiDraw.center(g, kind, px + pw - 8 - kw, cy, kw, 5.5f, t.accent());
+        UiDraw.rounded(g, px + pw - 8 - kw, cy - 4.5f, kw, 9, 4.5f, UiDraw.alpha(t.on(), .16f));
+        UiDraw.center(g, kind, px + pw - 8 - kw, cy, kw, UiSpace.CAPTION, t.on());
         cy += 12;
         for (String line : lines) { UiDraw.text(g, line, px + 8, cy, UiDraw.SMALL, t.text()); cy += lineH; }
         if (!lines.isEmpty()) cy += 3;
-        UiDraw.rect(g, px + 8, cy - 3, inner, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.rect(g, px + 8, cy - 3, inner, .6f, UiDraw.alpha(t.line(), .6f));
         cy += 3;
         for (String[] fact : factLines) {
-            if (!fact[0].isEmpty()) UiDraw.text(g, fact[0], px + 8, cy, UiDraw.SMALL, t.muted());
-            UiDraw.text(g, fact[1], px + 8 + factLabel + 8, cy, UiDraw.SMALL, fact[0].equals("Current") ? t.accent() : t.text());
+            if (!fact[0].isEmpty()) UiDraw.text(g, fact[0], px + 8, cy, UiDraw.SMALL, t.textDim());
+            UiDraw.text(g, fact[1], px + 8 + factLabel + 8, cy, UiDraw.SMALL, fact[0].equals("Current") ? t.on() : t.text());
             cy += lineH;
         }
-        if (!statusLines.isEmpty()) { cy += 3; for (String line : statusLines) { UiDraw.text(g, line, px + 8, cy, UiDraw.SMALL, t.yellow()); cy += lineH; } }
+        if (!statusLines.isEmpty()) { cy += 3; for (String line : statusLines) { UiDraw.text(g, line, px + 8, cy, UiDraw.SMALL, t.warn()); cy += lineH; } }
         UiRender.opacity = before;
     }
 
@@ -621,7 +620,12 @@ final class SettingsList {
     /** Draws the hint or the latest error message at the given footer line. */
     void footer(GuiGraphics g, float fx, float cy, float width, UiTheme t, String override) {
         String error = message();
-        var line = error.isEmpty() ? new UiMotion.Line(UiDraw.fit(override != null ? override : hint(), width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
-        UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, UiMotion.footerColour(l.kind(), t)));
+        String text = override != null ? override : hint();
+        var line = error.isEmpty() ? new UiMotion.Line(UiDraw.isLegend(text) ? text : UiDraw.fit(text, width), 0) : new UiMotion.Line(UiDraw.fit(error, width), 1);
+        UiMotion.crossfade(g, "sl.footer." + System.identityHashCode(this), line, l -> {
+            int colour = UiMotion.footerColour(l.kind(), t);
+            if (UiDraw.isLegend(l.text())) UiDraw.legend(g, l.text(), fx, cy, t, colour, colour);
+            else UiDraw.text(g, l.text(), fx, cy, UiDraw.SMALL, colour);
+        });
     }
 }

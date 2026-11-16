@@ -278,7 +278,8 @@ public abstract class UiScreen extends Screen {
         if (strength <= 0) return;
         float face = centredPx(FACE), gap = Math.round(1.6f * pxPerUnit), size = face + gap * 2, inset = (barPx - size) / 2;
         float rx = lx(g, cellPx + inset), ry = ly(g, barPxTop + inset), rs = size / pxPerUnit;
-        UiDraw.outline(g, rx, ry, rs, rs, rs / 2, 1.1f, UiDraw.alpha(t.accent(), strength));
+        // The face is drawn square like the skin, so its hover ring is a square frame too, and neutral.
+        UiDraw.frame(g, rx, ry, rs, rs, UiSpace.CHAMFER_SMALL, UiDraw.alpha(t.line(), strength));
     }
 
     private void tabs(GuiGraphics g, int mx, int my) {
@@ -293,11 +294,9 @@ public abstract class UiScreen extends Screen {
         float facePx = centredPx(FACE), faceInset = (barPx - facePx) / 2, gearCellPx = barPxLeft + barPxWidth - barPx;
         boolean faceHover = closingAt == 0 && overFace(mx, my);
         float fh = UiAnim.smooth("bar.face", faceHover ? 1 : 0, 18);
-        UiDraw.shadow(g, x, y + 1, w, BAR, BAR / 2, 8 + fh * 3, UiDraw.alpha(0xff000000, .28f));
-        UiDraw.rounded(g, x, y, w, BAR, BAR / 2, t.mantle());
-        UiDraw.outline(g, x, y, w, BAR, BAR / 2, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .5f), t.accent(), fh * .8f));
-        // Face on the left, with an accent ring that grows on hover and while the bar is open.
-        circleRing(g, barPxLeft, Math.max(fh, barProgress() * .6f), t);
+        UiDraw.panel(g, x, y, w, BAR, t);
+        // Face on the left, with a neutral ring on hover.
+        circleRing(g, barPxLeft, fh, t);
         UiDraw.face(g, lx(g, barPxLeft + faceInset), ly(g, barPxTop + faceInset), facePx / pxPerUnit);
         if (faceHover) tooltip("bar.face", barOpen() ? "Hide navigation" : "Show navigation");
         if (barProgress() < .01f) return;
@@ -309,10 +308,11 @@ public abstract class UiScreen extends Screen {
             boolean gearHover = closingAt == 0 && overGear(mx, my);
             float gh = UiAnim.smooth("bar.gear", gearHover ? 1 : 0, 18), ga = UiAnim.smooth("bar.gear.on", settingsActive() ? 1 : 0, 16);
             float gs = facePx / pxPerUnit;
-            UiDraw.rounded(g, lx(g, gearCellPx + faceInset), ly(g, barPxTop + faceInset), gs, gs, gs / 2,
-                    UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), gh * .7f), UiDraw.alpha(t.accent(), .25f), ga));
-            circleRing(g, gearCellPx, Math.max(gh, ga * .9f), t);
-            int colour = UiDraw.mix(UiDraw.mix(t.muted(), t.text(), gh), t.accent(), ga);
+            // At rest the gear is a bare icon like the tabs beside it; the cell only appears on hover or while open.
+            float cell = Math.max(gh, ga);
+            if (cell > .01f) UiDraw.box(g, lx(g, gearCellPx + faceInset), ly(g, barPxTop + faceInset), gs, gs, UiSpace.CHAMFER_SMALL,
+                    UiDraw.alpha(UiDraw.mix(t.fill(), t.line(), gh * .5f), cell));
+            int colour = UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), gh), t.on(), ga);
             float iconPx = centredPx(GEAR), iconInset = (barPx - iconPx) / 2;
             UiDraw.icon(g, "client", lx(g, gearCellPx + iconInset), ly(g, barPxTop + iconInset), iconPx / pxPerUnit, colour);
             if (gearHover) tooltip("bar.gear", "Settings", "Appearance, presets, client options and this bar's tabs");
@@ -327,7 +327,9 @@ public abstract class UiScreen extends Screen {
             indicatorX = barProgress() < .99f || (draggingTab && active == pressedTab) ? target : UiAnim.approach(indicatorX, target, 16);
             indicatorWidth = UiAnim.approach(indicatorWidth, tabWidth[active], 16);
             UiRender.opacity = before * tabReveal(active);
-            UiDraw.rounded(g, indicatorX, y + (BAR - TAB_HEIGHT) / 2, indicatorWidth, TAB_HEIGHT, TAB_HEIGHT / 2, UiDraw.alpha(t.accent(), .2f));
+            // The active tab is marked by its accent label and a short rule under it that slides between tabs.
+            float ruleW = Math.min(indicatorWidth - 8, 14);
+            UiDraw.rect(g, indicatorX + (indicatorWidth - ruleW) / 2, y + (BAR + TAB_HEIGHT) / 2 - 1, ruleW, 1, t.on());
         }
         for (int i = 0; i < tabLabels.length; i++) {
             float reveal = tabReveal(i);
@@ -337,14 +339,14 @@ public abstract class UiScreen extends Screen {
             boolean dragged = draggingTab && i == pressedTab;
             boolean hover = closingAt == 0 && barProgress() > .6f && (dragged || !draggingTab && UiDraw.over(mx, my, tx, ty, tabWidth[i], TAB_HEIGHT));
             float h = UiAnim.smooth("tab." + tabEntries[i], hover ? 1 : 0, 18);
-            if (dragged) UiDraw.shadow(g, tx, ty + 1, tabWidth[i], TAB_HEIGHT, TAB_HEIGHT / 2, 5, UiDraw.alpha(0xff000000, .35f));
-            if (h > 0 && i != active) UiDraw.rounded(g, tx, ty, tabWidth[i], TAB_HEIGHT, TAB_HEIGHT / 2, UiDraw.alpha(t.surface(), dragged ? 1 : h * .7f));
-            int colour = i == active ? t.accent() : UiDraw.mix(t.muted(), t.text(), h);
+            if (dragged) UiDraw.shadow(g, tx, ty, tabWidth[i], TAB_HEIGHT, TAB_HEIGHT / 2, 0, UiDraw.shade(t.bg()));
+            if (dragged) UiDraw.rounded(g, tx, ty, tabWidth[i], TAB_HEIGHT, 2, t.fill());
+            int colour = i == active ? t.on() : UiDraw.mix(t.textDim(), t.text(), h);
             if (iconTabs) {
                 float size = Math.min(11, tabWidth[i] - 8);
                 UiDraw.icon(g, tabIcons[i], tx + (tabWidth[i] - size) / 2, ty + (TAB_HEIGHT - size) / 2, size, colour);
             } else UiDraw.center(g, tabLabels[i], tx, ty + TAB_HEIGHT / 2, tabWidth[i], colour);
-            if (hover && !draggingTab) tooltip("tab." + tabEntries[i], tabLabels[i], "Drag to reorder · right-click to remove");
+            if (hover && !draggingTab && iconTabs) tooltip("tab." + tabEntries[i], tabLabels[i]);
         }
         UiRender.opacity = before;
         g.disableScissor();
@@ -352,9 +354,10 @@ public abstract class UiScreen extends Screen {
 
     private void footer(GuiGraphics g) {
         UiTheme t = GuiState.theme();
-        boolean error = !GuiState.saveError.isEmpty();
-        UiDraw.circle(g, 12, height - 10, 2, error ? t.red() : t.accent());
-        UiDraw.text(g, error ? GuiState.saveError : "Argus Client", 18, height - 10, UiDraw.SMALL, error ? t.red() : t.muted());
+        // The slot is only for save errors; the version lives at the bottom of the Settings sidebar.
+        if (GuiState.saveError.isEmpty()) return;
+        UiDraw.circle(g, 12, height - 10, 2, t.danger());
+        UiDraw.text(g, GuiState.saveError, 18, height - 10, UiDraw.SMALL, t.danger());
     }
 
     /** Requests a tooltip for this frame; it fades in after the pointer rests on {@code owner}. */
@@ -367,20 +370,22 @@ public abstract class UiScreen extends Screen {
         float shown = UiAnim.enabled() ? UiAnim.easeOutCubic(rested * UiAnim.speed() / .14f) : rested >= 0 ? 1 : 0;
         if (shown <= 0) return;
         UiTheme t = GuiState.theme();
+        // A null first line means a body-only tooltip: no bold title, just the dim body lines.
+        int first = tooltipLines.length > 0 && tooltipLines[0] == null ? 1 : 0;
+        if (tooltipLines.length - first <= 0) return;
         float w = 0;
-        for (int i = 0; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
+        for (int i = first; i < tooltipLines.length; i++) w = Math.max(w, UiDraw.width(tooltipLines[i], i == 0 ? UiDraw.TEXT : UiDraw.SMALL));
         w = Math.min(width - 12, w + 16);
-        float lineH = 11, h = 8 + tooltipLines.length * lineH;
+        float lineH = 11, h = 8 + (tooltipLines.length - first) * lineH;
         float x = Math.clamp(mouseX + 12, 6, Math.max(6, width - w - 6)), y = Math.min(mouseY + 14, height - h - 6) + (1 - shown) * 3;
         float before = UiRender.opacity;
         UiRender.opacity = before * shown;
-        UiDraw.shadow(g, x, y + 2, w, h, 6, 8, UiDraw.alpha(0xff000000, .35f));
-        UiDraw.rounded(g, x, y, w, h, 6, t.mantle());
-        UiDraw.outline(g, x, y, w, h, 6, .6f, UiDraw.alpha(t.overlay(), .8f));
-        for (int i = 0; i < tooltipLines.length; i++) {
+        UiDraw.panel(g, x, y, w, h, t);
+        for (int i = first; i < tooltipLines.length; i++) {
             String line = UiDraw.fit(tooltipLines[i], w - 16, i == 0 ? UiDraw.TEXT : UiDraw.SMALL);
-            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.accent());
-            else UiDraw.text(g, line, x + 8, y + 4 + lineH * i + lineH / 2 + 1, UiDraw.SMALL, t.muted());
+            float row = i - first;
+            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.text());
+            else UiDraw.text(g, line, x + 8, y + 4 + lineH * row + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
         }
         UiRender.opacity = before;
     }
@@ -503,7 +508,9 @@ public abstract class UiScreen extends Screen {
 
     protected void backdrop(GuiGraphics g) {
         boolean dark = GuiState.preferences().mode == GuiPreferences.Mode.DARK;
-        UiDraw.gradient(g, 0, 0, width, height, 0, dark ? 0x7a07070d : 0x50000000, dark ? 0xa009090f : 0x70000000);
+        // Keep the world visible through the blur; the previous 48–63% dark overlay
+        // made the blurred background look almost black on opening the GUI.
+        UiDraw.gradient(g, 0, 0, width, height, 0, dark ? 0x300c0c0b : 0x28000000, dark ? 0x500d0d0c : 0x40000000);
     }
 
     @Override public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
@@ -528,6 +535,23 @@ public abstract class UiScreen extends Screen {
         return super.keyPressed(event);
     }
     @Override public void onClose() { beginClose(parent); }
-    @Override public void removed() { ColorPicker.closeNow(); GuiState.save(); super.removed(); }
+    @Override public void removed() {
+        ColorPicker.closeNow();
+        if (applyNoteShown) GuiState.preferences().applyNoteSeen = true;
+        GuiState.save();
+        super.removed();
+    }
+
+    private boolean applyNoteShown;
+
+    /**
+     * The autosave note for settings pages: shown only until the screen it first appears on closes, then never again.
+     * Returns null once it has been seen.
+     */
+    protected final String applyNote() {
+        if (GuiState.preferences().applyNoteSeen) return null;
+        applyNoteShown = true;
+        return "Changes apply instantly and are saved automatically";
+    }
     @Override public boolean isPauseScreen() { return false; }
 }

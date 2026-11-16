@@ -73,8 +73,13 @@ final class SettingsCards {
         addBetterChat(host);
         assignTabs();
         // A folded card starts folded rather than shrinking into place, so jumping to a setting lands where it should.
-        for (Section section : sections) section.body = section.open() ? section.list.contentHeight() + 6 : 0;
+        for (Section section : sections) section.body = section.open() ? section.list.contentHeight() + 6 + noteHeight(section) : 0;
     }
+
+    /** A group's note is a caption line at the top of its card's body, above the settings. */
+    private static final float NOTE_H = 12;
+    private static String note(Section s) { return s.group != null && s.group.groupNote != null && !s.group.groupNote.isBlank() ? s.group.groupNote : null; }
+    private static float noteHeight(Section s) { return note(s) != null ? NOTE_H : 0; }
 
     /**
      * Adds a card of the module's own tools.
@@ -148,13 +153,13 @@ final class SettingsCards {
 
     private void drawTabs(GuiGraphics g, int mx, int my, UiTheme t, List<String> tabs, String current, float x, float y, float w, float clipTop, float clipBottom) {
         float segment = w / tabs.size();
-        UiDraw.rounded(g, x, y, w, TABS, TABS / 2, t.crust());
+        UiDraw.rounded(g, x, y, w, TABS, TABS / 2, t.deep());
         float thumb = UiAnim.smooth("tabs." + module.getName(), tabs.indexOf(current), 16);
-        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, TABS - 4, (TABS - 4) / 2, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, TABS - 4, (TABS - 4) / 2, t.fill());
         for (int i = 0; i < tabs.size(); i++) {
             boolean hover = UiDraw.over(mx, my, x + i * segment, y, segment, TABS) && my >= clipTop && my < clipBottom;
             float hv = UiAnim.smooth("tabs." + module.getName() + "." + i, hover ? 1 : 0, 18);
-            int colour = tabs.get(i).equals(current) ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv);
+            int colour = tabs.get(i).equals(current) ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv);
             UiDraw.center(g, UiDraw.fit(tabs.get(i), segment - 10), x + i * segment, y + TABS / 2, segment, colour);
         }
     }
@@ -270,18 +275,17 @@ final class SettingsCards {
             Section s = item instanceof Section section ? section : null;
             InlineCard card = item instanceof InlineCard c ? c : null;
             boolean open = s != null ? s.open() : card.open;
-            if (s != null) s.body = UiAnim.approach(s.body, open ? s.list.contentHeight() + 6 : 0, 16);
+            if (s != null) s.body = UiAnim.approach(s.body, open ? s.list.contentHeight() + 6 + noteHeight(s) : 0, 16);
             else card.animate(open);
             tops.put(item, y);
             float body = bodyOf(item), h = UiDraw.CARD_HEAD + body;
             String title = s != null ? s.title() : card.title();
             String subtitle;
             if (s != null) {
-                int count = open ? s.list.rowCount() : s.size, changed = changed(sections.indexOf(s));
-                subtitle = count + (count == 1 ? " setting" : " settings") + (changed > 0 ? " · " + changed + " changed" : "");
-                if (s.group != null && s.group.groupNote != null) subtitle += " · " + s.group.groupNote;
+                // Only a change from default is worth a line; the count of rows is visible by looking.
+                int changed = changed(sections.indexOf(s));
+                subtitle = changed > 0 ? changed + " changed" : null;
             } else subtitle = card.subtitle();
-            if (!open) subtitle += " · click to show";
             String icon = s != null ? icon(sections.indexOf(s)) : card.icon();
             // Cards rise into place one after another when the page opens.
             float appear = host.appear(index + 3), opacity = UiRender.opacity;
@@ -292,13 +296,13 @@ final class SettingsCards {
                 boolean cardHover = UiDraw.over(mx, my, x, y, w, h) && my >= clipTop && my < clipBottom;
                 float lift = UiAnim.smooth("card.l." + module.getName() + "." + title, cardHover ? 1 : 0, 14);
                 UiDraw.card(g, x, y, w, h, icon, title, subtitle, 40, t);
-                if (lift > .01f) UiDraw.outline(g, x, y, w, h, 8, .7f, UiDraw.alpha(t.accent(), .28f * lift));
+                if (lift > .01f) UiDraw.outline(g, x, y, w, h, 8, 1, UiDraw.alpha(t.line(), lift));
                 boolean hover = UiDraw.over(mx, my, x, y, w, UiDraw.CARD_HEAD) && my >= clipTop && my < clipBottom;
                 String foldKey = "card.o." + module.getName() + "." + title;
                 float hv = UiAnim.smooth(foldKey + ".h", hover ? 1 : 0, 20);
                 float shown = UiAnim.smooth(foldKey, open ? 1 : 0, 16);
-                int colour = UiDraw.mix(t.muted(), t.text(), hv);
-                if (hv > 0) UiDraw.circle(g, x + w - UiDraw.CARD_PAD - 7, y + 15, 8, UiDraw.alpha(t.surface(), hv));
+                int colour = UiDraw.mix(t.textDim(), t.text(), hv);
+                if (hv > 0) UiDraw.circle(g, x + w - UiDraw.CARD_PAD - 7, y + 15, 8, UiDraw.alpha(t.fill(), hv));
                 UiDraw.icon(g, "chevron_down", x + w - UiDraw.CARD_PAD - 11, y + 11, 8, UiDraw.alpha(colour, shown));
                 UiDraw.icon(g, "chevron_right", x + w - UiDraw.CARD_PAD - 11, y + 11, 8, UiDraw.alpha(colour, 1 - shown));
                 if (body > 1) {
@@ -306,7 +310,9 @@ final class SettingsCards {
                     float bottom = Math.min(clipBottom, y + h);
                     g.enableScissor((int) x, (int) Math.max(clipTop, y + UiDraw.CARD_HEAD - 2), (int) (x + w), (int) bottom);
                     if (s != null) {
-                        s.list.embed(x + UiDraw.CARD_PAD - 4, y + UiDraw.CARD_HEAD, w - UiDraw.CARD_PAD * 2 + 8, clipTop, bottom);
+                        float note = noteHeight(s);
+                        if (note > 0) UiDraw.text(g, UiDraw.fit(note(s), w - UiDraw.CARD_PAD * 2, UiSpace.CAPTION), x + UiDraw.CARD_PAD, y + UiDraw.CARD_HEAD + note / 2 - 2, UiSpace.CAPTION, t.textDim());
+                        s.list.embed(x + UiDraw.CARD_PAD - 4, y + UiDraw.CARD_HEAD + note, w - UiDraw.CARD_PAD * 2 + 8, clipTop, bottom);
                         s.list.render(g, mx, my, delta, t);
                     } else card.render(g, mx, my, t, x + UiDraw.CARD_PAD, y + UiDraw.CARD_HEAD, w - UiDraw.CARD_PAD * 2, clipTop, Math.min(clipBottom, bottom));
                     g.disableScissor();

@@ -146,9 +146,9 @@ final class ShulkerComboEditScreen extends UiScreen {
     @Override protected void renderUi(GuiGraphics g, int mx, int my, float delta) {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
-        UiDraw.bold(g, "Edit combo", left + 62, top + 19, UiDraw.TITLE, t.text());
-        UiDraw.text(g, "Rule name", left + 12, top + 33, UiDraw.SMALL, t.muted());
-        UiDraw.text(g, "Min count", left + 98, top + 123, UiDraw.SMALL, t.muted());
+        UiDraw.title(g, "Edit combo", left + 62, top + 19, t.text());
+        UiDraw.text(g, "Rule name", left + 12, top + 33, UiDraw.SMALL, t.textDim());
+        UiDraw.text(g, "Min count", left + 98, top + 123, UiDraw.SMALL, t.textDim());
         if (UiDraw.over(mx, my, left + 12, top + 113, 82, 20)) {
             String help = switch (contentsMode) {
                 case All -> "Every listed item must reach the minimum count.";
@@ -163,13 +163,13 @@ final class ShulkerComboEditScreen extends UiScreen {
         } else {
             ShulkerIconRenderer.drawPixels(g, pixels, previewX, top + 88, 1);
         }
-        UiDraw.text(g, "Required items · click to remove", left + 12, requiredTop - 10, UiDraw.SMALL, t.muted());
-        if (required.isEmpty()) UiDraw.text(g, "Add items or enter a shulker name.", left + 12, requiredTop + 8, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Required items (click one to remove it)", left + 12, requiredTop - 10, UiDraw.SMALL, t.textDim());
+        if (required.isEmpty()) UiDraw.text(g, "Add items or enter a shulker name.", left + 12, requiredTop + 8, UiDraw.SMALL, t.textDim());
         int start = itemPage * itemsPerPage();
         for (int i = start; i < Math.min(required.size(), start + itemsPerPage()); i++) {
             int x = left + 12 + (i - start) * CELL, y = requiredTop;
             boolean hover = UiDraw.over(mx, my, x, y, CELL - 2, CELL - 2);
-            UiDraw.rounded(g, x, y, CELL - 2, CELL - 2, 5, hover ? UiDraw.alpha(t.red(), .35f) : t.surface());
+            UiDraw.rounded(g, x, y, CELL - 2, CELL - 2, 5, hover ? UiDraw.alpha(t.danger(), .35f) : t.fill());
             ShulkerIconRenderer.drawAt(g, required.get(i).getDefaultInstance(), null, x + 1, y + 1, 1);
             if (hover) UiDraw.text(g, UiDraw.fit(required.get(i).getDefaultInstance().getHoverName().getString(), panelWidth - 28), left + 14, top + panelHeight - 12, UiDraw.SMALL, t.text());
         }

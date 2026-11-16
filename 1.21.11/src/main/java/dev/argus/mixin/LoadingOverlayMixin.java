@@ -16,6 +16,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -40,6 +42,15 @@ abstract class LoadingOverlayMixin {
          "Ljava/util/function/IntSupplier;getAsInt()I"), require = 3, allow = 3)
    private int useArgusBackground(int original) {
       return LoadingAnimation.BACKGROUND;
+   }
+
+   /**
+    * Vanilla holds the finished screen for one second and then fades it over another, both measured in units of
+    * 1000 ms. Argus's flat loader has nothing left to watch once loading is done, so both take 200 ms.
+    */
+   @ModifyConstant(method = "render", constant = @Constant(floatValue = 1000.0F), require = 1, allow = 1)
+   private float shortenFadeOut(float original) {
+      return 200.0F;
    }
 
    @Inject(method = "render", at = @At("HEAD"))

@@ -50,9 +50,9 @@ final class PresetLoadConfirmationScreen extends UiScreen {
         if(imported) {
             if(!ImportedPresetStore.isRecovery(fingerprint))body.add("Settings without a supported match will use Argus defaults.");
             int on=0,off=0;for(var e:fingerprint.entrySet())if(e.getValue().isJsonObject() && e.getValue().getAsJsonObject().has("enabled")){if(e.getValue().getAsJsonObject().get("enabled").getAsBoolean())on++;else off++;}
-            body.add(on+" modules on · "+off+" modules off");
+            body.add(on+" modules on and "+off+" off");
             var meta=fingerprint.getAsJsonObject("argusImport");
-            if(meta.has("copiedSettings") && meta.has("defaultedSettings"))body.add(meta.get("copiedSettings").getAsInt()+" settings copied · "+meta.get("defaultedSettings").getAsInt()+" at Argus defaults");
+            if(meta.has("copiedSettings") && meta.has("defaultedSettings"))body.add(meta.get("copiedSettings").getAsInt()+" settings copied and "+meta.get("defaultedSettings").getAsInt()+" left at Argus defaults");
             body.add("An automatic recovery backup is also created before loading imported configs.");
         }
     }
@@ -94,17 +94,17 @@ final class PresetLoadConfirmationScreen extends UiScreen {
     }
     @Override protected void renderUi(GuiGraphics g,int mx,int my,float delta){
         UiTheme t=GuiState.theme();UiDraw.panel(g,left,top,panelWidth,panelHeight,t,1);
-        UiDraw.circle(g,left+26,top+24,12,UiDraw.alpha(t.yellow(),.15f));UiDraw.center(g,"!",left+14,top+24,24,UiDraw.TITLE,t.yellow());
-        UiDraw.bold(g,"Replace current config?",left+46,top+24,UiDraw.TITLE,t.text());
+        UiDraw.circle(g,left+26,top+24,12,UiDraw.alpha(t.warn(),.15f));UiDraw.center(g,"!",left+14,top+24,24,UiDraw.TITLE,t.warn());
+        UiDraw.title(g, "Replace current config?", left + 46, top + 24, t.text());
         List<String> lines=new ArrayList<>();List<Integer> starts=new ArrayList<>();for(String text:body){starts.add(lines.size());lines.addAll(UiDraw.wrap(text,panelWidth-36,UiDraw.SMALL));}
         int max=Math.max(0,lines.size()*13-bodyHeight);scroll=Math.clamp(scroll,0,max);
         g.enableScissor(left+12,bodyTop-4,left+panelWidth-12,bodyTop+bodyHeight);
         int firstEnd=starts.size()>1?starts.get(1):lines.size();
-        for(int i=0;i<lines.size();i++)UiDraw.text(g,lines.get(i),left+18,bodyTop+7+i*13-scroll,UiDraw.SMALL,i<firstEnd?t.text():t.muted());g.disableScissor();
-        if(max>0)UiDraw.text(g,"Scroll to read",left+18,bodyTop+bodyHeight+7,5.5f,t.muted());
+        for(int i=0;i<lines.size();i++)UiDraw.text(g,lines.get(i),left+18,bodyTop+7+i*13-scroll,UiDraw.SMALL,i<firstEnd?t.text():t.textDim());g.disableScissor();
+        if(max>0)UiDraw.text(g,"Scroll to read",left+18,bodyTop+bodyHeight+7,5.5f,t.textDim());
         if(!controller.message().isBlank()) {
             if(UiDraw.over(mx,my,left,top+panelHeight-30,panelWidth,30))tooltip("load.error",controller.message());
-            UiDraw.text(g,UiDraw.fit(controller.message(),panelWidth-32,UiDraw.SMALL),left+16,top+panelHeight-119,UiDraw.SMALL,t.red());
+            UiDraw.text(g,UiDraw.fit(controller.message(),panelWidth-32,UiDraw.SMALL),left+16,top+panelHeight-119,UiDraw.SMALL,t.danger());
         }
     }
     @Override protected boolean mouseScrolledUi(double x,double y,double h,double v){scroll-=(int)(v*20);return true;}

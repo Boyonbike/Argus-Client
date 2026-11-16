@@ -49,7 +49,7 @@ final class AutonavCard extends InlineCard {
     @Override String subtitle() {
         int saved = volytra.autonavWaypoints().size();
         String list = saved == 0 ? "No saved destinations" : saved + (saved == 1 ? " saved destination" : " saved destinations");
-        return volytra.autonavTripActive() ? "Trip in progress · " + list : volytra.autonavTripPaused() ? "Trip paused · " + list : list;
+        return volytra.autonavTripActive() ? "Trip in progress, " + list : volytra.autonavTripPaused() ? "Trip paused, " + list : list;
     }
     @Override boolean visible() { return volytra.autonavTripShown(); }
     @Override float bodyHeight() { return INPUTS + CONTROLS + LIST_HEAD + Math.max(1, volytra.autonavWaypoints().size()) * ROW + 4; }
@@ -148,13 +148,13 @@ final class AutonavCard extends InlineCard {
         LocalPlayer player = ClientAccess.argusclientMinecraft.player;
         if (player == null) return "";
         double blocks = Math.hypot(waypoint.x() + .5 - player.getX(), waypoint.z() + .5 - player.getZ());
-        return " · " + (blocks >= 10_000 ? String.format("%.1fk", blocks / 1000) : Long.toString(Math.round(blocks))) + " blocks away";
+        return " (" + (blocks >= 10_000 ? String.format("%.1fk", blocks / 1000) : Long.toString(Math.round(blocks))) + " blocks away)";
     }
 
     /** Places a field; a label, when given, sits just left of its box. */
     private void placeField(GuiGraphics g, int mx, int my, UiTheme t, UiInput field, String label, float fx, float cy, float fw) {
         if (label != null) {
-            UiDraw.text(g, label, fx, cy, UiDraw.mix(t.muted(), t.accent(), field.isFocused() ? 1 : 0));
+            UiDraw.text(g, label, fx, cy, UiDraw.mix(t.textDim(), t.on(), field.isFocused() ? 1 : 0));
             fx += 10; fw -= 10;
         }
         field.place(Math.round(fx), Math.round(cy - 8), Math.round(fw));
@@ -196,18 +196,18 @@ final class AutonavCard extends InlineCard {
                 paused ? "Carry on to where the paused trip was going" : "Fly to the X and Z above (turns Autonav on)",
                 () -> attempt(this::start, paused ? "Trip resumed." : "Trip started."));
         right -= startW + 8;
-        int dot = active ? t.accent() : paused ? UiDraw.mix(t.muted(), t.accent(), .5f) : UiDraw.alpha(t.muted(), .6f);
+        int dot = active ? t.on() : paused ? UiDraw.mix(t.textDim(), t.on(), .5f) : UiDraw.alpha(t.textDim(), .6f);
         UiDraw.circle(g, left + 6, cy, 3, dot);
-        UiDraw.text(g, UiDraw.fit(volytra.autonavTripStatus(), right - left - 16, UiDraw.SMALL), left + 14, cy, UiDraw.SMALL, active ? t.text() : t.muted());
+        UiDraw.text(g, UiDraw.fit(volytra.autonavTripStatus(), right - left - 16, UiDraw.SMALL), left + 14, cy, UiDraw.SMALL, active ? t.text() : t.textDim());
 
         // Saved destinations.
         float listTop = y + INPUTS + CONTROLS;
-        UiDraw.rect(g, left + 4, listTop - .3f, w - 8, .6f, UiDraw.alpha(t.overlay(), .4f));
+        UiDraw.rect(g, left + 4, listTop - .3f, w - 8, .6f, UiDraw.alpha(t.line(), .4f));
         List<AutonavWaypoint> saved = volytra.autonavWaypoints();
-        UiDraw.text(g, "Saved destinations" + (saved.isEmpty() ? "" : " · " + saved.size()), left + 4, listTop + LIST_HEAD / 2 + 1, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Saved destinations" + (saved.isEmpty() ? "" : " (" + saved.size() + ")"), left + 4, listTop + LIST_HEAD / 2 + 1, UiDraw.SMALL, t.textDim());
         float rowsTop = listTop + LIST_HEAD;
         if (saved.isEmpty()) {
-            UiDraw.text(g, UiDraw.fit("None yet · type a name and coordinates above, then Save", w - 8, UiDraw.SMALL), left + 4, rowsTop + ROW / 2, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
+            UiDraw.text(g, UiDraw.fit("None yet: type a name and coordinates above, then Save", w - 8, UiDraw.SMALL), left + 4, rowsTop + ROW / 2, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
             return;
         }
         int typedX = volytra.autonavTypedX(), typedZ = volytra.autonavTypedZ();
@@ -234,14 +234,13 @@ final class AutonavCard extends InlineCard {
             boolean current = waypoint.x() == typedX && waypoint.z() == typedZ;
             boolean hover = hovering(mx, my, left, ry, rowW, ROW - 2);
             float hv = UiAnim.smooth(rowKey + ".h", hover ? 1 : 0, 18), act = UiAnim.smooth(rowKey + ".act", current ? 1 : 0, 16);
-            int idle = hv > 0 ? UiDraw.alpha(t.surface(), hv * .8f) : i % 2 == 0 ? UiDraw.alpha(t.surface(), .3f) : UiDraw.alpha(t.surface(), 0f);
-            UiDraw.rounded(g, left, ry + 1, rowW, ROW - 2, 6, UiDraw.mix(idle, UiDraw.alpha(t.accent(), .14f + hv * .06f), act));
-            if (act > .01f) UiDraw.rounded(g, left + 2, ry + 6 + (ROW - 12) * (1 - act) / 2, 2, (ROW - 12) * act, 1, t.accent());
-            UiDraw.text(g, UiDraw.fit(waypoint.name(), rowW - 16), left + 10, rcy - 5, UiDraw.mix(t.text(), t.accent(), act));
-            UiDraw.text(g, UiDraw.fit(waypoint.x() + ", " + waypoint.z() + distance(waypoint), rowW - 16, UiDraw.SMALL), left + 10, rcy + 6, UiDraw.SMALL, t.muted());
+            int idle = hv > 0 ? UiDraw.alpha(t.fill(), hv * .8f) : i % 2 == 0 ? UiDraw.alpha(t.fill(), .3f) : UiDraw.alpha(t.fill(), 0f);
+            UiDraw.rounded(g, left, ry + 1, rowW, ROW - 2, 6, UiDraw.mix(idle, UiDraw.alpha(t.on(), .14f + hv * .06f), act));
+            UiDraw.text(g, UiDraw.fit(waypoint.name(), rowW - 16), left + 10, rcy - 5, UiDraw.mix(t.text(), t.on(), act));
+            UiDraw.text(g, UiDraw.fit(waypoint.x() + ", " + waypoint.z() + distance(waypoint), rowW - 16, UiDraw.SMALL), left + 10, rcy + 6, UiDraw.SMALL, t.textDim());
             UiRender.opacity = before;
             hit(left, ry, rowW, ROW - 2, () -> fill(waypoint));
-            if (waiting) UiMotion.drain(g, deleteX + 6, rcy + 6, delW - 12, System.nanoTime() - (System.currentTimeMillis() - armedAt) * 1_000_000L, 4_000_000_000L, UiDraw.alpha(t.accent(), .8f));
+            if (waiting) UiMotion.drain(g, deleteX + 6, rcy + 6, delW - 12, System.nanoTime() - (System.currentTimeMillis() - armedAt) * 1_000_000L, 4_000_000_000L, UiDraw.alpha(t.on(), .8f));
         }
     }
 }

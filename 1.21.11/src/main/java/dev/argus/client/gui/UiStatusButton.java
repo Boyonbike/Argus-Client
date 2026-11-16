@@ -65,15 +65,14 @@ final class UiStatusButton<S> extends Button {
         Integer target = tint.apply(shown, t);
         float tintTarget = target == null ? 0 : 1;
         tintAmount = tintAmount < 0 ? tintTarget : UiAnim.approach(tintAmount, tintTarget, 8);
-        int tc = target != null ? target : t.accent();
+        int tc = target != null ? target : t.on();
         float press = 1 - UiAnim.progress(pressedAt, .18f);
         float r = getWidth() / 2f, cx = getX() + r, cy = getY() + r;
 
-        // Soft halo that breathes while the tinted state is on (e.g. a live proxy).
-        if (tintAmount > .01f)
-            UiDraw.shadow(g, cx - r, cy - r, r * 2, r * 2, r, 3 + UiAnim.pulse(4.5e8) * 2.5f, UiDraw.alpha(tc, tintAmount * (.22f + .14f * UiAnim.pulse(4.5e8))));
-        UiDraw.circle(g, cx, cy, r, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hover * .8f), tc, tintAmount * .16f));
-        if (press > 0) UiDraw.circle(g, cx, cy, r, UiDraw.alpha(t.accent(), press * .22f));
+        // A tinted state (e.g. a live proxy) shows as a tinted fill and edge; nothing glows or breathes.
+        float x0 = getX(), y0 = getY(), size = getWidth();
+        UiDraw.box(g, x0, y0, size, size, UiSpace.CHAMFER_SMALL, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hover * .8f), tc, tintAmount * .16f));
+        if (press > 0) UiDraw.box(g, x0, y0, size, size, UiSpace.CHAMFER_SMALL, UiDraw.alpha(t.on(), press * .22f));
 
         boolean animating = changedAt != 0 && UiAnim.progress(changedAt, RIPPLE) < 1;
         if (animating) {
@@ -84,13 +83,9 @@ final class UiStatusButton<S> extends Button {
             }
             float in = UiAnim.progress(changedAt + (long) (OUT * .5e9f / UiAnim.speed()), IN);
             if (in > 0) glyph.draw(g, shown, cx, cy, r, .4f + .6f * UiAnim.easeOutBack(in), Math.min(1, in * 2.5f), hover, t);
-            float rp = UiAnim.progress(changedAt, RIPPLE), re = UiAnim.easeOutCubic(rp);
-            UiDraw.outline(g, cx - r - re * 7, cy - r - re * 7, (r + re * 7) * 2, (r + re * 7) * 2, r + re * 7, 1.2f * (1 - rp) + .2f,
-                    UiDraw.alpha(tc, (1 - rp) * .85f));
         } else {
             glyph.draw(g, shown, cx, cy, r, 1, 1, hover, t);
         }
-        UiDraw.outline(g, getX(), getY(), getWidth(), getHeight(), r, .6f,
-                UiDraw.mix(UiDraw.alpha(t.overlay(), .5f + hover * .3f), UiDraw.alpha(tc, .75f + hover * .25f), Math.max(tintAmount * .8f, hover * .6f)));
+        UiDraw.frame(g, x0, y0, size, size, UiSpace.CHAMFER_SMALL, UiDraw.mix(t.line(), tc, tintAmount));
     }
 }

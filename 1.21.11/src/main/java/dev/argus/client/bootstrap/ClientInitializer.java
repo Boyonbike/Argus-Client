@@ -119,6 +119,7 @@ public final class ClientInitializer {
          ClientContext.soundManager.reload();
          ClientContext.configurationManager = new ConfigurationManager();
          ConfigurationManager configuration = ClientContext.configurationManager;
+         dev.argus.client.gui.GuiCaptureRun.installIfRequested();
          CustomItemRegistries.initialize();
          configuration.load();
          this.clientInitialized = true;

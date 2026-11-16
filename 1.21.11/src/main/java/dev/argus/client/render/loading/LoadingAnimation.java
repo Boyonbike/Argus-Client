@@ -6,26 +6,23 @@ import dev.argus.client.render.loading.LoadingAtlas.Region;
 import org.joml.Matrix3x2fStack;
 
 /**
- * The animated Argus loading screen: the eye wakes, looks around (and at the cursor), blinks,
- * while HUD rings spin, light rays turn and particles drift. One instance lives per
- * loading overlay; everything is drawn from a single atlas texture using a normal and an
- * additive pipeline, so a frame is a few hundred quads in a handful of batches.
+ * The Argus loading screen: the emblem drawn flat on the GUI background, the wordmark, and a thin progress bar
+ * with its percentage. The eye still wakes, looks around (and at the cursor) and blinks, since that is the emblem
+ * itself; there are no glows, rings, rays, particles or shimmer. Colours match the GUI's dark theme.
  */
 public final class LoadingAnimation {
    private static final boolean NORMAL = false;
    private static final boolean ADD = true;
 
-   public static final int BACKGROUND = 0xFF050B0E;
-   private static final int CYAN = 0x4FD8EA;
-   private static final int TEAL = 0x1A93A6;
-   private static final int ICE = 0xC9F7FF;
-   private static final int DEEP = 0x0D4652;
-   private static final int TEXT = 0xE4FAFF;
+   /** The GUI's dark background and roles (see UiTheme): bg, text, textDim, line and the teal accent. */
+   public static final int BACKGROUND = 0xFF1B1C1E;
+   private static final int TEXT = 0xE6E4DF;
+   private static final int DIM = 0xA19E97;
+   private static final int LINE = 0x3A3D42;
+   private static final int ACCENT = 0x6DB8AB;
 
-   private static final int PARTICLES = 96;
    private static final float WAKE_TIME = 0.6F;
    private static final String WORDMARK = "ARGUS";
-   private static final String SCRAMBLE = "ABCDEFGHJKMNPQRSTVWXYZ0123456789#/<>+";
 
    private static volatile LoadingAtlas atlas;
 
@@ -38,24 +35,9 @@ public final class LoadingAnimation {
    private int mouseY = Integer.MIN_VALUE;
    private float mouseMovedAt = -100.0F;
    private float shownProgress;
-   private final float[] particles = new float[PARTICLES * 6];
 
    private LoadingCanvas graphics;
    private float alpha;
-
-   public LoadingAnimation() {
-      for (int i = 0; i < PARTICLES; i++) {
-         int o = i * 6;
-         this.particles[o] = hash(i * 7 + 1);
-         this.particles[o + 1] = hash(i * 7 + 2);
-         float depth = 0.25F + 0.75F * hash(i * 7 + 3);
-         this.particles[o + 2] = depth;
-         this.particles[o + 3] = hash(i * 7 + 4) * 6.2831855F;
-         this.particles[o + 4] = 0.6F + 2.4F * hash(i * 7 + 5);
-         // ~12% become large out-of-focus bokeh
-         this.particles[o + 5] = hash(i * 7 + 6) < 0.12F ? 1.0F : 0.0F;
-      }
-   }
 
    public static void setAtlas(LoadingAtlas value) {
       atlas = value;
@@ -110,106 +92,9 @@ public final class LoadingAnimation {
          return;
       }
 
-      float intro = easeOutCubic(clamp01(t / 0.9F));
-      this.drawBackground(t, w, h, cx, cy, unit, logo, intro, outro);
-      this.drawRings(t, cx, cy, logo, outro);
       this.drawLogo(atlas, t, dt, cx, cy, logo, out, outro);
-      this.drawShockwaves(t, cx, cy, logo, out);
       this.drawWordmark(atlas, t, cx, cy + logo * 1.0F, logo * 0.088F, out);
       this.drawProgress(atlas, t, cx, cy + logo * 1.2F, logo, unit, fadeOut >= 0.0F);
-   }
-
-   // ------------------------------------------------------------------ background
-
-   private void drawBackground(float t, float w, float h, float cx, float cy, float unit, float logo,
-         float intro, float outro) {
-      float breathe = 0.5F + 0.5F * (float) Math.sin(t * 0.9F);
-      // Ambient pool of light behind the emblem.
-      this.sprite(ADD, LoadingAtlas.DOT, cx, cy, unit * 2.6F, unit * 2.0F, 0.0F, DEEP, (0.55F + 0.15F * breathe) * intro);
-      this.sprite(ADD, LoadingAtlas.DOT, cx, cy, logo * 2.4F, logo * 2.4F, 0.0F, TEAL, (0.22F + 0.08F * breathe) * intro * (1.0F + outro));
-
-      // Counter-rotating god rays.
-      float rays = intro * (1.0F + 1.5F * outro);
-      this.sprite(ADD, LoadingAtlas.RAYS, cx, cy, logo * 3.1F, logo * 3.1F, t * 0.045F, CYAN, 0.075F * rays);
-      this.sprite(ADD, LoadingAtlas.RAYS, cx, cy, logo * 3.6F, logo * 3.6F, -t * 0.03F + 1.3F, TEAL, 0.06F * rays);
-
-      // Drifting motes with parallax; they streak outward when loading finishes.
-      float warp = outro * outro * 2.2F;
-      for (int i = 0; i < PARTICLES; i++) {
-         int o = i * 6;
-         float depth = this.particles[o + 2];
-         float phase = this.particles[o + 3];
-         boolean bokeh = this.particles[o + 5] > 0.5F;
-         float rise = (this.particles[o + 1] + t * 0.018F * (0.4F + depth)) % 1.0F;
-         float px = this.particles[o] * w + (float) Math.sin(t * 0.35F * this.particles[o + 4] + phase) * unit * 0.02F * depth;
-         float py = (1.08F - rise * 1.16F) * h;
-         if (warp > 0.0F) {
-            px += (px - cx) * warp * depth;
-            py += (py - cy) * warp * depth;
-         }
-         float edge = smooth(clamp01(rise / 0.15F)) * smooth(clamp01((1.0F - rise) / 0.2F));
-         float twinkle = 0.55F + 0.45F * (float) Math.sin(t * this.particles[o + 4] * 1.7F + phase);
-         float size;
-         float a;
-         if (bokeh) {
-            size = unit * (0.035F + 0.05F * depth);
-            a = 0.05F + 0.04F * twinkle;
-         } else {
-            size = unit * (0.006F + 0.014F * depth);
-            a = (0.25F + 0.55F * depth) * twinkle;
-         }
-         a *= edge * clamp01(t * 1.5F - hash(i * 3 + 11) * 0.6F) * (1.0F - outro * 0.6F);
-         if (a > 0.004F) {
-            this.sprite(ADD, LoadingAtlas.DOT, px, py, size, size, 0.0F, bokeh ? TEAL : CYAN, a);
-         }
-      }
-
-      this.sprite(NORMAL, LoadingAtlas.VIGNETTE, w * 0.5F, h * 0.5F, w, h, 0.0F, 0x000000, 1.0F);
-   }
-
-   // ------------------------------------------------------------------ rings
-
-   private void drawRings(float t, float cx, float cy, float logo, float outro) {
-      float expand = 1.0F + outro * 0.55F;
-      float fade = 1.0F - outro;
-      if (fade <= 0.0F) {
-         return;
-      }
-      float radarIn = appear(t, 1.1F, 1.2F);
-      this.sprite(ADD, LoadingAtlas.RADAR, cx, cy, logo * 1.62F * expand, logo * 1.62F * expand, t * 1.25F, CYAN, 0.16F * radarIn * fade);
-
-      float c = appear(t, 0.55F, 1.1F);
-      float a = appear(t, 0.42F, 1.0F);
-      float b = appear(t, 0.3F, 0.9F);
-      float pulse = 0.85F + 0.15F * (float) Math.sin(t * 2.3F);
-
-      this.ring(LoadingAtlas.RING_C, cx, cy, logo * 1.79F * expand, t * 0.04F, c, CYAN, 0.32F * fade);
-      this.ring(LoadingAtlas.RING_A, cx, cy, logo * 1.73F * expand, -t * 0.11F, a, CYAN, 0.5F * fade);
-      float rotB = t * 0.55F;
-      this.ring(LoadingAtlas.RING_B, cx, cy, logo * 1.6F * expand, rotB, b, ICE, 0.85F * pulse * fade);
-
-      // Sparks riding the bright head of each arc.
-      if (b > 0.0F) {
-         float spin = rotB + (1.0F - b) * -1.6F;
-         float radius = logo * 1.6F * expand * 0.5F * (204.0F / 256.0F) * (0.82F + 0.18F * b);
-         for (int k = 0; k < 3; k++) {
-            float angle = spin + (k + 0.62F) * 2.0943952F;
-            float sx = cx + (float) Math.cos(angle) * radius;
-            float sy = cy + (float) Math.sin(angle) * radius;
-            float flicker = 0.8F + 0.2F * (float) Math.sin(t * 13.0F + k * 2.1F);
-            this.sprite(ADD, LoadingAtlas.DOT, sx, sy, logo * 0.12F, logo * 0.12F, 0.0F, CYAN, 0.5F * b * fade);
-            this.sprite(ADD, LoadingAtlas.SPARK, sx, sy, logo * 0.13F, logo * 0.13F, t * 0.8F + k, ICE, 0.95F * flicker * b * fade);
-         }
-      }
-   }
-
-   private void ring(Region region, float cx, float cy, float size, float rotation, float appear, int rgb, float a) {
-      if (appear <= 0.0F) {
-         return;
-      }
-      float scale = 0.78F + 0.22F * appear;
-      float spinIn = (1.0F - appear) * 1.4F;
-      this.sprite(ADD, region, cx, cy, size * scale, size * scale, rotation - spinIn, rgb, a * appear);
    }
 
    // ------------------------------------------------------------------ logo & eye
@@ -219,22 +104,11 @@ public final class LoadingAnimation {
       if (pop <= 0.0F) {
          return;
       }
-      float scale = (0.84F + 0.16F * easeOutBack(pop)) * (1.0F + 0.08F * outro);
+      // Fades in where it will stay: no scale pop, bob or halo.
       float logoAlpha = smooth(clamp01((t - 0.08F) / 0.35F));
-      float size = logo * scale;
-      float bob = (float) Math.sin(t * 1.1F) * logo * 0.008F;
+      float size = logo;
       float x = cx - size * 0.5F;
-      float y = cy - size * 0.5F + bob;
-      float wake = t - WAKE_TIME;
-      float wakeFlash = wake > 0.0F ? (float) Math.exp(-wake * 3.5F) : 0.0F;
-      float sweep = this.sweepPhase(t);
-      float sweepGlow = sweep >= 0.0F ? (float) Math.sin(sweep * Math.PI) : 0.0F;
-
-      // Halo
-      float halo = 0.34F + 0.1F * (float) Math.sin(t * 1.7F) + 0.5F * wakeFlash + 0.12F * sweepGlow + 0.4F * outro;
-      float glowSize = size / LoadingAtlas.GLOW_SCALE;
-      this.sprite(ADD, LoadingAtlas.GLOW, cx, cy + bob, glowSize, glowSize, 0.0F, CYAN, halo * logoAlpha);
-      this.sprite(ADD, LoadingAtlas.GLOW, cx, cy + bob, glowSize * 1.25F, glowSize * 1.25F, 0.0F, TEAL, halo * 0.5F * logoAlpha);
+      float y = cy - size * 0.5F;
 
       Matrix3x2fStack pose = this.graphics.pose();
       pose.pushMatrix();
@@ -248,7 +122,7 @@ public final class LoadingAnimation {
          return;
       }
 
-      this.updateGaze(t, dt, cx, cy + bob + (LoadingAtlas.IRIS_CY - 128.0F) * size / 256.0F, logo, out);
+      this.updateGaze(t, dt, cx, cy + (LoadingAtlas.IRIS_CY - 128.0F) * size / 256.0F, logo, out);
 
       pose.pushMatrix();
       pose.translate(LoadingAtlas.SOCKET_OX, LoadingAtlas.SOCKET_OY);
@@ -259,29 +133,19 @@ public final class LoadingAnimation {
       // Iris: follows the gaze and dilates slightly; contracts sharply when the eye wakes.
       // Skipped while the eye is fully shut so it never shows through translucent lids.
       if (lids < 0.995F) {
-         float dilate = 1.0F + 0.025F * (float) Math.sin(t * 0.9F) - 0.07F * wakeFlash + 0.05F * outro;
          pose.pushMatrix();
          pose.translate(LoadingAtlas.IRIS_CX + this.lookX, LoadingAtlas.IRIS_CY + this.lookY);
-         pose.scale(dilate);
          pose.translate(-LoadingAtlas.IRIS_CX, -LoadingAtlas.IRIS_CY);
          pose.pushMatrix();
          pose.translate(LoadingAtlas.IRIS_OX, LoadingAtlas.IRIS_OY);
          this.layer(LoadingAtlas.IRIS, LoadingAtlas.IRIS_SCALE, a);
          pose.popMatrix();
-         // Living glint on the pupil highlight + inner glow.
-         float glint = 0.45F + 0.25F * (float) Math.sin(t * 2.6F) + 0.6F * wakeFlash;
-         this.sprite(ADD, LoadingAtlas.DOT, LoadingAtlas.IRIS_CX, LoadingAtlas.IRIS_CY, 44.0F, 44.0F, 0.0F, TEAL, (0.22F + 0.5F * outro) * a);
-         this.sprite(ADD, LoadingAtlas.SPARK, 119.0F, 124.0F, 22.0F, 22.0F, t * 0.6F, ICE, glint * a);
          pose.popMatrix();
       }
 
       this.drawEyelids(atlas, lids, a);
 
       this.layer(LoadingAtlas.FRAME, LoadingAtlas.LOGO_SCALE, a);
-
-      if (sweep >= 0.0F) {
-         this.drawSweep(sweep, a);
-      }
       pose.popMatrix();
    }
 
@@ -376,72 +240,6 @@ public final class LoadingAnimation {
          this.stretchRegion(NORMAL, lid.x(), lid.y() + bottomStart, lid.w(), bottomEnd - bottomStart,
                0.0F, bottomEdge, lid.w(), bottomEnd - bottomEdge, 0xFFFFFF, a);
       }
-      // Glowing lash lines on the closing edges.
-      float glow = a * (0.55F + 0.45F * amount);
-      this.lash(atlas, topEdge, glow);
-      this.lash(atlas, bottomEdge, glow);
-   }
-
-   private void lash(LoadingAtlas atlas, float edge, float a) {
-      int row = Math.max(0, Math.min(LoadingAtlas.LOGO - 1, Math.round(edge)));
-      int min = atlas.rowMinX[row];
-      int max = atlas.rowMaxX[row];
-      if (min < 0 || max <= min) {
-         return;
-      }
-      this.rect(ADD, min, edge - 0.9F, max + 1 - min, 1.8F, CYAN, a);
-      this.sprite(ADD, LoadingAtlas.DOT, (min + max + 1) * 0.5F, edge, (max - min) * 1.1F, 10.0F, 0.0F, TEAL, a * 0.6F);
-   }
-
-   /** Phase 0..1 of the current light sweep, or -1 between sweeps. */
-   private float sweepPhase(float t) {
-      float start = 1.7F;
-      if (t < start) {
-         return -1.0F;
-      }
-      float local = (t - start) % 4.8F;
-      return local < 1.15F ? local / 1.15F : -1.0F;
-   }
-
-   private void drawSweep(float phase, float a) {
-      float center = -70.0F + 400.0F * easeInOut(phase);
-      float slope = 0.5F;
-      float half = 30.0F;
-      int seg = 6;
-      Region sil = LoadingAtlas.SILHOUETTE;
-      int s = LoadingAtlas.LOGO_SCALE;
-      Matrix3x2fStack pose = this.graphics.pose();
-      pose.pushMatrix();
-      pose.scale(1.0F / s);
-      for (int y = 12; y < 244; y += 4) {
-         float c = center - (y + 2 - 128) * slope;
-         int from = Math.max(0, (int) Math.floor((c - half) / seg) * seg);
-         int to = Math.min(256, (int) Math.ceil((c + half) / seg) * seg);
-         for (int x = from; x < to; x += seg) {
-            float d = (x + seg * 0.5F - c) / (half * 0.55F);
-            float v = (float) Math.exp(-d * d) * 0.7F;
-            if (v > 0.02F) {
-               this.blit(ADD, sil, x * s, y * s, x * s, y * s, seg * s, 4 * s, ICE, v * a);
-            }
-         }
-      }
-      pose.popMatrix();
-   }
-
-   private void drawShockwaves(float t, float cx, float cy, float logo, float out) {
-      float wake = (t - WAKE_TIME) / 1.2F;
-      if (wake > 0.0F && wake < 1.0F) {
-         float e = easeOutCubic(wake);
-         float size = logo * (0.9F + 2.8F * e);
-         this.sprite(ADD, LoadingAtlas.SHOCK, cx, cy, size, size, 0.0F, CYAN, (float) Math.pow(1.0F - wake, 1.6F) * 0.7F);
-      }
-      if (out > 0.0F && out < 1.4F) {
-         float p = out / 1.4F;
-         float e = easeOutCubic(p);
-         float size = logo * (1.2F + 4.0F * e);
-         this.sprite(ADD, LoadingAtlas.SHOCK, cx, cy, size, size, 0.0F, CYAN, (float) Math.pow(1.0F - p, 1.4F) * 0.85F);
-         this.sprite(ADD, LoadingAtlas.DOT, cx, cy, logo * 3.0F, logo * 3.0F, 0.0F, CYAN, (float) Math.exp(-out * 4.0F) * 0.45F);
-      }
    }
 
    // ------------------------------------------------------------------ text & progress
@@ -450,98 +248,40 @@ public final class LoadingAnimation {
       if (!atlas.glyphsValid) {
          return;
       }
-      float tracking = cap * 0.62F;
+      // Plain wordmark at normal tracking, fading in once with the emblem.
+      float tracking = cap * 0.18F;
       float width = this.textWidth(atlas, WORDMARK, cap, tracking, false);
-      float pen = cx - width * 0.5F;
       float scale = cap / atlas.glyphCapHeight;
-      for (int i = 0; i < WORDMARK.length(); i++) {
-         char real = WORDMARK.charAt(i);
-         float reveal = 1.05F + i * 0.1F;
-         float since = t - reveal;
-         int index = LoadingAtlas.glyphIndex(real);
-         if (since < -0.4F) {
-            pen += this.advance(atlas, index, scale, tracking);
-            continue;
-         }
-         int shown = index;
-         int rgb;
-         float a;
-         if (since < 0.0F) {
-            shown = LoadingAtlas.glyphIndex(SCRAMBLE.charAt((int) (hash(i * 97 + (int) (t * 24.0F)) * SCRAMBLE.length())));
-            rgb = CYAN;
-            a = 0.55F;
-         } else {
-            float flash = (float) Math.exp(-since * 5.0F);
-            rgb = lerpRgb(TEXT, 0xFFFFFF, flash);
-            a = 1.0F;
-            if (flash > 0.02F) {
-               float gx = pen + (atlas.glyphInkRight[index] - atlas.glyphInkLeft[index]) * scale * 0.5F;
-               this.sprite(ADD, LoadingAtlas.DOT, gx, baseline - cap * 0.5F, cap * 3.0F, cap * 3.0F, 0.0F, CYAN, flash * 0.5F);
-            }
-         }
-         // Center scrambled glyphs on the real letter's slot so the word doesn't jitter.
-         float slot = (atlas.glyphInkRight[index] - atlas.glyphInkLeft[index]) * scale;
-         float shownWidth = (atlas.glyphInkRight[shown] - atlas.glyphInkLeft[shown]) * scale;
-         this.glyph(atlas, shown, pen + (slot - shownWidth) * 0.5F, baseline, scale, rgb, a * (1.0F - clamp01(out - 1.0F)));
-         pen += this.advance(atlas, index, scale, tracking);
+      float a = appear(t, 0.5F, 0.4F);
+      if (a > 0.0F) {
+         this.text(atlas, WORDMARK, cx - width * 0.5F, baseline, scale, tracking, TEXT, a, false);
       }
-      // Soft underglow
-      float revealAll = appear(t, 1.1F, 0.8F);
-      this.sprite(ADD, LoadingAtlas.DOT, cx, baseline - cap * 0.4F, width * 1.6F, cap * 3.2F, 0.0F, TEAL, 0.22F * revealAll);
    }
 
    private void drawProgress(LoadingAtlas atlas, float t, float cx, float y, float logo, float unit, boolean done) {
-      float appear = appear(t, 1.3F, 0.7F);
+      float appear = appear(t, 0.6F, 0.4F);
       if (appear <= 0.0F) {
          return;
       }
-      float fullWidth = logo * 1.05F;
-      float width = fullWidth * appear;
+      float width = logo * 1.05F;
       float x0 = cx - width * 0.5F;
-      float thick = Math.max(1.0F, unit * 0.0045F);
+      // Two GUI pixels tall, like the GUI's slider track; the accent fill is the only colour on screen.
+      float thick = Math.max(1.0F, Math.round(unit * 0.006F));
       float p = this.shownProgress;
-      float fill = width * p;
-
-      // Track with quarter ticks
-      this.rect(NORMAL, x0, y - thick * 0.5F, width, thick, 0xFFFFFF, 0.09F * appear);
-      for (int i = 1; i < 4; i++) {
-         float tx = x0 + width * i / 4.0F;
-         this.rect(NORMAL, tx - thick * 0.5F, y - thick * 2.0F, thick, thick * 4.0F, 0xFFFFFF, 0.08F * appear);
-      }
-
-      if (fill > 0.5F) {
-         this.sprite(ADD, LoadingAtlas.DOT, x0 + fill * 0.5F, y, fill * 1.3F, thick * 14.0F, 0.0F, TEAL, 0.25F * appear);
-         Region grad = LoadingAtlas.GRADIENT;
-         this.stretch(ADD, grad, x0, y - thick * 0.5F, fill, thick, CYAN, 1.0F * appear);
-         this.stretch(ADD, grad, x0, y - thick * 0.5F, fill, thick, 0xFFFFFF, 0.35F * appear);
-         // Shimmer travelling along the filled part.
-         float shimmer = (t * 0.55F) % 1.0F;
-         this.sprite(ADD, LoadingAtlas.DOT, x0 + fill * shimmer, y, fullWidth * 0.2F, thick * 4.0F, 0.0F, ICE,
-               0.55F * appear * (float) Math.sin(shimmer * Math.PI));
-         float head = x0 + fill;
-         float pulse = 0.8F + 0.2F * (float) Math.sin(t * 9.0F);
-         this.sprite(ADD, LoadingAtlas.DOT, head, y, thick * 18.0F, thick * 18.0F, 0.0F, CYAN, 0.55F * appear * pulse);
-         this.sprite(ADD, LoadingAtlas.SPARK, head, y, thick * 26.0F, thick * 26.0F, t * 1.5F, ICE, 0.9F * appear * pulse);
+      this.rect(NORMAL, x0, y - thick * 0.5F, width, thick, LINE, appear);
+      if (width * p > 0.0F) {
+         this.rect(NORMAL, x0, y - thick * 0.5F, width * p, thick, ACCENT, appear);
       }
 
       if (atlas.glyphsValid) {
          float cap = Math.max(3.0F, logo * 0.034F);
          float scale = cap / atlas.glyphCapHeight;
-         float tracking = cap * 0.55F;
+         float tracking = cap * 0.18F;
          float textY = y + thick * 0.5F + cap * 2.3F;
-         String label = done ? "READY" : "LOADING";
-         float dots = done ? 0.0F : 1.0F;
-         this.text(atlas, label, x0, textY, scale, tracking, TEXT, 0.5F * appear, false);
-         if (dots > 0.0F) {
-            float lx = x0 + this.textWidth(atlas, label, cap, tracking, false) + tracking;
-            for (int i = 0; i < 3; i++) {
-               float on = 0.25F + 0.75F * clamp01((float) Math.sin(t * 5.0F - i * 0.7F));
-               this.rect(NORMAL, lx + i * cap * 0.75F, textY - cap * 0.28F, cap * 0.28F, cap * 0.28F, CYAN, on * 0.7F * appear);
-            }
-         }
+         this.text(atlas, done ? "READY" : "LOADING", x0, textY, scale, tracking, DIM, appear, false);
          String pct = Math.round(p * 100.0F) + "%";
          float pw = this.textWidth(atlas, pct, cap, tracking, true);
-         this.text(atlas, pct, x0 + width - pw, textY, scale, tracking, done ? ICE : CYAN, 0.9F * appear, true);
+         this.text(atlas, pct, x0 + width - pw, textY, scale, tracking, TEXT, appear, true);
       }
    }
 

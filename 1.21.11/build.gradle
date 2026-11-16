@@ -6,6 +6,18 @@ version = project.mod_version
 group = 'dev.argus'
 base { archivesName = 'argus-client' }
 
+loom {
+    runs {
+        client {
+            // argusclient.mixins.json uses "defaultRequire": 0, so an injection that matches nothing is silently
+            // skipped. Count injections in dev runs so such misses are logged (tools/audit_mixins.py checks statically).
+            property 'mixin.debug.countInjections', 'true'
+            // ./gradlew runClient -PargusCapture screenshots each reworked GUI screen, then quits (GuiCaptureRun).
+            if (project.hasProperty('argusCapture')) property 'argus.capture', 'true'
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url = 'https://maven.lenni0451.net/releases' }

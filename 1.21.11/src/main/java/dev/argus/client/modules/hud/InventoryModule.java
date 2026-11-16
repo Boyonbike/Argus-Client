@@ -60,6 +60,10 @@ public class InventoryModule extends HudWidgetModule {
    private Collection<ItemStack> getSlotStacks() {
       ArrayList stacks = new ArrayList();
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
+      // No player outside a world, e.g. when the HUD editor is opened from the title screen.
+      if (player == null) {
+         return stacks;
+      }
       Inventory inventory = player.getInventory();
       NonNullList inventorySlots = inventory.getNonEquipmentItems();
       int index = 0;
@@ -79,6 +83,9 @@ public class InventoryModule extends HudWidgetModule {
    private Collection<ItemStack> getSelectedItemTotals() {
       HashMap<Item, Integer> itemCounts = new HashMap();
       LocalPlayer player = ClientAccess.argusclientMinecraft.player;
+      if (player == null) {
+         return new ArrayList<>();
+      }
 
       for (ItemStack stack : player.getInventory()) {
          Item item = stack.getItem();

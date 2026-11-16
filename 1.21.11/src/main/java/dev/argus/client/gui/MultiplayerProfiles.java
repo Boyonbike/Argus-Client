@@ -43,7 +43,7 @@ public final class MultiplayerProfiles {
         buttons.removeIf(b -> b instanceof Checkbox && "Vanilla".equals(b.getMessage().getString()));
         buttons.add(new UiStatusButton<ProxyEntry>(PAD,PAD,SIZE,"proxy",ProfileRuntime::activeProxy,
                 MultiplayerProfiles::drawShield,
-                (proxy,t)->proxy==null?null:ProxyHealth.activeDead()?t.red():t.green(),
+                (proxy,t)->proxy==null?null:ProxyHealth.activeDead()?t.danger():t.ok(),
                 proxy->proxy==null?"Proxies (none active)":"Proxies (using "+proxy.address()+(ProxyHealth.activeDead()?", dead":"")+")",
                 ()->client.screen==screen,
                 ()->client.setScreen(new ProxiesScreen(screen))));
@@ -69,7 +69,7 @@ public final class MultiplayerProfiles {
             if (status.isEmpty()) return;
             var theme=GuiState.theme();
             int textX=PAD+SIZE+5, available=Math.max(40,s.width-textX*2);
-            UiDraw.text(g,UiDraw.fit(status,available,UiDraw.SMALL),textX,PAD+SIZE/2f,UiDraw.SMALL,proxyWarning?theme.red():theme.muted());
+            UiDraw.text(g,UiDraw.fit(status,available,UiDraw.SMALL),textX,PAD+SIZE/2f,UiDraw.SMALL,proxyWarning?theme.danger():theme.textDim());
         });
     }
 
@@ -81,7 +81,7 @@ public final class MultiplayerProfiles {
 
     private static void drawShield(GuiGraphics g, ProxyEntry proxy, float cx, float cy, float r, float scale, float opacity, float hover, UiTheme t) {
         float size = 10 * scale;
-        int colour = proxy == null ? UiDraw.mix(t.text(), t.accent(), hover) : UiDraw.mix(t.green(), t.text(), hover * .35f);
+        int colour = proxy == null ? UiDraw.mix(t.text(), t.on(), hover) : UiDraw.mix(t.ok(), t.text(), hover * .35f);
         UiDraw.icon(g, proxy == null ? "shield_off" : "shield_live", cx - size / 2, cy - size / 2, size, UiDraw.alpha(colour, opacity));
     }
 

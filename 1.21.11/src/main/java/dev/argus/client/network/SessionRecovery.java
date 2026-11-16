@@ -72,8 +72,8 @@ public final class SessionRecovery {
                 var store = ProfileRuntime.profiles();
                 var saved = store == null ? null : store.accounts().stream()
                         .filter(a -> a.type() == AccountEntry.Type.MICROSOFT && a.uuid().equalsIgnoreCase(uuid)).findFirst().orElse(null);
-                if (saved == null) { status = "Session expired · restart your launcher or log in under Accounts"; result.complete(false); return; }
-                status = "Session expired · refreshing…";
+                if (saved == null) { status = "Session expired: restart your launcher or log in under Accounts"; result.complete(false); return; }
+                status = "Session expired, refreshing…";
                 var prepared = AccountSession.prepare(AccountAuthenticator.authenticate(saved), proxy, directory);
                 mc.execute(() -> {
                     try {
@@ -81,7 +81,7 @@ public final class SessionRecovery {
                         if (mc.getUser() != user) { result.complete(false); return; }
                         if (mc.level != null || mc.getConnection() != null) { status = ""; result.complete(false); return; }
                         if (ProfileRuntime.profiles() != store || !store.accounts().contains(saved)) {
-                            status = "Saved account changed · log in under Accounts";
+                            status = "Saved account changed: log in under Accounts";
                             result.complete(false);
                             return;
                         }
@@ -90,12 +90,12 @@ public final class SessionRecovery {
                         status = "";
                         result.complete(true);
                     } catch (Exception e) {
-                        status = "Couldn't refresh session · log in under Accounts";
+                        status = "Couldn't refresh session: log in under Accounts";
                         result.complete(false);
                     }
                 });
             } catch (Exception e) {
-                status = "Couldn't refresh session · log in under Accounts";
+                status = "Couldn't refresh session: log in under Accounts";
                 result.complete(false);
             }
         });

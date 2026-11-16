@@ -101,6 +101,39 @@ final class UiRender {
      */
     static void shape(GuiGraphics g, float x, float y, float width, float height, float radius,
                       int top, int bottom, float mode) {
+        emit(g, x, y, width, height, Math.round(Math.max(0, radius * pixelsPerUnit(g)) * 8), top, bottom, mode);
+    }
+
+    /**
+     * Rectangle with stepped pixel-art corners: {@code steps} GUI pixels cut diagonally from each corner, drawn
+     * on whole framebuffer pixels so the staircase stays crisp. {@code mode} 0 = fill, &gt;0 = outline of that
+     * logical thickness (rounded to whole GUI pixels). Soft shadows are not supported.
+     */
+    static void chamfer(GuiGraphics g, float x, float y, float width, float height, int steps, int colour, float mode) {
+        chamfer(g, x, y, width, height, steps, colour, colour, mode);
+    }
+
+    /** As above with a vertical gradient from {@code top} to {@code bottom}. */
+    static void chamfer(GuiGraphics g, float x, float y, float width, float height, int steps, int top, int bottom, float mode) {
+        chamfer(g, x, y, width, height, steps, top, bottom, mode, false);
+    }
+
+    /** Logical radius per chamfer step when smooth corners are on. */
+    static final float SMOOTH_RADIUS_PER_STEP = 2;
+
+    /** As above; {@code grain} adds a faint fixed noise per GUI pixel (the grain style trial). */
+    static void chamfer(GuiGraphics g, float x, float y, float width, float height, int steps, int top, int bottom, float mode, boolean grain) {
+        if (steps <= 0 && !grain) { shape(g, x, y, width, height, 0, top, bottom, Math.max(0, mode)); return; }
+        // Smooth corners setting: the same shape with an anti-aliased round corner, two units of radius per step.
+        // Grain is a per-GUI-pixel effect of the stepped path, so it is not drawn on smooth shapes.
+        if (steps > 0 && GuiState.preferences().smoothCorners) { shape(g, x, y, width, height, steps * SMOOTH_RADIUS_PER_STEP, top, bottom, Math.max(0, mode)); return; }
+        int cell = Math.max(1, Math.round(pixelsPerUnit(g)));
+        // Code layout: bits 0-3 steps, bit 4 grain, bits 5+ cell size in eighths of a pixel.
+        emit(g, x, y, width, height, -(Math.min(steps, 15) | (grain ? 16 : 0) | (cell * 8) << 5), top, bottom, Math.max(0, mode));
+    }
+
+    private static void emit(GuiGraphics g, float x, float y, float width, float height, int radiusCode,
+                             int top, int bottom, float mode) {
         if (width <= 0 || height <= 0) return;
         top = fade(top); bottom = fade(bottom);
         if ((top >>> 24) == 0 && (bottom >>> 24) == 0) return;
@@ -118,7 +151,7 @@ final class UiRender {
         if (bounds == null) return;
         g.guiRenderState.submitGuiElement(new ShapeState(qx0 / scale, qy0 / scale, qx1 / scale, qy1 / scale,
                 qx0 - cx, qy0 - cy, qx1 - cx, qy1 - cy,
-                Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), Math.round(Math.max(0, radius * k) * 8),
+                Math.round(pw / 2 * 8), Math.round(ph / 2 * 8), radiusCode,
                 Math.round(physicalMode * 8), top, bottom, scissor, bounds));
     }
 

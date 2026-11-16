@@ -1286,15 +1286,15 @@ final class VolytraNavigator {
          String to = "to " + this.pausedX + ", " + this.pausedZ;
          if (player == null) return "Paused " + to;
          long left = Math.round(Math.hypot(this.pausedX + 0.5 - player.getX(), this.pausedZ + 0.5 - player.getZ()));
-         return "Paused " + to + " · " + left + " blocks left";
+         return "Paused " + to + " (" + left + " blocks left)";
       }
-      if (!this.autonavActive) return this.autohighway.getValue() ? "No trip · Autohighway is flying" : "No trip";
+      if (!this.autonavActive) return this.autohighway.getValue() ? "No trip, Autohighway is flying" : "No trip";
       String to = "to " + (int) Math.floor(this.mapDestX) + ", " + (int) Math.floor(this.mapDestZ);
       if (player == null) return "Flying " + to;
-      if (this.mapArrivedAnnounced) return "Arrived · hovering until you move";
+      if (this.mapArrivedAnnounced) return "Arrived, hovering until you move";
       long left = Math.round(Math.hypot(this.mapDestX - player.getX(), this.mapDestZ - player.getZ()));
-      if (!player.isFallFlying()) return "Start gliding to set off " + to + " · " + left + " blocks";
-      return "Flying " + to + " · " + left + " blocks left" + (this.mapNoRoute ? " · looking for a way through" : "");
+      if (!player.isFallFlying()) return "Start gliding to set off " + to + " (" + left + " blocks)";
+      return "Flying " + to + " (" + left + " blocks left)" + (this.mapNoRoute ? ", looking for a way through" : "");
    }
 
    List<AutonavWaypoint> waypoints() {
