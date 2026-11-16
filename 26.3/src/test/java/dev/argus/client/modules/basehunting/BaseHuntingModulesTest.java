@@ -23,7 +23,7 @@ final class BaseHuntingModulesTest {
    @Test
    void everyModuleBuildsInTheBaseHuntingWindowWithAUniqueName() {
       List<Module> modules = BaseHuntingModules.create();
-      assertEquals(16, modules.size());
+      assertEquals(17, modules.size());
       Set<String> names = new HashSet<>();
       for (Module module : modules) {
          assertEquals(ModuleCategory.BASE_HUNTING, module.getCategory(), module.getName());
