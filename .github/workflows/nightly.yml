@@ -62,7 +62,7 @@ jobs:
       matrix:
         include:
           - version: '1.21.11'
-            java: '21'
+            java: '25'
           - version: '26.1.2'
             java: '25'
           - version: '26.2'
