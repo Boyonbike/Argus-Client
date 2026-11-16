@@ -306,24 +306,24 @@ final class MeteorInstanceImportScreen extends UiScreen {
         UiTheme t = GuiState.theme();
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         float bh = UiAnim.smooth("mii.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
-        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.surface(), t.overlay(), bh));
-        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.muted(), t.text(), bh));
+        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
+        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
         UiDraw.bold(g, "Import from another instance", left + 36, top + 19, UiDraw.TITLE, t.text());
-        ProfileManagerScreen.chip(g, "Meteor", left + panelWidth - 12 - UiDraw.width("Meteor", 5.5f) - 10, top + 19, t.blue());
-        UiDraw.text(g, UiDraw.fit("Reads only · your Meteor files are never changed", panelWidth - 120, UiDraw.SMALL), left + 36, top + 31, UiDraw.SMALL, t.muted());
+        ProfileManagerScreen.chip(g, "Meteor", left + panelWidth - 12 - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
+        UiDraw.text(g, UiDraw.fit("Reads only · your Meteor files are never changed", panelWidth - 120, UiDraw.SMALL), left + 36, top + 31, UiDraw.SMALL, t.textDim());
         renderInstances(g, mx, my, t);
         renderPane(g, mx, my, t);
         // Footer.
         float bottom = top + panelHeight - 30;
-        UiDraw.rect(g, left + 12, bottom - 26, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.rect(g, left + 12, bottom - 26, panelWidth - 24, .6f, UiDraw.alpha(t.line(), .6f));
         if (modulesReady() && !done) {
             boolean bad = !ImportedPresetStore.validName(presetName.trim());
-            UiDraw.text(g, "Preset name", left + 14, bottom + 11, UiDraw.SMALL, bad ? t.red() : t.muted());
+            UiDraw.text(g, "Preset name", left + 14, bottom + 11, UiDraw.SMALL, bad ? t.danger() : t.textDim());
         }
         String status = message.isEmpty() ? (scan == null ? "Choose an instance to see what it has." : summaryLine()) : message;
         if (!done && !failed && scan != null && !busy() && anything()) status = summaryLine();
         String shown = UiDraw.fit(status, panelWidth - 28, UiDraw.SMALL);
-        UiDraw.text(g, shown, left + 14, bottom - 14, UiDraw.SMALL, failed ? t.red() : done ? t.green() : t.muted());
+        UiDraw.text(g, shown, left + 14, bottom - 14, UiDraw.SMALL, failed ? t.danger() : done ? t.ok() : t.textDim());
         if (!shown.equals(status) && UiDraw.over(mx, my, left + 10, bottom - 22, panelWidth - 24, 16)) tooltip("mii.status", status);
     }
     private String summaryLine() {
@@ -335,8 +335,8 @@ final class MeteorInstanceImportScreen extends UiScreen {
     }
 
     private void renderInstances(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
-        UiDraw.bold(g, "Instances", listX + 2, listY - 9, UiDraw.SMALL, t.muted());
-        UiDraw.rounded(g, listX, listY, listW, listH, 7, UiDraw.alpha(t.mantle(), .7f));
+        UiDraw.bold(g, "Instances", listX + 2, listY - 9, UiDraw.SMALL, t.textDim());
+        UiDraw.rounded(g, listX, listY, listW, listH, 7, UiDraw.alpha(t.sunk(), .7f));
         instanceScroll = Math.clamp(instanceScroll, 0, maxInstanceScroll());
         shownInstanceScroll = UiAnim.approach(shownInstanceScroll, instanceScroll, 20);
         g.enableScissor(listX, listY, listX + listW, listY + listH);
@@ -344,16 +344,15 @@ final class MeteorInstanceImportScreen extends UiScreen {
             float y = listY + i * LIST_ROW - shownInstanceScroll; if (y + LIST_ROW < listY || y > listY + listH) continue;
             boolean sel = i == selectedInstance, hover = UiDraw.over(mx, my, listX, y, listW, LIST_ROW) && UiDraw.over(mx, my, listX, listY, listW, listH);
             float hv = UiAnim.smooth("mii.inst." + i, sel ? 1 : hover ? .5f : 0, 18);
-            if (hv > .01f) UiDraw.rounded(g, listX + 3, y + 2, listW - 6, LIST_ROW - 4, 5, UiDraw.alpha(sel ? t.accent() : t.surface(), sel ? .22f : hv));
-            if (sel) UiDraw.rounded(g, listX + 3, y + 6, 2.5f, LIST_ROW - 12, 1.2f, t.accent());
+            if (hv > .01f) UiDraw.rounded(g, listX + 3, y + 2, listW - 6, LIST_ROW - 4, 5, UiDraw.alpha(sel ? t.on() : t.fill(), sel ? .22f : hv));
             String name = UiDraw.fit(instances.get(i).name(), listW - 30, UiDraw.SMALL);
-            UiDraw.text(g, name, listX + 11, y + LIST_ROW / 2f, UiDraw.SMALL, sel ? t.text() : UiDraw.mix(UiDraw.mix(t.muted(), t.text(), .55f), t.text(), hv));
-            UiDraw.icon(g, "chevron_right", listX + listW - 16, y + LIST_ROW / 2f - 4, 8, UiDraw.alpha(sel ? t.accent() : t.muted(), sel ? 1 : .4f + hv * .6f));
+            UiDraw.text(g, name, listX + 11, y + LIST_ROW / 2f, UiDraw.SMALL, sel ? t.text() : UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), .55f), t.text(), hv));
+            UiDraw.icon(g, "chevron_right", listX + listW - 16, y + LIST_ROW / 2f - 4, 8, UiDraw.alpha(sel ? t.on() : t.textDim(), sel ? 1 : .4f + hv * .6f));
             if (hover && !name.equals(instances.get(i).name())) tooltip("mii.inst." + i, instances.get(i).name());
         }
         if (instances.isEmpty()) {
-            UiDraw.center(g, "No instances found", listX, listY + Math.min(listH / 2f, 20), listW, UiDraw.SMALL, t.muted());
-            if (!listError.isEmpty() && listH > 44) UiDraw.center(g, UiDraw.fit(listError, listW - 12, UiDraw.SMALL), listX, listY + 34, listW, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+            UiDraw.center(g, "No instances found", listX, listY + Math.min(listH / 2f, 20), listW, UiDraw.SMALL, t.textDim());
+            if (!listError.isEmpty() && listH > 44) UiDraw.center(g, UiDraw.fit(listError, listW - 12, UiDraw.SMALL), listX, listY + 34, listW, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .7f));
             if (UiDraw.over(mx, my, listX, listY, listW, listH) && !listError.isEmpty()) tooltip("mii.listerr", listError);
         }
         g.disableScissor();
@@ -361,13 +360,12 @@ final class MeteorInstanceImportScreen extends UiScreen {
 
     private void renderPane(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         String title = scan == null ? "What can be imported" : "Found in " + sourceLabel;
-        UiDraw.bold(g, UiDraw.fit(title, paneW - 8, UiDraw.SMALL), paneX + 2, paneY - 9, UiDraw.SMALL, t.muted());
-        UiDraw.rounded(g, paneX, paneY, paneW, paneH, 7, UiDraw.alpha(t.mantle(), .45f));
+        UiDraw.bold(g, UiDraw.fit(title, paneW - 8, UiDraw.SMALL), paneX + 2, paneY - 9, UiDraw.SMALL, t.textDim());
+        UiDraw.rounded(g, paneX, paneY, paneW, paneH, 7, UiDraw.alpha(t.sunk(), .45f));
         if (scan == null) {
             float cy = paneY + paneH / 2f - 14;
-            UiDraw.icon(g, scanning ? "reset" : "search", paneX + paneW / 2f - 7, cy - 8, 14, UiDraw.alpha(failed ? t.red() : t.muted(), .45f));
-            UiDraw.center(g, scanning ? "Reading Meteor folder…" : "Pick an instance", paneX, cy + 16, paneW, t.muted());
-            UiDraw.center(g, scanning ? "Nothing is changed while reading." : "Modules, friends, enemies, waypoints and macros", paneX, cy + 29, paneW, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+            UiDraw.center(g, scanning ? "Reading Meteor folder…" : "Pick an instance", paneX, cy + 4, paneW, failed ? t.danger() : t.textDim());
+            UiDraw.center(g, scanning ? "Nothing is changed while reading." : "Modules, friends, enemies, waypoints and macros", paneX, cy + 17, paneW, UiSpace.CAPTION, t.textDim());
             return;
         }
         scroll = Math.clamp(scroll, 0, maxScroll()); shownScroll = UiAnim.approach(shownScroll, scroll, 20);
@@ -377,54 +375,54 @@ final class MeteorInstanceImportScreen extends UiScreen {
             Row row = rows.get(i); float cy = y + ROW / 2f;
             boolean hover = clickable(row) && UiDraw.over(mx, my, paneX + 4, y, paneW - 8, ROW) && UiDraw.over(mx, my, paneX, paneY, paneW, paneH);
             float hv = UiAnim.smooth("mii.row." + row.kind() + row.text(), hover ? 1 : 0, 20);
-            if (hv > .01f) UiDraw.rounded(g, paneX + 4, y + 1, paneW - 8, ROW - 2, 5, UiDraw.alpha(t.surface(), hv * .8f));
+            if (hv > .01f) UiDraw.rounded(g, paneX + 4, y + 1, paneW - 8, ROW - 2, 5, UiDraw.alpha(t.fill(), hv * .8f));
             switch (row.kind()) {
-                case HEADER -> UiDraw.bold(g, UiDraw.fit(row.text(), paneW - 20, UiDraw.SMALL), paneX + 10, cy + 2, UiDraw.SMALL, t.muted());
+                case HEADER -> UiDraw.bold(g, UiDraw.fit(row.text(), paneW - 20, UiDraw.SMALL), paneX + 10, cy + 2, UiDraw.SMALL, t.textDim());
                 case MODULES -> item(g, t, y, "modules", row.text(), row.detail(), modulesOn, scan.modules().stream().anyMatch(Objects::nonNull), hover, mx, my, i);
                 case DATA -> item(g, t, y, icon(row.data()), row.text(), row.detail(), selected.contains(row.data()), available(row.data()), hover, mx, my, i);
                 case SOURCE -> {
                     boolean on = row.source() == moduleSource, ok = scan.modules().get(row.source()) != null;
                     float rx = paneX + 34, rcy = cy;
-                    UiDraw.outline(g, rx - 4.5f, rcy - 4.5f, 9, 9, 4.5f, .8f, ok ? (on ? t.accent() : t.overlay()) : UiDraw.alpha(t.overlay(), .4f));
-                    if (on) UiDraw.circle(g, rx, rcy, 2.4f, t.accent());
-                    UiDraw.text(g, UiDraw.fit(row.text(), paneW * .5f, UiDraw.SMALL), rx + 10, cy, UiDraw.SMALL, ok ? (on ? t.text() : UiDraw.mix(t.muted(), t.text(), .55f)) : t.muted());
+                    UiDraw.outline(g, rx - 4.5f, rcy - 4.5f, 9, 9, 4.5f, .8f, ok ? (on ? t.on() : t.line()) : UiDraw.alpha(t.line(), .4f));
+                    if (on) UiDraw.circle(g, rx, rcy, 2.4f, t.on());
+                    UiDraw.text(g, UiDraw.fit(row.text(), paneW * .5f, UiDraw.SMALL), rx + 10, cy, UiDraw.SMALL, ok ? (on ? t.text() : UiDraw.mix(t.textDim(), t.text(), .55f)) : t.textDim());
                     String detail = UiDraw.fit(row.detail(), paneW * .42f, UiDraw.SMALL);
-                    UiDraw.right(g, detail, paneX + paneW - 10, cy, UiDraw.SMALL, ok ? t.muted() : t.red());
+                    UiDraw.right(g, detail, paneX + paneW - 10, cy, UiDraw.SMALL, ok ? t.textDim() : t.danger());
                     if (hover && !detail.equals(row.detail())) tooltip("mii.src." + i, row.detail());
                 }
                 case WARNING -> {
-                    UiDraw.circle(g, paneX + 16, cy, 4.5f, UiDraw.alpha(t.yellow(), .2f)); UiDraw.center(g, "!", paneX + 11.5f, cy, 9, 6f, t.yellow());
+                    UiDraw.circle(g, paneX + 16, cy, 4.5f, UiDraw.alpha(t.warn(), .2f)); UiDraw.center(g, "!", paneX + 11.5f, cy, 9, UiSpace.CAPTION, t.warn());
                     String name = UiDraw.fit(row.text(), paneW * .32f, UiDraw.SMALL);
                     UiDraw.text(g, name, paneX + 26, cy, UiDraw.SMALL, t.text());
                     float nx = paneX + 30 + UiDraw.width(name, UiDraw.SMALL);
                     String why = UiDraw.fit(row.detail(), paneX + paneW - 10 - nx, UiDraw.SMALL);
-                    UiDraw.text(g, why, nx, cy, UiDraw.SMALL, t.yellow());
+                    UiDraw.text(g, why, nx, cy, UiDraw.SMALL, t.warn());
                     if (UiDraw.over(mx, my, paneX + 4, y, paneW - 8, ROW) && !why.equals(row.detail())) tooltip("mii.warn." + i, row.text(), row.detail());
                 }
                 case SKIPPED -> {
-                    UiDraw.icon(g, "close", paneX + 12, cy - 3.5f, 7, UiDraw.alpha(t.muted(), .55f));
-                    UiDraw.text(g, UiDraw.fit(row.text(), paneW - 40, UiDraw.SMALL), paneX + 26, cy, UiDraw.SMALL, UiDraw.alpha(t.muted(), .85f));
+                    UiDraw.icon(g, "close", paneX + 12, cy - 3.5f, 7, UiDraw.alpha(t.textDim(), .55f));
+                    UiDraw.text(g, UiDraw.fit(row.text(), paneW - 40, UiDraw.SMALL), paneX + 26, cy, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .85f));
                 }
-                case NOTE -> UiDraw.text(g, row.text(), paneX + 12, cy, UiDraw.SMALL, t.muted());
+                case NOTE -> UiDraw.text(g, row.text(), paneX + 12, cy, UiDraw.SMALL, t.textDim());
             }
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, paneX, paneY, paneW, 8, 7, UiDraw.alpha(t.mantle(), .9f), UiDraw.alpha(t.mantle(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, paneX, paneY + paneH - 8, paneW, 8, 7, UiDraw.alpha(t.mantle(), 0), UiDraw.alpha(t.mantle(), .9f)));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, paneX, paneY, paneW, 8, 7, UiDraw.alpha(t.sunk(), .9f), UiDraw.alpha(t.sunk(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, paneX, paneY + paneH - 8, paneW, 8, 7, UiDraw.alpha(t.sunk(), 0), UiDraw.alpha(t.sunk(), .9f)));
     }
     /** Checkbox row: tick, icon, label and a right-aligned detail. Disabled rows say why in the detail. */
     private void item(GuiGraphicsExtractor g, UiTheme t, float y, String icon, String label, String detail, boolean on, boolean enabled, boolean hover, int mx, int my, int index) {
         float cy = y + ROW / 2f, bx = paneX + 10;
         float k = UiAnim.smooth("mii.tick." + label, on && enabled ? 1 : 0, 18);
-        UiDraw.rounded(g, bx, cy - 5, 10, 10, 3, UiDraw.mix(UiDraw.alpha(t.crust(), .9f), t.accent(), k));
-        UiDraw.outline(g, bx, cy - 5, 10, 10, 3, .7f, enabled ? UiDraw.mix(t.overlay(), t.accent(), Math.max(k, hover ? .5f : 0)) : UiDraw.alpha(t.overlay(), .35f));
-        if (k > .05f) UiDraw.icon(g, "check", bx + 1.5f, cy - 3.5f, 7, UiDraw.alpha(t.crust(), k));
-        UiDraw.icon(g, icon, bx + 17, cy - 4.5f, 9, enabled ? UiDraw.mix(t.muted(), t.text(), .55f) : UiDraw.alpha(t.muted(), .5f));
-        UiDraw.text(g, label, bx + 31, cy, UiDraw.TEXT * .92f, enabled ? t.text() : t.muted());
+        UiDraw.rounded(g, bx, cy - 5, 10, 10, 3, UiDraw.mix(UiDraw.alpha(t.deep(), .9f), t.on(), k));
+        UiDraw.outline(g, bx, cy - 5, 10, 10, 3, .7f, enabled ? UiDraw.mix(t.line(), t.on(), Math.max(k, hover ? .5f : 0)) : UiDraw.alpha(t.line(), .35f));
+        if (k > .05f) UiDraw.icon(g, "check", bx + 1.5f, cy - 3.5f, 7, UiDraw.alpha(t.deep(), k));
+        UiDraw.icon(g, icon, bx + 17, cy - 4.5f, 9, enabled ? UiDraw.mix(t.textDim(), t.text(), .55f) : UiDraw.alpha(t.textDim(), .5f));
+        UiDraw.text(g, label, bx + 31, cy, UiDraw.TEXT * .92f, enabled ? t.text() : t.textDim());
         float room = paneX + paneW - 10 - (bx + 36 + UiDraw.width(label, UiDraw.TEXT * .92f));
         String shown = UiDraw.fit(detail, room, UiDraw.SMALL);
         boolean error = detail.startsWith("Couldn’t");
-        UiDraw.right(g, shown, paneX + paneW - 10, cy, UiDraw.SMALL, error ? t.red() : on && enabled ? t.accent() : t.muted());
+        UiDraw.right(g, shown, paneX + paneW - 10, cy, UiDraw.SMALL, error ? t.danger() : on && enabled ? t.on() : t.textDim());
         if (UiDraw.over(mx, my, paneX + 4, y, paneW - 8, ROW) && !shown.equals(detail)) tooltip("mii.item." + index, label, detail);
     }
     private boolean clickable(Row row) {

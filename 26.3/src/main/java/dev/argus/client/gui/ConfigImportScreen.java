@@ -118,28 +118,28 @@ final class ConfigImportScreen extends UiScreen {
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         // Header.
         float bh = UiAnim.smooth("imp.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
-        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.surface(), t.overlay(), bh));
-        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.muted(), t.text(), bh));
+        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
+        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
         UiDraw.bold(g, "Import config", left + 36, top + 19, UiDraw.TITLE, t.text());
         float right = left + panelWidth - 12;
-        right -= ProfileManagerScreen.chip(g, "Argus JSON", right - UiDraw.width("Argus JSON", 5.5f) - 10, top + 19, t.accent()) + 4;
-        ProfileManagerScreen.chip(g, "Meteor", right - UiDraw.width("Meteor", 5.5f) - 10, top + 19, t.blue());
+        right -= ProfileManagerScreen.chip(g, "Argus JSON", right - UiDraw.width("Argus JSON", UiSpace.CAPTION) - 10, top + 19, t.on()) + 4;
+        ProfileManagerScreen.chip(g, "Meteor", right - UiDraw.width("Meteor", UiSpace.CAPTION) - 10, top + 19, t.info());
         // Source card: path + preview, then name + binds.
         float cardY = top + CARD_Y;
         UiDraw.card(g, left + 12, cardY, panelWidth - 24, CARD_H, "misc", "Source", "Preview first · nothing changes until you load the saved preset", 124, t);
         float bx = bindsX(), by = bindsY();
         boolean bindHover = UiDraw.over(mx, my, bx, by - 2, 112, 20);
-        UiDraw.rounded(g, bx, by - 2, 112, 20, 7, UiDraw.mix(t.crust(), t.mantle(), bindHover ? .6f : 0));
-        UiDraw.outline(g, bx, by - 2, 112, 20, 7, .7f, UiDraw.alpha(t.overlay(), .7f));
-        UiDraw.text(g, "Import binds", bx + 8, by + 8, UiDraw.SMALL, importBinds ? t.text() : t.muted());
+        UiDraw.rounded(g, bx, by - 2, 112, 20, 7, UiDraw.mix(t.deep(), t.sunk(), bindHover ? .6f : 0));
+        UiDraw.outline(g, bx, by - 2, 112, 20, 7, .7f, UiDraw.alpha(t.line(), .7f));
+        UiDraw.text(g, "Import binds", bx + 8, by + 8, UiDraw.SMALL, importBinds ? t.text() : t.textDim());
         UiDraw.toggle(g, bx + 112 - 26, by + 3, UiAnim.smooth("imp.binds", importBinds ? 1 : 0, 16), bindHover, t);
         if (bindHover) tooltip("imp.binds", importBinds ? "Importing compatible binds" : "Keeping your current binds", "Turn on to copy keybinds for modules Argus also has");
         // Preview list.
         float headY = listTop - 12;
         UiDraw.bold(g, "Preview", left + 14, headY, UiDraw.TEXT, t.text());
         if (preview != null) UiDraw.right(g, preview.enabledTargets().size() + " modules on · " + preview.copiedSettings() + " settings copied · " + preview.defaultedSettings() + " at defaults",
-                left + panelWidth - 14, headY, UiDraw.SMALL, t.accent());
-        UiDraw.rect(g, left + 12, listTop - 4, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
+                left + panelWidth - 14, headY, UiDraw.SMALL, t.on());
+        UiDraw.rect(g, left + 12, listTop - 4, panelWidth - 24, .6f, UiDraw.alpha(t.line(), .6f));
         scroll = Math.clamp(scroll, 0, maxScroll());
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
         g.enableScissor(left + 4, listTop, left + panelWidth - 4, listTop + listHeight);
@@ -149,34 +149,33 @@ final class ConfigImportScreen extends UiScreen {
             float cy = y + ROW / 2f, tx = left + 30;
             boolean hover = UiDraw.over(mx, my, left + 12, y, panelWidth - 24, ROW) && my >= listTop && my < listTop + listHeight;
             switch (row.kind()) {
-                case HEADER -> { UiDraw.bold(g, UiDraw.fit(row.text(), panelWidth - 32, UiDraw.SMALL), left + 16, cy + 2, UiDraw.SMALL, t.muted()); continue; }
+                case HEADER -> { UiDraw.bold(g, UiDraw.fit(row.text(), panelWidth - 32, UiDraw.SMALL), left + 16, cy + 2, UiDraw.SMALL, t.textDim()); continue; }
                 case CHOICE -> {
                     float hv = UiAnim.smooth("imp.row." + i, hover ? 1 : 0, 20);
-                    UiDraw.rounded(g, left + 12, y + 1, panelWidth - 24, ROW - 2, 5, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), hv * .8f));
-                    UiDraw.icon(g, "chevron_right", left + 17, cy - 4, 8, UiDraw.mix(t.muted(), t.accent(), hv));
+                    UiDraw.rounded(g, left + 12, y + 1, panelWidth - 24, ROW - 2, 5, UiDraw.mix(UiDraw.alpha(t.sunk(), .8f), t.fill(), hv * .8f));
+                    UiDraw.icon(g, "chevron_right", left + 17, cy - 4, 8, UiDraw.mix(t.textDim(), t.on(), hv));
                 }
-                case ENABLED -> UiDraw.icon(g, "check", left + 17, cy - 4, 8, t.green());
-                case WARNING -> { UiDraw.circle(g, left + 21, cy, 4.5f, UiDraw.alpha(t.yellow(), .2f)); UiDraw.center(g, "!", left + 16.5f, cy, 9, 6f, t.yellow()); }
-                case INFO -> UiDraw.circle(g, left + 21, cy, 1.6f, UiDraw.alpha(t.muted(), .7f));
+                case ENABLED -> UiDraw.icon(g, "check", left + 17, cy - 4, 8, t.ok());
+                case WARNING -> { UiDraw.circle(g, left + 21, cy, 4.5f, UiDraw.alpha(t.warn(), .2f)); UiDraw.center(g, "!", left + 16.5f, cy, 9, UiSpace.CAPTION, t.warn()); }
+                case INFO -> UiDraw.circle(g, left + 21, cy, 1.6f, UiDraw.alpha(t.textDim(), .7f));
             }
-            int colour = row.kind() == Kind.WARNING ? t.yellow() : row.kind() == Kind.INFO ? t.muted() : t.text();
+            int colour = row.kind() == Kind.WARNING ? t.warn() : row.kind() == Kind.INFO ? t.textDim() : t.text();
             String shown = UiDraw.fit(row.text(), panelWidth - 50, UiDraw.SMALL);
             UiDraw.text(g, shown, tx, cy, UiDraw.SMALL, colour);
             if (hover && !shown.equals(row.text())) tooltip("import.row." + i, row.text());
         }
         if (rows.isEmpty()) {
             float cy = listTop + Math.min(listHeight / 2f - 16, 24);
-            UiDraw.icon(g, busy ? "reset" : "star", left + panelWidth / 2f - 7, cy - 6, 14, UiDraw.alpha(failed ? t.red() : t.muted(), .45f));
-            UiDraw.center(g, busy ? "Reading config…" : failed ? "Nothing to preview" : "Nothing previewed yet", left, cy + 18, panelWidth, t.muted());
-            UiDraw.center(g, busy ? "This only reads the file." : "Choose a source above, then press Preview.", left, cy + 30, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+            UiDraw.center(g, busy ? "Reading config…" : failed ? "Nothing to preview" : "Nothing previewed yet", left, cy + 4, panelWidth, failed ? t.danger() : t.textDim());
+            UiDraw.center(g, busy ? "This only reads the file." : "Choose a source above, then press Preview.", left, cy + 16, panelWidth, UiSpace.CAPTION, t.textDim());
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, listTop, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, listTop + listHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, listTop, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, listTop + listHeight - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
         // Footer: status on the left, actions on the right.
         float fy = top + panelHeight - 21, room = panelWidth - 28 - 180;
         String shown = UiDraw.fit(message, room, UiDraw.SMALL);
-        UiDraw.text(g, shown, left + 14, fy, UiDraw.SMALL, failed ? t.red() : savedAlready || preview != null ? t.green() : t.muted());
+        UiDraw.text(g, shown, left + 14, fy, UiDraw.SMALL, failed ? t.danger() : savedAlready || preview != null ? t.ok() : t.textDim());
         if (!shown.equals(message) && UiDraw.over(mx, my, left + 10, fy - 8, room, 16)) tooltip("import.status", message);
     }
 

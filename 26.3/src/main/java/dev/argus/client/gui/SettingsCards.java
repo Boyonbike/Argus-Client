@@ -149,13 +149,13 @@ final class SettingsCards {
 
     private void drawTabs(GuiGraphicsExtractor g, int mx, int my, UiTheme t, List<String> tabs, String current, float x, float y, float w, float clipTop, float clipBottom) {
         float segment = w / tabs.size();
-        UiDraw.rounded(g, x, y, w, TABS, TABS / 2, t.crust());
+        UiDraw.rounded(g, x, y, w, TABS, TABS / 2, t.deep());
         float thumb = UiAnim.smooth("tabs." + module.getName(), tabs.indexOf(current), 16);
-        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, TABS - 4, (TABS - 4) / 2, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, x + 2 + thumb * segment, y + 2, segment - 4, TABS - 4, (TABS - 4) / 2, t.fill());
         for (int i = 0; i < tabs.size(); i++) {
             boolean hover = UiDraw.over(mx, my, x + i * segment, y, segment, TABS) && my >= clipTop && my < clipBottom;
             float hv = UiAnim.smooth("tabs." + module.getName() + "." + i, hover ? 1 : 0, 18);
-            int colour = tabs.get(i).equals(current) ? t.accent() : UiDraw.mix(t.muted(), t.text(), hv);
+            int colour = tabs.get(i).equals(current) ? t.on() : UiDraw.mix(t.textDim(), t.text(), hv);
             UiDraw.center(g, UiDraw.fit(tabs.get(i), segment - 10), x + i * segment, y + TABS / 2, segment, colour);
         }
     }
@@ -293,13 +293,13 @@ final class SettingsCards {
                 boolean cardHover = UiDraw.over(mx, my, x, y, w, h) && my >= clipTop && my < clipBottom;
                 float lift = UiAnim.smooth("card.l." + module.getName() + "." + title, cardHover ? 1 : 0, 14);
                 UiDraw.card(g, x, y, w, h, icon, title, subtitle, 40, t);
-                if (lift > .01f) UiDraw.outline(g, x, y, w, h, 8, .7f, UiDraw.alpha(t.accent(), .28f * lift));
+                if (lift > .01f) UiDraw.outline(g, x, y, w, h, 8, 1, UiDraw.alpha(t.line(), lift));
                 boolean hover = UiDraw.over(mx, my, x, y, w, UiDraw.CARD_HEAD) && my >= clipTop && my < clipBottom;
                 String foldKey = "card.o." + module.getName() + "." + title;
                 float hv = UiAnim.smooth(foldKey + ".h", hover ? 1 : 0, 20);
                 float shown = UiAnim.smooth(foldKey, open ? 1 : 0, 16);
-                int colour = UiDraw.mix(t.muted(), t.text(), hv);
-                if (hv > 0) UiDraw.circle(g, x + w - UiDraw.CARD_PAD - 7, y + 15, 8, UiDraw.alpha(t.surface(), hv));
+                int colour = UiDraw.mix(t.textDim(), t.text(), hv);
+                if (hv > 0) UiDraw.circle(g, x + w - UiDraw.CARD_PAD - 7, y + 15, 8, UiDraw.alpha(t.fill(), hv));
                 UiDraw.icon(g, "chevron_down", x + w - UiDraw.CARD_PAD - 11, y + 11, 8, UiDraw.alpha(colour, shown));
                 UiDraw.icon(g, "chevron_right", x + w - UiDraw.CARD_PAD - 11, y + 11, 8, UiDraw.alpha(colour, 1 - shown));
                 if (body > 1) {

@@ -66,14 +66,14 @@ public final class AccountsScreen extends ProfileManagerScreen {
         var t = GuiState.theme();
         if (signingIn()) {
             UiDraw.card(g, x, y, w, 74, "player", "Sign in with Microsoft", "Finish signing in in your browser, then come back here", 0, t);
-            UiDraw.text(g, UiDraw.fit(link, w - 220, UiDraw.SMALL), x + 10, y + 55, UiDraw.SMALL, t.blue());
+            UiDraw.text(g, UiDraw.fit(link, w - 220, UiDraw.SMALL), x + 10, y + 55, UiDraw.SMALL, t.info());
             return;
         }
         if (passwordFor != null) {
             UiDraw.card(g, x, y, w, 72, "shield", "Lobby password · " + passwordFor.username(), "AutoLobby sends /login with this when you play as this account", 120, t);
             float right = x + w - 10;
-            right -= pill(g, "Cancel", right, y + 15, mx, my, t.muted(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
-            pill(g, "Save", right, y + 15, mx, my, t.accent(), true, !busy, this::submitForm);
+            right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
+            pill(g, "Save", right, y + 15, mx, my, t.on(), true, !busy, this::submitForm);
             label(g, "Stored on this computer · leave empty and save to clear it", x + 10, y + 38);
             return;
         }
@@ -85,8 +85,8 @@ public final class AccountsScreen extends ProfileManagerScreen {
         };
         UiDraw.card(g, x, y, w, 72, "player", title, sub, 120, t);
         float right = x + w - 10;
-        right -= pill(g, "Cancel", right, y + 15, mx, my, t.muted(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
-        pill(g, "Add & log in", right, y + 15, mx, my, t.accent(), true, !busy, this::submitForm);
+        right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, !busy, () -> { closeForm(); rebuildWidgets(); }) + 4;
+        pill(g, "Add & log in", right, y + 15, mx, my, t.on(), true, !busy, this::submitForm);
         label(g, adding == AccountEntry.Type.OFFLINE ? "Username · 1–16 letters, digits or underscores" : "Account token · stored on this computer", x + 10, y + 38);
     }
 
@@ -115,7 +115,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         UiDraw.card(g, x, y, w, CARD_H, "shield", "Appear as vanilla", "Tells servers you're playing unmodded Minecraft · applies when you next join", 60, t);
         boolean hover = UiDraw.over(mx, my, x + w - 70, y + 6, 70, 18);
         float on = UiAnim.smooth("acc.vanilla", module.isToggled() ? 1 : 0, 16);
-        UiDraw.right(g, module.isToggled() ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        UiDraw.right(g, module.isToggled() ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.on(), on));
         UiDraw.toggle(g, x + w - UiDraw.CARD_PAD - 18, y + 10, on, hover, t);
         hit(x + w - 70, y + 6, 70, 18, () -> module.setToggled(!module.isToggled()));
     }
@@ -129,7 +129,7 @@ public final class AccountsScreen extends ProfileManagerScreen {
         return switch (type) { case MICROSOFT -> "Microsoft"; case OFFLINE -> "Cracked"; case SESSION -> "Session"; case ALTENING -> "Altening"; };
     }
     private static int typeColour(AccountEntry.Type type, UiTheme t) {
-        return switch (type) { case MICROSOFT -> t.blue(); case OFFLINE -> t.yellow(); case SESSION -> t.green(); case ALTENING -> t.accent(); };
+        return switch (type) { case MICROSOFT -> t.info(); case OFFLINE -> t.warn(); case SESSION -> t.ok(); case ALTENING -> t.on(); };
     }
 
     @Override protected void renderRow(GuiGraphicsExtractor g, int index, float x, float y, float w, int mx, int my, boolean hover) {
@@ -139,24 +139,24 @@ public final class AccountsScreen extends ProfileManagerScreen {
         String key = "acc." + account.id();
         rowFrame(g, key, x, y, w, hover, active);
         float cy = y + (ROW - 3) / 2f;
-        badge(g, "player", x + 15, cy, active ? t.accent() : typeColour(account.type(), t));
+        badge(g, "player", x + 15, cy, active ? t.on() : typeColour(account.type(), t));
         // Actions, right to left.
         float right = x + w - 8;
         boolean confirm = account.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS;
-        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.red(), !busy, () -> {
+        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.danger(), !busy, () -> {
             if (account.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS) { deleting = null; change(() -> profiles.removeAccount(account.id()), "Removed " + account.username() + "."); }
             else { deleting = account.id(); deleteAt = System.nanoTime(); }
         }) + 4;
         String loginLabel = active ? "Log in again" : "Log in";
-        right -= pill(g, loginLabel, right, cy, mx, my, t.accent(), true, !busy, () -> login(account)) + 4;
+        right -= pill(g, loginLabel, right, cy, mx, my, t.on(), true, !busy, () -> login(account)) + 4;
         boolean hasLobbyPassword = profiles.lobbyPassword(account) != null;
         if (account.type() == AccountEntry.Type.OFFLINE)
-            right -= pill(g, hasLobbyPassword ? "Lobby password" : "Set lobby password", right, cy, mx, my, t.muted(), false, !busy, () -> passwordForm(account)) + 4;
+            right -= pill(g, hasLobbyPassword ? "Lobby password" : "Set lobby password", right, cy, mx, my, t.textDim(), false, !busy, () -> passwordForm(account)) + 4;
         float textX = x + 30, room = right - textX - 6;
-        UiDraw.bold(g, UiDraw.fit(account.username(), room), textX, cy - 5, UiDraw.TEXT, active ? t.accent() : t.text());
+        UiDraw.bold(g, UiDraw.fit(account.username(), room), textX, cy - 5, UiDraw.TEXT, active ? t.on() : t.text());
         float cw = chip(g, typeName(account.type()), textX, cy + 6.5f, typeColour(account.type(), t));
-        if (hasLobbyPassword) cw += chip(g, "AutoLobby", textX + cw + 4, cy + 6.5f, t.green()) + 4;
-        if (!account.uuid().isEmpty()) UiDraw.text(g, UiDraw.fit(account.uuid(), room - cw - 6, 5.5f), textX + cw + 5, cy + 6.5f, 5.5f, UiDraw.alpha(t.muted(), .7f));
+        if (hasLobbyPassword) cw += chip(g, "AutoLobby", textX + cw + 4, cy + 6.5f, t.ok()) + 4;
+        if (!account.uuid().isEmpty()) UiDraw.text(g, UiDraw.fit(account.uuid(), room - cw - 6, UiSpace.CAPTION), textX + cw + 5, cy + 6.5f, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
     }
 
     // ---- actions ------------------------------------------------------------------------------

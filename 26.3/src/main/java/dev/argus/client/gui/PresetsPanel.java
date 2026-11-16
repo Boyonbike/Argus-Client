@@ -124,7 +124,7 @@ final class PresetsPanel {
         boolean hover = UiDraw.over(mx, my, px, cy - 7, pw, 14);
         float hv = UiAnim.smooth("pp." + label + "." + Math.round(cy) + "." + Math.round(right), hover ? 1 : 0, 20);
         UiTheme t = GuiState.theme();
-        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, filled ? UiDraw.alpha(tint, .22f + hv * .14f) : UiDraw.mix(t.surface(), t.overlay(), hv * .8f));
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, filled ? UiDraw.alpha(tint, .22f + hv * .14f) : UiDraw.mix(t.fill(), t.line(), hv * .8f));
         UiDraw.center(g, label, px, cy, pw, UiDraw.SMALL, filled ? tint : UiDraw.mix(t.text(), tint, hv));
         hits.add(new Hit(px, cy - 7, pw, 14, action));
         return pw;
@@ -139,7 +139,7 @@ final class PresetsPanel {
         float pw = UiAnim.smooth(key + ".w", target, target, 20), px = right - pw;
         boolean hover = UiDraw.over(mx, my, px, cy - 7, pw, 14);
         float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".arm", armed ? 1 : 0, 18);
-        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
         int colour = UiDraw.mix(UiDraw.mix(t.text(), tint, hv), tint, on);
         UiMotion.crossfade(g, key + ".label", shown, l -> UiDraw.center(g, l, px, cy, pw, UiDraw.SMALL, colour));
         if (armed) UiMotion.drain(g, px + 5, cy + 4.6f, pw - 10, armedAt, window, UiDraw.alpha(tint, .8f));
@@ -149,16 +149,16 @@ final class PresetsPanel {
 
     void render(GuiGraphicsExtractor g, int mx, int my, float delta, UiTheme t) {
         hits.clear();
-        UiDraw.icon(g, "star", x, y + 13.5f, 9, t.accent());
+        UiDraw.icon(g, "star", x, y + 13.5f, 9, t.on());
         UiDraw.bold(g, "Presets", x + 13, y + 18, UiDraw.TITLE, t.text());
-        float importWidth = pill(g, "Import config", x + w, y + 14, mx, my, t.accent(), true, this::importConfig);
+        float importWidth = pill(g, "Import config", x + w, y + 14, mx, my, t.on(), true, this::importConfig);
         if (recoveryName != null && Presets.exists(PresetCategory.MODULES, recoveryName))
-            pill(g, "Restore backup", x + w - importWidth - 5, y + 14, mx, my, t.green(), false, () -> {
+            pill(g, "Restore backup", x + w - importWidth - 5, y + 14, mx, my, t.ok(), false, () -> {
                 PresetCategory previous = category; category = PresetCategory.MODULES;
                 load(recoveryName); category = previous;
             });
-        UiDraw.text(g, "Save configs and bind them to servers or worlds to load them automatically", x, y + 31, UiDraw.SMALL, t.muted());
-        UiDraw.rect(g, x, y + 40, w, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.text(g, "Save configs and bind them to servers or worlds to load them automatically", x, y + 31, UiDraw.SMALL, t.textDim());
+        UiDraw.rect(g, x, y + 40, w, .6f, UiDraw.alpha(t.line(), .6f));
         UiDraw.card(g, x - 6, y + 46, w + 12, 112, "star", "Save current config", "Pick what the preset covers, name it and save", 0, t);
         UiDraw.card(g, x - 6, y + 164, w + 12, listHeight() + 34, "misc", "Saved presets",
                 Presets.names(category).size() + " saved · click a name to bind it to servers", 0, t);
@@ -173,15 +173,15 @@ final class PresetsPanel {
                 chipIndicator = UiAnim.approach(chipIndicator, cx, 18); chipIndicatorW = UiAnim.approach(chipIndicatorW, cw, 18);
             }
             float hv = UiAnim.smooth("pp.cat." + c.name(), hover && !active ? 1 : 0, 20);
-            if (hv > 0) UiDraw.rounded(g, cx, y + 78, cw, 15, 7.5f, UiDraw.alpha(t.surface(), hv * .8f));
+            if (hv > 0) UiDraw.rounded(g, cx, y + 78, cw, 15, 7.5f, UiDraw.alpha(t.fill(), hv * .8f));
             cx += cw + 4;
         }
-        UiDraw.rounded(g, chipIndicator, y + 78, chipIndicatorW, 15, 7.5f, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, chipIndicator, y + 78, chipIndicatorW, 15, 7.5f, t.fill());
         cx = x;
         for (PresetCategory c : Presets.categories()) {
             String label = label(c);
             float cw = UiDraw.width(label, UiDraw.SMALL) + 16;
-            UiDraw.center(g, label, cx, y + 85.5f, cw, UiDraw.SMALL, c == category ? t.accent() : t.muted());
+            UiDraw.center(g, label, cx, y + 85.5f, cw, UiDraw.SMALL, c == category ? t.on() : t.textDim());
             PresetCategory chosen = c;
             hits.add(new Hit(cx, y + 78, cw, 15, () -> { if (category != chosen) { category = chosen; select(null); scroll = 0; } }));
             cx += cw + 4;
@@ -190,11 +190,11 @@ final class PresetsPanel {
         String target = Presets.currentTarget();
         String where = target == null ? "Join a server or world to bind presets to it"
                 : (Presets.isWorld(target) ? "In world: " : "On server: ") + Presets.label(target);
-        UiDraw.icon(g, target == null ? "misc" : Presets.isWorld(target) ? "player" : "people", x, y + 98, 8, target == null ? t.muted() : t.green());
-        UiDraw.text(g, UiDraw.fit(where, w - 14), x + 12, y + 102, UiDraw.SMALL, target == null ? t.muted() : t.text());
+        UiDraw.icon(g, target == null ? "misc" : Presets.isWorld(target) ? "player" : "people", x, y + 98, 8, target == null ? t.textDim() : t.ok());
+        UiDraw.text(g, UiDraw.fit(where, w - 14), x + 12, y + 102, UiDraw.SMALL, target == null ? t.textDim() : t.text());
         // Save the current config.
         nameInput.extractRenderState(g, mx, my, delta);
-        pill(g, "Save current", x + w, y + 128, mx, my, t.accent(), true, this::saveCurrent);
+        pill(g, "Save current", x + w, y + 128, mx, my, t.on(), true, this::saveCurrent);
         // Preset list.
         List<String> names = Presets.names(category);
         var bindings = Presets.bindings(category);
@@ -218,17 +218,17 @@ final class PresetsPanel {
             if (rowY + rowH >= top && rowY <= top + view) {
                 boolean hover = UiDraw.over(mx, my, x - 4, rowY, w + 8, rowH) && my >= top && my < top + view;
                 float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20);
-                UiDraw.rounded(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), Math.max(hv * .7f, expand)));
-                if (expand > 0) UiDraw.outline(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, .6f, UiDraw.alpha(t.accent(), .35f * expand));
+                UiDraw.rounded(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, UiDraw.mix(UiDraw.alpha(t.sunk(), .8f), t.fill(), Math.max(hv * .7f, expand)));
+                if (expand > 0) UiDraw.outline(g, x - 4, rowY + 1, w + 8, rowH - 2, 6, 1, UiDraw.alpha(t.line(), expand));
                 // The chevron turns with the row's expansion instead of swapping.
-                if (expand < .99f) UiDraw.icon(g, "chevron_right", x + 1 + expand * 1.5f, rowY + 7, 8, UiDraw.alpha(t.muted(), .7f * (1 - expand)));
-                if (expand > .01f) UiDraw.icon(g, "chevron_down", x + 1, rowY + 7 - (1 - expand) * 1.5f, 8, UiDraw.alpha(t.muted(), .7f * expand));
+                if (expand < .99f) UiDraw.icon(g, "chevron_right", x + 1 + expand * 1.5f, rowY + 7, 8, UiDraw.alpha(t.textDim(), .7f * (1 - expand)));
+                if (expand > .01f) UiDraw.icon(g, "chevron_down", x + 1, rowY + 7 - (1 - expand) * 1.5f, 8, UiDraw.alpha(t.textDim(), .7f * expand));
                 String shownName = UiDraw.fit(name, w * .34f);
                 UiDraw.bold(g, shownName, x + 13, rowY + 11, UiDraw.TEXT, t.text());
                 if (Presets.hasLayout(category, name)) {
-                    float lx = x + 13 + UiDraw.width(shownName) + 6, lw = UiDraw.width("Layout", 5.5f) + 10;
-                    UiDraw.rounded(g, lx, rowY + 6.5f, lw, 9, 4.5f, UiDraw.alpha(t.blue(), .16f));
-                    UiDraw.center(g, "Layout", lx, rowY + 11, lw, 5.5f, t.blue());
+                    float lx = x + 13 + UiDraw.width(shownName) + 6, lw = UiDraw.width("Layout", UiSpace.CAPTION) + 10;
+                    UiDraw.rounded(g, lx, rowY + 6.5f, lw, 9, 4.5f, UiDraw.alpha(t.info(), .16f));
+                    UiDraw.center(g, "Layout", lx, rowY + 11, lw, UiSpace.CAPTION, t.info());
                     if (UiDraw.over(mx, my, lx, rowY + 6, lw, 10)) host.hostTooltip(key + ".layout", "Includes window layout", "Loading this preset also moves the module windows");
                 }
                 String selectedName = name;
@@ -237,20 +237,20 @@ final class PresetsPanel {
                 float chipX = x + 13, chipY = rowY + 23;
                 List<String> targets = new ArrayList<>();
                 bindings.forEach((where2, preset) -> { if (preset.equalsIgnoreCase(name)) targets.add(where2); });
-                if (targets.isEmpty()) UiDraw.text(g, "Not bound · loads only when you choose it", chipX, chipY, 6f, UiDraw.alpha(t.muted(), .7f));
+                if (targets.isEmpty()) UiDraw.text(g, "Not bound · loads only when you choose it", chipX, chipY, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
                 for (String bound : targets) {
                     String label = Presets.label(bound);
-                    float cw = UiDraw.width(label, 6f) + 22;
-                    if (chipX + cw > x + w * .55f) { UiDraw.text(g, "+" + (targets.size() - targets.indexOf(bound)) + " more", chipX, chipY, 6f, t.muted()); break; }
+                    float cw = UiDraw.width(label, UiSpace.CAPTION) + 22;
+                    if (chipX + cw > x + w * .55f) { UiDraw.text(g, "+" + (targets.size() - targets.indexOf(bound)) + " more", chipX, chipY, UiSpace.CAPTION, t.textDim()); break; }
                     // Chips fade in when bound and slide along when a neighbour is unbound.
                     float chipDrawX = UiAnim.smooth(key + ".chipDrawX." + bound, chipX, chipX, 18), chipBefore = UiRender.opacity;
                     UiRender.opacity = chipBefore * UiMotion.rowAppear(key + ".chip", bound);
                     boolean chipHover = UiDraw.over(mx, my, chipDrawX + cw - 11, chipY - 5, 10, 10);
-                    int chipColour = Presets.isWorld(bound) ? t.green() : t.blue();
+                    int chipColour = Presets.isWorld(bound) ? t.ok() : t.info();
                     UiDraw.rounded(g, chipDrawX, chipY - 5, cw, 10, 5, UiDraw.alpha(chipColour, .16f));
                     UiDraw.icon(g, Presets.isWorld(bound) ? "player" : "people", chipDrawX + 3, chipY - 3, 6, chipColour);
-                    UiDraw.text(g, label, chipDrawX + 11, chipY, 6f, chipColour);
-                    UiDraw.icon(g, "close", chipDrawX + cw - 9, chipY - 3, 6, UiDraw.mix(UiDraw.alpha(chipColour, .7f), t.red(), UiAnim.smooth(key + ".cxh." + bound, chipHover ? 1 : 0, 20)));
+                    UiDraw.text(g, label, chipDrawX + 11, chipY, UiSpace.CAPTION, chipColour);
+                    UiDraw.icon(g, "close", chipDrawX + cw - 9, chipY - 3, 6, UiDraw.mix(UiDraw.alpha(chipColour, .7f), t.danger(), UiAnim.smooth(key + ".cxh." + bound, chipHover ? 1 : 0, 20)));
                     UiRender.opacity = chipBefore;
                     String unbindTarget = bound;
                     hits.add(new Hit(chipDrawX + cw - 11, chipY - 5, 10, 10, () -> { Presets.unbind(unbindTarget, category); status("Unbound " + Presets.label(unbindTarget) + ".", false); }));
@@ -260,17 +260,17 @@ final class PresetsPanel {
                 // Actions, right to left.
                 float right = x + w, cy = rowY + 16;
                 boolean confirming = name.equals(confirmDelete) && System.nanoTime() - confirmAt < 3e9;
-                right -= confirmPill(g, "pp.del." + name, "Delete", "Really delete?", confirming, confirmAt, 3_000_000_000L, right, cy, mx, my, t.red(), () -> delete(selectedName)) + 4;
-                right -= pill(g, "Save over", right, cy, mx, my, t.accent(), false, () -> overwrite(selectedName)) + 4;
+                right -= confirmPill(g, "pp.del." + name, "Delete", "Really delete?", confirming, confirmAt, 3_000_000_000L, right, cy, mx, my, t.danger(), () -> delete(selectedName)) + 4;
+                right -= pill(g, "Save over", right, cy, mx, my, t.on(), false, () -> overwrite(selectedName)) + 4;
                 if (target != null) {
                     boolean boundHere = name.equalsIgnoreCase(bindings.getOrDefault(target, ""));
                     String here = target;
-                    right -= pill(g, boundHere ? "Unbind here" : (Presets.isWorld(target) ? "Bind to world" : "Bind to server"), right, cy, mx, my, t.green(), boundHere, () -> {
+                    right -= pill(g, boundHere ? "Unbind here" : (Presets.isWorld(target) ? "Bind to world" : "Bind to server"), right, cy, mx, my, t.ok(), boundHere, () -> {
                         if (boundHere) { Presets.unbind(here, category); status(selectedName + " no longer loads here.", false); }
                         else { Presets.bind(here, category, selectedName); status(selectedName + " will load whenever you join " + Presets.label(here) + ".", false); }
                     }) + 4;
                 }
-                pill(g, "Load", right, cy, mx, my, t.accent(), true, () -> load(selectedName));
+                pill(g, "Load", right, cy, mx, my, t.on(), true, () -> load(selectedName));
                 // Expanded: bind to any server by address.
                 if (open && expand > .6f) {
                     float before = UiRender.opacity;
@@ -279,7 +279,7 @@ final class PresetsPanel {
                     addressInput.visible = rowY + 34 >= top && rowY + 54 <= top + view;
                     addressShown = addressInput.visible;
                     addressInput.extractRenderState(g, mx, my, delta);
-                    pill(g, "Add server", x + w, rowY + 46, mx, my, t.blue(), true, () -> bindTyped(selectedName));
+                    pill(g, "Add server", x + w, rowY + 46, mx, my, t.info(), true, () -> bindTyped(selectedName));
                     UiRender.opacity = before;
                 }
             }
@@ -288,13 +288,12 @@ final class PresetsPanel {
         }
         if (selected != null) addressInput.visible = addressShown;
         if (names.isEmpty()) {
-            UiDraw.icon(g, "star", x + w / 2 - 7, top + 14, 14, UiDraw.alpha(t.muted(), .45f));
-            UiDraw.center(g, "No " + (category == PresetCategory.ALL ? "" : (category == PresetCategory.HUD ? "HUD" : category.getName().toLowerCase(Locale.ROOT)) + " ") + "presets yet", x, top + 40, w, t.muted());
-            UiDraw.center(g, "Name your current config above and press Save current.", x, top + 52, w, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+            UiDraw.center(g, "No " + (category == PresetCategory.ALL ? "" : (category == PresetCategory.HUD ? "HUD" : category.getName().toLowerCase(Locale.ROOT)) + " ") + "presets yet", x, top + 20, w, t.textDim());
+            UiDraw.center(g, "Name your current config above and press Save current.", x, top + 32, w, UiSpace.CAPTION, t.textDim());
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, top, w + 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, x - 4, top + view - 8, w + 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, x - 4, top, w + 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
+        UiMotion.faded(UiMotion.edge((Math.max(0, total - view)) - shownScroll), () -> UiDraw.gradient(g, x - 4, top + view - 8, w + 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
         // Footer.
         boolean showStatus = !status.isEmpty() && (System.nanoTime() - statusAt) / 1e9f < 4.25f;
         var line = showStatus ? new UiMotion.Line(UiDraw.fit(status, w), statusError ? 1 : 2)

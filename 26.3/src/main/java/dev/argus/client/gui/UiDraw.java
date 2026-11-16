@@ -9,7 +9,7 @@ final class UiDraw {
     private UiDraw() {}
 
     /** Body text, secondary text and headings, in logical units. */
-    static final float TEXT = 7.5f, SMALL = 6.5f, TITLE = 8.25f;
+    static final float TEXT = 7.5f, SMALL = UiSpace.CAPTION, TITLE = 8.25f;
 
     /** Framebuffer pixels per logical unit for the open menu; text is measured at this density. */
     static float density = 2;
@@ -107,12 +107,29 @@ final class UiDraw {
 
     // ---- shapes -----------------------------------------------------------------------------
 
+    /**
+     * Shapes. Corners are stepped pixel-art chamfers, never smooth: a {@code radius} picks how many GUI pixels are
+     * cut (none at 0, one for small radii, two otherwise), so older call sites keep their relative weight.
+     * Only {@link #circle} stays round (toggle knobs, slider thumbs, status dots, the avatar).
+     */
+    static int steps(float radius, float w, float h) {
+        if (radius <= 0) return 0;
+        int steps = radius < 2.5f ? 1 : UiSpace.CHAMFER;
+        // A cut deeper than a third of the short side reads as a blob, not a corner.
+        return Math.max(0, Math.min(steps, (int) (Math.min(w, h) / 3)));
+    }
+
     static void rect(GuiGraphicsExtractor g, float x, float y, float w, float h, int colour) { UiRender.shape(g, x, y, w, h, 0, colour, colour, 0); }
-    static void rounded(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, 0); }
-    static void gradient(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int top, int bottom) { UiRender.shape(g, x, y, w, h, radius, top, bottom, 0); }
-    static void outline(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float thickness, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, Math.max(.01f, thickness)); }
-    static void shadow(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float blur, int colour) { UiRender.shape(g, x, y, w, h, radius, colour, colour, -Math.max(.5f, blur)); }
-    static void circle(GuiGraphicsExtractor g, float cx, float cy, float r, int colour) { rounded(g, cx - r, cy - r, r * 2, r * 2, r, colour); }
+    static void rounded(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int colour) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), colour, 0); }
+    static void gradient(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int top, int bottom) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), top, bottom, 0); }
+    /** Stepped outline; thickness is rounded to whole GUI pixels (at least one). */
+    static void outline(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float thickness, int colour) { UiRender.chamfer(g, x, y, w, h, steps(radius, w, h), colour, Math.max(1, Math.round(thickness))); }
+    /**
+     * Hard drop shadow, Minecraft style: the shape repeated one GUI pixel down and right. {@code blur} is ignored;
+     * the soft shadows it used to draw are gone.
+     */
+    static void shadow(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, float blur, int colour) { UiRender.chamfer(g, x + 1, y + 1, w, h, steps(radius, w, h), colour, 0); }
+    static void circle(GuiGraphicsExtractor g, float cx, float cy, float r, int colour) { UiRender.shape(g, cx - r, cy - r, r * 2, r * 2, r, colour, colour, 0); }
 
     static void icon(GuiGraphicsExtractor g, String name, float x, float y, float size, int colour) { UiIcons.draw(g, name, x, y, size, colour); }
 

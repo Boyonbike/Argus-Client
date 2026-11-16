@@ -42,17 +42,4 @@ public record UiTheme(int bg, int sunk, int deep, int fill, int line, int text,
                 UiDraw.mix(a.textDim, b.textDim, t), UiDraw.mix(a.on, b.on, t), UiDraw.mix(a.ok, b.ok, t),
                 UiDraw.mix(a.info, b.info, t), UiDraw.mix(a.warn, b.warn, t), UiDraw.mix(a.danger, b.danger, t));
     }
-
-    // ---- Old palette names, kept so screens compile while phase 3 moves them to the roles above. ----
-    @Deprecated public int base() { return bg; }
-    @Deprecated public int mantle() { return sunk; }
-    @Deprecated public int crust() { return deep; }
-    @Deprecated public int surface() { return fill; }
-    @Deprecated public int overlay() { return line; }
-    @Deprecated public int muted() { return textDim; }
-    @Deprecated public int accent() { return on; }
-    @Deprecated public int green() { return ok; }
-    @Deprecated public int blue() { return info; }
-    @Deprecated public int yellow() { return warn; }
-    @Deprecated public int red() { return danger; }
 }

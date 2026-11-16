@@ -118,9 +118,7 @@ final class ColorPicker {
         g.pose().scale(scale, scale);
         g.pose().translate(-originX, -originY);
         try {
-            UiDraw.shadow(g, x, y + 3, W, h, 9, 12, UiDraw.alpha(0xff000000, .4f));
-            UiDraw.rounded(g, x, y, W, h, 9, t.mantle());
-            UiDraw.outline(g, x, y, W, h, 9, .6f, UiDraw.alpha(t.accent(), .45f));
+            UiDraw.panel(g, x, y, W, h, t);
             // Header: before/after swatches, name, close.
             int now = setting.getValue().getRGB();
             checker(g, x + PAD, y + PAD, 14, 14, t);
@@ -128,7 +126,7 @@ final class ColorPicker {
             UiDraw.outline(g, x + PAD, y + PAD, 14, 14, 4, .6f, UiDraw.alpha(t.text(), .25f));
             UiDraw.bold(g, UiDraw.fit(title, W - PAD * 2 - 44), x + PAD + 20, y + PAD + 7, UiDraw.TEXT, t.text());
             boolean closeHover = UiDraw.over(mx, my, x + W - PAD - 12, y + PAD + 1, 12, 12);
-            UiDraw.icon(g, "close", x + W - PAD - 10, y + PAD + 3, 8, closeHover ? t.red() : t.muted());
+            UiDraw.icon(g, "close", x + W - PAD - 10, y + PAD + 3, 8, closeHover ? t.danger() : t.textDim());
             // Saturation/brightness square, drawn as columns of vertical gradients.
             float sx = svX(), sy = svY(), sw = svW();
             int columns = 40;
@@ -157,15 +155,15 @@ final class ColorPicker {
             }
             // Hex entry and revert.
             float ty = hexY();
-            UiDraw.text(g, "Hex", sx, ty + 6, UiDraw.SMALL, t.muted());
+            UiDraw.text(g, "Hex", sx, ty + 6, UiDraw.SMALL, t.textDim());
             hex.place(Math.round(sx + 22), Math.round(ty), Math.round(sw - 22 - 46));
             hex.extractRenderState(g, mx, my, 0);
             float rx = sx + sw - 40;
             boolean revertHover = UiDraw.over(mx, my, rx, ty - 4, 40, 20);
-            UiDraw.rounded(g, rx, ty - 4, 40, 20, 7, UiDraw.mix(t.surface(), t.overlay(), revertHover ? .8f : 0));
+            UiDraw.rounded(g, rx, ty - 4, 40, 20, 7, UiDraw.mix(t.fill(), t.line(), revertHover ? .8f : 0));
             checker(g, rx + 5, ty, 10, 10, t);
             UiDraw.rounded(g, rx + 5, ty, 10, 10, 3, original);
-            UiDraw.text(g, "Undo", rx + 18, ty + 5, 6f, t.text());
+            UiDraw.text(g, "Undo", rx + 18, ty + 5, UiSpace.CAPTION, t.text());
             if (revertHover) host().hostTooltip("cp.revert", "Revert", "Back to the colour it had when you opened this");
             // Rainbow and theme sync.
             float half = (sw - 8) / 2, gy = toggleY();
@@ -173,7 +171,7 @@ final class ColorPicker {
             switchRow(g, "Sync theme", setting.isSynced(), sx + half + 8, gy, half, mx, my, t, "cp.sync");
             // Saved colours.
             float py = paletteY();
-            UiDraw.text(g, "Saved colours", sx, py + 4, UiDraw.SMALL, t.muted());
+            UiDraw.text(g, "Saved colours", sx, py + 4, UiDraw.SMALL, t.textDim());
             var saved = GuiState.preferences().savedColours;
             int per = perRow();
             for (int i = 0; i <= saved.size(); i++) {
@@ -181,14 +179,14 @@ final class ColorPicker {
                 boolean hover = UiDraw.over(mx, my, cx, cy, SWATCH, SWATCH);
                 if (i == saved.size()) {
                     if (saved.size() >= GuiPreferences.MAX_SAVED_COLOURS) break;
-                    UiDraw.rounded(g, cx, cy, SWATCH, SWATCH, 3.5f, UiDraw.mix(t.surface(), t.overlay(), hover ? .9f : 0));
-                    UiDraw.icon(g, "plus", cx + 2, cy + 2, SWATCH - 4, hover ? t.accent() : t.muted());
+                    UiDraw.rounded(g, cx, cy, SWATCH, SWATCH, 3.5f, UiDraw.mix(t.fill(), t.line(), hover ? .9f : 0));
+                    UiDraw.icon(g, "plus", cx + 2, cy + 2, SWATCH - 4, hover ? t.on() : t.textDim());
                     if (hover) host().hostTooltip("cp.add", "Save this colour", "Adds the current colour to your palette");
                 } else {
                     int colour = saved.get(i);
                     checker(g, cx, cy, SWATCH, SWATCH, t);
                     UiDraw.rounded(g, cx, cy, SWATCH, SWATCH, 3.5f, colour);
-                    UiDraw.outline(g, cx, cy, SWATCH, SWATCH, 3.5f, hover ? 1f : .6f, hover ? t.accent() : UiDraw.alpha(t.text(), .2f));
+                    UiDraw.outline(g, cx, cy, SWATCH, SWATCH, 3.5f, hover ? 1f : .6f, hover ? t.on() : UiDraw.alpha(t.text(), .2f));
                     if (hover) host().hostTooltip("cp.saved." + i, "#" + String.format("%08X", colour), "Click to use · right-click to remove");
                 }
             }
@@ -216,8 +214,8 @@ final class ColorPicker {
 
     private void switchRow(GuiGraphicsExtractor g, String label, boolean on, float x, float y, float w, int mx, int my, UiTheme t, String key) {
         boolean hover = UiDraw.over(mx, my, x - 2, y, w + 4, 16);
-        if (hover) UiDraw.rounded(g, x - 2, y, w + 4, 16, 5, UiDraw.alpha(t.surface(), .8f));
-        UiDraw.text(g, label, x + 2, y + 8, 6f, t.text());
+        if (hover) UiDraw.rounded(g, x - 2, y, w + 4, 16, 5, UiDraw.alpha(t.fill(), .8f));
+        UiDraw.text(g, label, x + 2, y + 8, UiSpace.CAPTION, t.text());
         UiDraw.toggle(g, x + w - 19, y + 3, UiAnim.smooth(key, on ? 1 : 0, 16), hover, t);
     }
 

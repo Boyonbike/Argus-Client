@@ -66,10 +66,10 @@ public final class ProxiesScreen extends ProfileManagerScreen {
                 : keep ? "Reconnects through the same proxy after a restart · all proxies are re-checked on launch"
                 : "Every launch starts on a direct connection";
         UiDraw.card(g, x, y, w, CARD_H, dead ? "shield_off" : "shield", "Keep proxy on launch", dead ? "" : sub, 60, t);
-        if (dead) UiDraw.text(g, UiDraw.fit(sub, w - UiDraw.CARD_PAD * 2 - 80, 6f), x + UiDraw.CARD_PAD + 20, y + 21, 6f, t.red());
+        if (dead) UiDraw.text(g, UiDraw.fit(sub, w - UiDraw.CARD_PAD * 2 - 80, UiSpace.CAPTION), x + UiDraw.CARD_PAD + 20, y + 21, UiSpace.CAPTION, t.danger());
         boolean hover = !busy && UiDraw.over(mx, my, x + w - 70, y + 6, 70, 18);
         float on = UiAnim.smooth("px.keep", keep ? 1 : 0, 16);
-        UiDraw.right(g, keep ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.muted(), t.accent(), on));
+        UiDraw.right(g, keep ? "On" : "Off", x + w - UiDraw.CARD_PAD - 24, y + 15, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.on(), on));
         UiDraw.toggle(g, x + w - UiDraw.CARD_PAD - 18, y + 10, on, hover, t);
         if (!busy) hit(x + w - 70, y + 6, 70, 18, () -> change(() -> profiles.setKeepProxy(!keep),
                 keep ? "The proxy will be switched off when the game restarts." : "The switched-on proxy will be kept and re-checked on launch."));
@@ -97,8 +97,8 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         var t = GuiState.theme();
         UiDraw.card(g, x, y, w, FORM_H, "shield", editId == null ? "New proxy" : "Edit proxy", "SOCKS4 or SOCKS5 · reconnect to apply changes", 100, t);
         float right = x + w - 10;
-        right -= pill(g, "Cancel", right, y + 15, mx, my, t.muted(), false, true, () -> { closeForm(); rebuildWidgets(); }) + 4;
-        pill(g, "Save", right, y + 15, mx, my, t.accent(), true, true, this::submitForm);
+        right -= pill(g, "Cancel", right, y + 15, mx, my, t.textDim(), false, true, () -> { closeForm(); rebuildWidgets(); }) + 4;
+        pill(g, "Save", right, y + 15, mx, my, t.on(), true, true, this::submitForm);
         int inner = w - 20, half = (inner - 8) / 2;
         label(g, "Name", x + 10, y + ROW1);
         label(g, "Host", x + 10, y + ROW2);
@@ -108,16 +108,16 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         // SOCKS version as a two-way segmented control.
         float sx = x + w - 10 - typeWidth(), sy = y + ROW1 + 10, sw = typeWidth() / 2f;
         label(g, "Type", sx, y + ROW1);
-        UiDraw.rounded(g, sx, sy - 2, typeWidth(), 20, 7, t.crust());
-        UiDraw.outline(g, sx, sy - 2, typeWidth(), 20, 7, .7f, UiDraw.alpha(t.overlay(), .7f));
+        UiDraw.rounded(g, sx, sy - 2, typeWidth(), 20, 7, t.deep());
+        UiDraw.outline(g, sx, sy - 2, typeWidth(), 20, 7, .7f, UiDraw.alpha(t.line(), .7f));
         float knob = UiAnim.smooth("px.type", type == ProxyEntry.Type.SOCKS5 ? 0 : 1, 18);
-        UiDraw.rounded(g, sx + 2 + knob * sw, sy, sw - 4, 16, 6, UiDraw.alpha(t.accent(), .22f));
+        UiDraw.rounded(g, sx + 2 + knob * sw, sy, sw - 4, 16, 6, t.fill());
         ProxyEntry.Type[] types = {ProxyEntry.Type.SOCKS5, ProxyEntry.Type.SOCKS4};
         for (int i = 0; i < 2; i++) {
             ProxyEntry.Type option = types[i];
             float ox = sx + i * sw;
             boolean on = option == type, hover = UiDraw.over(mx, my, ox, sy - 2, sw, 20);
-            UiDraw.center(g, option.toString(), ox, sy + 8, sw, UiDraw.SMALL, on ? t.accent() : hover ? t.text() : t.muted());
+            UiDraw.center(g, option.toString(), ox, sy + 8, sw, UiDraw.SMALL, on ? t.on() : hover ? t.text() : t.textDim());
             hit(ox, sy - 2, sw, 20, () -> type = option);
         }
     }
@@ -160,27 +160,27 @@ public final class ProxiesScreen extends ProfileManagerScreen {
         // Actions, right to left.
         float right = x + w - 8;
         boolean confirm = p.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS;
-        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.red(), !busy, () -> {
+        right -= confirmPill(g, key + ".del", "Delete", "Really delete?", confirm, deleteAt, CONFIRM_NANOS, right, cy, mx, my, t.danger(), !busy, () -> {
             if (p.id().equals(deleting) && System.nanoTime() - deleteAt < CONFIRM_NANOS) { deleting = null; change(() -> profiles.removeProxy(p.id()), "Proxy removed."); }
             else { deleting = p.id(); deleteAt = System.nanoTime(); }
         }) + 4;
-        right -= pill(g, "Edit", right, cy, mx, my, t.accent(), false, !busy, () -> edit(p)) + 4;
-        right -= pill(g, "Check", right, cy, mx, my, t.blue(), false, !busy,
+        right -= pill(g, "Edit", right, cy, mx, my, t.on(), false, !busy, () -> edit(p)) + 4;
+        right -= pill(g, "Check", right, cy, mx, my, t.info(), false, !busy,
                 () -> background("Checking " + p.address() + "…", () -> ProxyChecker.check(p, 5000), r -> {
                     results.put(p.id(), r);
                     if (r.alive()) ok(r.message() + " · " + r.latency() + " ms"); else error(r.message());
                 })) + 4;
         float textX = x + 36, room = right - textX - 6;
-        UiDraw.bold(g, UiDraw.fit(p.name().isBlank() ? p.address() : p.name(), room), textX, cy - 5, UiDraw.TEXT, enabled ? t.accent() : t.text());
-        float cx = textX + chip(g, p.type().toString(), textX, cy + 6.5f, t.blue()) + 4;
+        UiDraw.bold(g, UiDraw.fit(p.name().isBlank() ? p.address() : p.name(), room), textX, cy - 5, UiDraw.TEXT, enabled ? t.on() : t.text());
+        float cx = textX + chip(g, p.type().toString(), textX, cy + 6.5f, t.info()) + 4;
         var r = results.get(p.id());
         boolean tcpOnly = p.type() == ProxyEntry.Type.SOCKS4;
         String state = r == null ? (ProxyHealth.checking() ? "Checking…" : "Unchecked") : !r.alive() ? (enabled ? "Dead" : "Unreachable") : tcpOnly ? "TCP reachable" : r.latency() + " ms";
-        int tint = r == null ? t.muted() : shouldCleanUp(p, r) ? t.red() : r.latency() >= 500 ? t.yellow() : t.green();
+        int tint = r == null ? t.textDim() : shouldCleanUp(p, r) ? t.danger() : r.latency() >= 500 ? t.warn() : t.ok();
         float sw = chip(g, state, cx, cy + 6.5f, tint);
         if (r != null && !r.alive() && UiDraw.over(mx, my, cx, cy + 2, sw, 9)) tooltip(key + ".err", "Unreachable", r.message());
         cx += sw + 5;
-        if (!p.name().isBlank()) UiDraw.text(g, UiDraw.fit(p.address(), right - cx - 6, 5.5f), cx, cy + 6.5f, 5.5f, UiDraw.alpha(t.muted(), .7f));
+        if (!p.name().isBlank()) UiDraw.text(g, UiDraw.fit(p.address(), right - cx - 6, UiSpace.CAPTION), cx, cy + 6.5f, UiSpace.CAPTION, UiDraw.alpha(t.textDim(), .7f));
     }
 
     // ---- import, checks and clean-up --------------------------------------------------------------

@@ -272,8 +272,8 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             boxShown = boxing ? UiAnim.approach(boxShown, 1, 22) : 0;
             if (boxing) {
                 float bx = Math.min(boxX0, boxX1), by = Math.min(boxY0, boxY1), bw = Math.abs(boxX1 - boxX0), bh = Math.abs(boxY1 - boxY0);
-                UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(t.accent(), .08f * boxShown));
-                UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(t.accent(), .7f * boxShown));
+                UiDraw.rounded(g, bx, by, bw, bh, 3, UiDraw.alpha(t.on(), .08f * boxShown));
+                UiDraw.outline(g, bx, by, bw, bh, 3, .8f, UiDraw.alpha(t.on(), .7f * boxShown));
             }
             // The toolbar and Elements panel rise in and sink out like the menu pages do.
             g.pose().pushMatrix();
@@ -282,7 +282,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                 toolbar(g, mouseX, mouseY, t);
                 panel(g, mouseX, mouseY, t);
             } finally { g.pose().popMatrix(); }
-            hints(g, t);
+            hints(g, mouseX, mouseY, t);
             drawTooltip(g, t);
         } finally {
             UiRender.opacity = before;
@@ -337,7 +337,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             float w = side == Side.LEFT || side == Side.RIGHT ? z : lw(), h = side == Side.TOP || side == Side.BOTTOM ? z : lh();
             UiDraw.rect(g, x, y, w, h, UiDraw.alpha(0xff000000, .4f * a));
             float lx = side == Side.LEFT ? z : side == Side.RIGHT ? lw() - z : 0, ly = side == Side.TOP ? z : side == Side.BOTTOM ? lh() - z : 0;
-            int edge = UiDraw.alpha(t.accent(), (focus ? .9f : .5f) * a);
+            int edge = UiDraw.alpha(t.on(), (focus ? .9f : .5f) * a);
             if (side == Side.LEFT || side == Side.RIGHT) UiDraw.rect(g, lx - .5f, 0, 1, lh(), edge);
             else UiDraw.rect(g, 0, ly - .5f, lw(), 1, edge);
             if (!focus) continue;
@@ -347,8 +347,8 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             float py = side == Side.TOP ? ly + 6 : side == Side.BOTTOM ? ly - ph - 6 : (lh() - ph) / 2;
             float before = UiRender.opacity;
             UiRender.opacity = before * a;
-            UiDraw.rounded(g, px, py, pw, ph, ph / 2, UiDraw.alpha(t.mantle(), .92f));
-            UiDraw.outline(g, px, py, pw, ph, ph / 2, .6f, UiDraw.alpha(t.accent(), .6f));
+            UiDraw.rounded(g, px, py, pw, ph, ph / 2, UiDraw.alpha(t.sunk(), .92f));
+            UiDraw.outline(g, px, py, pw, ph, ph / 2, .6f, UiDraw.alpha(t.on(), .6f));
             UiDraw.text(g, label, px + 7, py + ph / 2, UiDraw.SMALL, t.text());
             UiRender.opacity = before;
         }
@@ -377,17 +377,17 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         fade(pickFade, selection);
         pickFade.forEach((widget, a) -> {
             float[] b = bounds(widget);
-            UiDraw.rounded(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, UiDraw.alpha(t.accent(), .1f * a));
-            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), a));
+            UiDraw.rounded(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, UiDraw.alpha(t.on(), .1f * a));
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.on(), a));
         });
         if (dragged == null) { ghostPlaced = false; ghostShown = 0; }
         if (lineOwner != null || !groupStart.isEmpty() || boxing || dragged != null) hoverFade.clear();
         if (lineOwner != null) {
             for (var drawn : lineOwner.lines()) if (drawn.row() == line) {
-                UiDraw.outline(g, logical(drawn.x()) - 2, logical(drawn.y()) - 2, logical(drawn.w()) + 4, logical(drawn.h()) + 4, 3, 1, t.accent());
+                UiDraw.outline(g, logical(drawn.x()) - 2, logical(drawn.y()) - 2, logical(drawn.w()) + 4, logical(drawn.h()) + 4, 3, 1, t.on());
             }
             float[] stack = lineOwner.stackBounds();
-            if (stack != null) UiDraw.outline(g, logical(stack[0]) - 2, logical(stack[1]) - 2, logical(stack[2]) + 4, logical(stack[3]) + 4, 3, .6f, UiDraw.alpha(t.accent(), .45f));
+            if (stack != null) UiDraw.outline(g, logical(stack[0]) - 2, logical(stack[1]) - 2, logical(stack[2]) + 4, logical(stack[3]) + 4, 3, .6f, UiDraw.alpha(t.on(), .45f));
             return;
         }
         if (!groupStart.isEmpty() || boxing) return;
@@ -398,10 +398,10 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             ghostX = UiAnim.approach(ghostX, targetX, 26); ghostY = UiAnim.approach(ghostY, targetY, 26);
             ghostShown = UiAnim.approach(ghostShown, Math.abs(targetX - b[0]) > .5f || Math.abs(targetY - b[1]) > .5f ? 1 : 0, 18);
             if (ghostShown > .01f) {
-                UiDraw.rounded(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, UiDraw.alpha(t.accent(), .12f * ghostShown));
-                UiDraw.outline(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, .8f, UiDraw.alpha(t.accent(), .55f * ghostShown));
+                UiDraw.rounded(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, UiDraw.alpha(t.on(), .12f * ghostShown));
+                UiDraw.outline(g, ghostX - 1, ghostY - 1, b[2] + 2, b[3] + 2, 3, .8f, UiDraw.alpha(t.on(), .55f * ghostShown));
             }
-            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, t.accent());
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, t.on());
             return;
         }
         edgeHover = null;
@@ -414,7 +414,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                 var under = list.lineAt(rawX, rawY);
                 if (under != null) {
                     float a = UiAnim.smooth("hud.line." + under.x() + "." + under.y(), 0, 1, 22);
-                    UiDraw.outline(g, logical(under.x()) - 2, logical(under.y()) - 2, logical(under.w()) + 4, logical(under.h()) + 4, 3, 1, UiDraw.alpha(t.accent(), .7f * a));
+                    UiDraw.outline(g, logical(under.x()) - 2, logical(under.y()) - 2, logical(under.w()) + 4, logical(under.h()) + 4, 3, 1, UiDraw.alpha(t.on(), .7f * a));
                     hovered = null;
                 }
             }
@@ -423,7 +423,7 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         fade(hoverFade, hovered == null ? List.of() : List.of(hovered));
         hoverFade.forEach((widget, a) -> {
             float[] b = bounds(widget);
-            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.accent(), .7f * a));
+            UiDraw.outline(g, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, 1, UiDraw.alpha(t.on(), .7f * a));
         });
     }
 
@@ -439,15 +439,13 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         barX = (lw() - barW) / 2;
         float prior = UiRender.opacity;
         UiRender.opacity = prior * (busy() ? .35f : 1);
-        UiDraw.shadow(g, barX, BAR_Y + 1, barW, BAR_H, BAR_H / 2, 8, UiDraw.alpha(0xff000000, .28f));
-        UiDraw.rounded(g, barX, BAR_Y, barW, BAR_H, BAR_H / 2, t.mantle());
-        UiDraw.outline(g, barX, BAR_Y, barW, BAR_H, BAR_H / 2, .6f, UiDraw.alpha(t.overlay(), .5f));
+        UiDraw.panel(g, barX, BAR_Y, barW, BAR_H, t);
         float x = barX + 12, cy = BAR_Y + BAR_H / 2;
-        UiDraw.icon(g, "hud", x, cy - 4.5f, 9, t.accent());
+        UiDraw.icon(g, "hud", x, cy - 4.5f, 9, t.on());
         UiDraw.bold(g, title, x + 14, cy, UiDraw.TEXT, t.text());
         x = barX + 10 + titleW;
-        UiDraw.rect(g, x - 6, BAR_Y + 8, .6f, BAR_H - 16, UiDraw.alpha(t.overlay(), .7f));
-        UiDraw.text(g, count, x, cy, UiDraw.SMALL, t.muted());
+        UiDraw.rect(g, x - 6, BAR_Y + 8, .6f, BAR_H - 16, UiDraw.alpha(t.line(), .7f));
+        UiDraw.text(g, count, x, cy, UiDraw.SMALL, t.textDim());
         x += countW;
         for (int i = 0; i < BUTTONS.length; i++) {
             float by = BAR_Y + (BAR_H - BTN_H) / 2;
@@ -456,9 +454,9 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             boolean hudOn = hud().isToggled();
             boolean selected = i == B_ELEMENTS && !panelHidden || i == B_HUD && hudOn;
             float h = UiAnim.smooth("hud.btn." + i, hover ? 1 : 0, 18), s = UiAnim.smooth("hud.btn.on." + i, selected ? 1 : 0, 16);
-            if (s > .01f) UiDraw.rounded(g, x, by, buttonW[i], BTN_H, BTN_H / 2, UiDraw.alpha(t.accent(), .2f * s));
-            if (h > 0 && s < 1) UiDraw.rounded(g, x, by, buttonW[i], BTN_H, BTN_H / 2, UiDraw.alpha(t.surface(), h * .7f * (1 - s)));
-            int colour = UiDraw.mix(UiDraw.mix(t.muted(), t.text(), h), t.accent(), s);
+            if (s > .01f) UiDraw.rounded(g, x, by, buttonW[i], BTN_H, BTN_H / 2, UiDraw.alpha(t.on(), .2f * s));
+            if (h > 0 && s < 1) UiDraw.rounded(g, x, by, buttonW[i], BTN_H, BTN_H / 2, UiDraw.alpha(t.fill(), h * .7f * (1 - s)));
+            int colour = UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), h), t.on(), s);
             UiDraw.icon(g, BUTTON_ICONS[i], x + 9, cy - 4, 8, colour);
             UiDraw.text(g, BUTTONS[i], x + 21, cy, colour);
             if (i == B_HUD) UiDraw.toggle(g, x + buttonW[i] - 27, cy - 5, UiAnim.smooth("hud.btn.switch", hudOn ? 1 : 0, 16), hover, t);
@@ -493,41 +491,39 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             // Header doubles as the drag handle.
             boolean headHover = !busy() && !draggingPanel && UiDraw.over(mx, my, x, y, PANEL_W, PANEL_HEAD);
             float hh = UiAnim.smooth("hud.panel.head", headHover || draggingPanel ? 1 : 0, 18);
-            UiDraw.circle(g, x + 17, y + 15, 8, UiDraw.alpha(t.accent(), .16f));
-            UiDraw.icon(g, "plus", x + 13, y + 11, 8, t.accent());
-            UiDraw.bold(g, "Elements", x + 30, y + 11, UiDraw.TITLE, t.text());
-            UiDraw.text(g, "Switch one on to add it to your screen", x + 30, y + 21, 6f, t.muted());
+            UiDraw.text(g, "Elements", x + UiSpace.WINDOW_PAD, y + 11, UiSpace.ROW_TITLE, t.text());
+            UiDraw.text(g, "Switch one on to add it to your screen", x + UiSpace.WINDOW_PAD, y + 21, UiSpace.CAPTION, t.textDim());
             boolean closeHover = headHover && UiDraw.over(mx, my, x + PANEL_W - 20, y + 7, 14, 14);
             float ch = UiAnim.smooth("hud.panel.close", closeHover ? 1 : 0, 18);
-            if (ch > 0) UiDraw.circle(g, x + PANEL_W - 13, y + 14, 7, UiDraw.alpha(t.surface(), ch));
-            UiDraw.icon(g, "close", x + PANEL_W - 17, y + 10, 8, UiDraw.alpha(UiDraw.mix(t.muted(), t.text(), ch), .5f + hh * .5f));
+            if (ch > 0) UiDraw.circle(g, x + PANEL_W - 13, y + 14, 7, UiDraw.alpha(t.fill(), ch));
+            UiDraw.icon(g, "close", x + PANEL_W - 17, y + 10, 8, UiDraw.alpha(UiDraw.mix(t.textDim(), t.text(), ch), .5f + hh * .5f));
             if (closeHover) tooltip("hud.panel.close", "Hide elements", "Show them again with Elements in the toolbar");
             else if (headHover) tooltip("hud.panel.head", "Elements", "Drag the header to move this panel");
-            UiDraw.rect(g, x + 1, y + PANEL_HEAD, PANEL_W - 2, .6f, UiDraw.alpha(t.overlay(), .45f));
+            UiDraw.rect(g, x + 1, y + PANEL_HEAD, PANEL_W - 2, .6f, UiDraw.alpha(t.line(), .45f));
             // Search.
             float sx = x + 10, sy = y + PANEL_HEAD + 7, sw = PANEL_W - 20, sh = 18;
             boolean searchHover = !busy() && UiDraw.over(mx, my, sx, sy, sw, sh);
             float sf = UiAnim.smooth("hud.search", searchFocused ? 1 : 0, 16), shv = UiAnim.smooth("hud.search.h", searchHover ? 1 : 0, 18);
-            UiDraw.rounded(g, sx, sy, sw, sh, sh / 2, UiDraw.mix(t.surface(), t.overlay(), shv * .5f));
-            UiDraw.outline(g, sx, sy, sw, sh, sh / 2, .7f, UiDraw.mix(UiDraw.alpha(t.overlay(), .5f), t.accent(), sf));
-            UiDraw.icon(g, "search", sx + 7, sy + 5, 8, UiDraw.mix(t.muted(), t.accent(), sf));
+            UiDraw.rounded(g, sx, sy, sw, sh, sh / 2, UiDraw.mix(t.fill(), t.line(), shv * .5f));
+            UiDraw.outline(g, sx, sy, sw, sh, sh / 2, .7f, UiDraw.mix(UiDraw.alpha(t.line(), .5f), t.on(), sf));
+            UiDraw.icon(g, "search", sx + 7, sy + 5, 8, UiDraw.mix(t.textDim(), t.on(), sf));
             String visible = UiDraw.fit(query, sw - 36);
-            if (query.isEmpty()) UiDraw.text(g, "Search elements…", sx + 19, sy + sh / 2, UiDraw.alpha(t.muted(), .8f));
+            if (query.isEmpty()) UiDraw.text(g, "Search elements…", sx + 19, sy + sh / 2, UiDraw.alpha(t.textDim(), .8f));
             else UiDraw.text(g, visible, sx + 19, sy + sh / 2, t.text());
             if (searchFocused && (System.currentTimeMillis() / 530) % 2 == 0)
-                UiDraw.rect(g, sx + 19 + (query.isEmpty() ? 0 : UiDraw.width(visible) + .8f), sy + 5, .8f, sh - 10, t.accent());
+                UiDraw.rect(g, sx + 19 + (query.isEmpty() ? 0 : UiDraw.width(visible) + .8f), sy + 5, .8f, sh - 10, t.on());
             if (!query.isEmpty()) {
                 boolean clearHover = UiDraw.over(mx, my, sx + sw - 16, sy + 3, 12, 12);
-                UiDraw.icon(g, "close", sx + sw - 14, sy + 5, 8, clearHover ? t.text() : t.muted());
+                UiDraw.icon(g, "close", sx + sw - 14, sy + 5, 8, clearHover ? t.text() : t.textDim());
             }
             // Filter segments.
             float fy = sy + sh + 6, fw = (PANEL_W - 20) / 3f, fh = 15;
-            UiDraw.rounded(g, x + 10, fy, PANEL_W - 20, fh, fh / 2, UiDraw.alpha(t.surface(), .55f));
+            UiDraw.rounded(g, x + 10, fy, PANEL_W - 20, fh, fh / 2, UiDraw.alpha(t.fill(), .55f));
             float indicator = UiAnim.smooth("hud.filter", filter, 18);
-            UiDraw.rounded(g, x + 10 + fw * indicator + 1, fy + 1, fw - 2, fh - 2, (fh - 2) / 2, UiDraw.alpha(t.accent(), .22f));
+            UiDraw.rounded(g, x + 10 + fw * indicator + 1, fy + 1, fw - 2, fh - 2, (fh - 2) / 2, t.fill());
             for (int i = 0; i < FILTERS.length; i++) {
                 boolean hover = !busy() && UiDraw.over(mx, my, x + 10 + fw * i, fy, fw, fh);
-                int colour = i == filter ? t.accent() : hover ? t.text() : t.muted();
+                int colour = i == filter ? t.on() : hover ? t.text() : t.textDim();
                 UiDraw.center(g, FILTERS[i], x + 10 + fw * i, fy + fh / 2, fw, UiDraw.SMALL, colour);
             }
             // List.
@@ -540,9 +536,8 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                 boolean none = filter == 1 && query.isBlank();
                 String empty = elements().isEmpty() ? "No HUD elements found" : !query.isBlank() ? "Nothing matches “" + UiDraw.fit(query.trim(), 70) + "”"
                         : none ? "Nothing on screen yet" : "Everything is on screen";
-                UiDraw.icon(g, none ? "plus" : "search", x + PANEL_W / 2 - 6, listTop + 18, 12, UiDraw.alpha(t.muted(), .5f));
-                UiDraw.center(g, empty, x, listTop + 42, PANEL_W, UiDraw.SMALL, t.muted());
-                if (none) UiDraw.center(g, "Switch elements on under All", x, listTop + 53, PANEL_W, 6f, UiDraw.alpha(t.muted(), .7f));
+                UiDraw.center(g, empty, x, listTop + 20, PANEL_W, UiSpace.CAPTION, t.textDim());
+                if (none) UiDraw.center(g, "Switch elements on under All", x, listTop + 31, PANEL_W, UiSpace.CAPTION, t.textDim());
             }
             g.enableScissor(Math.round(x + 2), Math.round(listTop), Math.round(x + PANEL_W - 2), Math.round(listBottom));
             try {
@@ -552,11 +547,11 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                     row(g, shown.get(i), x + 8, ry, PANEL_W - 16, mx, my, t);
                 }
             } finally { g.disableScissor(); }
-            if (scroll > .5f) UiDraw.gradient(g, x + 1, listTop, PANEL_W - 2, 10, 0, t.base(), UiDraw.alpha(t.base(), 0));
-            if (scroll < max - .5f) UiDraw.gradient(g, x + 1, listBottom - 10, PANEL_W - 2, 10, 0, UiDraw.alpha(t.base(), 0), t.base());
+            if (scroll > .5f) UiDraw.gradient(g, x + 1, listTop, PANEL_W - 2, 10, 0, t.bg(), UiDraw.alpha(t.bg(), 0));
+            if (scroll < max - .5f) UiDraw.gradient(g, x + 1, listBottom - 10, PANEL_W - 2, 10, 0, UiDraw.alpha(t.bg(), 0), t.bg());
             if (max > 0) {
                 float track = listBottom - listTop, thumb = Math.max(16, track * track / content);
-                UiDraw.rounded(g, x + PANEL_W - 5, listTop + (track - thumb) * (scroll / max), 2, thumb, 1, UiDraw.alpha(t.overlay(), .8f));
+                UiDraw.rounded(g, x + PANEL_W - 5, listTop + (track - thumb) * (scroll / max), 2, thumb, 1, UiDraw.alpha(t.line(), .8f));
             }
         } finally {
             g.pose().popMatrix();
@@ -569,14 +564,12 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         String key = "hud.row." + module.getName();
         float hv = UiAnim.smooth(key, hover ? 1 : 0, 18);
         float on = UiAnim.smooth(key + ".on", module.isToggled() ? 1 : 0, 16);
-        UiDraw.rounded(g, x, y, w, ROW_H, 7, UiDraw.mix(UiDraw.alpha(t.mantle(), .55f), t.surface(), hv * .75f));
-        if (on > .01f) UiDraw.rounded(g, x, y + 7, 2, ROW_H - 14, 1, UiDraw.alpha(t.accent(), on));
-        float cx = x + 16, cy = y + ROW_H / 2;
-        UiDraw.circle(g, cx, cy, 9, UiDraw.mix(UiDraw.alpha(t.surface(), .9f), UiDraw.alpha(t.accent(), .2f), on));
-        UiDraw.icon(g, icon(module), cx - 4.5f, cy - 4.5f, 9, UiDraw.mix(t.muted(), t.accent(), on));
-        float textX = x + 31, reserve = 24 + (hv > .01f ? 14 : 0);
-        UiDraw.bold(g, UiDraw.fit(GuiState.title(module.getName()), w - (textX - x) - reserve), textX, y + 11, UiDraw.TEXT, t.text());
-        UiDraw.text(g, UiDraw.fit(description(module), w - (textX - x) - reserve, 6f), textX, y + 21, 6f, t.muted());
+        // Flat row: a fill only under the pointer. No icon badge; the toggle carries the state.
+        if (hv > .01f) UiDraw.rounded(g, x, y, w, ROW_H, 2, UiDraw.alpha(t.fill(), hv));
+        float cy = y + ROW_H / 2;
+        float textX = x + UiSpace.S2, reserve = 24 + (hv > .01f ? 14 : 0);
+        UiDraw.text(g, UiDraw.fit(GuiState.title(module.getName()), w - (textX - x) - reserve, UiSpace.BODY), textX, y + 11, UiSpace.BODY, t.text());
+        UiDraw.text(g, UiDraw.fit(description(module), w - (textX - x) - reserve, UiSpace.CAPTION), textX, y + 21, UiSpace.CAPTION, t.textDim());
         float tx = x + w - 24, ty = cy - 5;
         UiDraw.toggle(g, tx, ty, on, hover && UiDraw.over(mx, my, tx - 2, ty - 3, 22, 16), t);
         if (hv > .01f) {
@@ -584,15 +577,20 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
             boolean gearHover = hover && UiDraw.over(mx, my, gx - 2, cy - 6, 12, 12);
             float before = UiRender.opacity;
             UiRender.opacity = before * hv;
-            if (gearHover) UiDraw.circle(g, gx + 4, cy, 6.5f, t.overlay());
-            UiDraw.icon(g, "sliders", gx, cy - 4, 8, gearHover ? t.text() : t.muted());
+            if (gearHover) UiDraw.circle(g, gx + 4, cy, 6.5f, t.line());
+            UiDraw.icon(g, "sliders", gx, cy - 4, 8, gearHover ? t.text() : t.textDim());
             UiRender.opacity = before;
             if (gearHover) tooltip(key + ".gear", GuiState.title(module.getName()) + " settings", "Or right-click the element on screen");
             else if (hover) tooltip(key, GuiState.title(module.getName()), module.isToggled() ? "Click to select it on screen · the switch removes it" : "Click to add it to your screen");
         }
     }
 
-    private void hints(GuiGraphicsExtractor g, UiTheme t) {
+    /**
+     * Bottom hint. While idle or with a selection it is a key legend (keycap + verb, at most four, the rest in the
+     * tooltip of a "?" cap); while something is happening it is one plain sentence about that.
+     * The legend is encoded as one string ("cap\tverb" lines) so it can crossfade like the sentences do.
+     */
+    private void hints(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         var p = GuiState.preferences();
         String text = edgeDrag != null ? "Drag to set the " + sideName(edgeDrag).toLowerCase(Locale.ROOT) + " safe zone · each edge has its own"
                 : boxing ? "Drag over elements to select them · Shift adds to the selection"
@@ -600,14 +598,55 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
                 : !groupStart.isEmpty() ? (p.snap ? "Moving " + groupStart.size() + " elements together on the grid" : "Moving " + groupStart.size() + " elements together")
                 : dragged != null ? (p.snap ? "Snaps to the grid" + (p.hudGap > 0 ? " · keeps a " + p.hudGap + " gap" : "") : "Snapping is off in Appearance") + " · drop in a corner to stack"
                 : !hud().isToggled() ? "The HUD is off, so nothing shows in game · switch it on in the toolbar"
-                : !picked.isEmpty() ? picked.size() + " selected · drag to move together · Del removes · Arrows nudge · Esc clears"
-                : "Drag to move · Drag empty space to select · Lines move on their own · R restacks · Right-click for settings · Drag an edge for its safe zone";
-        text = UiDraw.fit(text, lw() - 40, UiDraw.SMALL);
-        // The pill eases to the new text's width and the text crossfades.
-        float target = UiDraw.width(text, UiDraw.SMALL) + 20, w = UiAnim.smooth("hud.hints.w", target, target, 18), h = 16, x = (lw() - w) / 2, y = lh() - h - 8;
-        UiDraw.rounded(g, x, y, w, h, h / 2, UiDraw.alpha(t.mantle(), .78f));
-        UiDraw.outline(g, x, y, w, h, h / 2, .6f, UiDraw.alpha(t.overlay(), .4f));
-        UiMotion.text(g, "hud.hints", text, l -> UiDraw.center(g, l, x, y + h / 2, w, UiDraw.SMALL, t.muted()));
+                : !picked.isEmpty() ? picked.size() + " selected\nDrag\tmove together\nDel\tremove\nArrows\tnudge\nEsc\tclear"
+                : "Drag\tmove\nDrag space\tselect\nR\trestack\nRight-click\tsettings\n?\tmore";
+        boolean legend = text.indexOf('\t') >= 0;
+        if (!legend) text = UiDraw.fit(text, lw() - 40, UiSpace.CAPTION);
+        float target = (legend ? legendWidth(text) : UiDraw.width(text, UiSpace.CAPTION)) + UiSpace.S4;
+        float w = UiAnim.smooth("hud.hints.w", target, target, 18), h = 17, x = (lw() - w) / 2, y = lh() - h - 8;
+        UiDraw.rounded(g, x, y, w, h, 2, t.sunk());
+        UiDraw.outline(g, x, y, w, h, 2, 1, t.line());
+        UiMotion.text(g, "hud.hints", text, l -> {
+            if (l.indexOf('\t') < 0) { UiDraw.center(g, l, x, y + h / 2, w, UiSpace.CAPTION, t.textDim()); return; }
+            drawLegend(g, l, x + (w - legendWidth(l)) / 2, y + h / 2, t);
+        });
+        if (legend && text.contains("?\t") && UiDraw.over(mx, my, x, y, w, h))
+            tooltip("hud.hints.more", "More", "Lines of an element move on their own", "Drag a screen edge to set its safe zone");
+    }
+
+    private static final float CAP_PAD = 3, CAP_GAP = 4, ENTRY_GAP = 10;
+
+    private static float legendWidth(String legend) {
+        float w = 0;
+        String[] entries = legend.split("\n");
+        for (int i = 0; i < entries.length; i++) {
+            String[] parts = entries[i].split("\t", 2);
+            if (i > 0) w += ENTRY_GAP;
+            w += parts.length == 1 ? UiDraw.width(parts[0], UiSpace.CAPTION)
+                    : UiDraw.width(parts[0], UiSpace.CAPTION) + CAP_PAD * 2 + CAP_GAP + UiDraw.width(parts[1], UiSpace.CAPTION);
+        }
+        return w;
+    }
+
+    /** Keycaps in a raised fill with the verb after each; a line without a tab (e.g. "3 selected") is a plain label. */
+    private static void drawLegend(GuiGraphicsExtractor g, String legend, float x, float cy, UiTheme t) {
+        String[] entries = legend.split("\n");
+        for (int i = 0; i < entries.length; i++) {
+            String[] parts = entries[i].split("\t", 2);
+            if (i > 0) x += ENTRY_GAP;
+            if (parts.length == 1) {
+                UiDraw.text(g, parts[0], x, cy, UiSpace.CAPTION, t.text());
+                x += UiDraw.width(parts[0], UiSpace.CAPTION);
+                continue;
+            }
+            float capW = UiDraw.width(parts[0], UiSpace.CAPTION) + CAP_PAD * 2;
+            UiDraw.box(g, x, cy - 5.5f, capW, 11, UiSpace.CHAMFER_SMALL, t.fill());
+            UiDraw.rect(g, x + 1, cy + 4.5f, capW - 2, 1, t.line());
+            UiDraw.text(g, parts[0], x + CAP_PAD, cy - .5f, UiSpace.CAPTION, t.text());
+            x += capW + CAP_GAP;
+            UiDraw.text(g, parts[1], x, cy, UiSpace.CAPTION, t.textDim());
+            x += UiDraw.width(parts[1], UiSpace.CAPTION);
+        }
     }
 
     private void tooltip(Object owner, String... lines) { tooltipOwner = owner; tooltipLines = lines; }
@@ -626,13 +665,11 @@ public final class ArgusHudEditorScreen extends HudEditorScreen {
         float x = Math.clamp(mouseX + 12, 6, Math.max(6, lw() - w - 6)), y = Math.min(mouseY + 14, lh() - h - 6) + (1 - shownT) * 3;
         float before = UiRender.opacity;
         UiRender.opacity = before * shownT;
-        UiDraw.shadow(g, x, y + 2, w, h, 6, 8, UiDraw.alpha(0xff000000, .35f));
-        UiDraw.rounded(g, x, y, w, h, 6, t.mantle());
-        UiDraw.outline(g, x, y, w, h, 6, .6f, UiDraw.alpha(t.overlay(), .8f));
+        UiDraw.panel(g, x, y, w, h, t);
         for (int i = 0; i < tooltipLines.length; i++) {
             String line = UiDraw.fit(tooltipLines[i], w - 16, i == 0 ? UiDraw.TEXT : UiDraw.SMALL);
-            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.accent());
-            else UiDraw.text(g, line, x + 8, y + 4 + lineH * i + lineH / 2 + 1, UiDraw.SMALL, t.muted());
+            if (i == 0) UiDraw.bold(g, line, x + 8, y + 4 + lineH / 2 + 1, UiDraw.TEXT, t.on());
+            else UiDraw.text(g, line, x + 8, y + 4 + lineH * i + lineH / 2 + 1, UiDraw.SMALL, t.textDim());
         }
         UiRender.opacity = before;
     }

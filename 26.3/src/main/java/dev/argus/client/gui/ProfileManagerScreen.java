@@ -108,7 +108,7 @@ abstract class ProfileManagerScreen extends UiScreen {
         float hv = UiAnim.smooth("pm." + label + "." + Math.round(cy) + "." + Math.round(right), hover ? 1 : 0, 20);
         float before = UiRender.opacity;
         if (!enabled) UiRender.opacity = before * .45f;
-        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, filled ? UiDraw.alpha(tint, .22f + hv * .14f) : UiDraw.mix(t.surface(), t.overlay(), hv * .8f));
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, filled ? UiDraw.alpha(tint, .22f + hv * .14f) : UiDraw.mix(t.fill(), t.line(), hv * .8f));
         UiDraw.center(g, label, px, cy, pw, UiDraw.SMALL, filled ? tint : UiDraw.mix(t.text(), tint, hv));
         UiRender.opacity = before;
         if (enabled) hits.add(new Hit(px, cy - 7, pw, 14, drawingList, action));
@@ -128,7 +128,7 @@ abstract class ProfileManagerScreen extends UiScreen {
         float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".arm", armed ? 1 : 0, 18);
         float before = UiRender.opacity;
         if (!enabled) UiRender.opacity = before * .45f;
-        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
+        UiDraw.rounded(g, px, cy - 7, pw, 14, 7, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hv * .8f), UiDraw.alpha(tint, .22f + hv * .14f), on));
         int colour = UiDraw.mix(UiDraw.mix(t.text(), tint, hv), tint, on);
         UiMotion.crossfade(g, key + ".label", shown, l -> UiDraw.center(g, l, px, cy, pw, UiDraw.SMALL, colour));
         if (armed) UiMotion.drain(g, px + 5, cy + 4.6f, pw - 10, armedAt, window, UiDraw.alpha(tint, .8f));
@@ -142,9 +142,9 @@ abstract class ProfileManagerScreen extends UiScreen {
 
     /** Coloured label chip; returns its width. */
     protected static float chip(GuiGraphicsExtractor g, String label, float x, float cy, int tint) {
-        float cw = UiDraw.width(label, 5.5f) + 10;
+        float cw = UiDraw.width(label, UiSpace.CAPTION) + 10;
         UiDraw.rounded(g, x, cy - 4.5f, cw, 9, 4.5f, UiDraw.alpha(tint, .16f));
-        UiDraw.center(g, label, x, cy, cw, 5.5f, tint);
+        UiDraw.center(g, label, x, cy, cw, UiSpace.CAPTION, tint);
         return cw;
     }
     /** Round tinted badge holding an icon, centred on (cx, cy). */
@@ -153,7 +153,7 @@ abstract class ProfileManagerScreen extends UiScreen {
         UiDraw.icon(g, icon, cx - 4.5f, cy - 4.5f, 9, tint);
     }
     /** Small muted caption above a form field. */
-    protected static void label(GuiGraphicsExtractor g, String text, float x, float cy) { UiDraw.text(g, text, x, cy, 6f, GuiState.theme().muted()); }
+    protected static void label(GuiGraphicsExtractor g, String text, float x, float cy) { UiDraw.text(g, text, x, cy, UiSpace.CAPTION, GuiState.theme().textDim()); }
 
     // ---- messages and background work -----------------------------------------------------------
 
@@ -200,25 +200,25 @@ abstract class ProfileManagerScreen extends UiScreen {
         UiDraw.panel(g, left, top, panelWidth, panelHeight, t);
         // Header: back chevron, title and a status chip on the right.
         float bh = UiAnim.smooth("pm.back", UiDraw.over(mx, my, left + 10, top + 10, 18, 18) ? 1 : 0, 18);
-        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.surface(), t.overlay(), bh));
-        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.muted(), t.text(), bh));
+        UiDraw.circle(g, left + 19, top + 19, 9, UiDraw.mix(t.fill(), t.line(), bh));
+        UiDraw.icon(g, "chevron_left", left + 15, top + 15, 8, UiDraw.mix(t.textDim(), t.text(), bh));
         String title = getTitle().getString();
         UiDraw.bold(g, title, left + 36, top + 19, UiDraw.TITLE, t.text());
         float room = panelWidth - 36 - UiDraw.width(title, UiDraw.TITLE) - 34;
         String status = UiDraw.fit(status(), room - 20, UiDraw.SMALL);
         float sw = UiDraw.width(status, UiDraw.SMALL) + 20, sx = left + panelWidth - 12 - sw;
-        int dot = statusGood() ? t.green() : t.muted();
-        UiDraw.rounded(g, sx, top + 12, sw, 14, 7, UiDraw.alpha(t.mantle(), .9f));
-        UiDraw.outline(g, sx, top + 12, sw, 14, 7, .6f, UiDraw.alpha(t.overlay(), .5f));
+        int dot = statusGood() ? t.ok() : t.textDim();
+        UiDraw.rounded(g, sx, top + 12, sw, 14, 7, UiDraw.alpha(t.sunk(), .9f));
+        UiDraw.outline(g, sx, top + 12, sw, 14, 7, .6f, UiDraw.alpha(t.line(), .5f));
         UiDraw.circle(g, sx + 8, top + 19, 2.2f, dot);
-        UiDraw.text(g, status, sx + 14, top + 19, UiDraw.SMALL, statusGood() ? t.text() : t.muted());
+        UiDraw.text(g, status, sx + 14, top + 19, UiDraw.SMALL, statusGood() ? t.text() : t.textDim());
         if (UiDraw.over(mx, my, sx, top + 12, sw, 14) && !status.equals(status())) tooltip("pm.status", status());
 
         if (profiles == null) {
             float cy = top + panelHeight / 2f - 18;
-            UiDraw.icon(g, "close", left + panelWidth / 2f - 7, cy - 14, 14, UiDraw.alpha(t.red(), .6f));
+            UiDraw.icon(g, "close", left + panelWidth / 2f - 7, cy - 14, 14, UiDraw.alpha(t.danger(), .6f));
             UiDraw.center(g, "Saved profiles are unavailable", left, cy + 10, panelWidth, t.text());
-            UiDraw.center(g, UiDraw.fit(message, panelWidth - 40, UiDraw.SMALL), left, cy + 22, panelWidth, UiDraw.SMALL, t.muted());
+            UiDraw.center(g, UiDraw.fit(message, panelWidth - 40, UiDraw.SMALL), left, cy + 22, panelWidth, UiDraw.SMALL, t.textDim());
             footer(g, mx, my, t);
             return;
         }
@@ -236,7 +236,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     }
 
     private void renderList(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
-        UiDraw.rect(g, left + 12, top + listY() - 6, panelWidth - 24, .6f, UiDraw.alpha(t.overlay(), .6f));
+        UiDraw.rect(g, left + 12, top + listY() - 6, panelWidth - 24, .6f, UiDraw.alpha(t.line(), .6f));
         int start = listTop(), view = listHeight(), n = rowCount();
         scroll = Math.clamp(scroll, 0, maxScroll());
         shownScroll = UiAnim.approach(shownScroll, scroll, 20);
@@ -259,31 +259,31 @@ abstract class ProfileManagerScreen extends UiScreen {
         } finally { drawingList = false; }
         if (n == 0) {
             String[] e = empty();
-            UiDraw.icon(g, e[0], left + panelWidth / 2f - 7, start + 14, 14, UiDraw.alpha(t.muted(), .45f));
-            UiDraw.center(g, e[1], left, start + 40, panelWidth, t.muted());
-            UiDraw.center(g, UiDraw.fit(e[2], panelWidth - 40, UiDraw.SMALL), left, start + 52, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.muted(), .7f));
+            UiDraw.icon(g, e[0], left + panelWidth / 2f - 7, start + 14, 14, UiDraw.alpha(t.textDim(), .45f));
+            UiDraw.center(g, e[1], left, start + 40, panelWidth, t.textDim());
+            UiDraw.center(g, UiDraw.fit(e[2], panelWidth - 40, UiDraw.SMALL), left, start + 52, panelWidth, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .7f));
         }
         g.disableScissor();
-        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.base(), UiDraw.alpha(t.base(), 0)));
-        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + view - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.base(), 0), t.base()));
+        UiMotion.faded(UiMotion.edge(shownScroll), () -> UiDraw.gradient(g, left + 4, start, panelWidth - 8, 8, 0, t.bg(), UiDraw.alpha(t.bg(), 0)));
+        UiMotion.faded(UiMotion.edge(maxScroll() - shownScroll), () -> UiDraw.gradient(g, left + 4, start + view - 8, panelWidth - 8, 8, 0, UiDraw.alpha(t.bg(), 0), t.bg()));
     }
 
     /** Row card background, shared by both lists; {@code highlight} outlines it in the accent. */
     protected void rowFrame(GuiGraphicsExtractor g, String key, float x, float y, float w, boolean hover, boolean highlight) {
         UiTheme t = GuiState.theme();
         float hv = UiAnim.smooth(key + ".h", hover ? 1 : 0, 20), on = UiAnim.smooth(key + ".on", highlight ? 1 : 0, 16);
-        UiDraw.rounded(g, x, y, w, ROW - 3, 6, UiDraw.mix(UiDraw.alpha(t.mantle(), .8f), t.surface(), hv * .7f));
-        if (on > 0) UiDraw.outline(g, x, y, w, ROW - 3, 6, .7f, UiDraw.alpha(t.accent(), .45f * on));
+        UiDraw.rounded(g, x, y, w, ROW - 3, 6, UiDraw.mix(UiDraw.alpha(t.sunk(), .8f), t.fill(), hv * .7f));
+        if (on > 0) UiDraw.outline(g, x, y, w, ROW - 3, 6, .7f, UiDraw.alpha(t.on(), .45f * on));
     }
 
     private void footer(GuiGraphicsExtractor g, int mx, int my, UiTheme t) {
         float cy = top + panelHeight - 12, right = left + panelWidth - 12;
-        if (busy) right -= pill(g, "Cancel", right, cy, mx, my, t.red(), false, true, this::cancelTask) + 6;
+        if (busy) right -= pill(g, "Cancel", right, cy, mx, my, t.danger(), false, true, this::cancelTask) + 6;
         // The busy dot fades in and nudges the text over; messages crossfade instead of swapping.
         float busyShown = UiAnim.smooth("pm.busy", busy ? 1 : 0, 16);
         if (busyShown > .01f) {
             float pulse = .45f + .55f * UiAnim.pulse(1.6e8);
-            UiDraw.circle(g, left + 16, cy, 2.2f * (.6f + .4f * busyShown), UiDraw.alpha(t.accent(), pulse * busyShown));
+            UiDraw.circle(g, left + 16, cy, 2.2f * (.6f + .4f * busyShown), UiDraw.alpha(t.on(), pulse * busyShown));
         }
         float x = left + 14 + 9 * busyShown;
         int kind = busy ? 3 : message.isEmpty() ? 4 : tone.ordinal();
@@ -293,7 +293,7 @@ abstract class ProfileManagerScreen extends UiScreen {
     }
 
     private static int footerColour(int kind, UiTheme t) {
-        return switch (kind) { case 1 -> t.green(); case 2 -> t.red(); case 3 -> t.text(); case 4 -> UiDraw.alpha(t.muted(), .8f); default -> t.muted(); };
+        return switch (kind) { case 1 -> t.ok(); case 2 -> t.danger(); case 3 -> t.text(); case 4 -> UiDraw.alpha(t.textDim(), .8f); default -> t.textDim(); };
     }
 
     // ---- input ----------------------------------------------------------------------------------

@@ -110,9 +110,14 @@ final class UiRender {
      * logical thickness (rounded to whole GUI pixels). Soft shadows are not supported.
      */
     static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int colour, float mode) {
-        if (steps <= 0) { shape(g, x, y, width, height, 0, colour, colour, Math.max(0, mode)); return; }
+        chamfer(g, x, y, width, height, steps, colour, colour, mode);
+    }
+
+    /** As above with a vertical gradient from {@code top} to {@code bottom}. */
+    static void chamfer(GuiGraphicsExtractor g, float x, float y, float width, float height, int steps, int top, int bottom, float mode) {
+        if (steps <= 0) { shape(g, x, y, width, height, 0, top, bottom, Math.max(0, mode)); return; }
         int cell = Math.max(1, Math.round(pixelsPerUnit(g)));
-        emit(g, x, y, width, height, -(Math.min(steps, 15) | (cell * 8) << 4), colour, colour, Math.max(0, mode));
+        emit(g, x, y, width, height, -(Math.min(steps, 15) | (cell * 8) << 4), top, bottom, Math.max(0, mode));
     }
 
     private static void emit(GuiGraphicsExtractor g, float x, float y, float width, float height, int radiusCode,

@@ -99,7 +99,7 @@ final class ShulkerPixelEditorScreen extends UiScreen {
         ShulkerIconRenderer.drawPixels(g, new PixelIcon(pixels), controls + 73, gridY + 101, 1);
         int labelWidth = left + panelWidth - controls - 10;
         UiDraw.text(g, UiDraw.fit(status, labelWidth), controls, gridY + 126, UiDraw.SMALL, theme.text());
-        UiDraw.text(g, "Left paint · Right erase · Middle sample", gridX, height - 17, UiDraw.SMALL, theme.muted());
+        UiDraw.text(g, "Left paint · Right erase · Middle sample", gridX, height - 17, UiDraw.SMALL, theme.textDim());
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {

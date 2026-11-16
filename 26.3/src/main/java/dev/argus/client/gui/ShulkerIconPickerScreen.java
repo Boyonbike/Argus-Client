@@ -100,13 +100,13 @@ final class ShulkerIconPickerScreen extends UiScreen {
             Choice choice = shown.get(scroll + row);
             float y = listTop + row * ROW;
             boolean hover = UiDraw.over(mx, my, left + 10, y, panelWidth - 20, ROW - 2);
-            if (hover) UiDraw.rounded(g, left + 10, y, panelWidth - 20, ROW - 2, 6, t.surface());
+            if (hover) UiDraw.rounded(g, left + 10, y, panelWidth - 20, ROW - 2, 6, t.fill());
             ShulkerIconRenderer.drawAt(g, choice.item().getDefaultInstance(), solid ? colour : null, left + 16, y + 2, 1);
             String label = choice.item().getDefaultInstance().getHoverName().getString() + (choice.shared() ? " (shared block shape)" : "");
             UiDraw.text(g, UiDraw.fit(label, panelWidth - 70), left + 40, y + ROW / 2f - 1, t.text());
         }
-        if (shown.isEmpty()) UiDraw.text(g, "No items match.", left + 14, listTop + 10, UiDraw.SMALL, t.muted());
-        else UiDraw.text(g, (multi ? "Click an item to add it. " : "Click an item to select it. ") + shown.size() + " shown", left + 14, top + panelHeight - 12, UiDraw.SMALL, t.muted());
+        if (shown.isEmpty()) UiDraw.text(g, "No items match.", left + 14, listTop + 10, UiDraw.SMALL, t.textDim());
+        else UiDraw.text(g, (multi ? "Click an item to add it. " : "Click an item to select it. ") + shown.size() + " shown", left + 14, top + panelHeight - 12, UiDraw.SMALL, t.textDim());
     }
 
     @Override protected boolean mouseClickedUi(MouseButtonEvent event, boolean doubled) {

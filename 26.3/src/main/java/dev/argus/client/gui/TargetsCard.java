@@ -254,7 +254,7 @@ final class TargetsCard extends InlineCard {
         rows.clear();
         // Presets row: one button per preset, each adding all its groups at once.
         float px = x + 4, pcy = y + PRESETS / 2 - 2;
-        UiDraw.text(g, "Presets", px, pcy, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, "Presets", px, pcy, UiDraw.SMALL, t.textDim());
         px += UiDraw.width("Presets", UiDraw.SMALL) + 8;
         for (DefaultTargets.Preset preset : DefaultTargets.presets()) {
             boolean done = DefaultTargets.missing(targets.rules(), preset) == 0;
@@ -289,7 +289,7 @@ final class TargetsCard extends InlineCard {
 
         List<SpecificRules.Rule> all = targets.rules().all();
         if (all.isEmpty()) {
-            UiDraw.text(g, "Nothing added yet. Search above, tick what you want, then press Add.", x + 4, top + ROW / 2, UiDraw.SMALL, t.muted());
+            UiDraw.text(g, "Nothing added yet. Search above, tick what you want, then press Add.", x + 4, top + ROW / 2, UiDraw.SMALL, t.textDim());
             return;
         }
         // Rows fade in when added and glide when one above is removed; dropdowns ease open and shut.
@@ -308,8 +308,8 @@ final class TargetsCard extends InlineCard {
                 shownDrop.put(rule.id, h);
                 if (h > 4.5f) {
                     float open = target > 0 ? Math.min(1, h / target) : 0;
-                    UiDraw.rounded(g, x + 10, below, w - 10, h - 4, 6, UiDraw.alpha(t.crust(), .7f * Math.max(open, .4f)));
-                    UiDraw.rect(g, x + 4, below - 2, 1.2f, h - 4, UiDraw.alpha(t.accent(), .5f));
+                    UiDraw.rounded(g, x + 10, below, w - 10, h - 4, 6, UiDraw.alpha(t.deep(), .7f * Math.max(open, .4f)));
+                    UiDraw.rect(g, x + 4, below - 2, 1.2f, h - 4, UiDraw.alpha(t.on(), .5f));
                     if (list != null) {
                         float listBefore = UiRender.opacity;
                         UiRender.opacity = listBefore * open;
@@ -327,12 +327,12 @@ final class TargetsCard extends InlineCard {
     private float drawMatches(GuiGraphicsExtractor g, int mx, int my, UiTheme t, float x, float y, float w) {
         List<SpecificTargets.Candidate> list = visibleMatches();
         float h = panelHeight() - 4;
-        UiDraw.rounded(g, x, y, w, h, 6, t.crust());
-        UiDraw.outline(g, x, y, w, h, 6, .6f, UiDraw.alpha(t.accent(), .35f));
+        UiDraw.rounded(g, x, y, w, h, 6, t.deep());
+        UiDraw.outline(g, x, y, w, h, 6, 1, t.line());
         String head = selected.isEmpty() ? "Click to tick · tick several to add them as one group"
                 : selected.size() + " ticked" + (field.getValue().isBlank() && selected.size() > 10 ? " (first 10 shown)" : "")
                 + " · Enter or Add puts them in one group";
-        UiDraw.text(g, UiDraw.fit(head, w - 60, UiDraw.SMALL), x + 8, y + 9, UiDraw.SMALL, t.muted());
+        UiDraw.text(g, UiDraw.fit(head, w - 60, UiDraw.SMALL), x + 8, y + 9, UiDraw.SMALL, t.textDim());
         if (!selected.isEmpty()) {
             float cw = UiDraw.width("Clear", UiDraw.SMALL) + 14;
             button(g, mx, my, t, "clear", x + w - cw - 4, y + 2, cw, 14, "Clear", false, "Untick everything", selected::clear);
@@ -340,7 +340,7 @@ final class TargetsCard extends InlineCard {
         float top = y + 16;
         if (list.isEmpty()) {
             UiDraw.text(g, UiDraw.fit("No matches. Online players show by name; type player:Name for anyone else.", w - 16, UiDraw.SMALL),
-                    x + 8, top + MATCH / 2, UiDraw.SMALL, t.muted());
+                    x + 8, top + MATCH / 2, UiDraw.SMALL, t.textDim());
         }
         for (int i = 0; i < list.size(); i++) {
             SpecificTargets.Candidate candidate = list.get(i);
@@ -349,12 +349,12 @@ final class TargetsCard extends InlineCard {
             boolean ticked = selected.containsKey(candidate.key());
             boolean hover = !added && hovering(mx, my, x + 2, ry, w - 4, MATCH);
             float hv = UiAnim.smooth("tc." + module.getName() + ".m" + i, hover ? 1 : 0, 18);
-            if (ticked || hv > 0) UiDraw.rounded(g, x + 2, ry, w - 4, MATCH, 5, UiDraw.alpha(t.accent(), (ticked ? .12f : 0) + hv * .1f));
+            if (ticked || hv > 0) UiDraw.rounded(g, x + 2, ry, w - 4, MATCH, 5, UiDraw.alpha(t.on(), (ticked ? .12f : 0) + hv * .1f));
             // Tick box.
             float bx = x + 7, by = cy - 5;
-            UiDraw.rounded(g, bx, by, 10, 10, 3, ticked ? t.accent() : UiDraw.alpha(t.surface(), added ? .4f : 1));
-            UiDraw.outline(g, bx, by, 10, 10, 3, .6f, UiDraw.alpha(t.overlay(), .8f));
-            if (ticked) UiDraw.icon(g, "check", bx + 1, by + 1, 8, t.crust());
+            UiDraw.rounded(g, bx, by, 10, 10, 3, ticked ? t.on() : UiDraw.alpha(t.fill(), added ? .4f : 1));
+            UiDraw.outline(g, bx, by, 10, 10, 3, .6f, UiDraw.alpha(t.line(), .8f));
+            if (ticked) UiDraw.icon(g, "check", bx + 1, by + 1, 8, t.deep());
             float tx = x + 22;
             if (candidate.icon() != null) {
                 ItemStack icon = candidate.icon();
@@ -363,9 +363,9 @@ final class TargetsCard extends InlineCard {
             tx += 20;
             String detail = added ? candidate.kind() + " · already added" : candidate.kind();
             float dw = UiDraw.width(detail, UiDraw.SMALL);
-            int colour = added ? t.muted() : ticked || hover ? t.accent() : t.text();
+            int colour = added ? t.textDim() : ticked || hover ? t.on() : t.text();
             UiDraw.text(g, UiDraw.fit(candidate.name(), x + w - tx - dw - 16), tx, cy, colour);
-            UiDraw.right(g, detail, x + w - 8, cy, UiDraw.SMALL, t.muted());
+            UiDraw.right(g, detail, x + w - 8, cy, UiDraw.SMALL, t.textDim());
             if (!added) hit(x + 2, ry, w - 4, MATCH, () -> tick(candidate));
         }
         return y + h;
@@ -385,7 +385,7 @@ final class TargetsCard extends InlineCard {
         float right = x + w - 2;
         String removeKey = "rm." + rule.id;
         boolean removeArmed = isArmed(removeKey);
-        right = circle(g, mx, my, t, "x." + rule.id, right, cy, "close", removeArmed, removeArmed ? t.red() : 0,
+        right = circle(g, mx, my, t, "x." + rule.id, right, cy, "close", removeArmed, removeArmed ? t.danger() : 0,
                 removeArmed ? "Click again to remove" : linked ? "Remove from both pages" : "Remove", () -> {
                     if (!isArmed(removeKey)) { armed = removeKey; armedAt = System.currentTimeMillis(); say("Click the X again to remove it."); return; }
                     armed = "";
@@ -409,14 +409,14 @@ final class TargetsCard extends InlineCard {
         boolean hover = hovering(mx, my, x, y + 1, right - x, ROW - 2);
         String rowKey = "tc." + module.getName() + ".r." + rule.id;
         float hv = UiAnim.smooth(rowKey, hover ? 1 : 0, 18), drop = UiAnim.smooth(rowKey + ".drop", dropped ? 1 : 0, 16), lit = UiAnim.smooth(rowKey + ".on", on ? 1 : 0, 16);
-        int base = UiDraw.mix(UiDraw.alpha(t.surface(), .35f), UiDraw.alpha(t.accent(), .1f), drop);
-        UiDraw.rounded(g, x, y + 1, right - x, ROW - 2, 6, UiDraw.mix(base, UiDraw.alpha(t.surface(), .9f), hv * .6f));
+        int base = UiDraw.mix(UiDraw.alpha(t.fill(), .35f), UiDraw.alpha(t.on(), .1f), drop);
+        UiDraw.rounded(g, x, y + 1, right - x, ROW - 2, 6, UiDraw.mix(base, UiDraw.alpha(t.fill(), .9f), hv * .6f));
 
         // Type tag at the far left, in the group's colour while on.
         int swatch = settings.swatch() | 0xFF000000;
-        UiDraw.rounded(g, x + 4, cy - 8, TYPE_W, 16, 8, UiDraw.mix(UiDraw.alpha(t.overlay(), .35f), UiDraw.alpha(swatch, .28f), lit));
-        UiDraw.outline(g, x + 4, cy - 8, TYPE_W, 16, 8, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f), UiDraw.alpha(swatch, .8f), lit));
-        UiDraw.center(g, rule.category().title(), x + 4, cy, TYPE_W, UiDraw.SMALL, UiDraw.mix(t.muted(), t.text(), lit));
+        UiDraw.rounded(g, x + 4, cy - 8, TYPE_W, 16, 8, UiDraw.mix(UiDraw.alpha(t.line(), .35f), UiDraw.alpha(swatch, .28f), lit));
+        UiDraw.outline(g, x + 4, cy - 8, TYPE_W, 16, 8, .6f, UiDraw.mix(UiDraw.alpha(t.line(), .6f), UiDraw.alpha(swatch, .8f), lit));
+        UiDraw.center(g, rule.category().title(), x + 4, cy, TYPE_W, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.text(), lit));
 
         float tx = x + TYPE_W + 10;
         SpecificRules.Member first = rule.members().get(0);
@@ -432,12 +432,12 @@ final class TargetsCard extends InlineCard {
                 + (capped ? "too many to show all, nearest shown · " : "")
                 + (linked ? "linked with " + other : inOther ? "also on in " + other : "this page only");
         String hint = hover ? (on ? "Click: turn off · Right-click: settings" : "Click: turn on · Right-click: settings") : state;
-        UiDraw.text(g, UiDraw.fit(label, right - tx - 18), tx, cy - 5, UiDraw.mix(t.muted(), t.text(), lit));
+        UiDraw.text(g, UiDraw.fit(label, right - tx - 18), tx, cy - 5, UiDraw.mix(t.textDim(), t.text(), lit));
         float hintX = tx, hintRoom = right - tx - 18;
-        UiMotion.text(g, rowKey + ".hint", UiDraw.fit(hint, hintRoom, UiDraw.SMALL), l -> UiDraw.text(g, l, hintX, cy + 6, UiDraw.SMALL, t.muted()));
+        UiMotion.text(g, rowKey + ".hint", UiDraw.fit(hint, hintRoom, UiDraw.SMALL), l -> UiDraw.text(g, l, hintX, cy + 6, UiDraw.SMALL, t.textDim()));
         // The chevron turns with the dropdown instead of swapping.
-        if (drop < .99f) UiDraw.icon(g, "chevron_right", right - 14 + drop * 1.5f, cy - 4, 8, UiDraw.alpha(t.muted(), .8f * (1 - drop)));
-        if (drop > .01f) UiDraw.icon(g, "chevron_down", right - 14, cy - 4 - (1 - drop) * 1.5f, 8, UiDraw.alpha(t.muted(), .8f * drop));
+        if (drop < .99f) UiDraw.icon(g, "chevron_right", right - 14 + drop * 1.5f, cy - 4, 8, UiDraw.alpha(t.textDim(), .8f * (1 - drop)));
+        if (drop > .01f) UiDraw.icon(g, "chevron_down", right - 14, cy - 4 - (1 - drop) * 1.5f, 8, UiDraw.alpha(t.textDim(), .8f * drop));
         hit(x, y + 1, right - x, ROW - 2, () -> toggle(rule));
         rows.add(new Row(rule, y));
         return y + ROW;
@@ -450,12 +450,12 @@ final class TargetsCard extends InlineCard {
         boolean hover = hovering(mx, my, cx - r, cy - r, CIRCLE, CIRCLE);
         String base = "tc." + module.getName() + "." + key;
         float hv = UiAnim.smooth(base, hover ? 1 : 0, 18), on = UiAnim.smooth(base + ".lit", lit ? 1 : 0, 16), warn = UiAnim.smooth(base + ".tint", tint != 0 ? 1 : 0, 16);
-        int colour = tint != 0 ? UiDraw.mix(t.accent(), tint, warn) : UiDraw.mix(t.accent(), t.red(), warn);
-        // An armed (tinted) circle pulses its ring while it waits for the second click.
-        float pulse = tint != 0 ? .3f * UiAnim.pulse(1.5e8) : 0;
-        UiDraw.circle(g, cx, cy, r, UiDraw.mix(UiDraw.mix(t.surface(), t.overlay(), hv * .7f), UiDraw.alpha(colour, .22f + hv * .1f), on));
-        UiDraw.outline(g, cx - r, cy - r, CIRCLE, CIRCLE, r, .6f, UiDraw.mix(UiDraw.alpha(t.overlay(), .6f + hv * .3f), UiDraw.alpha(colour, .6f + pulse), on));
-        UiDraw.icon(g, icon, cx - 4, cy - 4, 8, UiDraw.mix(UiDraw.mix(t.muted(), t.text(), hv), colour, on));
+        int colour = tint != 0 ? UiDraw.mix(t.on(), tint, warn) : UiDraw.mix(t.on(), t.danger(), warn);
+        // An armed (tinted) circle shows a full-strength ring while it waits for the second click.
+        float pulse = tint != 0 ? .3f : 0;
+        UiDraw.circle(g, cx, cy, r, UiDraw.mix(UiDraw.mix(t.fill(), t.line(), hv * .7f), UiDraw.alpha(colour, .22f + hv * .1f), on));
+        UiDraw.outline(g, cx - r, cy - r, CIRCLE, CIRCLE, r, .6f, UiDraw.mix(UiDraw.alpha(t.line(), .6f + hv * .3f), UiDraw.alpha(colour, .6f + pulse), on));
+        UiDraw.icon(g, icon, cx - 4, cy - 4, 8, UiDraw.mix(UiDraw.mix(t.textDim(), t.text(), hv), colour, on));
         hit(cx - r, cy - r, CIRCLE, CIRCLE, run);
         if (hover) host.tooltip("tc." + key, icon.equals("link") ? "Link" : "Remove", tip);
         return right - CIRCLE - 4;

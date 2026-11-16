@@ -33,13 +33,13 @@ final class ModuleSettingsScreen extends UiScreen {
         // Breadcrumb bar: back · Modules › Category.
         boolean backHover = UiDraw.over(mx, my, left + 8, top + 6, 64, 16);
         float bh = UiAnim.smooth("set.back", backHover ? 1 : 0, 18);
-        if (bh > 0) UiDraw.rounded(g, left + 8, top + 6, 64, 16, 8, UiDraw.alpha(t.surface(), bh));
-        UiDraw.icon(g, "chevron_left", left + 12 - bh * 1.5f, top + 10, 8, UiDraw.mix(t.muted(), t.text(), bh));
-        UiDraw.text(g, "Modules", left + 23, top + 14, UiDraw.SMALL, UiDraw.mix(t.muted(), t.text(), bh));
+        if (bh > 0) UiDraw.rounded(g, left + 8, top + 6, 64, 16, 8, UiDraw.alpha(t.fill(), bh));
+        UiDraw.icon(g, "chevron_left", left + 12 - bh * 1.5f, top + 10, 8, UiDraw.mix(t.textDim(), t.text(), bh));
+        UiDraw.text(g, "Modules", left + 23, top + 14, UiDraw.SMALL, UiDraw.mix(t.textDim(), t.text(), bh));
         String crumb = GuiState.title(page.module().getCategory().getName());
-        UiDraw.icon(g, "chevron_right", left + 74, top + 10.5f, 7, UiDraw.alpha(t.muted(), .6f));
-        UiDraw.text(g, crumb, left + 84, top + 14, UiDraw.SMALL, UiDraw.alpha(t.muted(), .8f));
-        UiDraw.rect(g, left + 1, top + BAR, panelWidth - 2, .6f, UiDraw.alpha(t.overlay(), .45f));
+        UiDraw.icon(g, "chevron_right", left + 74, top + 10.5f, 7, UiDraw.alpha(t.textDim(), .6f));
+        UiDraw.text(g, crumb, left + 84, top + 14, UiDraw.SMALL, UiDraw.alpha(t.textDim(), .8f));
+        UiDraw.rect(g, left + 1, top + BAR, panelWidth - 2, .6f, UiDraw.alpha(t.line(), .45f));
         page.render(g, mx, my, delta, t);
     }
 
