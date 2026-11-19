@@ -67,6 +67,7 @@ public final class MeteorMappings {
             kill-effects KillEffects
             liquid-filler SourceFill
             smart-sponge AutoSponge
+            auto-wither AutoWither
             logout-spots LogoutSpots
             long-jump LongJump
             middle-click-extra MiddleClick
