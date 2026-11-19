@@ -47,6 +47,7 @@ final class UiInput extends EditBox {
         super.setResponder(value -> { lastEdit = System.nanoTime(); responder.accept(value); });
     }
 
+
     private float w(String text) { return UiDraw.width(text); }
 
     private void alignCursor() {

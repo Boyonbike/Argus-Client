@@ -79,6 +79,22 @@ rewritten for Argus's settings, events and Mojang-mapped rendering calls on
 terms as the AutoWasp files above.
 
 
+## Meteor Client AutoWither
+
+- **Project:** Meteor Client
+- **Authors:** Meteor Development and contributors
+- **Source:** <https://github.com/MeteorDevelopment/meteor-client>
+- **Licence:** GNU GPL version 3 (GPL-3.0)
+- **Full licence text:** [licenses/GPL-3.0.txt](licenses/GPL-3.0.txt)
+
+The **AutoWither** module (`AutoWitherModule.java`) is ported from Meteor
+Client's AutoWither: it finds a clear 3x3 spot near the player, builds the soul
+sand T facing the way they look and tops it with three wither skeleton skulls,
+with the same radius, priority, delay, rotate and turn-off options. It was
+rewritten for Argus's settings, events, rotation manager and box renderer on
+19 November 2026 and is covered by GPL-3.0 on the same terms as the AutoWasp
+files above.
+
 ## Meteor Client boss bar stacking
 
 - **Project:** Meteor Client

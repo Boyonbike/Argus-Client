@@ -222,6 +222,10 @@ abstract class InlineCard {
         private final List<Action> headerActions = new ArrayList<>();
         private String hint = "";
         private UiInput field;
+        /** Short boxes after the main field (X, Y and Z, say); when set, submit gets every box, main field first. */
+        private final List<UiInput> extras = new ArrayList<>();
+        private final List<String> extraLabels = new ArrayList<>();
+        private Consumer<List<String>> submitAll;
         private String submitLabel = "Add", submitTip;
         private Function<String, String> submitDone = text -> "Added " + text + ".";
         private Consumer<String> submit;
@@ -243,32 +247,82 @@ abstract class InlineCard {
             return this;
         }
 
+        /**
+         * Short labelled boxes drawn after the main field, such as X, Y and Z. Once added, {@code submit} receives the
+         * main field's text followed by each box's, and Tab moves between them.
+         */
+        Items extraFields(List<String> labels, List<UiInput> boxes, Consumer<List<String>> submit) {
+            extraLabels.addAll(labels); extras.addAll(boxes); submitAll = submit;
+            return this;
+        }
+
         @Override String title() { return title; }
         @Override String icon() { return icon; }
         @Override String subtitle() { return subtitle.get(); }
+
+        private List<UiInput> fields() {
+            List<UiInput> all = new ArrayList<>();
+            if (field != null) all.add(field);
+            all.addAll(extras);
+            return all;
+        }
 
         private boolean hasTop() { return field != null || !headerActions.isEmpty() || !hint.isEmpty(); }
         private float rowHeight(List<Entry> list) { for (Entry e : list) if (e.icon() != null || !e.detail().isEmpty()) return 28; return 24; }
         @Override float bodyHeight() { List<Entry> list = entries.get(); return (hasTop() ? 26 : 0) + Math.max(1, list.size()) * rowHeight(list) + 4; }
 
-        @Override void reattach() { if (field != null) host.hostAdd(field); }
-        @Override void stopEditing() { if (field != null) field.setFocused(false); }
-        @Override void hide() { if (field != null) { field.visible = false; field.setFocused(false); } }
+        @Override void reattach() { for (UiInput box : fields()) host.hostAdd(box); }
+        @Override void stopEditing() { for (UiInput box : fields()) box.setFocused(false); }
+        @Override void hide() { for (UiInput box : fields()) { box.visible = false; box.setFocused(false); } }
         @Override boolean widgetClicked(MouseButtonEvent event, boolean doubled) {
-            if (field == null) return false;
-            if (field.visible && field.isMouseOver(event.x(), event.y())) { host.hostFocus(field); return field.mouseClicked(event, doubled); }
-            field.setFocused(false);
+            List<UiInput> boxes = fields();
+            for (UiInput box : boxes) {
+                if (box.visible && box.isMouseOver(event.x(), event.y())) {
+                    for (UiInput other : boxes) if (other != box) other.setFocused(false);
+                    host.hostFocus(box);
+                    return box.mouseClicked(event, doubled);
+                }
+            }
+            stopEditing();
             return false;
         }
         @Override boolean keyPressed(KeyEvent event) {
-            if (field != null && field.isFocused() && field.visible && (event.key() == 257 || event.key() == 335)) { add(); return true; }
+            List<UiInput> boxes = fields();
+            int focused = -1;
+            for (int i = 0; i < boxes.size(); i++) if (boxes.get(i).isFocused() && boxes.get(i).visible) focused = i;
+            if (focused < 0) return false;
+            int key = event.key();
+            if (key == 257 || key == 335) { add(); return true; }
+            if (key == 258 && boxes.size() > 1) {
+                // Tab (Shift+Tab backwards) moves through the boxes.
+                int step = (event.modifiers() & 1) != 0 ? boxes.size() - 1 : 1;
+                boxes.get(focused).setFocused(false);
+                UiInput next = boxes.get((focused + step) % boxes.size());
+                host.hostFocus(next);
+                next.setFocused(true);
+                return true;
+            }
             return false;
         }
 
         private void add() {
             String text = field.getValue().trim();
+            if (submitAll != null) {
+                List<String> values = new ArrayList<>();
+                for (UiInput box : fields()) values.add(box.getValue().trim());
+                attempt(() -> submitAll.accept(values), submitDone.apply(text));
+                if (error().isEmpty()) for (UiInput box : fields()) box.setValue("");
+                return;
+            }
             attempt(() -> submit.accept(text), submitDone.apply(text));
             if (error().isEmpty()) field.setValue("");
+        }
+
+
+        private void placeBox(GuiGraphics g, int mx, int my, UiInput box, float bx, float cy, float bw) {
+            box.place(Math.round(bx), Math.round(cy - 8), Math.round(bw));
+            box.visible = inView(cy - 8, 16);
+            if (box.visible) box.render(g, mx, my, 0); else box.setFocused(false);
         }
 
         private boolean isArmed(String key) { return key.equals(armed) && System.currentTimeMillis() - armedAt < 4000; }
@@ -295,10 +349,19 @@ abstract class InlineCard {
                 if (field != null) {
                     float bw = buttonWidth(submitLabel) + 8;
                     button(g, mx, my, t, "add", right - bw, cy - 9, bw, 18, submitLabel, true, submitTip, this::add);
-                    float fieldW = Math.max(40, right - bw - 6 - x);
-                    field.place(Math.round(x), Math.round(cy - 8), Math.round(fieldW));
-                    field.visible = inView(cy - 8, 16);
-                    if (field.visible) field.render(g, mx, my, 0); else field.setFocused(false);
+                    right -= bw + 6;
+                    // Labelled boxes (X, Y, Z) sit right to left before the button; the main field takes what is left.
+                    float space = right - x, boxW = extras.isEmpty() ? 0 : Math.max(46, Math.min(78, space * .17f));
+                    for (int i = extras.size() - 1; i >= 0; i--) {
+                        UiInput box = extras.get(i);
+                        String label = extraLabels.get(i);
+                        float lw = UiDraw.width(label) + 4;
+                        float bx = right - boxW;
+                        UiDraw.text(g, label, bx - lw, cy, UiDraw.mix(t.textDim(), t.on(), box.isFocused() ? 1 : 0));
+                        placeBox(g, mx, my, box, bx, cy, boxW);
+                        right = bx - lw - 6;
+                    }
+                    placeBox(g, mx, my, field, x, cy, Math.max(40, right - x));
                 } else UiDraw.text(g, UiDraw.fit(hint, right - x - 4, UiDraw.SMALL), x + 4, cy, UiDraw.SMALL, t.textDim());
                 top = 26;
             }

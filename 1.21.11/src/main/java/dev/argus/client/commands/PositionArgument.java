@@ -41,14 +41,33 @@ public class PositionArgument implements ArgumentType {
          Vec3 leftwards = upwards.cross(direction);
          return player.position().add(leftwards.scale(left)).add(upwards.scale(up)).add(direction.scale(forward));
       } else {
-         WorldCoordinate x = WorldCoordinate.parseDouble(reader, false);
+         WorldCoordinate x = readWorld(reader);
          readSeparator(reader, start);
-         WorldCoordinate y = WorldCoordinate.parseDouble(reader, false);
+         WorldCoordinate y = readWorld(reader);
          readSeparator(reader, start);
-         WorldCoordinate z = WorldCoordinate.parseDouble(reader, false);
+         WorldCoordinate z = readWorld(reader);
          Vec3 position = player.position();
          return new Vec3(x.get(position.x), y.get(position.y), z.get(position.z));
       }
+   }
+
+   /** A world coordinate, also taking an explicit + sign ({@code +120}, {@code ~+5}) that vanilla's reader rejects. */
+   private static WorldCoordinate readWorld(StringReader reader) throws CommandSyntaxException {
+      boolean relative = reader.canRead() && reader.peek() == '~';
+      if (relative) {
+         reader.skip();
+      }
+
+      if (reader.canRead(2) && reader.peek() == '+' && reader.peek(1) != ' ') {
+         reader.skip();
+      }
+
+      if (relative) {
+         double offset = reader.canRead() && reader.peek() != ' ' ? reader.readDouble() : 0.0;
+         return new WorldCoordinate(true, offset);
+      }
+
+      return WorldCoordinate.parseDouble(reader, false);
    }
 
    private static void readSeparator(StringReader reader, int start) throws CommandSyntaxException {
