@@ -44,6 +44,8 @@ public final class ModulesScreen extends UiScreen {
     private List<GuiSearch.Entry> searchIndex = List.of();
     private List<GuiSearch.Hit> results = List.of();
     private UiInput searchInput;
+    private String pendingQuery;
+    private long searchFocusedAt;
     private Window searchWindow, dragging;
     private float dragX, dragY, canvasShown;
     /** Windows picked with the selection box; dragging any of them moves the whole group. */
@@ -62,6 +64,8 @@ public final class ModulesScreen extends UiScreen {
         DescriptionCatalog.ensureApplied();
     }
     ModulesScreen(Screen parent, boolean focusSearch) { this(parent); focusOnOpen = focusSearch; }
+    /** Opens with the search focused and {@code typed} already in it, for typing that started on another page. */
+    ModulesScreen(Screen parent, String typed) { this(parent, true); pendingQuery = typed; }
 
     @Override protected void buildContent() {
         String query = searchInput == null ? "" : searchInput.getValue();
@@ -88,6 +92,7 @@ public final class ModulesScreen extends UiScreen {
         searchInput = new UiInput(searchWindow.x + 6, searchWindow.y + HEADER + 8, searchWindow.width - 12, 12, "Search modules…").withIcon("search");
         searchInput.setValue(query); searchInput.setResponder(value -> refreshSearch()); addWidget(searchInput); refreshSearch();
         if (focusOnOpen) { focusSearch(); focusOnOpen = false; }
+        if (pendingQuery != null) { searchInput.setValue(pendingQuery); searchInput.moveCursorToEnd(false); pendingQuery = null; }
     }
 
     private void restore(Window window, int x, int y) {
@@ -183,6 +188,15 @@ public final class ModulesScreen extends UiScreen {
     void focusSearch() {
         searchWindow.collapsed = false; canvasScroll = Math.max(0, searchWindow.y - 64);
         searchInput.visible = true; searchInput.active = true; setInitialFocus(searchInput);
+        searchFocusedAt = System.nanoTime();
+    }
+
+    /** While a folded or scrolled-away Search window glides into view, its box keeps the typing. */
+    private boolean searchRevealing() { return System.nanoTime() - searchFocusedAt < 800_000_000L; }
+
+    /** The box hides itself while off screen; a focused box still takes keys meanwhile. */
+    private void armSearchInput() {
+        if (getFocused() == searchInput) { searchInput.visible = true; searchInput.active = true; }
     }
 
     @Override protected void renderUi(GuiGraphicsExtractor g, int mx, int my, float delta) {
@@ -228,7 +242,7 @@ public final class ModulesScreen extends UiScreen {
         drawCompactHint(g, theme);
         drawLegend(g, theme);
         searchInput.active = searchInput.visible;
-        if (!searchInput.visible && getFocused() == searchInput) setFocused(null);
+        if (!searchInput.visible && getFocused() == searchInput && !searchRevealing()) setFocused(null);
     }
 
     private float gridFade;
@@ -580,6 +594,7 @@ public final class ModulesScreen extends UiScreen {
 
     @Override public boolean keyPressed(KeyEvent event) {
         if (InputKeys.glfw(event) == 256 && !picked.isEmpty() && getFocused() != searchInput) { picked.clear(); return true; }
+        armSearchInput();
         if (getFocused() == searchInput && !results.isEmpty()) {
             int key = InputKeys.glfw(event);
             if (key == 264 || key == 265) { // down / up
@@ -597,6 +612,8 @@ public final class ModulesScreen extends UiScreen {
 
     /** Typing anywhere in the menu starts a search; the first character goes into the box. */
     @Override public boolean charTyped(CharacterEvent event) {
+        if (ColorPicker.typed(event)) return true;
+        armSearchInput();
         if (!closing() && getFocused() != searchInput && event.isAllowedChatCharacter() && !Character.isWhitespace(event.codepoint())) {
             focusSearch();
             searchInput.visible = true; searchInput.active = true;

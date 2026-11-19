@@ -56,4 +56,5 @@ final class ModuleSettingsScreen extends UiScreen {
     @Override protected boolean mouseReleasedUi(MouseButtonEvent event) { return page.mouseReleased() || super.mouseReleasedUi(event); }
     @Override protected boolean mouseScrolledUi(double mx, double my, double horizontal, double vertical) { return page.mouseScrolled(mx, my, vertical); }
     @Override public boolean keyPressed(KeyEvent event) { return page.keyPressed(event) || super.keyPressed(event); }
+    @Override protected boolean typingSearches() { return true; }
 }

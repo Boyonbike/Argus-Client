@@ -517,7 +517,27 @@ public abstract class UiScreen extends Screen {
 
     @Override public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
         if (ColorPicker.typed(event)) return true;
+        if (startsSearch(event)) {
+            minecraft.gui.setScreen(new ModulesScreen(rootParent(), event.codepointAsString()));
+            return true;
+        }
         return super.charTyped(event);
+    }
+
+    /** When the last key press went unused at this time, its typed character may start a search. */
+    private long unusedKeyAt;
+
+    /** Pages that send typing to the module search when no text box has it; the module menu handles this itself. */
+    protected boolean typingSearches() { return false; }
+
+    /** True when a page that searches on typing gets a printable character that nothing else wanted. */
+    private boolean startsSearch(net.minecraft.client.input.CharacterEvent event) {
+        if (!typingSearches() || closingAt != 0 || modal() || capturingMenuKey() || SettingsList.anyCapturing()) return false;
+        if (getFocused() instanceof EditBox box && box.isFocused()) return false;
+        // The key that typed this was already used (a bind being set, a shortcut) when it never reached here.
+        boolean keyUnused = System.nanoTime() - unusedKeyAt < 250_000_000L;
+        unusedKeyAt = 0;
+        return keyUnused && event.isAllowedChatCharacter() && !Character.isWhitespace(event.codepoint());
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
@@ -534,7 +554,9 @@ public abstract class UiScreen extends Screen {
             if (this instanceof ModulesScreen screen) screen.focusSearch(); else minecraft.gui.setScreen(new ModulesScreen(rootParent(), true));
             return true;
         }
-        return super.keyPressed(event);
+        boolean used = super.keyPressed(event);
+        if (!used) unusedKeyAt = System.nanoTime();
+        return used;
     }
     @Override public void onClose() { beginClose(parent); }
     @Override public void removed() {

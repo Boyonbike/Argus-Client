@@ -58,6 +58,14 @@ final class UiInput extends EditBox {
         if (filter == null || filter.test(value)) super.setValue(value);
     }
 
+    /** Typing and pasting go through the filter too: an edit it rejects is undone. */
+    @Override public void insertText(String text) {
+        if (filter == null) { super.insertText(text); return; }
+        String before = getValue(); int cursor = getCursorPosition();
+        super.insertText(text);
+        if (!filter.test(getValue())) { super.setValue(before); moveCursorTo(cursor, false); }
+    }
+
     private float w(String text) { return UiDraw.width(text); }
 
     private void alignCursor() {
