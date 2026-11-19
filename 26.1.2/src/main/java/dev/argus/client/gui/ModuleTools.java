@@ -15,6 +15,7 @@ import dev.argus.client.modules.render.TracersModule;
 import dev.argus.client.modules.render.WaypointsModule;
 import dev.argus.client.ClientContext;
 import dev.argus.client.managers.WaypointRegistry;
+import dev.argus.client.utils.world.TypedCoordinates;
 import dev.argus.client.utils.world.Waypoint;
 import dev.argus.client.utils.world.WorldUtils;
 import java.util.Locale;
@@ -96,28 +97,54 @@ final class ModuleTools {
     }
 
     /**
-     * Adds a waypoint from what was typed: {@code name} for where you stand, or {@code name x y z} for those
-     * coordinates (in the dimension you are in).
+     * Adds a waypoint from the Name, X, Y and Z boxes. With X and Z blank it goes where you stand; with only Y blank
+     * it takes your height. Any whole or decimal number works, with or without a + or - sign. For older habits,
+     * "name x y z" or "name x z" typed into the Name box still works.
      */
-    private static void addWaypoint(String text) {
+    private static void addWaypoint(List<String> values) {
         if (!inWorld()) throw new IllegalStateException("Join a world to add a waypoint.");
-        String[] parts = text.trim().split("\\s+");
-        Vec3 position = Minecraft.getInstance().player.position();
-        String name = text.trim();
-        if (parts.length >= 4) {
-            try {
-                double x = Double.parseDouble(parts[parts.length - 3]), y = Double.parseDouble(parts[parts.length - 2]), z = Double.parseDouble(parts[parts.length - 1]);
-                position = new Vec3(x, y, z);
-                name = String.join(" ", java.util.Arrays.copyOf(parts, parts.length - 3));
-            } catch (NumberFormatException notCoordinates) {
-                // The whole text is the name.
+        Vec3 here = Minecraft.getInstance().player.position();
+        String name = values.get(0);
+        String xText = values.get(1), yText = values.get(2), zText = values.get(3);
+        if (xText.isEmpty() && yText.isEmpty() && zText.isEmpty()) {
+            // Coordinates typed after the name, as the old single box took them.
+            String[] parts = name.split("\\s+");
+            int count = parts.length >= 4 && TypedCoordinates.parse(parts[parts.length - 3]) != null ? 3 : parts.length >= 3 ? 2 : 0;
+            if (count > 0 && java.util.Arrays.stream(parts, parts.length - count, parts.length).allMatch(part -> TypedCoordinates.parse(part) != null)) {
+                xText = parts[parts.length - count];
+                yText = count == 3 ? parts[parts.length - 2] : "";
+                zText = parts[parts.length - 1];
+                name = String.join(" ", java.util.Arrays.copyOf(parts, parts.length - count));
             }
         }
         if (name.isEmpty()) throw new IllegalArgumentException("Type a name for the waypoint.");
+        Vec3 position = here;
+        if (!xText.isEmpty() || !yText.isEmpty() || !zText.isEmpty()) {
+            if (xText.isEmpty() || zText.isEmpty()) throw new IllegalArgumentException("Type both X and Z, or leave all three blank to use where you stand.");
+            Double x = TypedCoordinates.parse(xText), z = TypedCoordinates.parse(zText);
+            Double y = yText.isEmpty() ? Double.valueOf(here.y) : TypedCoordinates.parse(yText);
+            if (x == null) throw new IllegalArgumentException(badCoordinate("X", xText));
+            if (y == null) throw new IllegalArgumentException(badCoordinate("Y", yText));
+            if (z == null) throw new IllegalArgumentException(badCoordinate("Z", zText));
+            position = new Vec3(x, y, z);
+        }
         String dimension = WorldUtils.getDimension().getDisplayName().toLowerCase(Locale.ROOT);
         if (!ClientContext.waypointRegistry.registerWaypoint(new Waypoint(name, position, dimension, WaypointRegistry.currentServerKey())))
             throw new IllegalArgumentException("There is already a waypoint called " + name + " on this server.");
         ClientContext.configurationManager.saveAsync();
+    }
+
+    private static String badCoordinate(String axis, String text) {
+        return axis + " must be a number from -30,000,000 to 30,000,000, such as 120 or -45 (you typed " + text + ").";
+    }
+
+    /** Fills the coordinate boxes with where you stand, rounded to the block. */
+    private static void fillHere(List<UiInput> boxes) {
+        if (!inWorld()) throw new IllegalStateException("Join a world first.");
+        net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
+        boxes.get(0).setValue(Integer.toString(player.getBlockX()));
+        boxes.get(1).setValue(Integer.toString(player.getBlockY()));
+        boxes.get(2).setValue(Integer.toString(player.getBlockZ()));
     }
 
     /**
@@ -137,6 +164,13 @@ final class ModuleTools {
     }
 
     private static InlineCard waypoints(UiScreen host) {
+        List<UiInput> coords = new ArrayList<>();
+        for (String axis : List.of("X", "Y", "Z")) {
+            UiInput box = new UiInput(0, 0, 60, 16, axis.equals("Y") ? "Optional" : "");
+            box.setMaxLength(12);
+            box.setFilter(TypedCoordinates::typing);
+            coords.add(box);
+        }
         return new InlineCard.Items(host, "Waypoints", "compass",
                 () -> {
                     int n = shownWaypoints().size();
@@ -162,8 +196,10 @@ final class ModuleTools {
                     }
                     return entries;
                 })
-                .field("Name, or name x y z…", 64, "Add", "Adds a waypoint where you stand, or at x y z if you type them after the name",
-                        text -> "Added waypoint " + text.trim() + ".", ModuleTools::addWaypoint);
+                .field("Name", 64, "Add", "Adds the waypoint at X, Y and Z, or where you stand if they are blank (Enter)",
+                        text -> "Added waypoint " + text.trim() + ".", text -> {})
+                .extraFields(List.of("X", "Y", "Z"), coords, ModuleTools::addWaypoint)
+                .header(InlineCard.Items.Action.of("Here", "Fill X, Y and Z with where you stand", "", () -> fillHere(coords)));
     }
 
     // ---- Boat Phase --------------------------------------------------------------------------

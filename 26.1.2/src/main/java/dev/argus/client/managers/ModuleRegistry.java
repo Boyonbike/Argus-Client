@@ -171,6 +171,7 @@ import dev.argus.client.modules.player.RotationLockModule;
 import dev.argus.client.modules.player.ScaffoldModule;
 import dev.argus.client.modules.player.SourceFillModule;
 import dev.argus.client.modules.player.AutoSpongeModule;
+import dev.argus.client.modules.misc.AutoWitherModule;
 import dev.argus.client.modules.player.SpeedMineModule;
 import dev.argus.client.modules.render.AmbienceModule;
 import dev.argus.client.modules.render.AnimationsModule;
@@ -893,6 +894,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new AutoSpongeModule())) {
          throw new IllegalStateException("Registration rejected AutoSpongeModule");
+      }
+
+      if (!this.registerModule(new AutoWitherModule())) {
+         throw new IllegalStateException("Registration rejected AutoWitherModule");
       }
 
       if (!this.registerModule(new SpammerModule())) {

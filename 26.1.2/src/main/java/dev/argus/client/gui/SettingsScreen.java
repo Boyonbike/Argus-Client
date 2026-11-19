@@ -403,6 +403,7 @@ final class SettingsScreen extends UiScreen {
     }
 
     @Override protected boolean capturingMenuKey() { return bindingMenuKey; }
+    @Override protected boolean typingSearches() { return true; }
 
     /** A two-option segmented control with a sliding thumb. */
     private void segmented(GuiGraphicsExtractor g, String key, String[] labels, int chosen, float x, float y, float w, int mx, int my, UiTheme t, java.util.function.IntConsumer pick) {
