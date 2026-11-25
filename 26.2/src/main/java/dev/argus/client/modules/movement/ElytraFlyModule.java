@@ -358,6 +358,9 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler(priority = -300)
    private void onLocalPlayerPreTickEvent(LocalPlayerPreTickEvent event) {
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.updateDurabilitySwap();
       this.getActiveMode().handlePrePlayerTick(event);
    }
@@ -386,6 +389,9 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler
    private void onLocalPlayerTickEvent(LocalPlayerTickEvent event) {
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.getActiveMode().handlePlayerTick(event);
    }
 
@@ -430,11 +436,18 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler(priority = -200)
    private void onLocalPlayerMoveEvent(LocalPlayerMoveEvent event) {
+      // Baritone steers a flight Baritone Elytra is powering; ElytraFly would fight it.
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.getActiveMode().handleMovement(event);
    }
 
    @EventHandler
    private void handleTravelRotation(LivingEntityRotationEvent event) {
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.getActiveMode().handleTravelRotation(event);
    }
 
@@ -517,6 +530,9 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler
    private void onLocalPlayerSendPositionEvent(LocalPlayerSendPositionEvent event) {
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.getActiveMode().handleSendPosition(event);
    }
 
@@ -534,6 +550,9 @@ public class ElytraFlyModule extends Module {
 
    @EventHandler
    private void handleRotationManagerEvent(RotationRequestEvent event) {
+      if (BaritoneElytraModule.isControllingFlight()) {
+         return;
+      }
       this.getActiveMode().handleRotationManagerEvent(event);
    }
 

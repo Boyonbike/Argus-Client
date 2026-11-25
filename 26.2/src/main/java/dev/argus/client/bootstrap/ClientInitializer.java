@@ -75,7 +75,9 @@ public final class ClientInitializer {
       if (!this.managersInitialized) {
          // Generate the animated loading screen's atlas while the rest of startup runs.
          LoadingOverlayRenderer.prewarm();
-         ClientContext.baritoneBridge = FabricLoader.getInstance().isModLoaded("baritone-meteor") ? new BaritoneAdapter() : new DisabledBaritoneBridge();
+         // Meteor's build registers as baritone-meteor; the official Fabric release as baritone. Both ship the same baritone.api.
+         boolean baritoneLoaded = FabricLoader.getInstance().isModLoaded("baritone-meteor") || FabricLoader.getInstance().isModLoaded("baritone");
+         ClientContext.baritoneBridge = baritoneLoaded ? new BaritoneAdapter() : new DisabledBaritoneBridge();
          ClientContext.waypointAdapter = FabricLoader.getInstance().isModLoaded("xaerominimap")
             ? new XaeroWaypointAdapter() : new DisabledWaypointAdapter();
          FontSupport.initialize();
