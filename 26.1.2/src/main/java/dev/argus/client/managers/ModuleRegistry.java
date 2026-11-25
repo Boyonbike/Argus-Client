@@ -39,6 +39,7 @@ import dev.argus.client.modules.combat.AutoCrystalModule;
 import dev.argus.client.modules.combat.AutoDropModule;
 import dev.argus.client.modules.combat.AutoExpModule;
 import dev.argus.client.modules.combat.AutoLogModule;
+import dev.argus.client.modules.combat.TotemMessageModule;
 import dev.argus.client.modules.combat.AutoMaceModule;
 import dev.argus.client.modules.combat.AutoMineModule;
 import dev.argus.client.modules.combat.AutoPotModule;
@@ -96,6 +97,7 @@ import dev.argus.client.modules.misc.BetterChatModule;
 import dev.argus.client.modules.misc.ChatFilterModule;
 import dev.argus.client.modules.misc.ChestSearchBarModule;
 import dev.argus.client.modules.misc.CoordLoggerModule;
+import dev.argus.client.modules.misc.CopyBlockPosModule;
 import dev.argus.client.modules.misc.CustomDeathTextModule;
 import dev.argus.client.modules.misc.ExtraScreenshotModule;
 import dev.argus.client.modules.misc.AntiCoordsModule;
@@ -115,6 +117,8 @@ import dev.argus.client.modules.misc.VisualRangeModule;
 import dev.argus.client.modules.movement.AutoWalkModule;
 import dev.argus.client.modules.movement.AutoWaspModule;
 import dev.argus.client.modules.movement.AvoidModule;
+import dev.argus.client.modules.movement.BaritoneElytraModule;
+import dev.argus.client.modules.movement.elytratrip.ElytraTripModule;
 import dev.argus.client.modules.movement.ElytraFlyModule;
 import dev.argus.client.modules.movement.BoatPhaseModule;
 import dev.argus.client.modules.movement.EntityControlModule;
@@ -372,6 +376,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
          throw new IllegalStateException("Registration rejected AutoLogModule");
       }
 
+      if (!this.registerModule(new TotemMessageModule())) {
+         throw new IllegalStateException("Registration rejected TotemMessageModule");
+      }
+
       if (!this.registerModule(new AutoMaceModule())) {
          throw new IllegalStateException("Registration rejected AutoMaceModule");
       }
@@ -526,6 +534,14 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new ElytraFlyModule())) {
          throw new IllegalStateException("Registration rejected ElytraFlyModule");
+      }
+
+      if (!this.registerModule(new BaritoneElytraModule())) {
+         throw new IllegalStateException("Registration rejected BaritoneElytraModule");
+      }
+
+      if (!this.registerModule(new ElytraTripModule())) {
+         throw new IllegalStateException("Registration rejected ElytraTripModule");
       }
 
       if (!this.registerModule(new BoatPhaseModule())) {
@@ -898,6 +914,10 @@ public final class ModuleRegistry extends Registry<Module> implements ClientAcce
 
       if (!this.registerModule(new AutoWitherModule())) {
          throw new IllegalStateException("Registration rejected AutoWitherModule");
+      }
+
+      if (!this.registerModule(new CopyBlockPosModule())) {
+         throw new IllegalStateException("Registration rejected CopyBlockPosModule");
       }
 
       if (!this.registerModule(new SpammerModule())) {
