@@ -18,6 +18,8 @@
     "BoatPhaseConnectionMixin",
     "BoatPhaseNetworkMixin",
     "BaritoneComeCommandMixin",
+    "BaritoneElytraBehaviorMixin",
+    "BaritoneNetherPathfinderMixin",
     "ClientVehicleStorageMixin",
     "BoolArgumentTypeMixin",
     "BundleContentsMixin",

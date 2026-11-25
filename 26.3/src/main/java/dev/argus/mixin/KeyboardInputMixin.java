@@ -55,7 +55,9 @@ public class KeyboardInputMixin extends ClientInput {
             return key;
          }
 
-         this.softwareKey.setDown(com.mojang.blaze3d.platform.InputConstants.isKeyDown(keyCode));
+         // The physical key, or the key as the client holds it. Opening a screen lets go of every key, so under one the
+         // client only holds a key that code pressed, such as ElytraTrip walking into the lobby portal.
+         this.softwareKey.setDown(com.mojang.blaze3d.platform.InputConstants.isKeyDown(keyCode) || key.isDown());
          return this.softwareKey;
       } else {
          return key;

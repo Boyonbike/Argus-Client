@@ -71,6 +71,13 @@ public final class GuiCaptureRun {
                     steps.add(new Step(m + "-module-page", () -> { theme.run(); mc.gui.setScreen(new ModuleSettingsScreen(title, module, null)); }));
                 steps.add(new Step(m + "-hud-editor", () -> { theme.run(); mc.gui.setScreen(new ArgusHudEditorScreen()); }));
             }
+            var elytraTrip = GuiState.module("ElytraTrip");
+            if (elytraTrip != null) {
+                steps.add(new Step("dark-elytratrip-page", () -> {
+                    plain(); GuiState.preferences().mode = GuiPreferences.Mode.DARK;
+                    mc.gui.setScreen(new ModuleSettingsScreen(title, elytraTrip, null));
+                }));
+            }
             steps.add(new Step("dark-surface-on-appearance", () -> {
                 var p2 = GuiState.preferences();
                 p2.mode = GuiPreferences.Mode.DARK; p2.grain = true; p2.bevels = true; p2.corner = GuiPreferences.MAX_CORNER;

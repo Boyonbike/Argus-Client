@@ -223,7 +223,6 @@ public final class ChatToolsModule extends Module {
     /** Set by a press of the window key and handled on the next tick, so even a tap shorter than a tick is caught. */
     private boolean openRequested;
     /** How far (squared, in blocks) the server must move the player for it to count as a teleport. */
-    private static final double TELEPORT_JUMP_SQ = 16 * 16;
     private Waiting waitingNow = new Waiting(0, 0, null);
 
     public ChatToolsModule() {
@@ -1116,7 +1115,7 @@ public final class ChatToolsModule extends Module {
         } else if (event.getPacket() instanceof ClientboundPlayerPositionPacket packet) {
             // A long jump is a teleport happening: it ends a pending /home, /tpa or /hotspot and starts its cooldown.
             var player = mc.player;
-            if (player != null && packet.relatives().isEmpty() && packet.change().position().distanceToSqr(player.position()) >= TELEPORT_JUMP_SQ)
+            if (player != null && packet.relatives().isEmpty() && packet.change().position().distanceToSqr(player.position()) >= ChatTeleportState.TELEPORT_JUMP_SQ)
                 mc.execute(() -> { if (isToggled() && mc.getConnection() != null) { checkSession(); teleports.teleported(now()); } });
         } else if (event.getPacket() instanceof ClientboundLoginPacket) {
             // A login while already in a world is a network moving you to another of its servers. Read the world now,

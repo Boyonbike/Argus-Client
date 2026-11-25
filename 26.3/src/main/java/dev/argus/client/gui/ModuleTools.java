@@ -1,5 +1,6 @@
 package dev.argus.client.gui;
 
+import dev.argus.client.modules.movement.elytratrip.ElytraTripModule;
 import dev.argus.client.modules.Module;
 import dev.argus.client.modules.client.DiscordSyncModule;
 import dev.argus.client.modules.client.HUDModule;
@@ -68,6 +69,10 @@ final class ModuleTools {
         if (module instanceof DiscordSyncModule sync) page.inline(discordSync(host, sync), Placement.last());
         if (module instanceof WaypointsModule) page.inline(waypoints(host), Placement.first());
         if (module instanceof BoatPhaseModule boat) page.inline(boatControls(host, boat), Placement.first());
+        if (module instanceof ElytraTripModule elytraTrip) {
+            page.inline(new ElytraTripCard(host, elytraTrip), Placement.first());
+            page.inline(new StationCard(host, elytraTrip), Placement.after("Trip"));
+        }
         if (module instanceof ElytraFlyModule fly && fly.volytra() != null) page.inline(autonavTrip(host, fly.volytra()), Placement.after("Autonav"));
         if (module instanceof HUDModule && hooks.topBar()) page.inline(hud(host, hooks), Placement.first());
         if ((module instanceof ESPModule || module instanceof TracersModule) && TargetLinks.get() != null)

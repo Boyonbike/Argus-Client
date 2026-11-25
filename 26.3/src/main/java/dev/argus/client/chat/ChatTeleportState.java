@@ -418,6 +418,22 @@ public final class ChatTeleportState {
         return result;
     }
 
+    /** Squared distance of a position jump that counts as a teleport happening. */
+    public static final double TELEPORT_JUMP_SQ = 16 * 16;
+
+    /** When the last teleport of this kind finished, or {@link Long#MIN_VALUE} if none has. */
+    public long completedAt(Kind kind, long now) {
+        expire(now);
+        Completed done = completed.get(kind);
+        return done == null ? Long.MIN_VALUE : done.at();
+    }
+
+    /** Whether a teleport of this kind was sent and is still waiting on the server or its warmup. */
+    public boolean pending(Kind kind, long now) {
+        expire(now);
+        return operations.containsKey(kind);
+    }
+
     public boolean canCancel(Kind kind, long now) {
         Timer timer = timers.get(kind);
         return timer != null && timer.phase() != Phase.Cooldown && now < timer.expires()

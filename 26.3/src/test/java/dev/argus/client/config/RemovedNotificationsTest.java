@@ -19,7 +19,12 @@ final class RemovedNotificationsTest {
      * BaseFinder's opt-in Discord alerts, added on request on 13 November 2026. They must post to a Discord webhook
      * link, so this one class may mention them; everything else stays covered by the check below.
      */
-    private static final Set<String> ALLOWED = Set.of("dev/argus/client/modules/basehunting/HuntDiscordAlerts.class");
+    private static final Set<String> ALLOWED = Set.of("dev/argus/client/modules/basehunting/HuntDiscordAlerts.class",
+        // ElytraTrip's opt-in Discord trip updates, added on request on 22 November 2026; same rule as BaseFinder's.
+        "dev/argus/client/modules/movement/elytratrip/ElytraTripModule.class",
+        "dev/argus/client/modules/movement/elytratrip/TripCoordinator.class",
+        "dev/argus/client/modules/movement/elytratrip/TripDiscord.class",
+        "dev/argus/client/modules/movement/elytratrip/TripEmbeds.class");
 
     @Test void baseAndReleaseJarsContainNoNotificationImplementationOrReferences() throws Exception {
         List<Path> jars = new ArrayList<>(List.of(Path.of(System.getProperty("argus.release.jar"))));
