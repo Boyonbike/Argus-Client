@@ -534,6 +534,12 @@ public class OffhandModule extends Module implements LethalDamageTracker.LethalC
                this.deathReportSent = false;
             }
 
+            if (this.lethalDamageTracker.isLethalCheckEnabled()) {
+               // Without this the predictor drops its motion history after 2s with no crystal nearby, so the
+               // first lethal checks of a fight would only see the current hitbox.
+               ClientContext.movementPredictionManager.keepWarm();
+            }
+
             this.lethalDamageTracker.update();
             if (this.shouldDiscardTotem()) {
                ItemStack offhandStack = ClientAccess.argusclientMinecraft.player.getOffhandItem();

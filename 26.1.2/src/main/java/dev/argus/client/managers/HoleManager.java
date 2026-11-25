@@ -80,6 +80,11 @@ public final class HoleManager implements ClientAccess {
       return this.holes;
    }
 
+   /** Keeps the background scan running so a module's first read sees current holes, not an empty list. */
+   public void keepWarm() {
+      this.lastDemandMillis = System.currentTimeMillis();
+   }
+
    boolean isScanDemanded() {
       return System.currentTimeMillis() - this.lastDemandMillis < SCAN_DEMAND_MILLIS;
    }
