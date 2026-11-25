@@ -486,6 +486,11 @@ public class FeetPlaceModule extends PlacementModule {
    @EventHandler
    private void onLocalPlayerPreTick(LocalPlayerPreTickEvent event) {
       this.sequentialPlacementComplete = false;
+      if (this.flattenSetting.getValue()) {
+         // Flatten's hole check reads the scanned hole list, which is empty until something keeps the scan running.
+         ClientContext.holeManager.keepWarm();
+      }
+
       if (!this.centered && this.centerSetting.getValue() && !ClientAccess.argusclientMinecraft.player.isPassenger()) {
          this.centered = centerPlayer();
       }
