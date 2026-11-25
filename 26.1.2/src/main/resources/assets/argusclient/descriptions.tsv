@@ -803,10 +803,13 @@ Baritone	Goal	Color of the Baritone goal box.
 AutoNameTag	Entities	Entity types to use name tags on.
 AutoNameTag	Mode	Treat the entity list as any, whitelist or blacklist.
 AutoNameTag	Range	Maximum distance to entities to tag.
-AutoNameTag	Frequency	Maximum name tags used per cycle.
+AutoNameTag	Priority	Which entity to tag first: closest, farthest, lowest or highest health.
+AutoNameTag	Renametag	Also renames entities that already have a different name.
+AutoNameTag	Frequency	Maximum name tags used per cycle (one per cycle while rotating).
 AutoNameTag	Delay	Seconds between name tag cycles.
 AutoNameTag	Rotate	Rotate towards the entity before tagging.
-AutoNameTag	Swap	Swap mode: none, normal or silent.
+AutoNameTag	Swap	None only uses a tag already in hand; Normal switches to it; Silent switches back afterwards.
+AutoNameTag	Auto disable	Turns the module off when you have no named name tags.
 FastFall	Mode	Plain, Strict or Instant fall behaviour.
 FastFall	Height	Maximum height above ground to start fast falling.
 FastFall	Speed	Fall speed added in Plain mode.
