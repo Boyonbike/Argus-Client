@@ -79,6 +79,15 @@ public final class MovementPredictionManager implements ClientAccess {
       this.playerPredictions.clear();
    }
 
+   /**
+    * Keeps predictions running without reading one. Predictions average each player's recent motion, so a
+    * module that must be accurate the moment a threat appears (Offhand's lethal check) calls this every tick
+    * instead of waiting for its first read to restart the history.
+    */
+   public void keepWarm() {
+      this.lastDemandMillis = System.currentTimeMillis();
+   }
+
    public synchronized AABB getPredictedBoundingBox(Player player, int tickIndex) {
       this.lastDemandMillis = System.currentTimeMillis();
       PlayerMotionPredictor prediction = this.playerPredictions.get(player.getId());
