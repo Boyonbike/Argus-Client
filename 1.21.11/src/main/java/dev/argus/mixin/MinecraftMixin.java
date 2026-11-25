@@ -146,7 +146,8 @@ public class MinecraftMixin {
 
    @ModifyExpressionValue(method = "handleKeybinds", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isUsingItem()Z"))
    private boolean bypassUsingItemForAutoEat(boolean originalUsingItem) {
-      return autoEatModule.isEating() && autoEatModule.isToggled() ? false : originalUsingItem;
+      return autoEatModule.isEating() && autoEatModule.isToggled()
+         || dev.argus.client.modules.movement.elytratrip.TripSurvival.isEating() ? false : originalUsingItem;
    }
 
    @WrapWithCondition(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;stop()V"))

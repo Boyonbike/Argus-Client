@@ -4,11 +4,16 @@ import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
 import baritone.api.Settings.Setting;
 import baritone.api.behavior.IPathingBehavior;
+import baritone.api.event.events.RotationMoveEvent;
+import baritone.api.event.events.TickEvent;
+import baritone.api.event.events.WorldEvent;
+import baritone.api.event.listener.AbstractGameEventListener;
 import baritone.api.pathing.calc.IPathingControlManager;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.pathing.goals.GoalXZ;
 import baritone.api.process.IBaritoneProcess;
+import baritone.api.process.ICustomGoalProcess;
 import baritone.api.process.IElytraProcess;
 import baritone.api.process.PathingCommand;
 import baritone.api.process.PathingCommandType;
@@ -35,7 +40,16 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
+   private final List<java.util.function.Predicate<String>> messageListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
    private final ObjectSet<NamedFeature> pauseRequests = ObjectSets.synchronize(new ObjectOpenHashSet());
+   /** The height Baritone's own #elytra gives a goal without one; its pathfinder works out the real height. */
+   private static final int XZ_GOAL_Y = 64;
+   private float[] latestHeading;
+   private LocalPlayer headingPlayer;
+   private int headingTick = -1;
+   private boolean rocketless;
+   private int savedMinFireworks;
+   private double savedFireworkSpeed;
 
    @Override
    public void pathElytraTo(BlockPos position) {
@@ -121,9 +135,22 @@ public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
       eventBus.subscribe(this);
       IPathingControlManager controlManager = BaritoneAPI.getProvider().getPrimaryBaritone().getPathingControlManager();
       controlManager.registerProcess(new BaritoneAdapter.PauseProcess());
+      this.registerElytraHeadingListener();
       Setting messageTagSetting = BaritoneAPI.getSettings().useMessageTag;
       messageTagSetting.value = false;
       BaritoneAPI.getSettings().logger.value = (Consumer<Component>)message -> {
+         String text = message.getString();
+         boolean hide = false;
+         for (java.util.function.Predicate<String> listener : this.messageListeners) {
+            try {
+               hide |= listener.test(text);
+            } catch (RuntimeException e) {
+               dev.argus.client.ArgusClient.LOGGER.error("A Baritone message listener failed", e);
+            }
+         }
+         if (hide) {
+            return;
+         }
          MutableComponent copiedMessage = message.copy();
          List<Component> siblings = copiedMessage.getSiblings();
          siblings.addFirst(Component.literal(" "));
@@ -156,6 +183,312 @@ public final class BaritoneAdapter implements ClientAccess, BaritoneBridge {
       float playerYaw = ClientAccess.argusclientMinecraft.player.getYRot();
       GoalXZ goal = GoalXZ.fromDirection(playerPosition, playerYaw, 5.0);
       BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(goal);
+   }
+
+   /**
+    * Baritone registers its look behaviour first, so this listener sees the rotation it moves the player with. Its event bus
+    * has no unregister, so this one listener lives as long as the adapter.
+    */
+   private void registerElytraHeadingListener() {
+      IBaritone baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+      baritone.getGameEventHandler().registerEventListener(new AbstractGameEventListener() {
+         @Override
+         public void onPlayerRotationMove(RotationMoveEvent event) {
+            if (event.getType() != RotationMoveEvent.Type.MOTION_UPDATE) {
+               return;
+            }
+            BaritoneAdapter.this.latestHeading = null;
+            LocalPlayer player = baritone.getPlayerContext().player();
+            if (!BaritoneAdapter.isSteering(baritone, player)) {
+               return;
+            }
+            float yaw = event.getYaw();
+            float pitch = event.getPitch();
+            if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+               return;
+            }
+            // With no solution yet Baritone leaves the event alone, which is just where the camera points.
+            if (yaw == player.getYRot() && pitch == player.getXRot()) {
+               return;
+            }
+            BaritoneAdapter.this.latestHeading = new float[]{yaw, pitch};
+            BaritoneAdapter.this.headingPlayer = player;
+            BaritoneAdapter.this.headingTick = player.tickCount;
+         }
+
+         @Override
+         public void onTick(TickEvent event) {
+            BaritoneAdapter.this.latestHeading = null;
+         }
+
+         @Override
+         public void onWorldEvent(WorldEvent event) {
+            BaritoneAdapter.this.latestHeading = null;
+         }
+      });
+   }
+
+   private static IBaritone primary() {
+      return BaritoneAPI.getProvider().getPrimaryBaritone();
+   }
+
+   private static boolean isSteering(IBaritone baritone, LocalPlayer player) {
+      // Any gliding moment Baritone's elytra process is in charge of. Its status text isn't checked: it reads "Begin flying"
+      // well into a flight and differs between Baritone builds, and every tick it rejected went unpowered.
+      if (player == null || !player.isFallFlying()) {
+         return false;
+      }
+      IElytraProcess elytra = baritone.getElytraProcess();
+      return elytra.isLoaded() && elytra.isActive() && baritone.getPathingControlManager().mostRecentInControl().orElse(null) == elytra;
+   }
+
+   @Override
+   public WalkingTrip walkingTrip() {
+      IBaritone baritone = primary();
+      ICustomGoalProcess process = baritone.getCustomGoalProcess();
+      IPathingControlManager control = baritone.getPathingControlManager();
+      // #goal on its own also makes the process active, but only shows the goal. Walking means it asked for a path.
+      boolean walking = control.mostRecentInControl().orElse(null) == process
+         && control.mostRecentCommand()
+            .map(command -> command.commandType == PathingCommandType.SET_GOAL_AND_PATH
+               || command.commandType == PathingCommandType.REVALIDATE_GOAL_AND_PATH
+               || command.commandType == PathingCommandType.FORCE_REVALIDATE_GOAL_AND_PATH)
+            .orElse(false);
+      if (!walking) {
+         return null;
+      }
+      Goal goal = process.getGoal();
+      if (goal instanceof GoalXZ xz) {
+         return new WalkingTrip(goal, new BlockPos(xz.getX(), XZ_GOAL_Y, xz.getZ()));
+      } else if (goal instanceof IGoalRenderPos block) {
+         return new WalkingTrip(goal, block.getGoalPos().immutable());
+      } else {
+         return null;
+      }
+   }
+
+   @Override
+   public void walk(WalkingTrip trip) {
+      primary().getCustomGoalProcess().setGoalAndPath((Goal)trip.goal());
+   }
+
+   @Override
+   public boolean isElytraSupported() {
+      return primary().getElytraProcess().isLoaded();
+   }
+
+   @Override
+   public int elytraMinimumDurability() {
+      return BaritoneAPI.getSettings().elytraMinimumDurability.value;
+   }
+
+   @Override
+   public void flyTo(BlockPos destination) {
+      primary().getElytraProcess().pathTo(destination);
+   }
+
+   @Override
+   public boolean isElytraActive() {
+      return primary().getElytraProcess().isActive();
+   }
+
+   @Override
+   public String elytraStatus() {
+      IElytraProcess elytra = primary().getElytraProcess();
+      return elytra.isActive() ? elytra.displayName() : "";
+   }
+
+   @Override
+   public boolean isElytraSteering() {
+      IBaritone baritone = primary();
+      return isSteering(baritone, baritone.getPlayerContext().player());
+   }
+
+   @Override
+   public float[] elytraHeading() {
+      IBaritone baritone = primary();
+      LocalPlayer player = baritone.getPlayerContext().player();
+      if (this.latestHeading == null || player == null || player != this.headingPlayer || player.tickCount != this.headingTick
+         || !isSteering(baritone, player)) {
+         return null;
+      }
+      return this.latestHeading;
+   }
+
+   @Override
+   public List<? extends BlockPos> elytraRoute() {
+      IBaritone baritone = primary();
+      if (!isSteering(baritone, baritone.getPlayerContext().player())) {
+         return List.of();
+      }
+      return elytraPathOf(baritone.getElytraProcess());
+   }
+
+   @Override
+   public void setLavaRouting(boolean enabled, boolean thinOnly) {
+      // Not both in one condition: each has to take effect whatever the other did.
+      boolean changed = BaritoneElytraOverrides.setLavaPassable(enabled);
+      changed |= BaritoneElytraOverrides.setThinLavaOnly(thinOnly) && enabled;
+      if (!changed) {
+         return;
+      }
+      IBaritone baritone = primary();
+      IElytraProcess elytra = baritone.getElytraProcess();
+      // Rebuilds the terrain Baritone knows about and plans again. It needs a world to check the goal against.
+      if (!elytra.isActive() || baritone.getPlayerContext().player() == null || baritone.getPlayerContext().world() == null) {
+         return;
+      }
+      try {
+         elytra.resetState();
+      } catch (IllegalArgumentException e) {
+         // Out of Baritone's elytra bounds. The flight ends as it would on any other refused path.
+      }
+   }
+
+   @Override
+   public boolean lavaRoutingWorks() {
+      return BaritoneElytraOverrides.lavaHookWorks();
+   }
+
+   @Override
+   public void flyFresh(BlockPos destination) {
+      IElytraProcess elytra = primary().getElytraProcess();
+      // Letting go of the flight is what makes Baritone drop its pathfinder; pathTo then builds a new one.
+      elytra.onLostControl();
+      elytra.pathTo(destination);
+   }
+
+   @Override
+   public void walkToXZ(int x, int z) {
+      primary().getCustomGoalProcess().setGoalAndPath(new GoalXZ(x, z));
+   }
+
+   @Override
+   public void addMessageListener(java.util.function.Predicate<String> listener) {
+      this.messageListeners.add(listener);
+   }
+
+   @Override
+   public boolean isElytraReadyForTakeoff() {
+      IBaritone baritone = primary();
+      IElytraProcess elytra = baritone.getElytraProcess();
+      return elytra.isActive() && !elytra.displayName().contains("Waiting for elytra path") && !baritone.getPathingBehavior().isPathing();
+   }
+
+   @Override
+   public boolean elytraAutoJump() {
+      return BaritoneAPI.getSettings().elytraAutoJump.value;
+   }
+
+   @Override
+   public List<? extends BlockPos> elytraPath() {
+      IElytraProcess elytra = primary().getElytraProcess();
+      if (!elytra.isActive()) {
+         return List.of();
+      }
+      return elytraPathOf(elytra);
+   }
+
+   /**
+    * The route Baritone's elytra process is flying. The 1.21.11 Baritone build has no IElytraProcess.getPath, so this
+    * reads what newer builds return from it: ElytraProcess's ElytraBehavior, its PathManager, and that one's NetherPath.
+    * Field names are scrambled, so each is found by its type.
+    */
+   private static List<? extends BlockPos> elytraPathOf(IElytraProcess elytra) {
+      try {
+         Object behavior = fieldOfType(elytra, "baritone.process.elytra.ElytraBehavior");
+         Object manager = fieldOfType(behavior, "baritone.process.elytra.ElytraBehavior$PathManager");
+         Object path = fieldOfType(manager, "baritone.process.elytra.NetherPath");
+         if (path instanceof List<?> list) {
+            @SuppressWarnings("unchecked")
+            List<? extends BlockPos> route = (List<? extends BlockPos>) list;
+            return route;
+         }
+      } catch (ReflectiveOperationException | RuntimeException failure) {
+         // Not this Baritone build's layout, or nothing flying yet.
+      }
+      return List.of();
+   }
+
+   private static Object fieldOfType(Object owner, String typeName) throws ReflectiveOperationException {
+      if (owner == null) {
+         return null;
+      }
+      for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) {
+         for (java.lang.reflect.Field field : type.getDeclaredFields()) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getType().getName().equals(typeName)) {
+               field.setAccessible(true);
+               return field.get(owner);
+            }
+         }
+      }
+      return null;
+   }
+
+   @Override
+   public void setRocketless(boolean enabled) {
+      if (enabled == this.rocketless) {
+         return;
+      }
+      baritone.api.Settings settings = BaritoneAPI.getSettings();
+      if (enabled) {
+         this.savedMinFireworks = settings.elytraMinFireworksBeforeLanding.value;
+         this.savedFireworkSpeed = settings.elytraFireworkSpeed.value;
+         // Never land for want of fireworks, and never want one for speed.
+         settings.elytraMinFireworksBeforeLanding.value = -1;
+         settings.elytraFireworkSpeed.value = 0.0;
+      } else {
+         settings.elytraMinFireworksBeforeLanding.value = this.savedMinFireworks;
+         settings.elytraFireworkSpeed.value = this.savedFireworkSpeed;
+      }
+      this.rocketless = enabled;
+      BaritoneElytraOverrides.setNoFireworks(enabled);
+   }
+
+   private boolean freeLookForced;
+   private boolean savedFreeLook;
+   private boolean tightForced;
+   private boolean savedTight;
+
+   @SuppressWarnings("unchecked")
+   private static baritone.api.Settings.Setting<Boolean> tightSpacesSetting() {
+      try {
+         Object setting = baritone.api.Settings.class.getField("elytraAllowTightSpaces").get(BaritoneAPI.getSettings());
+         return setting instanceof baritone.api.Settings.Setting<?> found && found.value instanceof Boolean
+            ? (baritone.api.Settings.Setting<Boolean>) found : null;
+      } catch (ReflectiveOperationException | RuntimeException failure) {
+         return null;
+      }
+   }
+
+   @Override
+   public void setTightSpaces(boolean enabled) {
+      // The 1.21.11 Baritone build has no elytraAllowTightSpaces; a newer build that does gets the same handling as 26.3.
+      baritone.api.Settings.Setting<Boolean> tight = tightSpacesSetting();
+      if (tight == null) {
+         return;
+      }
+      if (enabled && !this.tightForced) {
+         this.savedTight = tight.value;
+         tight.value = true;
+         this.tightForced = true;
+      } else if (!enabled && this.tightForced) {
+         tight.value = this.savedTight;
+         this.tightForced = false;
+      }
+   }
+
+   @Override
+   public void setFreeLook(boolean enabled) {
+      baritone.api.Settings settings = BaritoneAPI.getSettings();
+      if (enabled && !this.freeLookForced) {
+         this.savedFreeLook = settings.freeLook.value;
+         settings.freeLook.value = true;
+         this.freeLookForced = true;
+      } else if (!enabled && this.freeLookForced) {
+         settings.freeLook.value = this.savedFreeLook;
+         this.freeLookForced = false;
+      }
    }
 
    private class PauseProcess implements IBaritoneProcess {

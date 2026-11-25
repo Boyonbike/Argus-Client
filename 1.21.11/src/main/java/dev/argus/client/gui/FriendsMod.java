@@ -25,6 +25,7 @@ public final class FriendsMod implements ClientModInitializer {
         DescriptionCatalog.ensureApplied();
         ScreenEvents.AFTER_INIT.register(MultiplayerProfiles::install);
         ScreenEvents.AFTER_INIT.register(AutoRekitModule::addContainerButton);
+        ScreenEvents.AFTER_INIT.register(dev.argus.client.modules.movement.elytratrip.StationChests::addSetupButtons);
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("argus").executes(ctx -> {
                 request = Request.MODULES;
